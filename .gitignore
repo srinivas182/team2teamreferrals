@@ -1,0 +1,16 @@
+/vendor/
+/node_modules/
+/public/build/
+/public/hot
+/storage/*.key
+/bootstrap/cache/*.php
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+.DS_Store
+Thumbs.db
+*.log
+/.idea/
+/.vscode/
+__pycache__/
