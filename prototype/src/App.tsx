@@ -7,6 +7,10 @@ import { HowItWorks, Pricing, Groups } from "./public/Pages1";
 import { GroupPage, CityPage, ProfilePage, AuthPage, BlogPost } from "./public/Pages2";
 import { Wizard, TrainingGate, Welcome } from "./onboarding/Onboarding";
 import { Shell } from "./app/Shell";
+import { Dashboard, Inbox, AcceptSign } from "./portal/Core";
+import { SendReferral, Pipeline, ReferralDetail } from "./portal/Work";
+import { SentList, Earnings, MyGroups, Billing } from "./portal/More";
+import { OwnerOverview, SeatMap, Applications, Enforcement } from "./portal/Owner";
 import { Card, Logo, Badge, Button } from "./ui/kit";
 
 type Screen = { route: string; title: string; area: string; part: "2a" | "2b" | "2c" };
@@ -25,14 +29,14 @@ function ScreenIndex() {
     <div className="mx-auto max-w-4xl px-5 py-10">
       <Logo className="h-9 w-auto" />
       <h1 className="display mt-8 font-display text-3xl font-extrabold">Prototype screens</h1>
-      <p className="mt-2 text-muted">Sprint 2 — high-fidelity, clickable prototype with sample content. Part 2a is ready; 2b and 2c follow.</p>
+      <p className="mt-2 text-muted">Sprint 2 — high-fidelity, clickable prototype with sample content. Parts 2a and 2b are ready; 2c follows.</p>
       {areas.map(a => (
         <section key={a} className="mt-8">
           <h2 className="text-lg font-semibold">{a}</h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {screens.filter(s => s.area === a).map(s => (
               <a key={s.route} href={`#${s.route}`} className="flex items-center justify-between rounded-md border border-line bg-surface px-4 py-3 hover:border-primary">
-                <span className="font-medium">{s.title}</span>{s.part === "2a" ? <Badge tone="success">Ready</Badge> : <Badge>Part {s.part}</Badge>}
+                <span className="font-medium">{s.title}</span>{s.part !== "2c" ? <Badge tone="success">Ready</Badge> : <Badge>Part {s.part}</Badge>}
               </a>))}
           </div>
         </section>))}
@@ -61,6 +65,11 @@ export default function App() {
   const publicPages: Record<string, JSX.Element> = {
     home: <Home />, "how-it-works": <HowItWorks />, pricing: <Pricing />, groups: <Groups />, group: <GroupPage />, city: <CityPage />, pro: <ProfilePage />, blog: <BlogPost />,
   };
+  const portal: Record<string, JSX.Element> = {
+    dashboard: <Dashboard />, inbox: <Inbox />, accept: <AcceptSign />, send: <SendReferral />, pipeline: <Pipeline />, referral: <ReferralDetail />,
+    sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing />,
+    owner: <OwnerOverview />, "seat-map": <SeatMap />, applications: <Applications />, enforcement: <Enforcement />,
+  };
   let view: JSX.Element;
   if (route === "screens") view = <ScreenIndex />;
   else if (publicPages[route]) view = <PublicLayout current={route}>{publicPages[route]}</PublicLayout>;
@@ -68,6 +77,7 @@ export default function App() {
   else if (route === "onboarding") view = <Wizard />;
   else if (route === "training") view = <TrainingGate />;
   else if (route === "welcome") view = <Welcome />;
+  else if (portal[route]) view = portal[route];
   else view = <Upcoming route={route} />;
   return <>{view}<Controls /></>;
 }

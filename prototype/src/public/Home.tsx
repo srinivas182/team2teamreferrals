@@ -24,7 +24,7 @@ function RelayCard() {
         <div><div className="text-muted">Lead</div><div className="font-medium">Buyer, pre-approved</div></div>
         <div><div className="text-muted">Price range</div><div className="font-medium tabular">$450k–$520k</div></div>
         <div><div className="text-muted">Referral fee</div><div className="font-medium tabular">30%</div></div>
-        <div><div className="text-muted">Est. referral value</div><div className="font-semibold tabular text-success">{money(3637)}</div></div>
+        <div><div className="text-muted">Est. referral value</div><div className="font-semibold tabular text-success">{money(3638)}</div></div>
       </div>
       <ol className="mt-5 space-y-3 text-sm">
         {[["Sent", "9:02 AM", "#2451F5"], ["Accepted by Chris Delgado", "9:16 AM · 14 min", "#FF7A1A"], ["First call with the buyer", "9:41 AM", "#FF7A1A"]].map(([a, b, c]) => (
