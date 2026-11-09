@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Network\Industries\Models;
+
+use App\Domains\Identity\Models\User;
+use App\Domains\Network\Industries\Tier;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * @property int $id
+ * @property string $slug
+ * @property string $name
+ * @property string $family
+ * @property Tier $tier
+ * @property string $territory_unit
+ * @property array{pro: string, pros: string, client: string, clients: string} $terminology
+ * @property string $icon
+ * @property ?string $description
+ * @property bool $license_required
+ * @property string $status
+ * @property ?\Illuminate\Support\Carbon $compliance_approved_at
+ * @property ?int $compliance_approved_by
+ * @property ?string $compliance_note
+ */
+final class Industry extends Model
+{
+    public const FAMILIES = [
+        'property' => 'Real estate and property', 'home' => 'Home services', 'money' => 'Insurance and financial', 'legal' => 'Legal',
+        'care' => 'Health and care', 'vehicles' => 'Vehicles and equipment', 'business' => 'Business services', 'life' => 'Events, travel and lifestyle',
+    ];
+
+    public const TERRITORIES = ['city' => 'City', 'county' => 'County', 'metro' => 'Metro area', 'state' => 'State'];
+
+    protected $fillable = ['slug', 'name', 'family', 'tier', 'territory_unit', 'terminology', 'icon', 'description', 'license_required'];
+
+    protected $attributes = ['status' => 'draft', 'icon' => 'Briefcase', 'license_required' => true, 'description' => null, 'compliance_approved_at' => null, 'compliance_approved_by' => null, 'compliance_note' => null];
+
+    protected function casts(): array
+    {
+        return ['tier' => Tier::class, 'terminology' => 'array', 'license_required' => 'boolean', 'compliance_approved_at' => 'datetime'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->compliance_approved_at !== null;
+    }
+
+    public function isLive(): bool
+    {
+        return $this->status === 'live';
+    }
+
+    /** @return HasMany<IndustryLicensing, $this> */
+    public function licensing(): HasMany
+    {
+        return $this->hasMany(IndustryLicensing::class);
+    }
+
+    /** @return HasMany<PlatformFeeRule, $this> */
+    public function feeRules(): HasMany
+    {
+        return $this->hasMany(PlatformFeeRule::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'compliance_approved_by');
+    }
+}
