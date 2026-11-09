@@ -12,9 +12,11 @@ final class FakeSms implements SmsSender
     /** @var list<array{to: string, message: string}> */
     public array $sent = [];
 
-    public function send(string $toE164, string $message): void
+    public function send(string $toE164, string $message): ?string
     {
         $this->sent[] = ['to' => $toE164, 'message' => $message];
+
+        return null;
     }
 
     public function lastCode(): ?string

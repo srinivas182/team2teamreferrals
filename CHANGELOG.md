@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 5a — Settings, providers and delivery log
+- Platform settings store: admin-edited, cached, secrets encrypted at rest and shown masked (last four characters only); blank secret fields keep the saved value.
+- Admin → System: General (company and support details), Email (log, SMTP, Amazon SES, Postmark, Mailgun; from name and address) and Text messages (log, Twilio number or Messaging Service). Changes apply on the next request, with no deploy, and are audited without revealing secrets.
+- "Send test" for email and SMS showing the provider's own error when one is refused.
+- Delivery log: every email and text with provider, status and error; Twilio delivery receipts update status via signed webhooks (X-Twilio-Signature verified).
+- Live provider health (healthy, some failures, failing, idle) from the last hour of sends, on the System screen and the delivery log.
+- Phone verification: "Text not arriving? Email me the code instead" appears after 30 seconds.
+- 81 PHP tests in total (11 new).
+
 ### Sprint 4b — Roles, staff and audit log
 - Roles (super admin, staff, member) and an admin permission catalogue of 17 permissions in five areas, kept in sync on every deploy; super admins pass every check; new members get the member role.
 - Admin area at `/admin` for staff and super admins only, and only with two-step sign-in on (staff without it are sent to set it up). Navigation shows only built screens each person may open.

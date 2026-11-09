@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeftRight,
+    Send,
+    Settings2,
     BadgeCheck,
     DollarSign,
     Factory,
@@ -40,6 +42,8 @@ const nav: Item[] = [
     { label: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage', ready: false },
     { label: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage', ready: true },
     { label: 'Audit log', href: '/admin/audit', icon: ScrollText, permission: 'audit.view', ready: true },
+    { label: 'Delivery log', href: '/admin/deliveries', icon: Send, permission: 'settings.manage', ready: true },
+    { label: 'System', href: '/admin/system', icon: Settings2, permission: 'settings.manage', ready: true },
 ];
 
 /** Super admin area: deliberately distinct navy sidebar so it never looks like a member screen. */

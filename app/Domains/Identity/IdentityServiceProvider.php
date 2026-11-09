@@ -16,8 +16,6 @@ use App\Domains\Identity\Devices\DeviceRecorder;
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Notifications\NewDeviceSignInNotification;
 use App\Domains\Seo\SeoData;
-use App\Support\Sms\LogSmsSender;
-use App\Support\Sms\SmsSender;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
@@ -37,10 +35,7 @@ use Spatie\Activitylog\Models\Activity;
 /** Accounts and sign-in: Fortify (password, 2FA, passkeys, reset, verification) rendered as React pages. */
 final class IdentityServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        $this->app->bindIf(SmsSender::class, LogSmsSender::class);
-    }
+    public function register(): void {}
 
     public function boot(): void
     {
