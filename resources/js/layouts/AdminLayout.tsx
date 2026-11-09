@@ -42,6 +42,7 @@ const nav: Item[] = [
     { label: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage', ready: false },
     { label: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage', ready: true },
     { label: 'Audit log', href: '/admin/audit', icon: ScrollText, permission: 'audit.view', ready: true },
+    { label: 'Templates', href: '/admin/templates', icon: PanelsTopLeft, permission: 'content.manage', ready: true },
     { label: 'Delivery log', href: '/admin/deliveries', icon: Send, permission: 'settings.manage', ready: true },
     { label: 'System', href: '/admin/system', icon: Settings2, permission: 'settings.manage', ready: true },
 ];

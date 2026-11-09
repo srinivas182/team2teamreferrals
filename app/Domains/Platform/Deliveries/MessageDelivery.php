@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class MessageDelivery extends Model
 {
-    public const STATUSES = ['sent', 'delivered', 'failed', 'bounced'];
+    public const STATUSES = ['sent', 'delivered', 'failed', 'bounced', 'suppressed'];
 
     protected $fillable = ['channel', 'provider', 'recipient', 'subject', 'status', 'provider_message_id', 'error', 'user_id'];
 

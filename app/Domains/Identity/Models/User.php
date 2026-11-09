@@ -33,6 +33,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property ?\Illuminate\Support\Carbon $two_factor_confirmed_at
  * @property bool $is_active
  * @property string $timezone
+ * @property ?string $quiet_hours_start
+ * @property ?string $quiet_hours_end
+ * @property bool $email_digest
  * @property-read string $name
  */
 final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
@@ -48,6 +51,9 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         'two_factor_recovery_codes' => null,
         'two_factor_confirmed_at' => null,
         'last_login_at' => null,
+        'quiet_hours_start' => null,
+        'quiet_hours_end' => null,
+        'email_digest' => false,
     ];
 
     protected $fillable = ['first_name', 'last_name', 'email', 'phone', 'password', 'timezone'];
@@ -78,6 +84,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'email_digest' => 'boolean',
         ];
     }
 

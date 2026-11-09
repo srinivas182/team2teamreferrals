@@ -14,6 +14,11 @@ final class RecordingSmsSender implements SmsSender
 
     public function send(string $toE164, string $message): ?string
     {
+        if (SmsOptOut::blocks($toE164)) {
+            MessageDelivery::create(['channel' => 'sms', 'provider' => $this->provider, 'recipient' => $toE164, 'subject' => self::type($message), 'status' => 'suppressed', 'error' => 'Recipient replied STOP']);
+
+            return null;
+        }
         try {
             $id = $this->inner->send($toE164, $message);
             MessageDelivery::create(['channel' => 'sms', 'provider' => $this->provider, 'recipient' => $toE164, 'subject' => self::type($message), 'status' => 'sent', 'provider_message_id' => $id]);
