@@ -7,6 +7,9 @@ import { HowItWorks, Groups } from "./public/Pages1";
 import { Pricing } from "./public/Pricing";
 import { IndustryHub, StatePage, CityPage2 } from "./public/Industry";
 import { GroupPage2, ProfilePage2, ClaimFlow, CompanyDashboard, Billing2 } from "./public/Members";
+import { AdminGroupPricing, AdminOverflow } from "./admin/Pricing";
+import { ReservePage } from "./public/Reserve";
+import { BrandKit } from "./system/BrandKit";
 import { AuthPage, BlogPost } from "./public/Pages2";
 import { Wizard, TrainingGate, Welcome } from "./onboarding/Onboarding";
 import { Shell } from "./app/Shell";
@@ -20,10 +23,11 @@ import { NotificationsPage, Gallery } from "./system/System";
 import { Card, Logo, Badge, Button } from "./ui/kit";
 
 type Screen = { route: string; title: string; area: string; part: "2a" | "2b" | "2c" };
-const updated2c = new Set(["home", "pricing", "industry-solar", "industry-real-estate", "state-texas", "city", "group", "pro", "claim", "company", "billing"]);
+const updated2c = new Set(["home", "pricing", "industry-solar", "industry-real-estate", "state-texas", "city", "group", "pro", "claim", "company", "billing", "admin-groups", "admin-overflow", "reserve", "brand-kit"]);
 export const screens: Screen[] = [
   ["home", "Home (multi-industry)"], ["pricing", "Pricing and calculator"], ["industry-solar", "Industry hub: Solar"], ["industry-real-estate", "Industry hub: Real estate"], ["state-texas", "Industry × state: Solar in Texas"], ["city", "City page: Solar in Austin"],
   ["group", "Network page: Solar Installers Network"], ["pro", "Team profile with ratings"], ["claim", "Claim flow: team or company"], ["company", "Company dashboard"], ["billing", "Billing: trials and free months"],
+  ["admin-groups", "Admin: group pricing and rules"], ["admin-overflow", "Admin: overflow demand"], ["reserve", "Pre-launch: reserve your city"], ["brand-kit", "Brand kit at scale"],
 ].map(([route, title]) => ({ route, title, area: "Sprint 2c — multi-industry update", part: "2c" as Screen["part"] })).concat([
   ["how-it-works", "How it works"], ["groups", "Group directory"],
   ["signup", "Sign up"], ["login", "Log in"], ["blog", "Blog post"],
@@ -77,7 +81,7 @@ export default function App() {
   };
   const portal: Record<string, JSX.Element> = {
     dashboard: <Dashboard />, inbox: <Inbox />, accept: <AcceptSign />, send: <SendReferral />, pipeline: <Pipeline />, referral: <ReferralDetail />,
-    sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing2 />, company: <CompanyDashboard />,
+    sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing2 />, company: <CompanyDashboard />, "admin-groups": <AdminGroupPricing />, "admin-overflow": <AdminOverflow />,
     palette: <Dashboard palette />, notifications: <Shell current="notifications" title="Notifications"><NotificationsPage /></Shell>,
     gallery: <Shell current="gallery" title="Component gallery"><Gallery /></Shell>,
     admin: <AdminDashboard />, "industry-builder": <IndustryBuilder />, "site-builder": <SiteBuilder />, "network-crm": <NetworkCrm />, "license-queue": <LicenseQueue />,
@@ -91,6 +95,8 @@ export default function App() {
   else if (publicPages[route]) view = <PublicLayout current={route}>{publicPages[route]}</PublicLayout>;
   else if (route === "login" || route === "signup") view = <AuthPage mode={route} />;
   else if (route === "claim") view = <ClaimFlow />;
+  else if (route === "reserve") view = <PublicLayout current="reserve"><ReservePage /></PublicLayout>;
+  else if (route === "brand-kit") view = <div className="min-h-screen bg-bg"><BrandKit /></div>;
   else if (route === "onboarding") view = <Wizard />;
   else if (route === "training") view = <TrainingGate />;
   else if (route === "welcome") view = <Welcome />;

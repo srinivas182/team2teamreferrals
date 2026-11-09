@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 2c part 3 — Admin pricing, pre-launch and brand kit (prototype)
+- Admin → Groups and pricing: seat price, founding price, trial length, multi-city discounts, annual months free, value guarantee (forced off in Tier C), company cap, seat-challenge rules, waitlist ranking, locked platform-fee mode, member preview and projected revenue.
+- Admin → Overflow demand: waitlisted teams and metro fill per network, "ready for a second group" flags, and "Open next group" (region, name, inherits rules, offers seats to waitlisted teams).
+- Pre-launch "Reserve your city": launch countdown, two-minute reservation, founding price and badge, invite-to-move-up, share card on success, live map and state race.
+- Brand kit: eight custom family emblems, all 46 industry tiles, share-card generator (fits long city names), motion principles, photography and illustration direction; written guide in docs/design/brand-kit.md.
+- All screens checked at 375 px with no horizontal scroll.
+
 ### Sprint 2c part 2 — Member screens (prototype)
 - Network page (Solar Installers Network): stats, search, list or map, "Send referral" on every installer, reserved and open cities, network rules (deadlines, seat challenge, company cap) and top installers.
 - Team profile: verified-license and founding-member badges, client and peer ratings, response time, update rate, 6-month report card, verified-only reviews, "Refer to me" code.

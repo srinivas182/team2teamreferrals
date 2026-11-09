@@ -1,8 +1,8 @@
-import { LayoutDashboard, Network, ArrowLeftRight, DollarSign, Rocket, PanelsTopLeft, GraduationCap, Sparkles, LifeBuoy, Settings2, Search, Bell, BadgeCheck, Factory } from "lucide-react";
+import { TrendingUp, LayoutDashboard, Network, ArrowLeftRight, DollarSign, Rocket, PanelsTopLeft, GraduationCap, Sparkles, LifeBuoy, Settings2, Search, Bell, BadgeCheck, Factory } from "lucide-react";
 import { Logo, Avatar, cn } from "../ui/kit";
 
 const nav = [
-  [LayoutDashboard, "Dashboard", "admin"], [Factory, "Industries", "industry-builder"], [Network, "Groups and seats", "admin-groups"], [BadgeCheck, "License queue", "license-queue"],
+  [LayoutDashboard, "Dashboard", "admin"], [Factory, "Industries", "industry-builder"], [Network, "Groups and pricing", "admin-groups"], [TrendingUp, "Overflow demand", "admin-overflow"], [BadgeCheck, "License queue", "license-queue"],
   [ArrowLeftRight, "Network CRM", "network-crm"], [DollarSign, "Revenue", "admin-revenue"], [Rocket, "Growth", "admin-growth"], [PanelsTopLeft, "Website builder", "site-builder"],
   [GraduationCap, "Training", "admin-training"], [Sparkles, "AI", "admin-ai"], [LifeBuoy, "Support", "admin-support"], [Settings2, "System", "admin-system"],
 ] as const;
