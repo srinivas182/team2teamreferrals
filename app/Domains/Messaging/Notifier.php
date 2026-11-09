@@ -46,7 +46,7 @@ final class Notifier
 
             match ($channel) {
                 'database' => $user->notify(new InAppNotification($type, $title, $body, $url)),
-                'push' => $quietUntil === null ? $this->safely(fn () => $this->push->send($user, $title, $body, $url)) : null,
+                'push' => $quietUntil === null && app(\App\Domains\Platform\Modules\Modules::class)->enabled('push') ? $this->safely(fn () => $this->push->send($user, $title, $body, $url)) : null,
                 'mail' => $this->mail($user, $type, $title, $body, $url, $def['urgent'], $quietUntil, $now),
                 'sms' => $this->text($user, $type, $title, $body, $url, $quietUntil),
                 default => null,

@@ -20,13 +20,25 @@ type Props = {
     matrix: Record<string, Record<string, boolean>>;
     quiet: { start: string | null; end: string | null; timezone: string };
     digest: boolean;
+    pushEnabled: boolean;
     pushDevices: number;
     vapidPublicKey: string;
     status?: string;
     seo: Seo;
 };
 
-export default function NotificationSettings({ types, channels, matrix, quiet, digest, pushDevices, vapidPublicKey, status, seo }: Props) {
+export default function NotificationSettings({
+    types,
+    channels,
+    matrix,
+    quiet,
+    digest,
+    pushEnabled,
+    pushDevices,
+    vapidPublicKey,
+    status,
+    seo,
+}: Props) {
     const { auth } = usePage<SharedProps>().props;
     const form = useForm({ matrix, quiet_start: quiet.start ?? '', quiet_end: quiet.end ?? '', digest });
     const [push, setPush] = useState<string | null>(null);
@@ -153,41 +165,43 @@ export default function NotificationSettings({ types, channels, matrix, quiet, d
                     </Card>
                 </div>
 
-                <Card className="flex flex-wrap items-center gap-4 p-6">
-                    <BellRing className="text-primary" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                        <h2 className="font-semibold">Push notifications</h2>
-                        <p className="text-sm text-muted">
-                            {pushDevices > 0
-                                ? `On for ${pushDevices} browser${pushDevices > 1 ? 's' : ''}.`
-                                : 'Get instant alerts on this browser or phone, even when Team to Team isn’t open.'}
-                        </p>
-                        {push && <p className="mt-1 text-sm text-muted">{push}</p>}
-                    </div>
-                    {pushDevices > 0 && (
-                        <Button variant="ghost" onClick={() => router.delete('/app/push-subscriptions', { preserveScroll: true })}>
-                            Turn off everywhere
+                {pushEnabled && (
+                    <Card className="flex flex-wrap items-center gap-4 p-6">
+                        <BellRing className="text-primary" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                            <h2 className="font-semibold">Push notifications</h2>
+                            <p className="text-sm text-muted">
+                                {pushDevices > 0
+                                    ? `On for ${pushDevices} browser${pushDevices > 1 ? 's' : ''}.`
+                                    : 'Get instant alerts on this browser or phone, even when Team to Team isn’t open.'}
+                            </p>
+                            {push && <p className="mt-1 text-sm text-muted">{push}</p>}
+                        </div>
+                        {pushDevices > 0 && (
+                            <Button variant="ghost" onClick={() => router.delete('/app/push-subscriptions', { preserveScroll: true })}>
+                                Turn off everywhere
+                            </Button>
+                        )}
+                        <Button
+                            variant="secondary"
+                            disabled={!pushSupported()}
+                            onClick={async () => {
+                                const r = await enablePush(vapidPublicKey);
+                                setPush(
+                                    {
+                                        enabled: 'Push is on for this browser.',
+                                        denied: 'Your browser blocked notifications. Allow them in its site settings, then try again.',
+                                        unsupported: 'This browser doesn’t support push. On iPhone, add Team to Team to your home screen first.',
+                                        error: 'Something went wrong. Please try again.',
+                                    }[r],
+                                );
+                                if (r === 'enabled') router.reload({ only: ['pushDevices'] });
+                            }}
+                        >
+                            Turn on for this browser
                         </Button>
-                    )}
-                    <Button
-                        variant="secondary"
-                        disabled={!pushSupported()}
-                        onClick={async () => {
-                            const r = await enablePush(vapidPublicKey);
-                            setPush(
-                                {
-                                    enabled: 'Push is on for this browser.',
-                                    denied: 'Your browser blocked notifications. Allow them in its site settings, then try again.',
-                                    unsupported: 'This browser doesn’t support push. On iPhone, add Team to Team to your home screen first.',
-                                    error: 'Something went wrong. Please try again.',
-                                }[r],
-                            );
-                            if (r === 'enabled') router.reload({ only: ['pushDevices'] });
-                        }}
-                    >
-                        Turn on for this browser
-                    </Button>
-                </Card>
+                    </Card>
+                )}
 
                 <div>
                     <Button

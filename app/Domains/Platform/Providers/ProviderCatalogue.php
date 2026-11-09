@@ -44,6 +44,34 @@ final class ProviderCatalogue
                 'from' => ['label' => 'From number or Messaging Service SID', 'required' => true, 'hint' => '+1… number, or MG… for a Messaging Service (recommended for A2P 10DLC)'],
             ]],
         ],
+        'payments' => [
+            'none' => ['label' => 'Not connected', 'fields' => []],
+            'stripe' => ['label' => 'Stripe', 'fields' => [
+                'publishable_key' => ['label' => 'Publishable key', 'required' => true, 'hint' => 'pk_test_… or pk_live_…'],
+                'secret_key' => ['label' => 'Secret key', 'secret' => true, 'required' => true, 'hint' => 'sk_test_… or sk_live_… (a restricted key works too)'],
+                'webhook_secret' => ['label' => 'Webhook signing secret', 'secret' => true, 'hint' => 'whsec_…, from the webhook endpoint you create in Stripe'],
+            ]],
+        ],
+        'storage' => [
+            'local' => ['label' => 'This server (development)', 'fields' => []],
+            's3' => ['label' => 'S3-compatible (AWS S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2)', 'fields' => [
+                'key' => ['label' => 'Access key ID', 'required' => true],
+                'secret' => ['label' => 'Secret access key', 'secret' => true, 'required' => true],
+                'bucket' => ['label' => 'Bucket', 'required' => true],
+                'region' => ['label' => 'Region', 'required' => true, 'hint' => 'us-east-1, or auto for Cloudflare R2'],
+                'endpoint' => ['label' => 'Endpoint', 'hint' => 'Leave blank for AWS. R2: https://<account>.r2.cloudflarestorage.com'],
+            ]],
+        ],
+        'ai' => [
+            'none' => ['label' => 'Off', 'fields' => []],
+            'anthropic' => ['label' => 'Anthropic (Claude)', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true],
+                'model' => ['label' => 'Model', 'required' => true, 'hint' => 'e.g. claude-haiku-5-5 for fast, low-cost tasks'],
+                'input_price' => ['label' => 'Input price (USD per million tokens)', 'required' => true, 'hint' => 'From your Anthropic pricing page; used for the spend cap'],
+                'output_price' => ['label' => 'Output price (USD per million tokens)', 'required' => true],
+                'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'AI features pause for the month when reached'],
+            ]],
+        ],
     ];
 
     /** @return array<string, array{label: string, secret?: bool, required?: bool, hint?: string}> */

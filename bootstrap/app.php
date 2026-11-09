@@ -26,10 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'noindex' => NoIndex::class,
             'role' => Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'module' => App\Domains\Platform\Http\Middleware\RequireModule::class,
         ]);
         $middleware->trustProxies(at: '*');
         // Lets "sign out of other devices" invalidate those sessions.
         $middleware->appendToGroup('web', Illuminate\Session\Middleware\AuthenticateSession::class);
+        // Admin-controlled maintenance page for members (staff and webhooks pass through).
+        $middleware->appendToGroup('web', App\Domains\Platform\Http\Middleware\MaintenanceGate::class);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/app');
     })

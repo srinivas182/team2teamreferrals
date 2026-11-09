@@ -13,7 +13,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::get('app/settings/notifications', [PreferencesController::class, 'show'])->name('settings.notifications');
     Route::put('app/settings/notifications', [PreferencesController::class, 'update'])->name('settings.notifications.update');
-    Route::post('app/push-subscriptions', [PreferencesController::class, 'subscribe'])->middleware('throttle:10,1')->name('push.subscribe');
+    Route::post('app/push-subscriptions', [PreferencesController::class, 'subscribe'])->middleware(['throttle:10,1', 'module:push'])->name('push.subscribe');
     Route::delete('app/push-subscriptions', [PreferencesController::class, 'unsubscribe'])->name('push.unsubscribe');
 
     Route::prefix('admin/templates')->name('admin.templates.')->middleware([EnsureStaff::class, 'can:content.manage'])->group(function (): void {

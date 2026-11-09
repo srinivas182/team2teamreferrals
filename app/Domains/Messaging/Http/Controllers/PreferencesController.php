@@ -33,6 +33,7 @@ final class PreferencesController
             'matrix' => $this->prefs->matrix($user),
             'quiet' => ['start' => $user->quiet_hours_start ? substr($user->quiet_hours_start, 0, 5) : null, 'end' => $user->quiet_hours_end ? substr($user->quiet_hours_end, 0, 5) : null, 'timezone' => $user->timezone],
             'digest' => $user->email_digest,
+            'pushEnabled' => app(\App\Domains\Platform\Modules\Modules::class)->enabled('push'),
             'pushDevices' => PushSubscription::query()->where('user_id', $user->id)->count(),
             'vapidPublicKey' => fn () => app(WebPushSender::class)->keys()['publicKey'],
             'status' => session('status'),

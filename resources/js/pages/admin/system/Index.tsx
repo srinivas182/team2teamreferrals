@@ -1,10 +1,27 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Mail, MessageSquare, Building2, Send } from 'lucide-react';
+import {
+    Mail,
+    MessageSquare,
+    Building2,
+    Send,
+    Gauge,
+    CreditCard,
+    HardDrive,
+    Sparkles,
+    ToggleRight,
+    Download,
+    Upload,
+    Wrench,
+    CheckCircle2,
+    XCircle,
+    MinusCircle,
+} from 'lucide-react';
+import { router } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { HealthBadge, type Health } from '@/components/admin/HealthBadge';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input, Select } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
@@ -17,20 +34,92 @@ type Driver = { key: string; label: string; fields: FieldDef[] };
 type Channel = { driver: string; drivers: Driver[]; health: Health };
 type ProviderData = { driver: string; fields: Record<string, string>; from_address: string; from_name: string };
 
+type Check = { ok: boolean | null; message: string; at: string };
+
 type Props = {
-    tab: 'general' | 'email' | 'sms';
+    tab: (typeof tabs)[number][0];
     general: { company_name: string | null; support_email: string | null; support_phone: string | null };
     email: Channel & { from_address: string; from_name: string };
     sms: Channel;
+    payments: Channel;
+    storage: Channel;
+    ai: Channel & { spent: number };
+    modules: { key: string; label: string; affects: string; enabled: boolean }[];
+    overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
+    maintenance: boolean;
+    checks: Record<string, Check> | null;
     status?: string;
     seo: Seo;
 };
 
 const tabs = [
+    ['overview', 'Overview', Gauge],
     ['general', 'General', Building2],
     ['email', 'Email', Mail],
     ['sms', 'Text messages', MessageSquare],
+    ['payments', 'Payments', CreditCard],
+    ['storage', 'Storage', HardDrive],
+    ['ai', 'AI', Sparkles],
+    ['modules', 'Modules', ToggleRight],
 ] as const;
+
+function CheckLine({ check }: { check: Check | null | undefined }) {
+    if (!check) return <p className="text-sm text-muted">Not checked yet.</p>;
+    const Icon = check.ok === true ? CheckCircle2 : check.ok === false ? XCircle : MinusCircle;
+    return (
+        <p
+            className={cn(
+                'flex gap-2 text-sm',
+                check.ok === true ? 'text-success' : check.ok === false ? 'text-danger dark:text-[#FDA4AF]' : 'text-muted',
+            )}
+        >
+            <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>{check.message}</span>
+        </p>
+    );
+}
+
+function ProviderTab({
+    title,
+    intro,
+    channel,
+    url,
+    provider,
+    checks,
+    extra,
+}: {
+    title: string;
+    intro: string;
+    channel: Channel;
+    url: string;
+    provider: string;
+    checks: Record<string, Check> | null;
+    extra?: ReactNode;
+}) {
+    return (
+        <div className="grid max-w-5xl gap-6 lg:grid-cols-[1fr_340px]">
+            <Card className="p-6">
+                <h2 className="text-lg font-semibold">{title}</h2>
+                <p className="mt-1 mb-5 text-sm text-muted">{intro}</p>
+                <ProviderForm channel={channel} url={url} />
+            </Card>
+            <div className="space-y-6">
+                <Card className="space-y-3 p-5">
+                    <h3 className="font-semibold">Connection</h3>
+                    <CheckLine check={checks?.[provider]} />
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => router.post(`/admin/system/check/${provider}`, {}, { preserveScroll: true })}
+                    >
+                        Test connection
+                    </Button>
+                </Card>
+                {extra}
+            </div>
+        </div>
+    );
+}
 
 function initialFields(channel: Channel) {
     const out: Record<string, Record<string, string>> = {};
@@ -123,7 +212,22 @@ function TestSend({ url, label, type, placeholder }: { url: string; label: strin
     );
 }
 
-export default function SystemSettings({ tab, general, email, sms, status, seo }: Props) {
+export default function SystemSettings({
+    tab,
+    general,
+    email,
+    sms,
+    payments,
+    storage,
+    ai,
+    modules,
+    overview,
+    maintenance,
+    checks,
+    status,
+    seo,
+}: Props) {
+    const mods = useForm({ modules: Object.fromEntries(modules.map((m) => [m.key, m.enabled])) as Record<string, boolean> });
     const gen = useForm({
         company_name: general.company_name ?? '',
         support_email: general.support_email ?? '',
@@ -248,6 +352,149 @@ export default function SystemSettings({ tab, general, email, sms, status, seo }
                         </Card>
                     </div>
                 </div>
+            )}
+            {tab === 'overview' && (
+                <div className="max-w-5xl space-y-6">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <p className="flex-1 text-muted">
+                            Every provider at a glance. Run all checks before launch, or whenever something looks wrong.
+                        </p>
+                        <Button onClick={() => router.post('/admin/system/check-all', {}, { preserveScroll: true })}>
+                            <Gauge /> Test everything
+                        </Button>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {overview.map((p) => (
+                            <Card key={p.key} className="p-5">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold">{p.label}</h3>
+                                    <span className="ml-auto text-xs text-muted">{p.driver ?? 'not set'}</span>
+                                </div>
+                                {p.health && (
+                                    <div className="mt-2">
+                                        <HealthBadge health={p.health} />
+                                    </div>
+                                )}
+                                <div className="mt-3">
+                                    <CheckLine check={checks?.[p.key] ?? p.last} />
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="p-6">
+                            <Wrench className="text-warning" aria-hidden />
+                            <h2 className="mt-3 font-semibold">Maintenance mode</h2>
+                            <p className="mt-1 text-sm text-muted">
+                                Members see a branded “We’ll be right back” page. Staff can still sign in, and provider webhooks keep arriving so
+                                nothing is lost.
+                            </p>
+                            <Button
+                                className="mt-4"
+                                variant={maintenance ? 'primary' : 'danger'}
+                                onClick={() => router.post('/admin/system/maintenance', { on: !maintenance }, { preserveScroll: true })}
+                            >
+                                {maintenance ? 'Turn maintenance off' : 'Turn maintenance on'}
+                            </Button>
+                        </Card>
+                        <Card className="p-6">
+                            <Download className="text-primary" aria-hidden />
+                            <h2 className="mt-3 font-semibold">Copy settings between environments</h2>
+                            <p className="mt-1 text-sm text-muted">
+                                Export non-secret settings from staging and import them in production. API keys and passwords are never exported;
+                                enter them once in each environment.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <Button variant="secondary" asChild>
+                                    <a href="/admin/system/export">
+                                        <Download /> Export
+                                    </a>
+                                </Button>
+                                <label className={cn(buttonVariants({ variant: 'secondary' }), 'cursor-pointer')}>
+                                    <Upload className="size-4" aria-hidden /> Import
+                                    <input
+                                        type="file"
+                                        accept="application/json"
+                                        className="sr-only"
+                                        onChange={(e) =>
+                                            e.target.files?.[0] &&
+                                            router.post(
+                                                '/admin/system/import',
+                                                { file: e.target.files[0] },
+                                                { forceFormData: true, preserveScroll: true },
+                                            )
+                                        }
+                                    />
+                                </label>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            )}
+
+            {tab === 'payments' && (
+                <ProviderTab
+                    title="Payments"
+                    intro="Card payments for seat subscriptions. Add this webhook endpoint in Stripe: /webhooks/stripe."
+                    channel={payments}
+                    url="/admin/system/payments"
+                    provider="payments"
+                    checks={checks}
+                />
+            )}
+            {tab === 'storage' && (
+                <ProviderTab
+                    title="File storage"
+                    intro="Licenses, W-9s and agreements. Files are private and open only through links that expire after a few minutes."
+                    channel={storage}
+                    url="/admin/system/storage"
+                    provider="storage"
+                    checks={checks}
+                />
+            )}
+            {tab === 'ai' && (
+                <ProviderTab
+                    title="AI provider"
+                    intro="Powers lead summaries, nudges and drafts in later sprints. Requests go through the provider’s API, which doesn’t use your data for training."
+                    channel={ai}
+                    url="/admin/system/ai"
+                    provider="ai"
+                    checks={checks}
+                    extra={
+                        <Card className="p-5">
+                            <h3 className="font-semibold">Spent this month</h3>
+                            <p className="mt-2 font-display text-2xl font-bold tabular">${ai.spent.toFixed(2)}</p>
+                        </Card>
+                    }
+                />
+            )}
+
+            {tab === 'modules' && (
+                <Card className="max-w-3xl">
+                    <ul className="divide-y divide-line">
+                        {modules.map((m) => (
+                            <li key={m.key} className="flex items-start gap-4 p-5">
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-medium">{m.label}</div>
+                                    <div className="text-sm text-muted">{m.affects}</div>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    role="switch"
+                                    aria-label={m.label}
+                                    className="mt-1 size-5"
+                                    checked={!!mods.data.modules[m.key]}
+                                    onChange={(e) => mods.setData('modules', { ...mods.data.modules, [m.key]: e.target.checked })}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="border-t border-line p-5">
+                        <Button loading={mods.processing} onClick={() => mods.put('/admin/system/modules', { preserveScroll: true })}>
+                            Save modules
+                        </Button>
+                    </div>
+                </Card>
             )}
         </AdminLayout>
     );
