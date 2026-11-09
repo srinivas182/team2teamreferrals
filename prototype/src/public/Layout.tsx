@@ -18,7 +18,7 @@ export function PublicLayout({ children, current }: { children: React.ReactNode;
           </nav>
           <div className="ml-auto hidden items-center gap-2 md:flex">
             <Button variant="ghost" size="sm" href="#login">Log in</Button>
-            <Button size="sm" href="#claim">Reserve your city</Button>
+            <Button size="sm" href="#reserve">Reserve your city</Button>
           </div>
           <button className="ml-auto rounded-md p-2 md:hidden" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? <X /> : <Menu />}
