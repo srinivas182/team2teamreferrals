@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 8b part 2 — Industry messages and terminology
+- Terminology completed: each industry now names a referral and a fee as well as its pros and clients. Defaults follow the tier: Tier B and C industries say "introduction" instead of "referral". Live preview in the industry form.
+- Every message can use the industry's own words: `{pro}`, `{pros}`, `{client_term}`, `{clients_term}`, `{referral_term}` and `{fee_term}` are filled in automatically (`{client}` stays the client's name). Platform wording now uses them, so "New referral" becomes "New introduction" in mortgage lending.
+- Industry message wording: Admin → Industries → Messages lists every notification, marks the ones this industry has customised, and edits email, text and in-app wording with preview in the industry's terms, versions and restore. "Use platform wording" returns to inheriting.
+- Wording resolves industry → platform → default; industry and platform versions are kept separately.
+- The counsel review pack now includes every message members and clients receive, as they read it, with its source (industry, platform or default) and the terms in use.
+- 174 PHP tests in total (8 new).
+
 ### Sprint 8b part 1 — Referral agreements
 - Agreement templates per industry (kind "agreement" in the industry template engine), with versions and reset to the default wording.
 - Defaults by tier: Tier A referral fee agreement (parties and licenses, client, fee, protection period, fee paid business to business, governing law, signatures); Tier B reciprocal introduction agreement (no fee, consent, reciprocity credits); Tier C no agreement, only client consent.

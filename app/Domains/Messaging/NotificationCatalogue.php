@@ -11,7 +11,7 @@ use InvalidArgumentException;
  * whether it is urgent (ignores quiet hours, never bundled) and whether members may
  * turn it off. Default wording lives here; admins override it with versioned templates.
  *
- * Merge fields: {first_name}, {client}, {city}, {industry}, {team}, {hours}, {days}, {month}, {next_month}, {date}, {device}.
+ * Merge fields: {pro}, {pros}, {client_term}, {clients_term}, {referral_term}, {fee_term} (the industry's own words), {first_name}, {client}, {city}, {industry}, {team}, {hours}, {days}, {month}, {next_month}, {date}, {device}.
  */
 final class NotificationCatalogue
 {
@@ -22,13 +22,13 @@ final class NotificationCatalogue
      */
     public const TYPES = [
         'referral.waiting' => ['group' => 'Referrals', 'label' => 'New referral waiting for you', 'description' => 'A member sent you a client and the clock is running.', 'channels' => ['mail', 'sms', 'database', 'push'], 'urgent' => true, 'locked' => false,
-            'title' => 'New referral: {client} in {city}', 'body' => '{team} sent you a {industry} client in {city}. Accept or decline within {hours} hours.', 'sms' => 'New t2t referral: {client} in {city}. Respond within {hours}h: {url}'],
+            'title' => 'New {referral_term}: {client} in {city}', 'body' => '{team} sent you a {client_term} in {city}. Accept or decline within {hours} hours.', 'sms' => 'New t2t {referral_term}: {client} in {city}. Respond within {hours}h: {url}'],
         'referral.deadline' => ['group' => 'Referrals', 'label' => 'Deadline reminders', 'description' => 'Before a response, first contact or update is due.', 'channels' => ['mail', 'sms', 'database', 'push'], 'urgent' => true, 'locked' => false,
-            'title' => '{hours} hours left to respond', 'body' => 'Your referral for {client} in {city} needs a response within {hours} hours.', 'sms' => 't2t: {hours}h left on the {client} referral. {url}'],
+            'title' => '{hours} hours left to respond', 'body' => 'Your {referral_term} for {client} in {city} needs a response within {hours} hours.', 'sms' => 't2t: {hours}h left on the {client} {referral_term}. {url}'],
         'referral.accepted' => ['group' => 'Referrals', 'label' => 'Your referral was accepted', 'description' => 'When a pro accepts a client you sent.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
-            'title' => '{team} accepted {client}', 'body' => '{team} in {city} accepted your referral and will contact {client} shortly.', 'sms' => ''],
+            'title' => '{team} accepted {client}', 'body' => '{team} in {city} accepted your {referral_term} and will contact {client} shortly.', 'sms' => ''],
         'referral.declined' => ['group' => 'Referrals', 'label' => 'Your referral was declined', 'description' => 'When a pro declines, with their reason.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
-            'title' => '{team} declined {client}', 'body' => '{team} declined the referral. It has moved to the backup team in {city}.', 'sms' => ''],
+            'title' => '{team} declined {client}', 'body' => '{team} declined the {referral_term}. It has moved to the backup {pro} in {city}.', 'sms' => ''],
         'referral.update' => ['group' => 'Referrals', 'label' => 'Progress updates', 'description' => 'Stage changes and notes on referrals you sent.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'Update on {client}', 'body' => '{team} moved {client} forward. See the latest notes.', 'sms' => ''],
         'seat.offered' => ['group' => 'Network', 'label' => 'A seat opened for you', 'description' => 'A city you are waitlisted for became available.', 'channels' => ['mail', 'sms', 'database'], 'urgent' => true, 'locked' => false,

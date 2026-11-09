@@ -23,7 +23,7 @@ type Props = {
         family: string;
         tier: 'A' | 'B' | 'C';
         territory: string;
-        terminology: { pro: string; pros: string; client: string; clients: string };
+        terminology: { pro: string; pros: string; client: string; clients: string; referral: string; fee: string };
         icon: string;
         description: string | null;
         licenseRequired: boolean;
@@ -134,8 +134,11 @@ export default function IndustryShow({
                 <Link href={`/admin/industries/${i.slug}/stages`} className="text-sm font-medium text-primary">
                     Pipeline stages
                 </Link>
-                <Link href={`/admin/industries/${i.slug}/agreement`} className="mr-2 text-sm font-medium text-primary">
+                <Link href={`/admin/industries/${i.slug}/agreement`} className="text-sm font-medium text-primary">
                     Agreement
+                </Link>
+                <Link href={`/admin/industries/${i.slug}/messages`} className="mr-2 text-sm font-medium text-primary">
+                    Messages
                 </Link>
                 <Badge tone={tierTone[i.tier]}>Tier {i.tier}</Badge>
                 {i.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}
@@ -168,10 +171,19 @@ export default function IndustryShow({
                                     ))}
                                 </Select>
                             </Field>
-                            {(['pro', 'pros', 'client', 'clients'] as const).map((k) => (
+                            {(['pro', 'pros', 'client', 'clients', 'referral', 'fee'] as const).map((k) => (
                                 <Field
                                     key={k}
-                                    label={{ pro: 'A professional is called', pros: 'Plural', client: 'A client is called', clients: 'Plural' }[k]}
+                                    label={
+                                        {
+                                            pro: 'A professional is called',
+                                            pros: 'Plural',
+                                            client: 'A client is called',
+                                            clients: 'Plural',
+                                            referral: 'A referral is called',
+                                            fee: 'A referral fee is called',
+                                        }[k]
+                                    }
                                     error={basics.errors[`terminology.${k}` as keyof typeof basics.errors]}
                                 >
                                     <Input
@@ -182,7 +194,8 @@ export default function IndustryShow({
                             ))}
                         </div>
                         <p className="mt-3 text-sm text-muted">
-                            Preview: “Send your {basics.data.terminology.client} to a verified {basics.data.terminology.pro} in Austin.”
+                            Preview: “Send your {basics.data.terminology.client} to a verified {basics.data.terminology.pro} in Austin.” · “New{' '}
+                            {basics.data.terminology.referral}: Tom Brennan in Houston.”
                         </p>
                     </Card>
 

@@ -21,7 +21,7 @@ final class TemplatesController
 
     public function index(): Response
     {
-        $edited = NotificationTemplate::query()->where('is_active', true)->get(['type', 'channel', 'version']);
+        $edited = NotificationTemplate::query()->whereNull('industry_id')->where('is_active', true)->get(['type', 'channel', 'version']);
 
         return Inertia::render('admin/templates/Index', [
             'types' => collect(NotificationCatalogue::TYPES)->map(fn ($d, $key) => [
@@ -43,11 +43,11 @@ final class TemplatesController
                 'channel' => $c,
                 'label' => NotificationCatalogue::CHANNELS[$c],
                 'current' => $this->templates->wording($type, $c),
-                'history' => NotificationTemplate::query()->where(['type' => $type, 'channel' => $c])->orderByDesc('version')->limit(20)->get()
+                'history' => $this->templates->scoped($type, $c, null)->orderByDesc('version')->limit(20)->get()
                     ->map(fn (NotificationTemplate $t) => ['id' => $t->id, 'version' => $t->version, 'subject' => $t->subject, 'body' => $t->body, 'active' => $t->is_active, 'when' => $t->created_at->toDayDateTimeString()]),
             ]),
-            'mergeFields' => ['first_name', 'client', 'city', 'industry', 'team', 'hours', 'days', 'month', 'next_month', 'date', 'url'],
-            'sample' => ['first_name' => 'Jordan', 'client' => 'Tom Brennan', 'city' => 'Houston', 'industry' => 'real estate', 'team' => 'Bayou City Homes', 'hours' => 24, 'days' => 7, 'month' => 'March', 'next_month' => 'April', 'date' => 'Feb 9, 2027', 'url' => url('/app')],
+            'mergeFields' => ['first_name', 'client', 'city', 'industry', 'team', 'hours', 'days', 'month', 'next_month', 'date', 'url', 'pro', 'pros', 'client_term', 'clients_term', 'referral_term', 'fee_term'],
+            'sample' => ['pro' => 'pro', 'pros' => 'pros', 'client_term' => 'client', 'clients_term' => 'clients', 'referral_term' => 'referral', 'fee_term' => 'referral fee', 'first_name' => 'Jordan', 'client' => 'Tom Brennan', 'city' => 'Houston', 'industry' => 'real estate', 'team' => 'Bayou City Homes', 'hours' => 24, 'days' => 7, 'month' => 'March', 'next_month' => 'April', 'date' => 'Feb 9, 2027', 'url' => url('/app')],
             'status' => session('status'),
             'seo' => SeoData::private('Edit template')->toArray(),
         ]);

@@ -64,7 +64,7 @@ final class AdminIndustriesController
         return Inertia::render('admin/industries/Show', [
             'industry' => [
                 'slug' => $industry->slug, 'name' => $industry->name, 'family' => $industry->family, 'tier' => $industry->tier->value, 'territory' => $industry->territory_unit,
-                'terminology' => $industry->terminology, 'icon' => $industry->icon, 'description' => $industry->description, 'licenseRequired' => $industry->license_required,
+                'terminology' => $industry->terms(), 'icon' => $industry->icon, 'description' => $industry->description, 'licenseRequired' => $industry->license_required,
                 'status' => $industry->status, 'approved' => $industry->isApproved(), 'approvedAt' => $industry->compliance_approved_at?->toDayDateTimeString(),
                 'approvedBy' => $industry->approver?->name, 'note' => $industry->compliance_note,
             ],
@@ -197,10 +197,10 @@ final class AdminIndustriesController
         return back()->with('status', 'fees-locked');
     }
 
-    /** @return array{name: string, family: string, tier: string, territory_unit: string, terminology: array{pro: string, pros: string, client: string, clients: string}, icon: string, description: ?string, license_required: bool} */
+    /** @return array{name: string, family: string, tier: string, territory_unit: string, terminology: array{pro: string, pros: string, client: string, clients: string, referral?: ?string, fee?: ?string}, icon: string, description: ?string, license_required: bool} */
     private function validateBasics(Request $request, ?Industry $industry): array
     {
-        /** @var array{name: string, family: string, tier: string, territory_unit: string, terminology: array{pro: string, pros: string, client: string, clients: string}, icon: string, description: ?string, license_required: bool} */
+        /** @var array{name: string, family: string, tier: string, territory_unit: string, terminology: array{pro: string, pros: string, client: string, clients: string, referral?: ?string, fee?: ?string}, icon: string, description: ?string, license_required: bool} */
         return $request->validate([
             'name' => ['required', 'string', 'max:120', Rule::unique('industries', 'name')->ignore($industry?->id)],
             'family' => ['required', Rule::in(array_keys(Industry::FAMILIES))],
@@ -210,6 +210,8 @@ final class AdminIndustriesController
             'terminology.pros' => ['required', 'string', 'max:40'],
             'terminology.client' => ['required', 'string', 'max:40'],
             'terminology.clients' => ['required', 'string', 'max:40'],
+            'terminology.referral' => ['nullable', 'string', 'max:40'],
+            'terminology.fee' => ['nullable', 'string', 'max:40'],
             'icon' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9]+$/'],
             'description' => ['nullable', 'string', 'max:2000'],
             'license_required' => ['required', 'boolean'],

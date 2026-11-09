@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $family
  * @property Tier $tier
  * @property string $territory_unit
- * @property array{pro: string, pros: string, client: string, clients: string} $terminology
+ * @property array{pro: string, pros: string, client: string, clients: string, referral?: ?string, fee?: ?string} $terminology
  * @property string $icon
  * @property ?string $description
  * @property bool $license_required
@@ -47,6 +47,34 @@ final class Industry extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Every term the industry uses, with tier-aware defaults: restricted industries call a referral an "introduction".
+     *
+     * @return array{pro: string, pros: string, client: string, clients: string, referral: string, fee: string}
+     */
+    public function terms(): array
+    {
+        $t = $this->terminology;
+
+        return [
+            'pro' => $t['pro'], 'pros' => $t['pros'], 'client' => $t['client'], 'clients' => $t['clients'],
+            'referral' => ($t['referral'] ?? null) ?: ($this->tier === Tier::Open ? 'referral' : 'introduction'),
+            'fee' => ($t['fee'] ?? null) ?: 'referral fee',
+        ];
+    }
+
+    /**
+     * Merge fields for messages and agreements. {client} stays free for the client's name.
+     *
+     * @return array<string, string>
+     */
+    public function mergeTerms(): array
+    {
+        $t = $this->terms();
+
+        return ['pro' => $t['pro'], 'pros' => $t['pros'], 'client_term' => $t['client'], 'clients_term' => $t['clients'], 'referral_term' => $t['referral'], 'fee_term' => $t['fee']];
     }
 
     public function isApproved(): bool
