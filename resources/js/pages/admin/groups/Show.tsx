@@ -39,12 +39,15 @@ type Props = {
         visibility: string;
         photo: string | null;
         launch: boolean;
+        private: boolean;
+        region: string | null;
         pricing: Pricing;
         rules: Rules;
         industry: { slug: string; name: string; tier: string; guaranteeAllowed: boolean; terms: Record<string, string> };
     };
     owners: { id: string; name: string; email: string }[];
     scheduled: { id: number; section: string; values: Record<string, unknown>; effectiveOn: string; notified: boolean }[];
+    overrides: { kind: string; label: string; version: number | null }[];
     affected: { seats: number; trial: number; paying: number };
     health: { owners: number; seats: number; referralsThisMonth: number | null; avgAcceptMinutes: number | null; quietSeats: number | null };
     status?: string;
@@ -84,7 +87,7 @@ function When({
     );
 }
 
-export default function GroupShow({ group, owners, scheduled, affected, health, status, seo }: Props) {
+export default function GroupShow({ group, owners, scheduled, overrides, affected, health, status, seo }: Props) {
     const g = group;
     const details = useForm<{ name: string; description: string; status: string; visibility: string; photo: File | null }>({
         name: g.name,
@@ -96,7 +99,7 @@ export default function GroupShow({ group, owners, scheduled, affected, health, 
     const pricing = useForm({ when: 'now', effective_on: '', values: g.pricing });
     const rules = useForm({ when: 'now', effective_on: '', values: g.rules });
     const owner = useForm({ email: '' });
-    const [tab, setTab] = useState<'details' | 'pricing' | 'rules' | 'owners'>('details');
+    const [tab, setTab] = useState<'details' | 'pricing' | 'rules' | 'overrides' | 'owners'>('details');
     const p = pricing.data.values;
     const errs = (f: { errors: Record<string, string> }, k: string) => f.errors[`values.${k}`] ?? f.errors[k];
     const setP = (k: keyof Pricing, v: unknown) => pricing.setData('values', { ...p, [k]: v });
@@ -120,6 +123,8 @@ export default function GroupShow({ group, owners, scheduled, affected, health, 
                 )}
                 <Badge>{g.visibility === 'open' ? 'Open to applications' : 'Invite only'}</Badge>
                 {g.launch && <Badge tone="sender">Launch group</Badge>}
+                {g.private && <Badge tone="info">Private network</Badge>}
+                {g.region && <Badge>{g.region[0]!.toUpperCase() + g.region.slice(1)} region</Badge>}
             </div>
             {status && (
                 <Alert tone="success" className="mb-4 max-w-4xl">
@@ -135,7 +140,7 @@ export default function GroupShow({ group, owners, scheduled, affected, health, 
             </div>
 
             <div className="mb-5 flex gap-1 border-b border-line" role="tablist">
-                {(['details', 'pricing', 'rules', 'owners'] as const).map((t) => (
+                {(['details', 'pricing', 'rules', 'overrides', 'owners'] as const).map((t) => (
                     <button
                         key={t}
                         role="tab"
@@ -333,6 +338,26 @@ export default function GroupShow({ group, owners, scheduled, affected, health, 
                     <Button loading={rules.processing} onClick={() => rules.put(`/admin/groups/${g.slug}/rules`, { preserveScroll: true })}>
                         {rules.data.when === 'now' ? 'Save rules' : 'Schedule rule change'}
                     </Button>
+                </Card>
+            )}
+
+            {tab === 'overrides' && (
+                <Card className="max-w-3xl">
+                    <p className="border-b border-line p-5 text-sm text-muted">
+                        By default this group uses its industry’s referral form, pipeline and agreement. Customise any of them for this group only. A
+                        group agreement needs its own approval; until then members sign the industry’s approved agreement.
+                    </p>
+                    <ul className="divide-y divide-line">
+                        {overrides.map((o) => (
+                            <li key={o.kind} className="flex items-center gap-3 p-5">
+                                <span className="flex-1 font-medium">{o.label}</span>
+                                {o.version ? <Badge tone="info">Customised · v{o.version}</Badge> : <Badge>Uses {g.industry.name}’s</Badge>}
+                                <Button variant="secondary" size="sm" asChild>
+                                    <Link href={`/admin/groups/${g.slug}/${o.kind}`}>{o.version ? 'Edit' : 'Customise'}</Link>
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
                 </Card>
             )}
 

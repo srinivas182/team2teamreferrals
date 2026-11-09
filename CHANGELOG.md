@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 10b — Group overrides, private networks and overflow demand
+- Per-group overrides: a group can replace its industry's referral form, pipeline or agreement (Admin → Groups → a group → Overrides), using the same editors as industries, with versions and "Use the industry's version". Resolution: group → industry → family default.
+- Group agreements need their own super-admin approval; until then the group's members keep signing the industry's approved agreement, never a draft. The agreement screen says which version members sign.
+- Private networks: a company's own network for passing clients between its branches (invite only, an owner from the start, never listed in the directory or public pages).
+- Overflow demand (Admin → Groups → Overflow demand): every industry's groups, and "Open next group" by US Census region (Northeast, Midwest, South, West) or as a second national network. The new group copies rules, pricing, form and pipeline from the launch group; a customised agreement comes as an unapproved draft. One group per region per industry. Waitlist and metro-fill numbers appear once seats exist (Sprint 11).
+- Group-level message wording moves to Sprint 16, where messages are sent for a specific group's referrals.
+- 202 PHP tests in total (6 new).
+
 ### Sprint 10a — Group admin, owners and scheduled changes
 - Admin → Groups → a group: details (name, description, photo, draft/live/closed, open or invite-only), pricing (seat and founding price, trial, multi-city discounts, annual months free, value guarantee) and rules (accept and first-contact hours, update days, seat challenge, company cap, waitlist ranking).
 - Compliance locks: the value guarantee can't be switched on in Tier C; a group can only go live once its industry is live; founding price can't exceed the seat price; bigger seat counts get equal or bigger discounts.

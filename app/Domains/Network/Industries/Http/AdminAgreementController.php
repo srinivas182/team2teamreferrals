@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Network\Industries\Http;
 
+use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Agreements\AgreementDefaults;
 use App\Domains\Network\Industries\Agreements\AgreementRenderer;
 use App\Domains\Network\Industries\Agreements\Agreements;
@@ -26,17 +27,59 @@ final class AdminAgreementController
 
     public function show(Request $request, Industry $industry): Response
     {
-        $current = $this->agreements->current($industry);
-        $history = $this->agreements->history($industry);
+        return $this->render($request, $industry, null);
+    }
+
+    public function groupShow(Request $request, Group $group): Response
+    {
+        return $this->render($request, $group->industry, $group);
+    }
+
+    public function groupSave(Request $request, Group $group): RedirectResponse
+    {
+        $request->validate(['clauses' => ['present', 'array']]);
+        $version = $this->agreements->save($group->industry, (array) $request->input('clauses'), $request->user()?->getKey(), $group->id);
+        activity('admin')->causedBy($request->user())->performedOn($group)->event('agreement-saved')->withProperties(['version' => $version])->log("Saved {$group->name} agreement v{$version} (awaiting approval)");
+
+        return back()->with('status', 'agreement-saved');
+    }
+
+    public function groupApprove(Request $request, Group $group): RedirectResponse
+    {
+        abort_unless((bool) $request->user()?->hasRole('super_admin'), 403, 'Only a super admin can approve an agreement.');
+        $data = $request->validate(['counsel' => ['required', 'string', 'max:160'], 'note' => ['required', 'string', 'max:2000']]);
+        $version = $this->agreements->approve($group->industry, $request->user()->getKey(), (string) $data['counsel'], (string) $data['note'], $group->id);
+        activity('admin')->causedBy($request->user())->performedOn($group)->event('agreement-approved')->withProperties(['version' => $version, 'counsel' => $data['counsel']])->log("Approved {$group->name} agreement v{$version}");
+
+        return back()->with('status', 'agreement-approved');
+    }
+
+    public function groupReset(Request $request, Group $group): RedirectResponse
+    {
+        $this->agreements->reset($group->industry, $group->id);
+        activity('admin')->causedBy($request->user())->performedOn($group)->event('agreement-reset')->log("{$group->name} now uses its industry's agreement");
+
+        return back()->with('status', 'agreement-reset');
+    }
+
+    private function render(Request $request, Industry $industry, ?Group $group): Response
+    {
+        $gid = $group?->id;
+        $current = $this->agreements->current($industry, $gid);
+        $history = $this->agreements->history($industry, $gid);
         $compare = null;
         if ($request->filled(['a', 'b'])) {
-            $compare = AgreementRenderer::compare($this->agreements->version($industry, $request->integer('a')), $this->agreements->version($industry, $request->integer('b')));
+            $compare = AgreementRenderer::compare($this->agreements->version($industry, $request->integer('a'), $gid), $this->agreements->version($industry, $request->integer('b'), $gid));
         }
 
         return Inertia::render('admin/industries/Agreement', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'tierLabel' => $industry->tier->label(), 'allowsFees' => $industry->tier->allowsMemberReferralFees(), 'terminology' => $industry->terms()],
             'current' => $current,
-            'signing' => $this->agreements->forSigning($industry)['version'] ?? null,
+            'signing' => $this->agreements->forSigning($industry, $gid)['version'] ?? null,
+            'signingScope' => $this->agreements->forSigning($industry, $gid)['scope'] ?? null,
+            'scope' => $group === null
+                ? ['basePath' => "/admin/industries/{$industry->slug}/agreement", 'backHref' => "/admin/industries/{$industry->slug}", 'backLabel' => $industry->name, 'group' => null]
+                : ['basePath' => "/admin/groups/{$group->slug}/agreement", 'backHref' => "/admin/groups/{$group->slug}", 'backLabel' => $group->name, 'group' => $group->name],
             'history' => $history,
             'fields' => AgreementDefaults::FIELDS,
             'feeFields' => AgreementDefaults::FEE_FIELDS,
@@ -47,7 +90,7 @@ final class AdminAgreementController
             'compare' => $compare,
             'compareVersions' => $request->filled(['a', 'b']) ? ['a' => $request->integer('a'), 'b' => $request->integer('b')] : null,
             'status' => session('status'),
-            'seo' => SeoData::private($industry->name.' agreement')->toArray(),
+            'seo' => SeoData::private(($group->name ?? $industry->name).' agreement')->toArray(),
         ]);
     }
 

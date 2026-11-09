@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Network\Industries\Http;
 
+use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Industries\Templates\Schemas;
@@ -21,22 +22,62 @@ final class AdminIndustryTemplatesController
 
     public function show(Industry $industry, string $kind): Response
     {
-        $resolved = $this->templates->resolve($kind, $industry);
+        return $this->render($industry, $kind, null);
+    }
+
+    public function save(Request $request, Industry $industry, string $kind): RedirectResponse
+    {
+        return $this->store($request, $industry, $kind, null);
+    }
+
+    public function reset(Request $request, Industry $industry, string $kind): RedirectResponse
+    {
+        return $this->resetScope($request, $industry, $kind, null);
+    }
+
+    /** A group's own form or pipeline, overriding its industry's. */
+    public function groupShow(Group $group, string $kind): Response
+    {
+        return $this->render($group->industry, $kind, $group);
+    }
+
+    public function groupSave(Request $request, Group $group, string $kind): RedirectResponse
+    {
+        return $this->store($request, $group->industry, $kind, $group);
+    }
+
+    public function groupReset(Request $request, Group $group, string $kind): RedirectResponse
+    {
+        return $this->resetScope($request, $group->industry, $kind, $group);
+    }
+
+    /** @return array{basePath: string, backHref: string, backLabel: string, inheritLabel: string, resetLabel: string, ownSource: string} */
+    public static function scopeProps(Industry $industry, string $kind, ?Group $group): array
+    {
+        return $group === null
+            ? ['basePath' => "/admin/industries/{$industry->slug}/{$kind}", 'backHref' => "/admin/industries/{$industry->slug}", 'backLabel' => 'Back to industry', 'inheritLabel' => 'Using the family default', 'resetLabel' => 'Use family default', 'ownSource' => 'industry']
+            : ['basePath' => "/admin/groups/{$group->slug}/{$kind}", 'backHref' => "/admin/groups/{$group->slug}", 'backLabel' => 'Back to group', 'inheritLabel' => 'Using the industry’s version', 'resetLabel' => 'Use the industry’s version', 'ownSource' => 'group'];
+    }
+
+    private function render(Industry $industry, string $kind, ?Group $group): Response
+    {
+        $resolved = $this->templates->resolve($kind, $industry, $group?->id);
 
         return Inertia::render($kind === 'form' ? 'admin/industries/FormBuilder' : 'admin/industries/Stages', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'family' => Industry::FAMILIES[$industry->family] ?? $industry->family, 'terminology' => $industry->terminology],
             'body' => $resolved['body'],
             'source' => $resolved['source'],
             'version' => $resolved['version'],
-            'history' => $this->templates->history($kind, $industry),
+            'history' => $this->templates->history($kind, $industry, $group?->id),
+            'scope' => self::scopeProps($industry, $kind, $group),
             'fieldTypes' => Schemas::FIELD_TYPES,
             'roles' => Schemas::ROLES,
             'status' => session('status'),
-            'seo' => SeoData::private(($kind === 'form' ? 'Referral form' : 'Pipeline').' · '.$industry->name)->toArray(),
+            'seo' => SeoData::private(($kind === 'form' ? 'Referral form' : 'Pipeline').' · '.($group->name ?? $industry->name))->toArray(),
         ]);
     }
 
-    public function save(Request $request, Industry $industry, string $kind): RedirectResponse
+    private function store(Request $request, Industry $industry, string $kind, ?Group $group): RedirectResponse
     {
         $request->validate(['body' => ['required', 'array', 'min:1', 'max:40'], 'acknowledge' => ['boolean']]);
         /** @var list<array<string, mixed>> $body */
@@ -49,17 +90,17 @@ final class AdminIndustryTemplatesController
             // Not an error: the screen shows the warnings and asks the admin to confirm.
             return back()->with('warnings', $check['warnings']);
         }
-        $version = $this->templates->save($kind, $industry, $body, $request->user()?->getKey());
-        activity('admin')->causedBy($request->user())->performedOn($industry)->event('industry-template-saved')
-            ->withProperties(['kind' => $kind, 'version' => $version, 'warnings' => $check['warnings']])->log("Saved {$kind} v{$version} for {$industry->name}");
+        $version = $this->templates->save($kind, $industry, $body, $request->user()?->getKey(), $group?->id);
+        activity('admin')->causedBy($request->user())->performedOn($group ?? $industry)->event($group ? 'group-template-saved' : 'industry-template-saved')
+            ->withProperties(['kind' => $kind, 'version' => $version, 'warnings' => $check['warnings']])->log("Saved {$kind} v{$version} for ".($group->name ?? $industry->name));
 
         return back()->with('status', 'template-saved');
     }
 
-    public function reset(Request $request, Industry $industry, string $kind): RedirectResponse
+    private function resetScope(Request $request, Industry $industry, string $kind, ?Group $group): RedirectResponse
     {
-        $this->templates->reset($kind, $industry);
-        activity('admin')->causedBy($request->user())->performedOn($industry)->event('industry-template-reset')->withProperties(['kind' => $kind])->log("Reset {$kind} for {$industry->name} to the family default");
+        $this->templates->reset($kind, $industry, $group?->id);
+        activity('admin')->causedBy($request->user())->performedOn($group ?? $industry)->event($group ? 'group-template-reset' : 'industry-template-reset')->withProperties(['kind' => $kind])->log("Reset {$kind} for ".($group->name ?? $industry->name));
 
         return back()->with('status', 'template-reset');
     }

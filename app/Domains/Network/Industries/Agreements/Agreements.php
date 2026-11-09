@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Network\Industries\Agreements;
 
 use App\Domains\Network\Industries\Models\Industry;
+use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Industries\Tier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,35 +22,44 @@ final class Agreements
     private const KIND = 'agreement';
 
     /** @return array{clauses: list<Clause>, version: ?int, approved: bool, source: string} the draft being edited */
-    public function current(Industry $industry): array
+    public function current(Industry $industry, ?int $groupId = null): array
     {
-        $row = $this->rows($industry)->firstWhere('is_active', true);
+        $row = $this->rows($industry, $groupId)->firstWhere('is_active', true);
         if ($row === null) {
-            return ['clauses' => AgreementDefaults::for($industry->tier), 'version' => null, 'approved' => false, 'source' => 'default'];
+            // A group without its own draft starts from the industry's current wording.
+            return $groupId === null
+                ? ['clauses' => AgreementDefaults::for($industry->tier), 'version' => null, 'approved' => false, 'source' => 'default']
+                : [...$this->current($industry), 'version' => null, 'approved' => false, 'source' => 'industry'];
         }
 
-        return ['clauses' => self::decode($row->body), 'version' => (int) $row->version, 'approved' => $row->approved_at !== null, 'source' => 'industry'];
+        return ['clauses' => self::decode($row->body), 'version' => (int) $row->version, 'approved' => $row->approved_at !== null, 'source' => $groupId === null ? 'industry' : 'group'];
     }
 
-    /** @return array{clauses: list<Clause>, version: int}|null the version members sign, or null if none is approved yet */
-    public function forSigning(Industry $industry): ?array
+    /** @return array{clauses: list<Clause>, version: int, scope: string}|null the version members sign, or null if none is approved yet */
+    public function forSigning(Industry $industry, ?int $groupId = null): ?array
     {
         if ($industry->tier === Tier::Directory) {
             return null;
         }
-        $row = DB::table('industry_templates')->where(['kind' => self::KIND, 'scope_type' => 'industry', 'scope_id' => $industry->id])
-            ->whereNotNull('approved_at')->orderByDesc('version')->first();
+        // A group's own approved version wins; otherwise its members sign the industry's approved version. Drafts are never signed.
+        foreach (array_filter([$groupId, 0], fn ($v) => $v !== null) as $scopeId) {
+            $row = DB::table('industry_templates')->where(IndustryTemplates::scope(self::KIND, $industry, $scopeId === 0 ? null : $scopeId))
+                ->whereNotNull('approved_at')->orderByDesc('version')->first();
+            if ($row !== null) {
+                return ['clauses' => self::decode($row->body), 'version' => (int) $row->version, 'scope' => $scopeId === 0 ? 'industry' : 'group'];
+            }
+        }
 
-        return $row === null ? null : ['clauses' => self::decode($row->body), 'version' => (int) $row->version];
+        return null;
     }
 
     /** @param array<int|string, mixed> $clauses */
-    public function save(Industry $industry, array $clauses, ?int $userId): int
+    public function save(Industry $industry, array $clauses, ?int $userId, ?int $groupId = null): int
     {
         $clean = $this->validate($industry, $clauses);
 
-        return DB::transaction(function () use ($industry, $clean, $userId) {
-            $scope = ['kind' => self::KIND, 'scope_type' => 'industry', 'scope_id' => $industry->id];
+        return DB::transaction(function () use ($industry, $clean, $userId, $groupId) {
+            $scope = IndustryTemplates::scope(self::KIND, $industry, $groupId);
             $version = (int) DB::table('industry_templates')->where($scope)->max('version') + 1;
             DB::table('industry_templates')->where($scope)->update(['is_active' => false]);
             DB::table('industry_templates')->insert([...$scope, 'version' => $version, 'body' => json_encode($clean), 'is_active' => true, 'created_by' => $userId, 'created_at' => now(), 'updated_at' => now()]);
@@ -59,35 +69,35 @@ final class Agreements
     }
 
     /** Approves the current draft. If it is still the default wording, it is saved as a version first. */
-    public function approve(Industry $industry, ?int $userId, string $counsel, string $note): int
+    public function approve(Industry $industry, ?int $userId, string $counsel, string $note, ?int $groupId = null): int
     {
-        $current = $this->current($industry);
-        $version = $current['version'] ?? $this->save($industry, $current['clauses'], $userId);
-        DB::table('industry_templates')->where(['kind' => self::KIND, 'scope_type' => 'industry', 'scope_id' => $industry->id, 'version' => $version])
+        $current = $this->current($industry, $groupId);
+        $version = $current['version'] ?? $this->save($industry, $current['clauses'], $userId, $groupId);
+        DB::table('industry_templates')->where([...IndustryTemplates::scope(self::KIND, $industry, $groupId), 'version' => $version])
             ->update(['approved_at' => now(), 'approved_by' => $userId, 'approved_counsel' => $counsel, 'approval_note' => $note]);
 
         return $version;
     }
 
-    public function reset(Industry $industry): void
+    public function reset(Industry $industry, ?int $groupId = null): void
     {
-        DB::table('industry_templates')->where(['kind' => self::KIND, 'scope_type' => 'industry', 'scope_id' => $industry->id])->update(['is_active' => false]);
+        DB::table('industry_templates')->where(IndustryTemplates::scope(self::KIND, $industry, $groupId))->update(['is_active' => false]);
     }
 
     /** @return list<Clause> */
-    public function version(Industry $industry, int $version): array
+    public function version(Industry $industry, int $version, ?int $groupId = null): array
     {
-        $row = $this->rows($industry)->firstWhere('version', $version);
+        $row = $this->rows($industry, $groupId)->firstWhere('version', $version);
         abort_if($row === null, 404);
 
         return self::decode($row->body);
     }
 
     /** @return list<array{version: int, active: bool, approved: bool, approvedAt: ?string, counsel: ?string, note: ?string, when: string}> */
-    public function history(Industry $industry): array
+    public function history(Industry $industry, ?int $groupId = null): array
     {
         $out = [];
-        foreach ($this->rows($industry) as $r) {
+        foreach ($this->rows($industry, $groupId) as $r) {
             $out[] = [
                 'version' => (int) $r->version, 'active' => (bool) $r->is_active, 'approved' => $r->approved_at !== null,
                 'approvedAt' => $r->approved_at ? (string) $r->approved_at : null,
@@ -158,9 +168,9 @@ final class Agreements
     }
 
     /** @return \Illuminate\Support\Collection<int, stdClass> */
-    private function rows(Industry $industry)
+    private function rows(Industry $industry, ?int $groupId = null)
     {
-        return DB::table('industry_templates')->where(['kind' => self::KIND, 'scope_type' => 'industry', 'scope_id' => $industry->id])->orderByDesc('version')->get();
+        return DB::table('industry_templates')->where(IndustryTemplates::scope(self::KIND, $industry, $groupId))->orderByDesc('version')->get();
     }
 
     /** @return list<Clause> */

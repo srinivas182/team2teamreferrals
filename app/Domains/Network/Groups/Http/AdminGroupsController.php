@@ -7,6 +7,7 @@ namespace App\Domains\Network\Groups\Http;
 use App\Domains\Identity\Models\User;
 use App\Domains\Network\Groups\GroupSettings;
 use App\Domains\Network\Groups\Models\Group;
+use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Seo\SeoData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,10 +24,12 @@ final class AdminGroupsController
     {
         return Inertia::render('admin/groups/Index', [
             'groups' => Group::query()->with('industry:id,slug,name,tier')->orderBy('name')->get()->map(fn (Group $g) => [
-                'slug' => $g->slug, 'name' => $g->name, 'status' => $g->status, 'launch' => $g->is_launch,
+                'slug' => $g->slug, 'name' => $g->name, 'status' => $g->status, 'launch' => $g->is_launch, 'private' => $g->is_private, 'region' => $g->region,
                 'industry' => ['slug' => $g->industry->slug, 'name' => $g->industry->name, 'tier' => $g->industry->tier->value],
                 'pricing' => $g->pricing, 'rules' => $g->rules,
             ]),
+            'industries' => Industry::query()->orderBy('name')->get(['slug', 'name'])->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name]),
+            'status' => session('status'),
             'seo' => SeoData::private('Groups')->toArray(),
         ]);
     }
@@ -38,13 +41,17 @@ final class AdminGroupsController
         return Inertia::render('admin/groups/Show', [
             'group' => [
                 'slug' => $group->slug, 'name' => $group->name, 'description' => $group->description, 'status' => $group->status, 'visibility' => $group->visibility,
-                'photo' => $group->photo_path ? Storage::disk('public')->url($group->photo_path) : null, 'launch' => $group->is_launch,
+                'photo' => $group->photo_path ? Storage::disk('public')->url($group->photo_path) : null, 'launch' => $group->is_launch, 'private' => $group->is_private, 'region' => $group->region,
                 'pricing' => $group->pricing, 'rules' => $group->rules,
                 'industry' => ['slug' => $group->industry->slug, 'name' => $group->industry->name, 'tier' => $group->industry->tier->value, 'guaranteeAllowed' => $group->industry->tier->allowsValueGuarantee(), 'terms' => $group->industry->terms()],
             ],
             'owners' => $group->owners()->orderBy('first_name')->get()->map(fn (User $u) => ['id' => $u->ulid, 'name' => $u->name, 'email' => $u->email]),
             'scheduled' => DB::table('group_scheduled_changes')->where('group_id', $group->id)->whereNull('applied_at')->whereNull('cancelled_at')->orderBy('effective_on')->get()
                 ->map(fn ($c) => ['id' => (int) $c->id, 'section' => (string) $c->section, 'values' => json_decode((string) $c->values, true), 'effectiveOn' => (string) $c->effective_on, 'notified' => $c->notified_at !== null]),
+            'overrides' => collect(['form' => 'Referral form', 'stages' => 'Pipeline', 'agreement' => 'Agreement'])->map(fn ($label, $kind) => [
+                'kind' => $kind, 'label' => $label,
+                'version' => DB::table('industry_templates')->where(['kind' => $kind, 'scope_type' => 'group', 'scope_id' => $group->id, 'is_active' => true])->value('version'),
+            ])->values(),
             'affected' => GroupSettings::affected($group),
             'health' => GroupSettings::health($group),
             'status' => session('status'),
