@@ -3,6 +3,7 @@
 use App\Domains\Identity\Http\Middleware\EnsureAccountIsActive;
 use App\Domains\Identity\Http\Middleware\EnsureStaff;
 use App\Domains\Network\Industries\Http\AdminIndustriesController;
+use App\Domains\Network\Industries\Http\AdminIndustryTemplatesController;
 use App\Domains\Network\Locations\Http\AdminLocationsController;
 use App\Domains\Network\Locations\Http\LocationLookupController;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +36,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('{industry}/revoke', [AdminIndustriesController::class, 'revoke'])->name('revoke');
         Route::post('{industry}/status', [AdminIndustriesController::class, 'status'])->name('status');
         Route::put('{industry}/fee', [AdminIndustriesController::class, 'saveFee'])->name('fee');
+        Route::get('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'show'])->whereIn('kind', ['form', 'stages'])->name('templates.show');
+        Route::put('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'save'])->whereIn('kind', ['form', 'stages'])->name('templates.save');
+        Route::delete('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'reset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');
     });

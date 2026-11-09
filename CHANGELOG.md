@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 8a — Referral forms and pipelines
+- Default referral form and pipeline for each of the eight industry families: a shared core (client, mobile, email, timeline, notes) plus family questions (price range for property, budget and home ownership for home services, coverage needs for insurance and financial, care type for care, and more).
+- Referral form builder (Admin → Industries → Referral form): questions with eight field types, required, sensitive (never on public pages), choices, and roles (estimated value, timeline); reorder, add, remove; live preview at phone or desktop size in the industry's own words.
+- Pipeline editor with a board preview: open stages plus exactly one Won and one Lost stage (they drive closing reports and the trust score).
+- Inheritance: industries use their family default until customised; "Use family default" resets; every save is a version. Groups can override in Sprint 10.
+- Checks before saving: errors block (missing client name or mobile, duplicate keys, too few options, bad pipelines); warnings must be confirmed (no estimated-value or timeline field, contact details not marked sensitive). Legal and care forms deliberately carry no estimated value.
+- Saved forms become validation rules for sending referrals (Sprint 16). Only known field properties are stored.
+- 154 PHP tests in total (15 new).
+
 ### Sprint 7b — Industry engine (part 1)
 - Industries: name, family (8), terminology (what a pro and a client are called), icon, description, territory unit (city, county, metro or state) and whether a license is required.
 - Compliance tiers as one rule set in code (`Tier`): A open, B restricted, C directory only, deciding member referral fees, referral routing, consumer requests, the value guarantee, disclosures and whether a platform fee can ever exist.
