@@ -157,7 +157,7 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
 
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Kpi label="Owners" value={String(health.owners)} />
-                <Kpi label="Seats" value={String(health.seats)} hint="Seats open in the next sprint." />
+                <Kpi label="Seats" value={String(health.seats)} />
                 <Kpi label="Referrals this month" value={health.referralsThisMonth === null ? '—' : String(health.referralsThisMonth)} />
                 <Kpi label="Average time to accept" value={health.avgAcceptMinutes === null ? '—' : `${health.avgAcceptMinutes} min`} />
             </div>
@@ -375,7 +375,10 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
                 <Card className="overflow-x-auto">
                     <div className="flex items-center gap-3 border-b border-line p-4 text-sm">
                         <span className="text-muted">{seats.length} seats with a holder, backup or waitlist</span>
-                        <Link href={`/admin/groups/${g.slug}/applications`} className="ml-auto font-medium text-primary">
+                        <Link href={`/admin/groups/${g.slug}/seat-map`} className="ml-auto font-medium text-primary">
+                            Seat map and invitations
+                        </Link>
+                        <Link href={`/admin/groups/${g.slug}/applications`} className="font-medium text-primary">
                             Applications{pendingApplications ? ` (${pendingApplications} pending)` : ''}
                         </Link>
                     </div>

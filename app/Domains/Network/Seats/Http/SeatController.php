@@ -106,6 +106,60 @@ final class SeatController
         return back()->with('status', 'application-declined');
     }
 
+    /** The seat map: every territory in the group as held, backup only, waitlisted or open. */
+    public function map(Request $request, Group $group): Response
+    {
+        $this->authorizeDecider($request, $group);
+        $points = \App\Domains\Network\Seats\SeatMap::points($group);
+
+        return Inertia::render('admin/groups/SeatMap', [
+            'group' => ['slug' => $group->slug, 'name' => $group->name, 'territory' => $group->industry->territory_unit],
+            'basePath' => $request->is('admin/*') ? "/admin/groups/{$group->slug}" : "/app/group/{$group->slug}",
+            'points' => $points,
+            'counts' => collect(['held', 'backup', 'waitlist', 'open'])->mapWithKeys(fn ($k) => [$k => collect($points)->where('state_of', $k)->count()]),
+            'status' => session('status'),
+            'note' => session('inviteNote'),
+            'seo' => SeoData::private('Seat map · '.$group->name)->toArray(),
+        ]);
+    }
+
+    /** Invite one or many teams to specific territories. */
+    public function invite(Request $request, Group $group): RedirectResponse
+    {
+        $this->authorizeDecider($request, $group);
+        $data = $request->validate(['rows' => ['required', 'array', 'min:1', 'max:100'], 'rows.*.email' => ['required', 'email'], 'rows.*.city_id' => ['required', 'integer', 'exists:cities,id']]);
+        /** @var list<array{email: string, city_id: int}> $rows */
+        $rows = array_values(array_map(fn ($r) => ['email' => (string) $r['email'], 'city_id' => (int) $r['city_id']], (array) $data['rows']));
+        $result = app(\App\Domains\Network\Seats\SeatInvites::class)->send($group, $rows, $this->user($request));
+        $note = "{$result['sent']} invitation(s) sent.".($result['skipped'] === [] ? '' : ' Skipped: '.implode('; ', $result['skipped']).'.');
+
+        return back()->with('status', 'invites-sent')->with('inviteNote', $note);
+    }
+
+    /** Public invitation page: shows the seat, then sign in (or create an account) to accept. */
+    public function invitation(Request $request, string $token): Response
+    {
+        if ($request->user() === null) {
+            // After signing in or creating an account, bring them straight back here.
+            $request->session()->put('url.intended', url('/invites/'.$token));
+        }
+        $invite = app(\App\Domains\Network\Seats\SeatInvites::class)->find($token);
+        $seat = $invite ? \App\Domains\Network\Seats\Models\Seat::query()->with('group')->find((int) $invite->seat_id) : null;
+
+        return Inertia::render('Invitation', [
+            'invite' => $invite && $seat ? ['token' => $token, 'email' => (string) $invite->email, 'territory' => $seat->territory_name, 'group' => $seat->group->name, 'industry' => $seat->group->industry->name,
+                'price' => (int) ($seat->group->pricing['seat_price'] ?? 10), 'trial' => (int) ($seat->group->pricing['trial_months'] ?? 3), 'expires' => (string) $invite->expires_at] : null,
+            'seo' => (new SeoData(title: 'Your invitation', description: 'Team to Team Referrals', index: false))->toArray(),
+        ]);
+    }
+
+    public function acceptInvitation(Request $request, string $token): RedirectResponse
+    {
+        $outcome = app(\App\Domains\Network\Seats\SeatInvites::class)->accept($token, $this->user($request));
+
+        return redirect()->to('/app')->with('status', $outcome === 'primary' ? 'seat-claimed' : 'application-approved-'.$outcome);
+    }
+
     private function authorizeDecider(Request $request, Group $group): void
     {
         $u = $this->user($request);

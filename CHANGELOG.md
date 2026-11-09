@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 11b — Seat map, invitations and real demand numbers
+- Seat map for owners and staff (Admin → Groups → a group → Seats → Seat map, or the owner overview): every territory as held, backup only, waitlisted or open, with counts, hover details, labels and a list view.
+- Invitations (bulk seat seeding): owners and staff invite pros to specific territories, one or many at once, by email; invitations last 14 days and are how invite-only groups get members. The public invitation page shows the offer before signing in, and returns the pro there after signing in or creating an account. Accepting runs through the normal seat rules (seat, backup or waitlist) and must be from the invited email. Every invitation is in the seat's history.
+- Overflow demand now shows real waitlisted teams and the share of the 100 largest metro areas with a seat holder.
+- Scheduled pricing and rule changes now notify every seat holder in the group 30 days ahead, not just owners.
+- Visual check of the applications queue, Seats tab with history, seat map and apply page; the map was made clearer (bigger dots, grid, labels) and an out-of-date hint removed.
+- 221 PHP tests in total (5 new).
+
 ### Sprint 11a part 2 — Seats, applications and the automated seat lifecycle
 - Seats: one per territory per group (city, county, metro or state, found from the team's city), with a holder, one backup and a waitlist. Teams (minimal until onboarding in Sprint 12) apply from the portal; the license number is required where the industry needs one and checked against the state's format.
 - Applications queue for group owners and staff: approve (the team gets the seat on its free trial, becomes backup, or joins the waitlist, shown before approving) or decline with a reason the team sees. Open groups can auto-approve.

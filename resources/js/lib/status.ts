@@ -58,6 +58,7 @@ const messages: Record<string, string> = {
     'application-approved-backup': 'Approved as backup for the seat.',
     'application-approved-waitlist': 'Approved and added to the waitlist.',
     'application-declined': 'Application declined. The team has been told why.',
+    'invites-sent': 'Invitations processed.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

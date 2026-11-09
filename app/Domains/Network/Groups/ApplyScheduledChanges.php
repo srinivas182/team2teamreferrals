@@ -27,8 +27,9 @@ final class ApplyScheduledChanges extends Command
             }
             $effective = \Carbon\CarbonImmutable::parse((string) $c->effective_on);
             if ($c->notified_at === null && $effective->subDays(30)->lessThanOrEqualTo(now())) {
-                // Seat holders are added to this list in Sprint 11; owners are told now.
-                foreach ($group->owners()->get() as $owner) {
+                // Owners and every seat holder in the group are told 30 days ahead.
+                $holders = User::query()->whereIn('id', DB::table('seats')->join('teams', 'teams.id', '=', 'seats.primary_team_id')->where('seats.group_id', $group->id)->pluck('teams.leader_id'))->get();
+                foreach ($group->owners()->get()->merge($holders)->unique('id') as $owner) {
                     /** @var User $owner */
                     $notifier->send($owner, 'network.announcement', ['body' => "{$group->name}: ".($c->section === 'pricing' ? 'pricing' : 'network rules').' change on '.$effective->toFormattedDateString().'. See the details in your group overview.'], url('/app/group/'.$group->slug), $group->industry);
                 }
