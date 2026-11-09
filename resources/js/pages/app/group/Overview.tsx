@@ -33,7 +33,13 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
     return (
         <PortalLayout title={group.name} user={{ name: auth.user?.name ?? '', team: '' }} isGroupOwner>
             <SeoHead seo={seo} />
-            <div className="mb-5 flex flex-wrap gap-2">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+                <a href={`/app/group/${group.slug}/applications`} className="text-sm font-medium text-primary">
+                    Applications
+                </a>
+                <a href={`/app/group/${group.slug}/seat-map`} className="mr-2 text-sm font-medium text-primary">
+                    Seat map and invitations
+                </a>
                 <Badge>{group.industry}</Badge>
                 {group.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}
                 <Badge>{group.visibility === 'open' ? 'Open to applications' : 'Invite only'}</Badge>

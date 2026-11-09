@@ -86,6 +86,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 
 // Seats: members apply and answer offers; owners and staff decide applications.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::post('invites/{token}/accept', [App\Domains\Network\Seats\Http\SeatController::class, 'acceptInvitation'])->name('seats.invite.accept');
     Route::get('app/groups/{group}/apply', [App\Domains\Network\Seats\Http\SeatController::class, 'applyForm'])->name('seats.apply.form');
     Route::post('app/groups/{group}/apply', [App\Domains\Network\Seats\Http\SeatController::class, 'apply'])->middleware('throttle:20,60')->name('seats.apply');
     Route::get('app/seats/offers/{offer}', [App\Domains\Network\Seats\Http\SeatController::class, 'offer'])->whereNumber('offer')->name('seats.offer');
@@ -95,5 +96,10 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::get("{$prefix}/{group}/applications", [App\Domains\Network\Seats\Http\SeatController::class, 'applications'])->name("seats.applications.{$who}");
         Route::post("{$prefix}/{group}/applications/{application}/approve", [App\Domains\Network\Seats\Http\SeatController::class, 'approve'])->whereNumber('application')->name("seats.approve.{$who}");
         Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
+        Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
+        Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
     }
 });
+
+// Invitation landing page: public, so a new pro can see the offer before creating an account.
+Route::middleware(['web', 'noindex:always'])->get('invites/{token}', [App\Domains\Network\Seats\Http\SeatController::class, 'invitation'])->name('seats.invite.show');

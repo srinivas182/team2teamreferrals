@@ -35,8 +35,7 @@ final class AdminNetworkGrowthController
                     'launch' => $launch ? ['slug' => $launch->slug, 'name' => $launch->name] : null,
                     'groups' => $mine->map(fn (Group $g) => ['slug' => $g->slug, 'name' => $g->name, 'region' => $g->region])->values(),
                     'takenRegions' => $mine->pluck('region')->filter()->values(),
-                    // Waitlist and metro-fill signals start once seats exist (Sprint 11).
-                    'waitlisted' => null, 'metroFill' => null,
+                    'waitlisted' => \App\Domains\Network\Seats\SeatMap::waitlisted($i), 'metroFill' => \App\Domains\Network\Seats\SeatMap::metroFill($i),
                 ];
             }),
             'regions' => collect(Regions::ALL)->map(fn ($r, $k) => ['key' => $k, 'label' => $r['label'], 'states' => count($r['states'])])->values(),
