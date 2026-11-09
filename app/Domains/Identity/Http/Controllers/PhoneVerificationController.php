@@ -46,6 +46,19 @@ final class PhoneVerificationController
         return back()->with('status', 'code-sent');
     }
 
+    public function sendByEmail(Request $request): RedirectResponse
+    {
+        $user = $this->user($request);
+        $key = 'phone-otp-send:'.$user->getKey();
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            throw ValidationException::withMessages(['code' => 'Too many codes requested. Try again in '.ceil(RateLimiter::availableIn($key) / 60).' minutes.']);
+        }
+        RateLimiter::hit($key, 600);
+        $this->verifier->sendByEmail($user);
+
+        return back()->with('status', 'code-emailed');
+    }
+
     public function verify(Request $request): RedirectResponse
     {
         $data = $request->validate(['code' => ['required', 'digits:6']], ['code.digits' => 'Enter the 6-digit code from the text message.']);

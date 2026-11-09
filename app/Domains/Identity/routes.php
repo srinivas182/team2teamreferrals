@@ -26,6 +26,7 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
     Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): void {
         Route::get('verify-phone', [PhoneVerificationController::class, 'show'])->name('verification.phone');
         Route::post('verify-phone/send', [PhoneVerificationController::class, 'send'])->name('verification.phone.send');
+        Route::post('verify-phone/email', [PhoneVerificationController::class, 'sendByEmail'])->name('verification.phone.email');
         Route::post('verify-phone', [PhoneVerificationController::class, 'verify'])->name('verification.phone.verify');
         Route::put('verify-phone/number', [PhoneVerificationController::class, 'update'])->name('verification.phone.update');
 

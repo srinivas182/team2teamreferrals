@@ -15,6 +15,10 @@ const messages: Record<string, string> = {
     'permissions-saved': 'Permissions saved.',
     'staff-deactivated': 'Staff member deactivated. They’ve been signed out.',
     'staff-reactivated': 'Staff member reactivated.',
+    'settings-saved': 'Settings saved. They apply immediately, with no deploy needed.',
+    'test-email-sent': 'Test email sent. Check the inbox, and the delivery log for its status.',
+    'test-sms-sent': 'Test text sent. Check the phone, and the delivery log for its status.',
+    'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
 export const statusMessage = (status?: string | null) => (status ? (messages[status] ?? status) : null);

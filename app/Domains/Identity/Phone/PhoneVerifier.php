@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Identity\Phone;
 
 use App\Domains\Identity\Models\User;
+use App\Domains\Identity\Notifications\PhoneCodeByEmailNotification;
 use App\Support\Sms\SmsSender;
 use Illuminate\Support\Facades\Cache;
 
@@ -28,6 +29,14 @@ final class PhoneVerifier
         $code = (string) random_int(100000, 999999);
         Cache::put($this->key($user), ['hash' => hash('sha256', $code), 'attempts' => 0], self::TTL_SECONDS);
         $this->sms->send($user->phone, "{$code} is your Team to Team verification code. It expires in 10 minutes. Don't share it with anyone.");
+    }
+
+    /** Fallback when a text doesn't arrive: a fresh code by email (replaces any code sent by text). */
+    public function sendByEmail(User $user): void
+    {
+        $code = (string) random_int(100000, 999999);
+        Cache::put($this->key($user), ['hash' => hash('sha256', $code), 'attempts' => 0], self::TTL_SECONDS);
+        $user->notify(new PhoneCodeByEmailNotification($code));
     }
 
     public function verify(User $user, string $code): bool

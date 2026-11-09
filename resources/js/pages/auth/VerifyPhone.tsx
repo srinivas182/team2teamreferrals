@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,13 @@ export default function VerifyPhone({ phone, status, seo }: { phone: string | nu
     const resend = useForm<{ code: string }>({ code: '' });
     const change = useForm({ phone: '' });
     const [editing, setEditing] = useState(phone === null);
+    const emailCode = useForm<{ code: string }>({ code: '' });
+    // If the text hasn't arrived after 30 seconds, offer the code by email instead.
+    const [canEmail, setCanEmail] = useState(false);
+    useEffect(() => {
+        const t = window.setTimeout(() => setCanEmail(true), 30_000);
+        return () => window.clearTimeout(t);
+    }, []);
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -61,9 +68,19 @@ export default function VerifyPhone({ phone, status, seo }: { phone: string | nu
                             Use a different number
                         </button>
                     </div>
-                    {resend.errors.code && (
+                    {canEmail && (
+                        <Button
+                            variant="ghost"
+                            className="mt-3 w-full"
+                            loading={emailCode.processing}
+                            onClick={() => emailCode.post('/verify-phone/email')}
+                        >
+                            Text not arriving? Email me the code instead
+                        </Button>
+                    )}
+                    {(resend.errors.code ?? emailCode.errors.code) && (
                         <Alert tone="danger" className="mt-3">
-                            {resend.errors.code}
+                            {resend.errors.code ?? emailCode.errors.code}
                         </Alert>
                     )}
                 </>
