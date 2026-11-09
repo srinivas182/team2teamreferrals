@@ -83,3 +83,17 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 // Group owners: their own group's overview.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])
     ->get('app/group/{group}', App\Domains\Network\Groups\Http\OwnerGroupController::class)->name('app.group');
+
+// Seats: members apply and answer offers; owners and staff decide applications.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/groups/{group}/apply', [App\Domains\Network\Seats\Http\SeatController::class, 'applyForm'])->name('seats.apply.form');
+    Route::post('app/groups/{group}/apply', [App\Domains\Network\Seats\Http\SeatController::class, 'apply'])->middleware('throttle:20,60')->name('seats.apply');
+    Route::get('app/seats/offers/{offer}', [App\Domains\Network\Seats\Http\SeatController::class, 'offer'])->whereNumber('offer')->name('seats.offer');
+    Route::post('app/seats/offers/{offer}/accept', [App\Domains\Network\Seats\Http\SeatController::class, 'accept'])->whereNumber('offer')->name('seats.offer.accept');
+    Route::post('app/seats/offers/{offer}/decline', [App\Domains\Network\Seats\Http\SeatController::class, 'decline'])->whereNumber('offer')->name('seats.offer.decline');
+    foreach (['admin/groups' => 'admin', 'app/group' => 'owner'] as $prefix => $who) {
+        Route::get("{$prefix}/{group}/applications", [App\Domains\Network\Seats\Http\SeatController::class, 'applications'])->name("seats.applications.{$who}");
+        Route::post("{$prefix}/{group}/applications/{application}/approve", [App\Domains\Network\Seats\Http\SeatController::class, 'approve'])->whereNumber('application')->name("seats.approve.{$who}");
+        Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
+    }
+});
