@@ -24,6 +24,12 @@ final readonly class SeoData
         public ?string $modifiedAt = null,
     ) {}
 
+    /** Private pages (auth, portal, admin): titled for the browser tab, never indexed. */
+    public static function private(string $title): self
+    {
+        return new self(title: $title, description: (string) config('seo.default_description'), index: false);
+    }
+
     /**
      * @return array{title: string, description: string, canonical: string, robots: string, image: string, type: string, siteName: string, locale: string, schema: list<array<string, mixed>>, modifiedAt: ?string}
      */

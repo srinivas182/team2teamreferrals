@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
         $middleware->alias(['noindex' => NoIndex::class]);
         $middleware->trustProxies(at: '*');
+        // Lets "sign out of other devices" invalidate those sessions.
+        $middleware->appendToGroup('web', Illuminate\Session\Middleware\AuthenticateSession::class);
+        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectUsersTo('/app');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

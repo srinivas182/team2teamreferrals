@@ -40,7 +40,7 @@ return [
     ],
 
     // Paths no crawler should fetch (portal, admin, auth, private client links).
-    'disallow' => ['/app', '/admin', '/login', '/register', '/password', '/c/', '/api/'],
+    'disallow' => ['/app', '/admin', '/login', '/register', '/forgot-password', '/reset-password', '/two-factor-challenge', '/verify-phone', '/email/', '/user/', '/passkeys/', '/c/', '/api/'],
 
     'sitemap' => [
         'cache_seconds' => 3600,

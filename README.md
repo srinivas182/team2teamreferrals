@@ -34,7 +34,8 @@ docker compose up
 ```
 
 - App: http://localhost:8000 (Vite on 5173, Mailpit on http://localhost:8025)
-- First run installs dependencies, creates `.env` from `.env.docker`, generates the key and migrates.
+- First run installs dependencies, creates `.env` from `.env.docker`, generates the key and migrates. Seed a test member with `docker compose exec app php artisan db:seed` (jordan@example.com / correct horse battery staple).
+- Text messages are written to `storage/logs/laravel.log` in development.
 - Enable the pre-commit checks once: `composer hooks`
 - Run all checks: `composer check` · front end: `npm run lint && npm run types && npm test`
 - Component library: `npm run storybook` (http://localhost:6006)
@@ -48,7 +49,7 @@ Every public page is server-rendered with title, description, canonical, Open Gr
 
 ## Status
 
-Phase A (Foundation). Sprint 3b — design system, components and layouts in the app. See [CHANGELOG.md](CHANGELOG.md).
+Phase A (Foundation). Sprint 4a — accounts and sign-in (password, passkeys, email links, two-step). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Brand assets
 

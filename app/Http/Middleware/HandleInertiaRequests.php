@@ -22,6 +22,15 @@ final class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'auth' => [
+                'user' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? [
+                    'id' => $u->ulid,
+                    'name' => $u->name,
+                    'firstName' => $u->first_name,
+                    'email' => $u->email,
+                ] : null,
+            ],
+            'flash' => ['status' => fn () => $request->session()->get('status')],
             'app' => [
                 'name' => config('seo.site_name'),
                 'shortName' => config('seo.short_name'),
