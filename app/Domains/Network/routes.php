@@ -114,3 +114,14 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('team-invites/{token}/accept', [App\Domains\Network\Teams\TeamController::class, 'accept'])->name('team.invite.accept');
 });
 Route::middleware(['web', 'noindex:always'])->get('team-invites/{token}', [App\Domains\Network\Teams\TeamController::class, 'invitation'])->name('team.invite.show');
+
+// Licenses: teams add them; staff verify them.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/profile', [App\Domains\Network\Licenses\LicenseController::class, 'mine'])->name('licenses.mine');
+    Route::post('app/licenses', [App\Domains\Network\Licenses\LicenseController::class, 'store'])->middleware('throttle:30,60')->name('licenses.store');
+    Route::delete('app/licenses/{license}', [App\Domains\Network\Licenses\LicenseController::class, 'destroy'])->whereNumber('license')->name('licenses.destroy');
+});
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:licenses.verify'])->group(function (): void {
+    Route::get('admin/licenses', [App\Domains\Network\Licenses\LicenseController::class, 'queue'])->name('admin.licenses');
+    Route::post('admin/licenses/{license}', [App\Domains\Network\Licenses\LicenseController::class, 'decide'])->whereNumber('license')->name('admin.licenses.decide');
+});

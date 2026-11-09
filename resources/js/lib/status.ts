@@ -64,6 +64,10 @@ const messages: Record<string, string> = {
     'team-invite-revoked': 'Invitation cancelled.',
     'team-member-removed': 'Removed from the team.',
     'team-joined': 'Welcome to the team.',
+    'license-added': 'License added. Our team will verify it, usually within one business day.',
+    'license-removed': 'License removed.',
+    'license-verified': 'License verified. The team has been told.',
+    'license-rejected': 'License rejected. The team has been told why.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
