@@ -103,3 +103,14 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 
 // Invitation landing page: public, so a new pro can see the offer before creating an account.
 Route::middleware(['web', 'noindex:always'])->get('invites/{token}', [App\Domains\Network\Seats\Http\SeatController::class, 'invitation'])->name('seats.invite.show');
+
+// Teams: profile, members and invitations.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/team', [App\Domains\Network\Teams\TeamController::class, 'show'])->name('team.show');
+    Route::post('app/team', [App\Domains\Network\Teams\TeamController::class, 'update'])->name('team.update');
+    Route::post('app/team/invites', [App\Domains\Network\Teams\TeamController::class, 'invite'])->middleware('throttle:20,60')->name('team.invite');
+    Route::delete('app/team/invites/{invite}', [App\Domains\Network\Teams\TeamController::class, 'revokeInvite'])->whereNumber('invite')->name('team.invite.revoke');
+    Route::delete('app/team/members/{member}', [App\Domains\Network\Teams\TeamController::class, 'removeMember'])->name('team.member.remove');
+    Route::post('team-invites/{token}/accept', [App\Domains\Network\Teams\TeamController::class, 'accept'])->name('team.invite.accept');
+});
+Route::middleware(['web', 'noindex:always'])->get('team-invites/{token}', [App\Domains\Network\Teams\TeamController::class, 'invitation'])->name('team.invite.show');

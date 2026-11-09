@@ -59,6 +59,11 @@ const messages: Record<string, string> = {
     'application-approved-waitlist': 'Approved and added to the waitlist.',
     'application-declined': 'Application declined. The team has been told why.',
     'invites-sent': 'Invitations processed.',
+    'team-saved': 'Team profile saved.',
+    'team-invite-sent': 'Invitation sent.',
+    'team-invite-revoked': 'Invitation cancelled.',
+    'team-member-removed': 'Removed from the team.',
+    'team-joined': 'Welcome to the team.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
