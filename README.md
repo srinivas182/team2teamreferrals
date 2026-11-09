@@ -17,15 +17,36 @@ The referral network for licensed, location-bound professionals. Teams join trus
 | Information architecture | [docs/design/information-architecture.md](docs/design/information-architecture.md) |
 | Core user flows | [docs/design/user-flows.md](docs/design/user-flows.md) |
 | Accessibility and motion | [docs/design/accessibility-and-motion.md](docs/design/accessibility-and-motion.md) |
+| Architecture decisions | [docs/adr](docs/adr) |
+| Architecture decisions | [docs/adr](docs/adr) |
 | How we work | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## Stack
 
-PHP 8.4+, Laravel, React with Inertia.js (SSR), Tailwind CSS with shadcn/ui, MySQL 8, Redis, Laravel Octane, Horizon and Reverb, Meilisearch, ClickHouse, Stripe, Docker. Mobile apps in React Native.
+PHP 8.4, Laravel 13, React 19 with Inertia 3 (SSR), TypeScript, Tailwind CSS with shadcn/ui, MySQL 8, Redis, Laravel Octane, Horizon and Reverb, Meilisearch, ClickHouse, Stripe, Docker. Mobile apps in React Native.
+
+## Run it locally
+
+Requires Docker.
+
+```bash
+docker compose up
+```
+
+- App: http://localhost:8000 (Vite on 5173, Mailpit on http://localhost:8025)
+- First run installs dependencies, creates `.env` from `.env.docker`, generates the key and migrates.
+- Enable the pre-commit checks once: `composer hooks`
+- Run all checks: `composer check` · front end: `npm run lint && npm run types`
+
+Without Docker: PHP 8.4, Composer, Node 22, then `composer setup` and `composer dev`.
+
+## SEO and AEO
+
+Every public page is server-rendered with title, description, canonical, Open Graph and JSON-LD (see `app/Domains/Seo` and ADR 0005). `/robots.txt`, `/sitemap.xml`, `/llms.txt` and the IndexNow key file are generated. Non-production environments are never indexable.
 
 ## Status
 
-Phase 0 (Design). Sprint 1 — brand, design system and user flows. See [CHANGELOG.md](CHANGELOG.md).
+Phase A (Foundation). Sprint 3a — application skeleton, Docker, CI and SEO foundation. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Brand assets
 

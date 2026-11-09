@@ -1,0 +1,39 @@
+# One-command local environment:  docker compose up
+# App http://localhost:8000 · Vite http://localhost:5173 · Mailpit http://localhost:8025
+services:
+  app:
+    build: { context: ., dockerfile: docker/dev/Dockerfile }
+    volumes: [".:/var/www/html"]
+    ports: ["8000:8000"]
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  vite:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    volumes: [".:/app"]
+    command: sh -c "npm ci && npm run dev"
+    environment: { VITE_DOCKER: "1" }
+    ports: ["5173:5173"]
+
+  mysql:
+    image: mysql:8.4
+    environment: { MYSQL_DATABASE: t2t, MYSQL_USER: t2t, MYSQL_PASSWORD: secret, MYSQL_ROOT_PASSWORD: secret }
+    volumes: ["mysql:/var/lib/mysql"]
+    ports: ["3306:3306"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-psecret"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+volumes:
+  mysql:

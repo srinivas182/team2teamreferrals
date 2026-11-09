@@ -1,0 +1,44 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build && vite build --ssr",
+        "lint": "eslint resources/js",
+        "format": "prettier --write resources/js resources/css",
+        "format:check": "prettier --check resources/js resources/css",
+        "types": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@eslint/js": "10.0.1",
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/node": "26.6.6",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "@vitejs/plugin-react": "6.2.1",
+        "concurrently": "^10.0.3",
+        "eslint": "10.14.0",
+        "eslint-plugin-react-hooks": "7.1.1",
+        "globals": "17.14.0",
+        "laravel-vite-plugin": "^3.1",
+        "prettier": "3.9.10",
+        "prettier-plugin-tailwindcss": "0.8.1",
+        "tailwindcss": "^4.0.0",
+        "typescript": "6.0.3",
+        "typescript-eslint": "8.72.1",
+        "vite": "^8.0.0"
+    },
+    "optionalDependencies": {
+        "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "@fontsource-variable/inter": "5.3.0",
+        "@inertiajs/react": "3.11.0",
+        "clsx": "2.1.1",
+        "lucide-react": "1.70.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "tailwind-merge": "3.7.0"
+    }
+}

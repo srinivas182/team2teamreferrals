@@ -1,0 +1,20 @@
+# Weekly, grouped dependency updates so they arrive as a few PRs, not dozens.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    groups: { php: { patterns: ['*'] } }
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    groups: { js: { patterns: ['*'] } }
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    groups: { actions: { patterns: ['*'] } }
