@@ -21,18 +21,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $visibility
  * @property ?string $photo_path
  * @property bool $is_launch
+ * @property bool $is_private
+ * @property ?string $region
+ * @property ?int $parent_group_id
  * @property array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string} $rules
  * @property array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} $pricing
  */
 final class Group extends Model
 {
-    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'photo_path', 'visibility', 'status', 'is_launch', 'rules', 'pricing'];
+    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'photo_path', 'visibility', 'status', 'is_launch', 'is_private', 'region', 'parent_group_id', 'rules', 'pricing'];
 
-    protected $attributes = ['status' => 'draft', 'visibility' => 'open', 'is_launch' => false, 'description' => null, 'photo_path' => null];
+    protected $attributes = ['status' => 'draft', 'visibility' => 'open', 'is_launch' => false, 'is_private' => false, 'region' => null, 'parent_group_id' => null, 'description' => null, 'photo_path' => null];
 
     protected function casts(): array
     {
-        return ['rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean'];
+        return ['rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean', 'is_private' => 'boolean'];
+    }
+
+    /**
+     * Groups members can find and apply to. Private company networks are never listed.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Group>  $query
+     */
+    public function scopeListed(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('is_private', false)->where('status', 'live');
     }
 
     public function getRouteKeyName(): string

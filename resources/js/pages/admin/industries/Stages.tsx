@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { TemplateShell } from '@/components/admin/TemplateShell';
+import { TemplateShell, type TemplateScope } from '@/components/admin/TemplateShell';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import type { Seo } from '@/types/seo';
 
 type Stage = { key: string; label: string; kind: 'open' | 'won' | 'lost' };
 type Props = {
+    scope: TemplateScope;
     industry: { slug: string; name: string };
     body: Stage[];
     source: string;
@@ -18,7 +19,7 @@ type Props = {
     seo: Seo;
 };
 
-export default function Stages({ industry, body, source, version, history, seo }: Props) {
+export default function Stages({ scope, industry, body, source, version, history, seo }: Props) {
     const form = useForm<{ body: Stage[]; acknowledge: boolean }>({ body, acknowledge: false });
     const stages = form.data.body;
     const set = (i: number, patch: Partial<Stage>) =>
@@ -34,13 +35,12 @@ export default function Stages({ industry, body, source, version, history, seo }
     };
     const save = (acknowledge: boolean) => {
         form.transform((d) => ({ ...d, acknowledge }));
-        form.put(`/admin/industries/${industry.slug}/stages`, { preserveScroll: true });
+        form.put(scope.basePath, { preserveScroll: true });
     };
     return (
         <TemplateShell
             title={`Pipeline · ${industry.name}`}
-            slug={industry.slug}
-            kind="stages"
+            scope={scope}
             source={source}
             version={version}
             history={history}

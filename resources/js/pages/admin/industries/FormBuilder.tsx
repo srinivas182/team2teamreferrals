@@ -1,7 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Lock, Monitor, Plus, Smartphone, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { TemplateShell } from '@/components/admin/TemplateShell';
+import { TemplateShell, type TemplateScope } from '@/components/admin/TemplateShell';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export type FormField = {
     help?: string;
 };
 type Props = {
+    scope: TemplateScope;
     industry: { slug: string; name: string; family: string; terminology: { pro: string; client: string } };
     body: FormField[];
     source: string;
@@ -86,7 +87,7 @@ export function FormPreview({ fields, client }: { fields: FormField[]; client: s
     );
 }
 
-export default function FormBuilder({ industry, body, source, version, history, fieldTypes, roles, seo }: Props) {
+export default function FormBuilder({ scope, industry, body, source, version, history, fieldTypes, roles, seo }: Props) {
     const form = useForm<{ body: FormField[]; acknowledge: boolean }>({ body, acknowledge: false });
     const [device, setDevice] = useState<'phone' | 'desktop'>('phone');
     const fields = form.data.body;
@@ -112,13 +113,12 @@ export default function FormBuilder({ industry, body, source, version, history, 
     };
     const save = (acknowledge: boolean) => {
         form.transform((d) => ({ ...d, acknowledge }));
-        form.put(`/admin/industries/${industry.slug}/form`, { preserveScroll: true });
+        form.put(scope.basePath, { preserveScroll: true });
     };
     return (
         <TemplateShell
             title={`Referral form · ${industry.name}`}
-            slug={industry.slug}
-            kind="form"
+            scope={scope}
             source={source}
             version={version}
             history={history}

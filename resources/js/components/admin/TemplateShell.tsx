@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
 
+export type TemplateScope = { basePath: string; backHref: string; backLabel: string; inheritLabel: string; resetLabel: string; ownSource: string };
+
 type Shared = { flash: { status?: string | null; warnings?: string[] | null }; errors: Record<string, string> };
 
 /** Common frame for the form and pipeline editors: source badge, errors, warnings to confirm, version history. */
 export function TemplateShell({
     title,
-    slug,
-    kind,
+    scope,
     source,
     version,
     history,
@@ -22,8 +23,7 @@ export function TemplateShell({
     children,
 }: {
     title: string;
-    slug: string;
-    kind: 'form' | 'stages';
+    scope: TemplateScope;
     source: string;
     version: number | null;
     history: { version: number; active: boolean; when: string }[];
@@ -40,9 +40,9 @@ export function TemplateShell({
             title={title}
             actions={
                 <>
-                    {source === 'industry' && (
-                        <Button variant="ghost" onClick={() => router.delete(`/admin/industries/${slug}/${kind}`, { preserveScroll: true })}>
-                            <RotateCcw /> Use family default
+                    {source === scope.ownSource && (
+                        <Button variant="ghost" onClick={() => router.delete(scope.basePath, { preserveScroll: true })}>
+                            <RotateCcw /> {scope.resetLabel}
                         </Button>
                     )}
                     <Button loading={saving} onClick={() => onSave(false)}>
@@ -51,11 +51,11 @@ export function TemplateShell({
                 </>
             }
         >
-            <Link href={`/admin/industries/${slug}`} className="text-sm text-muted hover:text-ink">
-                Back to industry
+            <Link href={scope.backHref} className="text-sm text-muted hover:text-ink">
+                {scope.backLabel}
             </Link>
             <div className="mt-2 mb-4 flex flex-wrap items-center gap-2 text-sm">
-                {source === 'family' ? <Badge>Using the family default</Badge> : <Badge tone="info">Customised · version {version}</Badge>}
+                {source !== scope.ownSource ? <Badge>{scope.inheritLabel}</Badge> : <Badge tone="info">Customised · version {version}</Badge>}
                 {history.length > 0 && (
                     <span className="text-muted">
                         {history.length} saved version{history.length > 1 ? 's' : ''}

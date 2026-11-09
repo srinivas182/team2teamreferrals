@@ -28,6 +28,8 @@ type Props = {
     industry: { slug: string; name: string; tier: string; tierLabel: string; allowsFees: boolean; terminology: { pro: string; client: string } };
     current: { clauses: Clause[]; version: number | null; approved: boolean; source: string };
     signing: number | null;
+    signingScope: string | null;
+    scope: { basePath: string; backHref: string; backLabel: string; group: string | null };
     history: Version[];
     fields: Record<string, string>;
     feeFields: string[];
@@ -63,6 +65,8 @@ function summary(clauses: Clause[], d: Record<string, string>, defaults: Clause[
 
 export default function Agreement({
     industry,
+    scope,
+    signingScope,
     defaults,
     current,
     signing,
@@ -114,32 +118,36 @@ export default function Agreement({
 
     return (
         <AdminLayout
-            title={`${industry.name}: agreement`}
+            title={scope.group ? `${scope.group}: agreement` : `${industry.name}: agreement`}
             actions={
-                <>
-                    <Button variant="secondary" asChild>
-                        <a href={`/admin/industries/${industry.slug}/agreement/preview.pdf`} target="_blank" rel="noreferrer">
-                            <FileText /> PDF preview
-                        </a>
-                    </Button>
-                    <Button variant="secondary" asChild>
-                        <a href={`/admin/industries/${industry.slug}/agreement/counsel-pack.pdf`}>
-                            <FileDown /> Counsel review pack
-                        </a>
-                    </Button>
-                </>
+                scope.group ? undefined : (
+                    <>
+                        <Button variant="secondary" asChild>
+                            <a href={`/admin/industries/${industry.slug}/agreement/preview.pdf`} target="_blank" rel="noreferrer">
+                                <FileText /> PDF preview
+                            </a>
+                        </Button>
+                        <Button variant="secondary" asChild>
+                            <a href={`/admin/industries/${industry.slug}/agreement/counsel-pack.pdf`}>
+                                <FileDown /> Counsel review pack
+                            </a>
+                        </Button>
+                    </>
+                )
             }
         >
             <SeoHead seo={seo} />
-            <Link href={`/admin/industries/${industry.slug}`} className="text-sm text-muted hover:text-ink">
-                {industry.name}
+            <Link href={scope.backHref} className="text-sm text-muted hover:text-ink">
+                {scope.backLabel}
             </Link>
             <div className="mt-3 mb-5 flex flex-wrap gap-2">
                 <Badge tone={industry.tier === 'A' ? 'success' : 'warning'}>
                     Tier {industry.tier} · {industry.tierLabel}
                 </Badge>
                 {signing ? (
-                    <Badge tone="success">Members sign v{signing}</Badge>
+                    <Badge tone="success">
+                        Members sign {scope.group && signingScope === 'industry' ? `the industry’s v${signing}` : `v${signing}`}
+                    </Badge>
                 ) : (
                     <Badge tone="danger">No approved version: members can’t sign yet</Badge>
                 )}
@@ -259,19 +267,11 @@ export default function Agreement({
                             >
                                 <Plus /> Add clause
                             </Button>
-                            <Button
-                                loading={form.processing}
-                                disabled={!dirty}
-                                onClick={() => form.put(`/admin/industries/${industry.slug}/agreement`, { preserveScroll: true })}
-                            >
+                            <Button loading={form.processing} disabled={!dirty} onClick={() => form.put(scope.basePath, { preserveScroll: true })}>
                                 Save as new version
                             </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.delete(`/admin/industries/${industry.slug}/agreement`, { preserveScroll: true })}
-                            >
-                                Back to default wording
+                            <Button variant="ghost" size="sm" onClick={() => router.delete(scope.basePath, { preserveScroll: true })}>
+                                {scope.group ? 'Use the industry’s agreement' : 'Back to default wording'}
                             </Button>
                         </div>
                         <p className="mt-2 text-xs text-muted">
@@ -328,7 +328,11 @@ export default function Agreement({
                                         {v.active && <Badge tone="info">Draft</Badge>}
                                         <a
                                             className="ml-auto text-primary"
-                                            href={`/admin/industries/${industry.slug}/agreement/preview.pdf?version=${v.version}`}
+                                            href={
+                                                scope.group
+                                                    ? undefined
+                                                    : `/admin/industries/${industry.slug}/agreement/preview.pdf?version=${v.version}`
+                                            }
                                             target="_blank"
                                             rel="noreferrer"
                                         >
@@ -360,9 +364,7 @@ export default function Agreement({
                                 </Field>
                                 <Button
                                     variant="secondary"
-                                    onClick={() =>
-                                        router.get(`/admin/industries/${industry.slug}/agreement`, cmp, { preserveScroll: true, preserveState: true })
-                                    }
+                                    onClick={() => router.get(scope.basePath, cmp, { preserveScroll: true, preserveState: true })}
                                 >
                                     <GitCompare /> Compare
                                 </Button>
@@ -394,41 +396,45 @@ export default function Agreement({
                             </div>
                         )}
                     </Card>
-                    <Card className="p-6">
-                        <h2 className="font-semibold">State addenda</h2>
-                        <p className="mt-1 text-sm text-muted">
-                            Extra wording added automatically when the receiving team is in that state (for example, required license and brokerage
-                            details).
-                        </p>
-                        <Field label="State" className="mt-3">
-                            <Select
-                                value={stateId}
-                                onChange={(e) => {
-                                    const id = +e.target.value;
-                                    setStateId(id);
-                                    addendum.setData('text', addenda.find((a) => a.stateId === id)?.text ?? '');
-                                }}
+                    {!scope.group && (
+                        <Card className="p-6">
+                            <h2 className="font-semibold">State addenda</h2>
+                            <p className="mt-1 text-sm text-muted">
+                                Extra wording added automatically when the receiving team is in that state (for example, required license and
+                                brokerage details).
+                            </p>
+                            <Field label="State" className="mt-3">
+                                <Select
+                                    value={stateId}
+                                    onChange={(e) => {
+                                        const id = +e.target.value;
+                                        setStateId(id);
+                                        addendum.setData('text', addenda.find((a) => a.stateId === id)?.text ?? '');
+                                    }}
+                                >
+                                    {states.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.name}
+                                            {addenda.some((a) => a.stateId === s.id) ? ' ✓' : ''}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Addendum wording" hint="Leave empty to remove it." className="mt-3">
+                                <Textarea rows={3} value={addendum.data.text} onChange={(e) => addendum.setData('text', e.target.value)} />
+                            </Field>
+                            <Button
+                                className="mt-3"
+                                variant="secondary"
+                                loading={addendum.processing}
+                                onClick={() =>
+                                    addendum.put(`/admin/industries/${industry.slug}/agreement/addenda/${stateId}`, { preserveScroll: true })
+                                }
                             >
-                                {states.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.name}
-                                        {addenda.some((a) => a.stateId === s.id) ? ' ✓' : ''}
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-                        <Field label="Addendum wording" hint="Leave empty to remove it." className="mt-3">
-                            <Textarea rows={3} value={addendum.data.text} onChange={(e) => addendum.setData('text', e.target.value)} />
-                        </Field>
-                        <Button
-                            className="mt-3"
-                            variant="secondary"
-                            loading={addendum.processing}
-                            onClick={() => addendum.put(`/admin/industries/${industry.slug}/agreement/addenda/${stateId}`, { preserveScroll: true })}
-                        >
-                            Save addendum
-                        </Button>
-                    </Card>
+                                Save addendum
+                            </Button>
+                        </Card>
+                    )}
                 </div>
             </div>
 
@@ -449,7 +455,7 @@ export default function Agreement({
                                 loading={approve.processing}
                                 disabled={dirty}
                                 onClick={() =>
-                                    approve.post(`/admin/industries/${industry.slug}/agreement/approve`, {
+                                    approve.post(`${scope.basePath}/approve`, {
                                         preserveScroll: true,
                                         onSuccess: () => setApproving(false),
                                     })

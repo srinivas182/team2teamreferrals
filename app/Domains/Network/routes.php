@@ -61,6 +61,16 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:groups.manage'])
     ->prefix('admin/groups')->name('admin.groups.')->group(function (): void {
         Route::get('/', App\Domains\Network\Groups\Http\AdminGroupsController::class)->name('index');
+        Route::get('overflow', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'overflow'])->name('overflow');
+        Route::post('overflow', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'openNext'])->name('open-next');
+        Route::post('private', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'createPrivate'])->name('private');
+        Route::get('{group}/agreement', [AdminAgreementController::class, 'groupShow'])->name('agreement.show');
+        Route::put('{group}/agreement', [AdminAgreementController::class, 'groupSave'])->name('agreement.save');
+        Route::delete('{group}/agreement', [AdminAgreementController::class, 'groupReset'])->name('agreement.reset');
+        Route::post('{group}/agreement/approve', [AdminAgreementController::class, 'groupApprove'])->name('agreement.approve');
+        Route::get('{group}/{kind}', [AdminIndustryTemplatesController::class, 'groupShow'])->whereIn('kind', ['form', 'stages'])->name('templates.show');
+        Route::put('{group}/{kind}', [AdminIndustryTemplatesController::class, 'groupSave'])->whereIn('kind', ['form', 'stages'])->name('templates.save');
+        Route::delete('{group}/{kind}', [AdminIndustryTemplatesController::class, 'groupReset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');
         Route::get('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'show'])->name('show');
         Route::post('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateDetails'])->name('details');
         Route::put('{group}/{section}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateSettings'])->whereIn('section', ['pricing', 'rules'])->name('settings');
