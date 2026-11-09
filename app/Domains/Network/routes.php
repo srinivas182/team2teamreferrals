@@ -57,6 +57,18 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::delete('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'reset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');
     });
 
-// Admin → Groups: the launch groups (full group management arrives in Sprint 10).
+// Admin → Groups.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:groups.manage'])
-    ->get('admin/groups', App\Domains\Network\Groups\Http\AdminGroupsController::class)->name('admin.groups.index');
+    ->prefix('admin/groups')->name('admin.groups.')->group(function (): void {
+        Route::get('/', App\Domains\Network\Groups\Http\AdminGroupsController::class)->name('index');
+        Route::get('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'show'])->name('show');
+        Route::post('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateDetails'])->name('details');
+        Route::put('{group}/{section}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateSettings'])->whereIn('section', ['pricing', 'rules'])->name('settings');
+        Route::delete('{group}/scheduled/{change}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'cancelScheduled'])->whereNumber('change')->name('scheduled.cancel');
+        Route::post('{group}/owners', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'addOwner'])->name('owners.add');
+        Route::delete('{group}/owners/{user}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'removeOwner'])->name('owners.remove');
+    });
+
+// Group owners: their own group's overview.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])
+    ->get('app/group/{group}', App\Domains\Network\Groups\Http\OwnerGroupController::class)->name('app.group');

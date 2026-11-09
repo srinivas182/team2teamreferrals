@@ -13,19 +13,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int $industry_id
+ * @property-read Industry $industry every group belongs to an industry (required foreign key)
  * @property string $slug
  * @property string $name
  * @property ?string $description
  * @property string $status
+ * @property string $visibility
+ * @property ?string $photo_path
  * @property bool $is_launch
  * @property array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string} $rules
  * @property array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} $pricing
  */
 final class Group extends Model
 {
-    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'status', 'is_launch', 'rules', 'pricing'];
+    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'photo_path', 'visibility', 'status', 'is_launch', 'rules', 'pricing'];
 
-    protected $attributes = ['status' => 'draft', 'is_launch' => false, 'description' => null];
+    protected $attributes = ['status' => 'draft', 'visibility' => 'open', 'is_launch' => false, 'description' => null, 'photo_path' => null];
 
     protected function casts(): array
     {
@@ -35,6 +38,17 @@ final class Group extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Domains\Identity\Models\User, $this> */
+    public function owners(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(\App\Domains\Identity\Models\User::class, 'group_owners')->withTimestamps();
+    }
+
+    public function isOwnedBy(?\App\Domains\Identity\Models\User $user): bool
+    {
+        return $user !== null && $this->owners()->whereKey($user->getKey())->exists();
     }
 
     /** @return BelongsTo<Industry, $this> */
