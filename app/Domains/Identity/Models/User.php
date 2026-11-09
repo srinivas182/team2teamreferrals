@@ -15,6 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\PasskeyAuthenticatable;
+use Laravel\Scout\Searchable;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
@@ -41,7 +42,7 @@ use Spatie\Permission\Traits\HasRoles;
 final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUlids, LogsActivity, Notifiable, PasskeyAuthenticatable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasUlids, LogsActivity, Notifiable, PasskeyAuthenticatable, Searchable, SoftDeletes, TwoFactorAuthenticatable;
 
     /** Mirrors the column defaults so new, unsaved-then-saved users behave the same as loaded ones. */
     protected $attributes = [
@@ -124,6 +125,12 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
                 'restored' => 'Account restored',
                 default => ucfirst($event),
             });
+    }
+
+    /** @return array<string, mixed> What the search engine indexes: names and email only, no secrets. */
+    public function toSearchableArray(): array
+    {
+        return ['id' => $this->id, 'first_name' => $this->first_name, 'last_name' => $this->last_name, 'email' => $this->email];
     }
 
     public function isStaff(): bool

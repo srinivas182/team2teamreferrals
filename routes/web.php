@@ -12,4 +12,4 @@ Route::get('/', fn () => Inertia::render('Home', [
         path: '/',
         schema: [Schema::organization(), Schema::website()],
     ))->toArray(),
-]))->name('home');
+]))->middleware('edge.cache')->name('home');

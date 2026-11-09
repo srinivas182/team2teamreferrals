@@ -16,12 +16,12 @@ use Throwable;
 /** Fast checks of everything a request depends on. Used by /health (monitors) and /status (members). */
 final class HealthChecks
 {
-    public const COMPONENTS = ['database' => 'Database', 'cache' => 'Cache and sessions', 'queue' => 'Background jobs', 'storage' => 'File storage'];
+    public const COMPONENTS = ['database' => 'Database', 'cache' => 'Cache and sessions', 'queue' => 'Background jobs', 'storage' => 'File storage', 'search' => 'Search'];
 
     /** @return array<string, array{ok: bool, ms: int}> */
     public function run(): array
     {
-        return [
+        $checks = [
             'database' => $this->time(fn () => DB::select('select 1')),
             'cache' => $this->time(function () {
                 $k = 'health:'.Str::random(8);
@@ -34,6 +34,16 @@ final class HealthChecks
             'queue' => $this->time(fn () => Queue::size()),
             'storage' => $this->time(fn () => Storage::disk(PrivateFiles::DISK)->exists('.health-probe')),
         ];
+        if (config('scout.driver') === 'meilisearch') {
+            $checks['search'] = $this->time(function () {
+                $h = app(\Meilisearch\Client::class)->health();
+                if (($h['status'] ?? null) !== 'available') {
+                    throw new RuntimeException('Meilisearch unavailable');
+                }
+            });
+        }
+
+        return $checks;
     }
 
     /** Cached for 30 seconds so the public status page can't be used to load the servers. */

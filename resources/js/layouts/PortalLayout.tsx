@@ -222,7 +222,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                     ))}
                 </nav>
             </div>
-            <CommandPalette open={palette} onOpenChange={setPalette} items={commands} />
+            <CommandPalette open={palette} onOpenChange={setPalette} items={commands} remote />
             <Toaster />
         </TooltipProvider>
     );

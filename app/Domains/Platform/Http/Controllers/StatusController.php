@@ -28,7 +28,7 @@ final class StatusController
         $r = $checks->cached();
 
         return Inertia::render('Status', [
-            'components' => collect(HealthChecks::COMPONENTS)->map(fn ($label, $k) => ['key' => $k, 'label' => $label, 'ok' => $r[$k]['ok'] ?? false])->values(),
+            'components' => collect(HealthChecks::COMPONENTS)->filter(fn ($label, $k) => isset($r[$k]))->map(fn ($label, $k) => ['key' => $k, 'label' => $label, 'ok' => $r[$k]['ok']])->values(),
             'incident' => $settings->get('status.incident'),
             'checkedAt' => now()->toIso8601String(),
             'seo' => (new SeoData(title: 'System status', description: 'Live status of Team to Team Referrals.', index: false))->toArray(),

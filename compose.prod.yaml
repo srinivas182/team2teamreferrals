@@ -10,6 +10,8 @@ x-app: &app
     SESSION_DRIVER: redis
     QUEUE_CONNECTION: redis
     INERTIA_SSR_URL: http://ssr:13714
+    SCOUT_DRIVER: meilisearch
+    MEILISEARCH_HOST: http://meilisearch:7700
   depends_on:
     mysql: { condition: service_healthy }
     redis: { condition: service_started }
@@ -35,11 +37,16 @@ services:
     environment: { MYSQL_DATABASE: t2t, MYSQL_USER: t2t, MYSQL_PASSWORD: secret, MYSQL_ROOT_PASSWORD: secret }
     volumes: [mysql-prod:/var/lib/mysql]
     healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"], interval: 5s, retries: 20 }
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    environment: { MEILI_ENV: production, MEILI_MASTER_KEY: "${MEILISEARCH_KEY:?set MEILISEARCH_KEY}", MEILI_NO_ANALYTICS: "true" }
+    volumes: [meili-prod:/meili_data]
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes: [redis-prod:/data]
 
 volumes:
+  meili-prod:
   mysql-prod:
   redis-prod:

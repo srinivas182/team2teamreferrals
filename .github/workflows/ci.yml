@@ -105,3 +105,26 @@ jobs:
       - name: Production image (Octane on FrankenPHP)
         uses: docker/build-push-action@v6
         with: { context: ., file: docker/prod/Dockerfile, target: app, push: false, cache-from: type=gha, cache-to: 'type=gha,mode=max' }
+
+  performance:
+    name: Performance budgets (Lighthouse)
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci && npm run build
+      - name: Serve the app (production mode, SQLite)
+        run: |
+          cp .env.example .env && php artisan key:generate
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/; s/^APP_DEBUG=.*/APP_DEBUG=false/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_DRIVER=.*/SESSION_DRIVER=file/; s/^CACHE_STORE=.*/CACHE_STORE=file/' .env
+          touch database/database.sqlite && php artisan migrate --force && php artisan optimize
+          (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && sleep 4
+      - run: npx --yes @lhci/cli@0.15.1 autorun
+
