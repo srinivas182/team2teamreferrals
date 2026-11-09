@@ -35,7 +35,7 @@ final class HandleInertiaRequests extends Middleware
                         : [],
                 ] : null,
             ],
-            'flash' => ['status' => fn () => $request->session()->get('status')],
+            'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
             // The bell: unread count and the five latest, on every signed-in page.
             'notifications' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? [

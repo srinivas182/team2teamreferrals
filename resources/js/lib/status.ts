@@ -22,7 +22,7 @@ const messages: Record<string, string> = {
     'push-turned-off': 'Push notifications are off on all your browsers.',
     'template-saved': 'Saved as a new version. It’s used for every message from now on.',
     'template-restored': 'That version is active again.',
-    'template-reset': 'Back to the default wording.',
+    'template-reset': 'Back to the default.',
     'maintenance-on': 'Maintenance mode is on. Members see the “We’ll be right back” page.',
     'maintenance-off': 'Maintenance mode is off. Everyone can use the platform again.',
     'settings-imported': 'Settings imported. Enter API keys separately: they are never exported.',

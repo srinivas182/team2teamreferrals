@@ -128,6 +128,12 @@ export default function IndustryShow({
                 All industries
             </Link>
             <div className="mt-2 mb-4 flex flex-wrap gap-2">
+                <Link href={`/admin/industries/${i.slug}/form`} className="text-sm font-medium text-primary">
+                    Referral form
+                </Link>
+                <Link href={`/admin/industries/${i.slug}/stages`} className="mr-2 text-sm font-medium text-primary">
+                    Pipeline stages
+                </Link>
                 <Badge tone={tierTone[i.tier]}>Tier {i.tier}</Badge>
                 {i.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}
                 {i.approved ? <Badge tone="info">Compliance-approved</Badge> : <Badge tone="warning">Needs compliance approval</Badge>}
