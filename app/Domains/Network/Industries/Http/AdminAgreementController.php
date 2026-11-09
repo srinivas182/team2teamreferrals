@@ -1,0 +1,134 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Network\Industries\Http;
+
+use App\Domains\Network\Industries\Agreements\AgreementDefaults;
+use App\Domains\Network\Industries\Agreements\AgreementRenderer;
+use App\Domains\Network\Industries\Agreements\Agreements;
+use App\Domains\Network\Industries\Models\Industry;
+use App\Domains\Network\Locations\Models\State;
+use App\Domains\Seo\SeoData;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/** Admin → Industries → Agreement: wording, approval, state addenda, PDF, compare and the counsel review pack. */
+final class AdminAgreementController
+{
+    public function __construct(private readonly Agreements $agreements) {}
+
+    public function show(Request $request, Industry $industry): Response
+    {
+        $current = $this->agreements->current($industry);
+        $history = $this->agreements->history($industry);
+        $compare = null;
+        if ($request->filled(['a', 'b'])) {
+            $compare = AgreementRenderer::compare($this->agreements->version($industry, $request->integer('a')), $this->agreements->version($industry, $request->integer('b')));
+        }
+
+        return Inertia::render('admin/industries/Agreement', [
+            'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'tierLabel' => $industry->tier->label(), 'allowsFees' => $industry->tier->allowsMemberReferralFees(), 'terminology' => $industry->terminology],
+            'current' => $current,
+            'signing' => $this->agreements->forSigning($industry)['version'] ?? null,
+            'history' => $history,
+            'fields' => AgreementDefaults::FIELDS,
+            'feeFields' => AgreementDefaults::FEE_FIELDS,
+            'defaults' => AgreementDefaults::for($industry->tier),
+            'sample' => $this->sample($industry),
+            'addenda' => $this->addenda($industry),
+            'states' => State::query()->orderBy('name')->get(['id', 'name', 'code'])->map(fn (State $s) => ['id' => $s->id, 'name' => $s->name, 'code' => $s->code]),
+            'compare' => $compare,
+            'compareVersions' => $request->filled(['a', 'b']) ? ['a' => $request->integer('a'), 'b' => $request->integer('b')] : null,
+            'status' => session('status'),
+            'seo' => SeoData::private($industry->name.' agreement')->toArray(),
+        ]);
+    }
+
+    public function save(Request $request, Industry $industry): RedirectResponse
+    {
+        $request->validate(['clauses' => ['present', 'array']]);
+        $version = $this->agreements->save($industry, (array) $request->input('clauses'), $request->user()?->getKey());
+        activity('admin')->causedBy($request->user())->performedOn($industry)->event('agreement-saved')->withProperties(['version' => $version])->log("Saved {$industry->name} agreement v{$version} (awaiting approval)");
+
+        return back()->with('status', 'agreement-saved');
+    }
+
+    public function approve(Request $request, Industry $industry): RedirectResponse
+    {
+        abort_unless((bool) $request->user()?->hasRole('super_admin'), 403, 'Only a super admin can approve an agreement.');
+        $data = $request->validate(['counsel' => ['required', 'string', 'max:160'], 'note' => ['required', 'string', 'max:2000']], ['counsel.required' => 'Record who reviewed it (e.g. the attorney and firm).']);
+        $version = $this->agreements->approve($industry, $request->user()->getKey(), (string) $data['counsel'], (string) $data['note']);
+        activity('admin')->causedBy($request->user())->performedOn($industry)->event('agreement-approved')->withProperties(['version' => $version, 'counsel' => $data['counsel']])->log("Approved {$industry->name} agreement v{$version}");
+
+        return back()->with('status', 'agreement-approved');
+    }
+
+    public function reset(Request $request, Industry $industry): RedirectResponse
+    {
+        $this->agreements->reset($industry);
+        activity('admin')->causedBy($request->user())->performedOn($industry)->event('agreement-reset')->log("Reset {$industry->name} agreement draft to the default wording");
+
+        return back()->with('status', 'agreement-reset');
+    }
+
+    public function saveAddendum(Request $request, Industry $industry, State $state): RedirectResponse
+    {
+        $text = trim((string) $request->validate(['text' => ['nullable', 'string', 'max:4000']])['text']);
+        if ($text === '') {
+            DB::table('agreement_state_addenda')->where(['industry_id' => $industry->id, 'state_id' => $state->id])->delete();
+        } else {
+            DB::table('agreement_state_addenda')->updateOrInsert(['industry_id' => $industry->id, 'state_id' => $state->id], ['text' => $text, 'updated_by' => $request->user()?->getKey(), 'updated_at' => now(), 'created_at' => now()]);
+        }
+        activity('admin')->causedBy($request->user())->performedOn($industry)->event('agreement-addendum')->withProperties(['state' => $state->code, 'removed' => $text === ''])->log("Updated {$industry->name} {$state->name} addendum");
+
+        return back()->with('status', 'addendum-saved');
+    }
+
+    public function pdf(Request $request, Industry $industry): HttpResponse
+    {
+        $clauses = $request->filled('version') ? $this->agreements->version($industry, $request->integer('version')) : $this->agreements->current($industry)['clauses'];
+        $data = $this->sample($industry);
+        $addenda = collect($this->addenda($industry))->where('code', 'TX')->map(fn ($a) => ['state' => $a['name'], 'text' => $a['text']])->values()->all();
+
+        return Pdf::loadView('pdf.agreement', [
+            'title' => 'Referral agreement (preview)', 'industry' => $industry, 'sections' => AgreementRenderer::render($clauses, $data, $addenda),
+            'summary' => AgreementRenderer::summary($clauses, $data), 'watermark' => 'SAMPLE · NOT FOR SIGNING',
+        ])->stream("{$industry->slug}-agreement-preview.pdf");
+    }
+
+    /** One PDF for the attorney: current wording, plain-English summary, every state addendum and the approval history. */
+    public function counselPack(Request $request, Industry $industry): HttpResponse
+    {
+        $current = $this->agreements->current($industry);
+        $data = $this->sample($industry);
+        activity('admin')->causedBy($request->user())->performedOn($industry)->event('counsel-pack')->log("Downloaded the {$industry->name} counsel review pack");
+
+        return Pdf::loadView('pdf.counsel-pack', [
+            'industry' => $industry, 'version' => $current['version'], 'approved' => $current['approved'],
+            'sections' => AgreementRenderer::render($current['clauses'], $data), 'summary' => AgreementRenderer::summary($current['clauses'], $data),
+            'addenda' => $this->addenda($industry), 'history' => $this->agreements->history($industry), 'generated' => now()->toDayDateTimeString(),
+        ])->download("{$industry->slug}-counsel-review-pack.pdf");
+    }
+
+    /** @return array<string, string> */
+    private function sample(Industry $industry): array
+    {
+        $t = $industry->terminology;
+
+        return [...AgreementDefaults::sample(), 'pro' => $t['pro'], 'client_term' => $t['client']];
+    }
+
+    /** @return array<int, array{stateId: int, code: string, name: string, text: string}> */
+    private function addenda(Industry $industry): array
+    {
+        return DB::table('agreement_state_addenda')->join('states', 'states.id', '=', 'agreement_state_addenda.state_id')
+            ->where('industry_id', $industry->id)->orderBy('states.name')->get(['states.id as state_id', 'states.code', 'states.name', 'agreement_state_addenda.text'])
+            ->map(fn ($r) => ['stateId' => (int) $r->state_id, 'code' => (string) $r->code, 'name' => (string) $r->name, 'text' => (string) $r->text])->values()->all();
+    }
+}

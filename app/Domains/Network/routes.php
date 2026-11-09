@@ -2,6 +2,7 @@
 
 use App\Domains\Identity\Http\Middleware\EnsureAccountIsActive;
 use App\Domains\Identity\Http\Middleware\EnsureStaff;
+use App\Domains\Network\Industries\Http\AdminAgreementController;
 use App\Domains\Network\Industries\Http\AdminIndustriesController;
 use App\Domains\Network\Industries\Http\AdminIndustryTemplatesController;
 use App\Domains\Network\Locations\Http\AdminLocationsController;
@@ -36,6 +37,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('{industry}/revoke', [AdminIndustriesController::class, 'revoke'])->name('revoke');
         Route::post('{industry}/status', [AdminIndustriesController::class, 'status'])->name('status');
         Route::put('{industry}/fee', [AdminIndustriesController::class, 'saveFee'])->name('fee');
+        Route::get('{industry}/agreement', [AdminAgreementController::class, 'show'])->name('agreement.show');
+        Route::put('{industry}/agreement', [AdminAgreementController::class, 'save'])->name('agreement.save');
+        Route::delete('{industry}/agreement', [AdminAgreementController::class, 'reset'])->name('agreement.reset');
+        Route::post('{industry}/agreement/approve', [AdminAgreementController::class, 'approve'])->name('agreement.approve');
+        Route::get('{industry}/agreement/preview.pdf', [AdminAgreementController::class, 'pdf'])->name('agreement.pdf');
+        Route::get('{industry}/agreement/counsel-pack.pdf', [AdminAgreementController::class, 'counselPack'])->name('agreement.counsel-pack');
+        Route::put('{industry}/agreement/addenda/{state}', [AdminAgreementController::class, 'saveAddendum'])->name('agreement.addendum');
         Route::get('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'show'])->whereIn('kind', ['form', 'stages'])->name('templates.show');
         Route::put('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'save'])->whereIn('kind', ['form', 'stages'])->name('templates.save');
         Route::delete('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'reset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');

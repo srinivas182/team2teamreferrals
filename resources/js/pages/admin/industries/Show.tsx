@@ -131,8 +131,11 @@ export default function IndustryShow({
                 <Link href={`/admin/industries/${i.slug}/form`} className="text-sm font-medium text-primary">
                     Referral form
                 </Link>
-                <Link href={`/admin/industries/${i.slug}/stages`} className="mr-2 text-sm font-medium text-primary">
+                <Link href={`/admin/industries/${i.slug}/stages`} className="text-sm font-medium text-primary">
                     Pipeline stages
+                </Link>
+                <Link href={`/admin/industries/${i.slug}/agreement`} className="mr-2 text-sm font-medium text-primary">
+                    Agreement
                 </Link>
                 <Badge tone={tierTone[i.tier]}>Tier {i.tier}</Badge>
                 {i.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}
