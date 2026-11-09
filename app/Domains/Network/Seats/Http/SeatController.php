@@ -79,9 +79,10 @@ final class SeatController
             'basePath' => $request->is('admin/*') ? "/admin/groups/{$group->slug}/applications" : "/app/group/{$group->slug}/applications",
             'applications' => DB::table('seat_applications')->join('teams', 'teams.id', '=', 'seat_applications.team_id')->join('seats', 'seats.id', '=', 'seat_applications.seat_id')
                 ->where('seat_applications.group_id', $group->id)->orderByRaw("case seat_applications.status when 'pending' then 0 else 1 end")->orderByDesc('seat_applications.created_at')->limit(200)
-                ->get(['seat_applications.id', 'seat_applications.status', 'seat_applications.outcome', 'seat_applications.license_number', 'seat_applications.decision_reason', 'seat_applications.created_at', 'teams.name as team', 'seats.territory_name', 'seats.primary_team_id', 'seats.backup_team_id'])
+                ->get(['seat_applications.id', 'seat_applications.status', 'seat_applications.outcome', 'seat_applications.license_number', 'seat_applications.decision_reason', 'seat_applications.created_at', 'teams.name as team', 'seats.territory_name', 'seats.primary_team_id', 'seats.backup_team_id', 'seat_applications.seat_id', 'seat_applications.team_id'])
                 ->map(fn ($a) => ['id' => (int) $a->id, 'status' => (string) $a->status, 'outcome' => $a->outcome, 'license' => $a->license_number, 'reason' => $a->decision_reason, 'when' => (string) $a->created_at, 'team' => (string) $a->team, 'territory' => (string) $a->territory_name,
-                    'wouldBe' => $a->primary_team_id === null ? 'primary' : ($a->backup_team_id === null ? 'backup' : 'waitlist')]),
+                    'wouldBe' => $a->primary_team_id === null ? 'primary' : ($a->backup_team_id === null ? 'backup' : 'waitlist'),
+                    'cap' => $a->status === 'pending' && $a->primary_team_id === null ? \App\Domains\Network\Companies\CompanyCap::ifHeld(\App\Domains\Network\Seats\Models\Seat::query()->with('group')->findOrFail((int) $a->seat_id), Team::query()->findOrFail((int) $a->team_id)) : null]),
             'status' => session('status'),
             'seo' => SeoData::private('Applications · '.$group->name)->toArray(),
         ]);

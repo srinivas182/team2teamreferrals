@@ -131,3 +131,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/groups', [App\Domains\Network\Onboarding\MemberGroupsController::class, 'index'])->name('member.groups');
     Route::get('app/team/preview', [App\Domains\Network\Onboarding\MemberGroupsController::class, 'preview'])->name('team.preview');
 });
+
+// Companies: dashboard, who pays, branch invitations.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/company', [App\Domains\Network\Companies\CompanyController::class, 'show'])->name('company.show');
+    Route::post('app/company', [App\Domains\Network\Companies\CompanyController::class, 'store'])->name('company.store');
+    Route::post('app/company/seats/{seat}/payer', [App\Domains\Network\Companies\CompanyController::class, 'payer'])->whereNumber('seat')->name('company.payer');
+    Route::post('app/company/invites', [App\Domains\Network\Companies\CompanyController::class, 'invite'])->middleware('throttle:20,60')->name('company.invite');
+    Route::post('company-invites/{token}/accept', [App\Domains\Network\Companies\CompanyController::class, 'accept'])->name('company.invite.accept');
+});
+Route::middleware(['web', 'noindex:always'])->get('company-invites/{token}', [App\Domains\Network\Companies\CompanyController::class, 'invitation'])->name('company.invite.show');

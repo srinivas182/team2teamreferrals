@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $ulid
  * @property string $name
  * @property int $leader_id
+ * @property ?int $company_id
  * @property ?string $logo_path
  * @property ?string $bio
  * @property ?string $website
@@ -29,9 +30,9 @@ final class Team extends Model
 
     public const ROLES = ['leader' => 'Leader', 'member' => 'Member', 'assistant' => 'Assistant'];
 
-    protected $fillable = ['name', 'leader_id', 'logo_path', 'bio', 'website', 'phone', 'social', 'service_area', 'founded_year'];
+    protected $fillable = ['name', 'leader_id', 'company_id', 'logo_path', 'bio', 'website', 'phone', 'social', 'service_area', 'founded_year'];
 
-    protected $attributes = ['logo_path' => null, 'bio' => null, 'website' => null, 'phone' => null, 'social' => null, 'service_area' => null, 'founded_year' => null];
+    protected $attributes = ['company_id' => null, 'logo_path' => null, 'bio' => null, 'website' => null, 'phone' => null, 'social' => null, 'service_area' => null, 'founded_year' => null];
 
     protected function casts(): array
     {

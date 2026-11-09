@@ -23,11 +23,12 @@ type Props = {
     licenses: string[];
     seats: { group: string; territory: string; founding: boolean }[];
     strength: { score: number };
+    company: { name: string; cities: number } | null;
     seo: Seo;
 };
 
 /** How the team will look to other pros and clients. Publishing arrives with public profiles (Sprint 26). */
-export default function TeamPreview({ team, licenses, seats, strength, seo }: Props) {
+export default function TeamPreview({ team, licenses, seats, strength, company, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     return (
         <PortalLayout title="Profile preview" user={{ name: auth.user?.name ?? '', team: team.name }}>
@@ -56,6 +57,11 @@ export default function TeamPreview({ team, licenses, seats, strength, seo }: Pr
                             </Badge>
                         ))}
                         {seats.some((s) => s.founding) && <Badge tone="sender">Founding member</Badge>}
+                        {company && (
+                            <Badge tone="info">
+                                Part of {company.name}, {company.cities} {company.cities === 1 ? 'city' : 'cities'}
+                            </Badge>
+                        )}
                     </div>
                     {team.bio && <p className="mt-4 text-muted">{team.bio}</p>}
                     <ul className="mt-4 space-y-1.5 text-sm">
