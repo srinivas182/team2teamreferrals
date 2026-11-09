@@ -18,10 +18,11 @@ final class NetworkServiceProvider extends ServiceProvider
             // Hourly so 72-hour offers pass on promptly; grace and release use whole days.
             $s->command('t2t:seats:lifecycle')->hourly()->onOneServer();
             $s->command('t2t:licenses:reminders')->dailyAt('07:00')->onOneServer();
+            $s->command('t2t:onboarding:nudges')->dailyAt('15:00')->onOneServer();
         });
         $this->loadRoutesFrom(__DIR__.'/routes.php');
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class, Licenses\SendLicenseReminders::class]);
+            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class, Licenses\SendLicenseReminders::class, Onboarding\SendOnboardingNudges::class]);
         }
     }
 }

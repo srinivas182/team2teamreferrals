@@ -68,7 +68,12 @@ export default function Team({ team, canEdit, canManage, members, invites, roles
             )}
             <div className="grid max-w-5xl gap-6 lg:grid-cols-[1.3fr_1fr]">
                 <Card className="space-y-4 p-6">
-                    <h2 className="font-semibold">Team profile</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="font-semibold">Team profile</h2>
+                        <a href="/app/team/preview" className="ml-auto text-sm font-medium text-primary">
+                            Preview your public profile
+                        </a>
+                    </div>
                     <fieldset disabled={!canEdit} className="space-y-4">
                         <div className="flex items-center gap-4">
                             {team.logo ? (

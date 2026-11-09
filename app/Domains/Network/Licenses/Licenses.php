@@ -61,14 +61,15 @@ final class Licenses
 
     /**
      * Waitlist ranking until the trust score exists (Sprint 34): verified licenses count most,
-     * then pending ones, then profile strength (Sprint 12c adds it). Capped at 100.
+     * then pending ones, then profile strength. Capped at 100.
      */
     public static function rankScore(Team $team): int
     {
         $verified = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'verified'])->count();
         $pending = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'pending'])->count();
 
-        return min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + 10);
+        // Licenses up to 60, profile strength up to 30, plus 10 for being on the platform.
+        return min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + (int) round(\App\Domains\Network\Onboarding\ProfileStrength::for($team)['score'] * 0.3) + 10);
     }
 
     public static function rerank(Team $team): void

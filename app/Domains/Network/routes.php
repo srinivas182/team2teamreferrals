@@ -125,3 +125,9 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('admin/licenses', [App\Domains\Network\Licenses\LicenseController::class, 'queue'])->name('admin.licenses');
     Route::post('admin/licenses/{license}', [App\Domains\Network\Licenses\LicenseController::class, 'decide'])->whereNumber('license')->name('admin.licenses.decide');
 });
+
+// Members: find a network; preview the team's public profile.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/groups', [App\Domains\Network\Onboarding\MemberGroupsController::class, 'index'])->name('member.groups');
+    Route::get('app/team/preview', [App\Domains\Network\Onboarding\MemberGroupsController::class, 'preview'])->name('team.preview');
+});
