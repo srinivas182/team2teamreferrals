@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 5c — Payments, storage, AI, modules and launch tools
+- Admin → System → Overview: one card per provider (email, text, payments, storage, AI) with its last check and live health; **Test everything** checks all providers in one click and remembers the results.
+- Payments: Stripe keys and webhook signing secret (encrypted), "Test connection" shows the account name and test/live mode; signed webhook endpoint `/webhooks/stripe` stores each event once (retries are harmless) for billing in Sprint 22.
+- Storage: this server, or any S3-compatible service (AWS S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2). Private files open only through signed links that expire; the storage test writes, reads and deletes a file.
+- AI: Anthropic provider with model, prices per million tokens and a monthly spend cap; usage metered per month; "Test connection" shows the reply, tokens and cost.
+- Modules: switch push, consumer requests, pre-launch reservations, community, events, cross-industry introductions, partner directory and AI on or off without a deploy; switched-off modules are hidden and their routes return 404.
+- Maintenance mode: members see the branded "We'll be right back" page; staff can still sign in and webhooks keep arriving.
+- Settings export and import: non-secret settings only, to copy staging to production; imports ignore unknown keys and never touch secrets.
+- 106 PHP tests in total (9 new).
+
 ### Sprint 5b — Notification framework
 - Notification catalogue: 11 types in four groups (referrals, network, billing, account and security), each with default channels (email, text, in-app, push), urgency and whether members can turn it off. One `Notifier` sends everything.
 - Member settings: channel grid per type ("Urgent" and "Always on" labelled), quiet hours in the member's own time zone (urgent items still come through), and an optional daily summary at 7:00.

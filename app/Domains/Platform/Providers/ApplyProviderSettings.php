@@ -14,6 +14,34 @@ final class ApplyProviderSettings
 
     public function __invoke(): void
     {
+        $this->storage();
+        $this->mail();
+    }
+
+    /** Private files (licenses, W-9s, agreements) live on the "private" disk: local in development, S3-compatible in production. */
+    private function storage(): void
+    {
+        $s = $this->settings;
+        if ($s->get('storage.driver') === 's3' && $s->has('storage.s3.bucket')) {
+            $this->config->set('filesystems.disks.private', [
+                'driver' => 's3',
+                'key' => $s->get('storage.s3.key'),
+                'secret' => $s->get('storage.s3.secret'),
+                'region' => $s->get('storage.s3.region', 'us-east-1'),
+                'bucket' => $s->get('storage.s3.bucket'),
+                'endpoint' => $s->get('storage.s3.endpoint'),
+                'use_path_style_endpoint' => $s->has('storage.s3.endpoint'),
+                'visibility' => 'private',
+                'throw' => true,
+            ]);
+
+            return;
+        }
+        $this->config->set('filesystems.disks.private', ['driver' => 'local', 'root' => storage_path('app/private'), 'visibility' => 'private', 'throw' => true]);
+    }
+
+    private function mail(): void
+    {
         $s = $this->settings;
         if ($from = $s->get('mail.from_address')) {
             $this->config->set('mail.from.address', $from);

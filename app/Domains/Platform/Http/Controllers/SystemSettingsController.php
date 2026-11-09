@@ -6,14 +6,19 @@ namespace App\Domains\Platform\Http\Controllers;
 
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Phone\PhoneNumber;
+use App\Domains\Platform\Ai\AiProvider;
 use App\Domains\Platform\Deliveries\ProviderHealth;
+use App\Domains\Platform\Modules\Modules;
 use App\Domains\Platform\Notifications\TestEmailNotification;
 use App\Domains\Platform\Providers\ProviderCatalogue;
+use App\Domains\Platform\Providers\ProviderChecks;
 use App\Domains\Platform\Settings\Settings;
 use App\Domains\Seo\SeoData;
 use App\Support\Sms\SmsSender;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -40,7 +45,7 @@ final class SystemSettingsController
         ];
 
         return Inertia::render('admin/system/Index', [
-            'tab' => $tab ?? 'general',
+            'tab' => $tab ?? 'overview',
             'general' => [
                 'company_name' => $s->get('general.company_name'),
                 'support_email' => $s->get('general.support_email'),
@@ -48,6 +53,13 @@ final class SystemSettingsController
             ],
             'email' => [...$channel('mail'), 'from_address' => $s->get('mail.from_address', (string) config('mail.from.address')), 'from_name' => $s->get('mail.from_name', (string) config('mail.from.name'))],
             'sms' => $channel('sms'),
+            'payments' => $channel('payments'),
+            'storage' => $channel('storage'),
+            'ai' => [...$channel('ai'), 'spent' => app(AiProvider::class)->spentThisMonth()],
+            'modules' => collect(Modules::ALL)->map(fn ($m, $k) => ['key' => $k, 'label' => $m['label'], 'affects' => $m['affects'], 'enabled' => app(Modules::class)->enabled($k)])->values(),
+            'overview' => collect(ProviderChecks::PROVIDERS)->map(fn ($label, $k) => ['key' => $k, 'label' => $label, 'driver' => $s->get(($k === 'mail' ? 'mail' : $k).'.driver'), 'last' => app(ProviderChecks::class)->last()[$k] ?? null, 'health' => in_array($k, ['mail', 'sms'], true) ? ProviderHealth::for($k) : null])->values(),
+            'maintenance' => $s->get('platform.maintenance') === '1',
+            'checks' => session('checks'),
             'status' => session('status'),
             'seo' => SeoData::private('System settings')->toArray(),
         ]);
@@ -83,9 +95,97 @@ final class SystemSettingsController
 
     public function updateSms(Request $request): RedirectResponse
     {
-        $driver = (string) $request->validate(['driver' => ['required', Rule::in(ProviderCatalogue::drivers('sms'))]])['driver'];
+        return $this->updateChannel($request, 'sms');
+    }
 
-        return $this->saveProvider('sms', $driver, ['sms.driver' => $driver], $request);
+    /** Payments, storage and AI share one handler: pick a driver, fill its fields. */
+    public function updateChannel(Request $request, string $channel): RedirectResponse
+    {
+        abort_unless(in_array($channel, ['sms', 'payments', 'storage', 'ai'], true), 404);
+        $driver = (string) $request->validate(['driver' => ['required', Rule::in(ProviderCatalogue::drivers($channel))]])['driver'];
+
+        return $this->saveProvider($channel, $driver, ["{$channel}.driver" => $driver], $request);
+    }
+
+    public function check(Request $request, ProviderChecks $checks, string $provider): RedirectResponse
+    {
+        abort_unless(isset(ProviderChecks::PROVIDERS[$provider]), 404);
+
+        return back()->with('checks', [$provider => $checks->check($provider, $request->user()?->getAttribute('email'))]);
+    }
+
+    public function checkAll(Request $request, ProviderChecks $checks): RedirectResponse
+    {
+        $results = $checks->all($request->user()?->getAttribute('email'));
+        activity('admin')->causedBy($request->user())->event('providers-tested')->withProperties(collect($results)->map(fn ($r) => $r['ok'])->all())->log('Tested every provider');
+
+        return back()->with('checks', $results);
+    }
+
+    public function updateModules(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['modules' => ['required', 'array'], 'modules.*' => ['boolean']]);
+        $values = [];
+        foreach (array_keys(Modules::ALL) as $k) {
+            if (array_key_exists($k, $data['modules'])) {
+                $values['modules.'.$k] = $data['modules'][$k] ? '1' : '0';
+            }
+        }
+        $this->save('modules', $values, [], $request);
+
+        return back()->with('status', 'settings-saved');
+    }
+
+    public function maintenance(Request $request): RedirectResponse
+    {
+        $on = $request->boolean('on');
+        $this->save('maintenance', ['platform.maintenance' => $on ? '1' : '0'], [], $request);
+
+        return back()->with('status', $on ? 'maintenance-on' : 'maintenance-off');
+    }
+
+    /** Non-secret settings as JSON, to copy a staging setup to production. Secrets are never included. */
+    public function export(Request $request): JsonResponse
+    {
+        $rows = DB::table('settings')->where('is_secret', false)->where('key', 'not like', 'health.%')->where('key', 'not like', 'push.%')->orderBy('key')->pluck('value', 'key');
+        activity('admin')->causedBy($request->user())->event('settings-exported')->log('Exported platform settings');
+
+        return response()->json(['exported_at' => now()->toIso8601String(), 'app_url' => config('app.url'), 'settings' => $rows], 200, [
+            'Content-Disposition' => 'attachment; filename="t2t-settings-'.now()->format('Y-m-d').'.json"',
+        ]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'mimetypes:application/json,text/plain', 'max:256']]);
+        $json = json_decode((string) file_get_contents((string) $request->file('file')?->getRealPath()), true);
+        $settings = is_array($json) && is_array($json['settings'] ?? null) ? $json['settings'] : null;
+        if ($settings === null) {
+            throw ValidationException::withMessages(['file' => 'That isn’t a settings export from Team to Team.']);
+        }
+        $secretKeys = DB::table('settings')->where('is_secret', true)->pluck('key')->all();
+        $values = [];
+        foreach ($settings as $key => $value) {
+            $key = (string) $key;
+            // Only known, non-secret keys: anything else in the file is ignored.
+            if (! preg_match('/^(general|mail|sms|payments|storage|ai|modules|platform)\.[a-z0-9_.]+$/', $key) || in_array($key, $secretKeys, true) || $this->isSecretField($key)) {
+                continue;
+            }
+            $values[$key] = is_scalar($value) ? (string) $value : null;
+        }
+        $this->save('import', $values, [], $request);
+
+        return back()->with('status', 'settings-imported');
+    }
+
+    private function isSecretField(string $key): bool
+    {
+        $parts = explode('.', $key);
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        return (ProviderCatalogue::fields($parts[0], $parts[1])[$parts[2]]['secret'] ?? false) === true;
     }
 
     public function testEmail(Request $request): RedirectResponse
