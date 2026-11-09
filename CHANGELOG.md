@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 10a — Group admin, owners and scheduled changes
+- Admin → Groups → a group: details (name, description, photo, draft/live/closed, open or invite-only), pricing (seat and founding price, trial, multi-city discounts, annual months free, value guarantee) and rules (accept and first-contact hours, update days, seat challenge, company cap, waitlist ranking).
+- Compliance locks: the value guarantee can't be switched on in Tier C; a group can only go live once its industry is live; founding price can't exceed the seat price; bigger seat counts get equal or bigger discounts.
+- Member preview, "who this change affects" (fills in once seats exist in Sprint 11) and projected revenue beside the pricing editor.
+- Scheduled changes: pricing or rules can take effect on a future date; owners are told 30 days ahead (seat holders join the notice in Sprint 11); applied automatically on the day by a daily job; cancellable. Every change is audited with before and after values.
+- Group owners: add by email and remove; owners get their own group overview (health, rules, upcoming changes) and can never change pricing.
+- Health card (owners, seats, referrals this month, average accept time) with placeholders until seats and referrals exist.
+- 196 PHP tests in total (8 new).
+
 ### Sprint 9b — Launch groups, tier counsel packs and licensing starter data
 - One launch group per industry (46), with the agreed names ("Residential Agent Alliance", "Solar Installers Network"…), description, default rules (24-hour accept and first contact, 7-day updates, seat challenge after 60 days below trust 70, 25% company cap, waitlist by trust) and sample pricing ($79 seat, $59 founding, 3-month trial, 2 months free annually, multi-city discounts; value guarantee off in Tier C). Created once and never overwritten.
 - Admin → Groups and seats lists every group with pricing and rules (editing, owners and seats arrive in Sprint 10). The readiness board's Group column now shows each launch group.

@@ -52,7 +52,10 @@ export default function GroupsIndex({ groups, seo }: { groups: Group[]; seo: Seo
                         {shown.map((g) => (
                             <tr key={g.slug} className="border-t border-line">
                                 <td className="px-4 py-3 font-medium">
-                                    {g.name} {g.launch && <Badge tone="sender">Launch</Badge>}
+                                    <Link href={`/admin/groups/${g.slug}`} className="hover:text-primary">
+                                        {g.name}
+                                    </Link>{' '}
+                                    {g.launch && <Badge tone="sender">Launch</Badge>}
                                 </td>
                                 <td className="px-4 py-3">
                                     <Link href={`/admin/industries/${g.industry.slug}`} className="hover:text-primary">

@@ -42,6 +42,11 @@ const messages: Record<string, string> = {
     'agreement-reset': 'The draft is back to the default wording. The last approved version is still in use.',
     'addendum-saved': 'State addendum saved.',
     'industry-message-reset': 'This message now uses the platform wording again.',
+    'group-saved': 'Group saved.',
+    'group-change-scheduled': 'Change scheduled. Members are told 30 days before it takes effect.',
+    'group-change-cancelled': 'Scheduled change cancelled.',
+    'group-owner-added': 'Owner added.',
+    'group-owner-removed': 'Owner removed.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Network\Groups;
+
+use App\Domains\Network\Groups\Models\Group;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+
+/** Validates a group's rules and pricing, including the compliance locks that come from the industry's tier. */
+final class GroupSettings
+{
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>}
+     */
+    public static function pricing(Group $group, array $input): array
+    {
+        $v = Validator::make($input, [
+            'seat_price' => ['required', 'integer', 'min:0', 'max:5000'],
+            'founding_price' => ['required', 'integer', 'min:0', 'lte:seat_price'],
+            'trial_months' => ['required', 'integer', 'min:0', 'max:12'],
+            'value_guarantee' => ['required', 'boolean'],
+            'annual_months_free' => ['required', 'integer', 'min:0', 'max:6'],
+            'discounts' => ['required', 'array'],
+            'discounts.2' => ['required', 'integer', 'min:0', 'max:50'],
+            'discounts.5' => ['required', 'integer', 'min:0', 'max:50'],
+            'discounts.20' => ['required', 'integer', 'min:0', 'max:50'],
+        ], ['founding_price.lte' => 'The founding price can’t be higher than the seat price.'])->validate();
+
+        if ($v['value_guarantee'] && ! $group->industry->tier->allowsValueGuarantee()) {
+            throw ValidationException::withMessages(['value_guarantee' => 'This industry’s tier needs fees that are the same for everyone and don’t depend on referrals, so the value guarantee must stay off.']);
+        }
+        if (! ($v['discounts'][2] <= $v['discounts'][5] && $v['discounts'][5] <= $v['discounts'][20])) {
+            throw ValidationException::withMessages(['discounts' => 'Larger seat counts should get the same or a bigger discount.']);
+        }
+
+        return [
+            'seat_price' => (int) $v['seat_price'], 'founding_price' => (int) $v['founding_price'], 'trial_months' => (int) $v['trial_months'],
+            'value_guarantee' => (bool) $v['value_guarantee'], 'annual_months_free' => (int) $v['annual_months_free'],
+            'discounts' => ['2' => (int) $v['discounts'][2], '5' => (int) $v['discounts'][5], '20' => (int) $v['discounts'][20]],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string}
+     */
+    public static function rules(array $input): array
+    {
+        $v = Validator::make($input, [
+            'accept_hours' => ['required', 'integer', 'min:1', 'max:168'],
+            'first_contact_hours' => ['required', 'integer', 'min:1', 'max:168'],
+            'update_days' => ['required', 'integer', 'min:1', 'max:60'],
+            'challenge_days' => ['required', 'integer', 'min:30', 'max:365'],
+            'challenge_threshold' => ['required', 'integer', 'min:0', 'max:100'],
+            'company_cap_pct' => ['required', 'integer', 'min:1', 'max:100'],
+            'waitlist' => ['required', 'in:trust,date'],
+        ])->validate();
+
+        return ['accept_hours' => (int) $v['accept_hours'], 'first_contact_hours' => (int) $v['first_contact_hours'], 'update_days' => (int) $v['update_days'],
+            'challenge_days' => (int) $v['challenge_days'], 'challenge_threshold' => (int) $v['challenge_threshold'], 'company_cap_pct' => (int) $v['company_cap_pct'], 'waitlist' => (string) $v['waitlist']];
+    }
+
+    /**
+     * Who a change affects. Seats arrive in Sprint 11; until then every count is zero.
+     *
+     * @return array{seats: int, trial: int, paying: int}
+     */
+    public static function affected(Group $group): array
+    {
+        return ['seats' => 0, 'trial' => 0, 'paying' => 0];
+    }
+
+    /**
+     * Group health for the admin card and the owner overview. Referral figures fill in from Sprint 15.
+     *
+     * @return array{owners: int, seats: int, referralsThisMonth: ?int, avgAcceptMinutes: ?int, quietSeats: ?int}
+     */
+    public static function health(Group $group): array
+    {
+        return ['owners' => $group->owners()->count(), 'seats' => 0, 'referralsThisMonth' => null, 'avgAcceptMinutes' => null, 'quietSeats' => null];
+    }
+}
