@@ -64,6 +64,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::get('overflow', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'overflow'])->name('overflow');
         Route::post('overflow', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'openNext'])->name('open-next');
         Route::post('private', [App\Domains\Network\Groups\Http\AdminNetworkGrowthController::class, 'createPrivate'])->name('private');
+        Route::post('bulk-pricing', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'bulkPricing'])->name('bulk-pricing');
         Route::get('{group}/agreement', [AdminAgreementController::class, 'groupShow'])->name('agreement.show');
         Route::put('{group}/agreement', [AdminAgreementController::class, 'groupSave'])->name('agreement.save');
         Route::delete('{group}/agreement', [AdminAgreementController::class, 'groupReset'])->name('agreement.reset');

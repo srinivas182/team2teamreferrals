@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Plus, Tags, TrendingUp } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import { Input as TextInput } from '@/components/ui/field';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -41,6 +43,23 @@ export default function GroupsIndex({
 }) {
     const [q, setQ] = useState('');
     const [creating, setCreating] = useState(false);
+    const [selected, setSelected] = useState<string[]>([]);
+    const [pricing, setPricing] = useState(false);
+    const note = usePage<{ flash: { note?: string | null } }>().props.flash.note;
+    const bulk = useForm({
+        groups: [] as string[],
+        when: 'now',
+        effective_on: '',
+        values: {
+            seat_price: 10,
+            founding_price: 10,
+            trial_months: 3,
+            value_guarantee: true,
+            annual_months_free: 2,
+            discounts: { '2': 0, '5': 0, '20': 0 },
+        },
+    });
+    const toggle = (slug: string) => setSelected((s) => (s.includes(slug) ? s.filter((x) => x !== slug) : [...s, slug]));
     const priv = useForm({ name: '', industry: industries[0]?.slug ?? '', owner_email: '' });
     const shown = groups.filter((g) => `${g.name} ${g.industry.name}`.toLowerCase().includes(q.toLowerCase()));
     return (
@@ -53,6 +72,9 @@ export default function GroupsIndex({
                             <TrendingUp /> Overflow demand
                         </Link>
                     </Button>
+                    <Button variant="secondary" disabled={selected.length === 0} onClick={() => setPricing(true)}>
+                        <Tags /> Set pricing{selected.length ? ` for ${selected.length}` : ''}
+                    </Button>
                     <Button onClick={() => setCreating(true)}>
                         <Plus /> New private network
                     </Button>
@@ -62,9 +84,91 @@ export default function GroupsIndex({
             <SeoHead seo={seo} />
             {status && (
                 <Alert tone="success" className="mb-4">
-                    {statusMessage(status)}
+                    {statusMessage(status)} {note}
                 </Alert>
             )}
+            <Dialog open={pricing} onOpenChange={setPricing}>
+                <DialogContent
+                    title={`Set pricing for ${selected.length} groups`}
+                    description="Each group gets this pricing. Tier C groups always keep the value guarantee off."
+                >
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="Seat price / month">
+                                <TextInput
+                                    type="number"
+                                    value={bulk.data.values.seat_price}
+                                    onChange={(e) => bulk.setData('values', { ...bulk.data.values, seat_price: +e.target.value })}
+                                />
+                            </Field>
+                            <Field label="Founding price">
+                                <TextInput
+                                    type="number"
+                                    value={bulk.data.values.founding_price}
+                                    onChange={(e) => bulk.setData('values', { ...bulk.data.values, founding_price: +e.target.value })}
+                                />
+                            </Field>
+                            <Field label="Free trial (months)">
+                                <TextInput
+                                    type="number"
+                                    value={bulk.data.values.trial_months}
+                                    onChange={(e) => bulk.setData('values', { ...bulk.data.values, trial_months: +e.target.value })}
+                                />
+                            </Field>
+                            <Field label="Annual: months free">
+                                <TextInput
+                                    type="number"
+                                    value={bulk.data.values.annual_months_free}
+                                    onChange={(e) => bulk.setData('values', { ...bulk.data.values, annual_months_free: +e.target.value })}
+                                />
+                            </Field>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={bulk.data.values.value_guarantee}
+                                onChange={(e) => bulk.setData('values', { ...bulk.data.values, value_guarantee: e.target.checked })}
+                            />{' '}
+                            Value guarantee (free month when no referral is offered)
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label="When">
+                                <Select value={bulk.data.when} onChange={(e) => bulk.setData('when', e.target.value)}>
+                                    <option value="now">Apply now</option>
+                                    <option value="scheduled">On a date (members told 30 days ahead)</option>
+                                </Select>
+                            </Field>
+                            {bulk.data.when === 'scheduled' && (
+                                <Field label="Takes effect on" error={bulk.errors.effective_on}>
+                                    <TextInput
+                                        type="date"
+                                        value={bulk.data.effective_on}
+                                        onChange={(e) => bulk.setData('effective_on', e.target.value)}
+                                    />
+                                </Field>
+                            )}
+                        </div>
+                        {Object.values(bulk.errors).length > 0 && <Alert tone="danger">{Object.values(bulk.errors)[0]}</Alert>}
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setPricing(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                loading={bulk.processing}
+                                onClick={() => {
+                                    bulk.transform((d) => ({ ...d, groups: selected }));
+                                    bulk.post('/admin/groups/bulk-pricing', {
+                                        preserveScroll: true,
+                                        onSuccess: () => (setPricing(false), setSelected([])),
+                                    });
+                                }}
+                            >
+                                Apply to {selected.length} groups
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
             <Dialog open={creating} onOpenChange={setCreating}>
                 <DialogContent
                     title="New private network"
@@ -117,6 +221,14 @@ export default function GroupsIndex({
                 <table className="w-full min-w-[900px] text-sm">
                     <thead className="text-left text-muted">
                         <tr>
+                            <th scope="col" className="w-10 px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    aria-label="Select all shown"
+                                    checked={shown.length > 0 && shown.every((g) => selected.includes(g.slug))}
+                                    onChange={(e) => setSelected(e.target.checked ? shown.map((g) => g.slug) : [])}
+                                />
+                            </th>
                             {['Group', 'Industry', 'Seat price', 'Trial', 'Value guarantee', 'Rules', 'Status'].map((h) => (
                                 <th key={h} scope="col" className="px-4 py-3 font-medium">
                                     {h}
@@ -127,6 +239,14 @@ export default function GroupsIndex({
                     <tbody>
                         {shown.map((g) => (
                             <tr key={g.slug} className="border-t border-line">
+                                <td className="px-4 py-3">
+                                    <input
+                                        type="checkbox"
+                                        aria-label={`Select ${g.name}`}
+                                        checked={selected.includes(g.slug)}
+                                        onChange={() => toggle(g.slug)}
+                                    />
+                                </td>
                                 <td className="px-4 py-3 font-medium">
                                     <Link href={`/admin/groups/${g.slug}`} className="hover:text-primary">
                                         {g.name}

@@ -28,7 +28,7 @@ it('creates one launch group per industry with the agreed name and pricing', fun
     expect(Group::count())->toBe(46)->and(Group::where('is_launch', true)->count())->toBe(46);
     $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
     expect($g->name)->toBe('Solar Installers Network')->and($g->industry->slug)->toBe('solar')
-        ->and($g->pricing)->toMatchArray(['seat_price' => 79, 'founding_price' => 59, 'trial_months' => 3, 'value_guarantee' => true])
+        ->and($g->pricing)->toMatchArray(['seat_price' => 10, 'founding_price' => 10, 'trial_months' => 3, 'value_guarantee' => true, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]])
         ->and($g->rules)->toMatchArray(['company_cap_pct' => 25, 'challenge_days' => 60]);
     expect(Group::whereHas('industry', fn ($q) => $q->where('slug', 'hospice'))->firstOrFail()->pricing['value_guarantee'])->toBeFalse();
 });
