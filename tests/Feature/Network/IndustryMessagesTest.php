@@ -116,7 +116,7 @@ it('saves the new referral and fee terms', function () {
 it('puts every message, as members read it, into the counsel review pack', function () {
     $ind = msgIndustry('B');
     $pack = AdminIndustryMessagesController::pack($ind, app(Templates::class));
-    $waiting = collect($pack)->first(fn ($m) => $m['label'] === 'New referral waiting for you' && $m['channel'] === 'Text');
+    $waiting = collect($pack)->first(fn ($m) => $m['label'] === 'New introduction waiting for you' && $m['channel'] === 'Text');
     expect($waiting['body'])->toContain('introduction')->and($waiting['source'])->toBe('default')
         ->and(collect($pack)->pluck('channel')->unique()->sort()->values()->all())->toBe(['Email', 'In-app', 'Text']);
 });

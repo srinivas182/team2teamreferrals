@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         \Illuminate\Support\Facades\Artisan::call('t2t:locations:import');
+        \Illuminate\Support\Facades\Artisan::call('t2t:catalogue:sync');
         User::factory()->create(['first_name' => 'Jordan', 'last_name' => 'Hale', 'email' => 'jordan@example.com']);
     }
 }

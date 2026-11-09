@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 9a — Launch catalogue
+- All 46 launch industries (30 Tier A, 12 Tier B, 4 Tier C) with names, families, tiers, territories, icons, terminology, descriptions and licensing, from `php artisan t2t:catalogue:sync` (also run by the database seeder).
+- Safe to re-run: the sync remembers what it last wrote, so values an admin changed are always kept, while catalogue improvements reach values nobody touched.
+- Industry-specific details on top of the family defaults: 18 industries get extra referral questions (solar power bill and roof type, mortgage loan purpose and credit range, Medicare plan interest, and more) and 9 get their own stage names (solar "Site survey", mortgage "Pre-qualified"). Every seeded form and pipeline must pass the builder's own checks, so a bad one can never be seeded.
+- Launch readiness board (Admin → Industries → Launch readiness): every industry's terms, agreement approval, licensing coverage, compliance sign-off and group, with "ready to go live" and filters. The admin dashboard shows "x of 46 industries ready".
+- Admin message labels now use each industry's words ("Your introduction was accepted" in Tier B).
+- 181 PHP tests in total (7 new).
+
 ### Sprint 8b part 2 — Industry messages and terminology
 - Terminology completed: each industry now names a referral and a fee as well as its pros and clients. Defaults follow the tier: Tier B and C industries say "introduction" instead of "referral". Live preview in the industry form.
 - Every message can use the industry's own words: `{pro}`, `{pros}`, `{client_term}`, `{clients_term}`, `{referral_term}` and `{fee_term}` are filled in automatically (`{client}` stays the client's name). Platform wording now uses them, so "New referral" becomes "New introduction" in mortgage lending.
