@@ -2,12 +2,15 @@
 
 use App\Domains\Seo\Http\Middleware\CanonicalUrl;
 use App\Domains\Seo\Http\Middleware\NoIndex;
+use App\Domains\Seo\SeoData;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,4 +29,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Branded, noindex error pages. 500s keep Laravel's debug page while debugging.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request): Response {
+            $status = $response->getStatusCode();
+            $branded = in_array($status, [403, 404, 419, 503], true) || ($status === 500 && ! config('app.debug'));
+            if (! $branded || $request->expectsJson()) {
+                return $response;
+            }
+            $seo = (new SeoData(title: 'Error '.$status, description: 'Team to Team Referrals', index: false))->toArray();
+
+            return Inertia::render('Error', ['status' => $status, 'seo' => $seo])->toResponse($request)->setStatusCode($status);
+        });
     })->create();

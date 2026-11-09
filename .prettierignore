@@ -7,3 +7,5 @@ prototype
 composer.lock
 package-lock.json
 *.blade.php
+resources/css/theme.css
+storybook-static

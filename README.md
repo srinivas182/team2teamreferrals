@@ -36,7 +36,9 @@ docker compose up
 - App: http://localhost:8000 (Vite on 5173, Mailpit on http://localhost:8025)
 - First run installs dependencies, creates `.env` from `.env.docker`, generates the key and migrates.
 - Enable the pre-commit checks once: `composer hooks`
-- Run all checks: `composer check` · front end: `npm run lint && npm run types`
+- Run all checks: `composer check` · front end: `npm run lint && npm run types && npm test`
+- Component library: `npm run storybook` (http://localhost:6006)
+- Design tokens → theme: edit `design/tokens.json`, then `npm run tokens`
 
 Without Docker: PHP 8.4, Composer, Node 22, then `composer setup` and `composer dev`.
 
@@ -46,7 +48,7 @@ Every public page is server-rendered with title, description, canonical, Open Gr
 
 ## Status
 
-Phase A (Foundation). Sprint 3a — application skeleton, Docker, CI and SEO foundation. See [CHANGELOG.md](CHANGELOG.md).
+Phase A (Foundation). Sprint 3b — design system, components and layouts in the app. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Brand assets
 
