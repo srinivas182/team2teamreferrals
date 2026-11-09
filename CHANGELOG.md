@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 7a — Locations
+- US locations loaded: 51 states and DC (Puerto Rico loaded but switched off), 3,220 counties with FIPS codes, 29,738 cities and towns with county, coordinates and population. Sources and licences in `database/data/us/SOURCES.md` (Census via us-atlas, kelvins/US-Cities-Database, GeoNames population with attribution).
+- `php artisan t2t:locations:import` is safe to re-run: names, coordinates and population refresh, while admin decisions (switched off, corrected county, aliases) are kept. Runs in the database seeder.
+- `php artisan t2t:locations:import-metros` loads Census metro and micro areas (CBSAs) and their counties from the official delineation file.
+- Fast type-ahead (`/locations/cities`): prefix match on names and aliases, largest places first; "St. George", "Saint George", "Ft Worth" and "Fort Worth" all match. Switched-off places never appear.
+- Admin → Locations: switch states and cities on or off for seats, correct a city's county, add aliases ("H-Town"), merge duplicates (the duplicate's name keeps working as an alias); every change audited.
+- Reusable, accessible `CityPicker` (combobox with arrow keys).
+- CI: Lighthouse now runs only when public-facing code changes, saving Actions minutes on back-end work.
+- 131 PHP tests in total (10 new), including a full import of the real dataset.
+
 ### Sprint 6b — Search, CDN, load testing and performance budgets
 - Search in the command palette (Ctrl/⌘ K, portal and admin) as you type: settings and admin screens by keyword, and people by name or email for staff who manage them. Every source checks permissions; members never see admin results. Meilisearch in Docker and production (typo-tolerant), database search in tests; search health on `/health` and `/status`.
 - Domains register their own search sources, so teams, cities and referrals plug in with their sprints.

@@ -1,0 +1,7 @@
+state,name,county_fips,lat,lon,population
+UT,Saint George,49053,37.10665,-113.59526,72897
+UT,Hurricane,49053,37.17526,-113.28995,14000
+TX,Austin,48209,30.21069,-97.94275,931830
+TX,Houston,48201,29.59616,-95.45871,2296224
+TX,Fort Worth,,32.72,-97.32,833319
+PR,San Juan,,18.46,-66.10,342259
