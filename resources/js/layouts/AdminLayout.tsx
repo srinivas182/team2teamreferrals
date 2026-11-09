@@ -1,6 +1,9 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { CommandPalette } from '@/components/ui/command';
 import {
     ArrowLeftRight,
+    Search,
     Send,
     Settings2,
     BadgeCheck,
@@ -51,6 +54,17 @@ const nav: Item[] = [
 export function AdminLayout({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
     const { url, props } = usePage<SharedProps>();
     const user = props.auth.user;
+    const [palette, setPalette] = useState(false);
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setPalette((p) => !p);
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
     const allowed = nav.filter((n) => n.ready && (n.permission === null || user?.permissions.includes(n.permission)));
     return (
         <TooltipProvider>
@@ -114,6 +128,15 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                                 </Link>
                             ))}
                         </nav>
+                        <button
+                            onClick={() => setPalette(true)}
+                            className="hidden h-10 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:flex sm:max-w-md"
+                            aria-label="Search people and settings (Ctrl K)"
+                        >
+                            <Search className="size-4" aria-hidden />
+                            <span className="truncate">Search people, settings…</span>
+                            <kbd className="ml-auto rounded border border-line px-1.5 text-xs">Ctrl K</kbd>
+                        </button>
                         <div className="ml-auto">
                             <ThemeToggle />
                         </div>
@@ -127,6 +150,12 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                     </main>
                 </div>
             </div>
+            <CommandPalette
+                open={palette}
+                onOpenChange={setPalette}
+                items={allowed.map((n) => ({ group: 'Go to', label: n.label, icon: n.icon, onSelect: () => router.visit(n.href) }))}
+                remote
+            />
             <Toaster />
         </TooltipProvider>
     );

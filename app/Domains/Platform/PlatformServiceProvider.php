@@ -24,6 +24,13 @@ final class PlatformServiceProvider extends ServiceProvider
     {
         // Scoped, not singleton: under Octane a singleton would keep one request's settings for the next.
         $this->app->scoped(Settings::class);
+        $this->app->singleton(Search\SearchRegistry::class, function () {
+            $r = new Search\SearchRegistry;
+            $r->register(new Search\PagesSource);
+            $r->register(new Search\PeopleSource);
+
+            return $r;
+        });
 
         // The SMS driver follows the admin setting; every driver is wrapped so sends are logged.
         $this->app->bind(SmsSender::class, function ($app): SmsSender {
@@ -39,6 +46,7 @@ final class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->app->make(ApplyProviderSettings::class)();
+        Event::listen(\App\Domains\Seo\Events\PublicUrlsChanged::class, Cdn\PurgeCdn::class);
         $this->loadRoutesFrom(__DIR__.'/routes.php');
 
         Event::listen(MessageSent::class, function (MessageSent $event): void {

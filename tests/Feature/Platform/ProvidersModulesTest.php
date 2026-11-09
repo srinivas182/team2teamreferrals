@@ -110,7 +110,7 @@ it('shows members a maintenance page while staff keep working', function () {
 
 it('tests every provider at once and remembers the results', function () {
     Storage::fake('private');
-    $this->actingAs(sysAdmin())->post('/admin/system/check-all')->assertSessionHas('checks', fn ($c) => array_keys($c) === ['mail', 'sms', 'payments', 'storage', 'ai'] && $c['storage']['ok'] === true && $c['payments']['ok'] === null);
+    $this->actingAs(sysAdmin())->post('/admin/system/check-all')->assertSessionHas('checks', fn ($c) => array_keys($c) === ['mail', 'sms', 'payments', 'storage', 'cdn', 'ai'] && $c['storage']['ok'] === true && $c['payments']['ok'] === null);
     $this->get('/admin/system')->assertInertia(fn ($p) => $p->where('tab', 'overview')->where('overview.3.last.ok', true));
 });
 

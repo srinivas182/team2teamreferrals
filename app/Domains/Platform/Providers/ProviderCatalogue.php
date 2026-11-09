@@ -62,6 +62,13 @@ final class ProviderCatalogue
                 'endpoint' => ['label' => 'Endpoint', 'hint' => 'Leave blank for AWS. R2: https://<account>.r2.cloudflarestorage.com'],
             ]],
         ],
+        'cdn' => [
+            'none' => ['label' => 'No CDN purge', 'fields' => []],
+            'cloudflare' => ['label' => 'Cloudflare', 'fields' => [
+                'zone_id' => ['label' => 'Zone ID', 'required' => true],
+                'api_token' => ['label' => 'API token (Cache Purge permission only)', 'secret' => true, 'required' => true],
+            ]],
+        ],
         'ai' => [
             'none' => ['label' => 'Off', 'fields' => []],
             'anthropic' => ['label' => 'Anthropic (Claude)', 'fields' => [

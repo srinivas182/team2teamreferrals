@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 6b — Search, CDN, load testing and performance budgets
+- Search in the command palette (Ctrl/⌘ K, portal and admin) as you type: settings and admin screens by keyword, and people by name or email for staff who manage them. Every source checks permissions; members never see admin results. Meilisearch in Docker and production (typo-tolerant), database search in tests; search health on `/health` and `/status`.
+- Domains register their own search sources, so teams, cities and referrals plug in with their sprints.
+- CDN: public pages are cacheable at the edge for signed-out visitors (5 minutes, served stale while refreshing) with no cookies; signed-in pages are never cached. Admin → System → CDN connects Cloudflare, and changed public pages are purged automatically.
+- k6 load tests (`loadtest/`): public visitors (1,000 users by default) and signed-in members (300), with pass criteria. Smoke run on a 1-core sandbox: 7,575 requests from 200 users, 0 errors, median 220 ms.
+- Lighthouse budgets in CI on home, login and status: performance 90+, accessibility 95+, best practices 90+, key SEO checks, server response under 600 ms. Locally: performance 96–97, accessibility 96–100, best practices 100.
+- Fixed in review: session cookies were still set on cacheable pages (added after route middleware), which would stop a CDN caching them; edge caching now runs outermost.
+- 121 PHP tests in total (6 new).
+
 ### Sprint 6a — Runtime and observability
 - Laravel Octane on FrankenPHP (worker mode keeps the app in memory). Production image: multi-stage, non-root, opcache tuned, health-checked; separate targets for the app and server-side rendering; `compose.prod.yaml` runs web, Horizon, scheduler, SSR, MySQL and Redis. CI builds the production image whenever Docker files change.
 - Octane safety: the settings store is now request-scoped, so one request's settings can never leak into the next (verified under Octane workers: maintenance on and off took effect on the very next request).

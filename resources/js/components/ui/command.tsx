@@ -1,6 +1,8 @@
 import { Command as Cmdk } from 'cmdk';
 import { CornerDownLeft, Search } from 'lucide-react';
 import * as React from 'react';
+import { router } from '@inertiajs/react';
+import { useRemoteSearch } from '@/lib/search';
 import { Dialog, DialogContent } from './dialog';
 
 export type CommandItem = {
@@ -13,8 +15,20 @@ export type CommandItem = {
 };
 
 /** Command palette (Ctrl/⌘ K): jump anywhere or start any action, entirely from the keyboard. */
-export function CommandPalette({ open, onOpenChange, items }: { open: boolean; onOpenChange: (o: boolean) => void; items: CommandItem[] }) {
+export function CommandPalette({
+    open,
+    onOpenChange,
+    items,
+    remote = false,
+}: {
+    open: boolean;
+    onOpenChange: (o: boolean) => void;
+    items: CommandItem[];
+    remote?: boolean;
+}) {
     const groups = Array.from(new Set(items.map((i) => i.group)));
+    const [query, setQuery] = React.useState('');
+    const remoteGroups = useRemoteSearch(remote && open ? query : '');
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
@@ -25,6 +39,8 @@ export function CommandPalette({ open, onOpenChange, items }: { open: boolean; o
                     <div className="flex items-center gap-3 border-b border-line px-4">
                         <Search className="size-[18px] text-subtle" aria-hidden />
                         <Cmdk.Input
+                            value={query}
+                            onValueChange={setQuery}
                             placeholder="Search or jump to…"
                             className="h-14 flex-1 bg-transparent text-base outline-none placeholder:text-subtle"
                         />
@@ -60,6 +76,31 @@ export function CommandPalette({ open, onOpenChange, items }: { open: boolean; o
                                             )}
                                         </Cmdk.Item>
                                     ))}
+                            </Cmdk.Group>
+                        ))}
+                        {remoteGroups.map((g) => (
+                            <Cmdk.Group
+                                key={'remote-' + g.key}
+                                heading={g.label}
+                                className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-subtle"
+                            >
+                                {g.items.map((i) => (
+                                    <Cmdk.Item
+                                        key={g.key + i.url + i.title}
+                                        value={`${g.key}:${i.title}:${i.subtitle ?? ''}`}
+                                        keywords={[query]}
+                                        onSelect={() => {
+                                            onOpenChange(false);
+                                            router.visit(i.url);
+                                        }}
+                                        className="flex cursor-default items-center gap-3 rounded-md px-3 py-2.5 data-[selected=true]:bg-cobalt-50 dark:data-[selected=true]:bg-cobalt-500/15"
+                                    >
+                                        <span className="flex-1">
+                                            {i.title}
+                                            {i.subtitle && <span className="ml-2 text-sm text-muted">{i.subtitle}</span>}
+                                        </span>
+                                    </Cmdk.Item>
+                                ))}
                             </Cmdk.Group>
                         ))}
                     </Cmdk.List>

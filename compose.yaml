@@ -31,9 +31,16 @@ services:
     image: redis:7-alpine
     ports: ["6379:6379"]
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    environment: { MEILI_ENV: development, MEILI_MASTER_KEY: dev-master-key-change-me, MEILI_NO_ANALYTICS: "true" }
+    ports: ["7700:7700"]
+    volumes: [meili:/meili_data]
+
   mailpit:
     image: axllent/mailpit:latest
     ports: ["8025:8025", "1025:1025"]
 
 volumes:
+  meili:
   mysql:

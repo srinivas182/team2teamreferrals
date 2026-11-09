@@ -9,6 +9,7 @@ import {
     HardDrive,
     Sparkles,
     ToggleRight,
+    Globe,
     Download,
     Upload,
     Wrench,
@@ -43,6 +44,7 @@ type Props = {
     sms: Channel;
     payments: Channel;
     storage: Channel;
+    cdn: Channel;
     ai: Channel & { spent: number };
     modules: { key: string; label: string; affects: string; enabled: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
@@ -59,6 +61,7 @@ const tabs = [
     ['sms', 'Text messages', MessageSquare],
     ['payments', 'Payments', CreditCard],
     ['storage', 'Storage', HardDrive],
+    ['cdn', 'CDN', Globe],
     ['ai', 'AI', Sparkles],
     ['modules', 'Modules', ToggleRight],
 ] as const;
@@ -219,6 +222,7 @@ export default function SystemSettings({
     sms,
     payments,
     storage,
+    cdn,
     ai,
     modules,
     overview,
@@ -449,6 +453,16 @@ export default function SystemSettings({
                     channel={storage}
                     url="/admin/system/storage"
                     provider="storage"
+                    checks={checks}
+                />
+            )}
+            {tab === 'cdn' && (
+                <ProviderTab
+                    title="CDN"
+                    intro="Public pages are cached at the edge for signed-out visitors. When a public page changes, it is purged from the CDN automatically."
+                    channel={cdn}
+                    url="/admin/system/cdn"
+                    provider="cdn"
                     checks={checks}
                 />
             )}

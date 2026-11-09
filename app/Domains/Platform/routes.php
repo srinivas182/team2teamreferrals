@@ -18,17 +18,20 @@ Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.s
 Route::get('health', [App\Domains\Platform\Http\Controllers\StatusController::class, 'health'])->middleware('throttle:60,1')->name('health');
 Route::middleware(['web'])->get('status', [App\Domains\Platform\Http\Controllers\StatusController::class, 'page'])->name('status');
 
+// Command palette search: permission-aware, as you type.
+Route::middleware(['web', 'auth', 'verified', 'throttle:90,1'])->get('app/search', App\Domains\Platform\Http\Controllers\SearchController::class)->name('search');
+
 // Private files: signed, expiring links for signed-in users only.
 Route::middleware(['web', 'auth', 'signed'])->get('files/{path}', PrivateFileController::class)->where('path', '.*')->name('files.private');
 
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:settings.manage'])
     ->prefix('admin')->name('admin.')->group(function (): void {
         Route::get('system/export', [SystemSettingsController::class, 'export'])->name('system.export');
-        Route::get('system/{tab?}', [SystemSettingsController::class, 'show'])->whereIn('tab', ['overview', 'general', 'email', 'sms', 'payments', 'storage', 'ai', 'modules'])->name('system');
+        Route::get('system/{tab?}', [SystemSettingsController::class, 'show'])->whereIn('tab', ['overview', 'general', 'email', 'sms', 'payments', 'storage', 'cdn', 'ai', 'modules'])->name('system');
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');
         Route::put('system/modules', [SystemSettingsController::class, 'updateModules'])->name('system.modules');
-        Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'ai'])->name('system.channel');
+        Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai'])->name('system.channel');
         Route::post('system/email/test', [SystemSettingsController::class, 'testEmail'])->middleware('throttle:6,1')->name('system.email.test');
         Route::post('system/sms/test', [SystemSettingsController::class, 'testSms'])->middleware('throttle:6,1')->name('system.sms.test');
         Route::post('system/check/{provider}', [SystemSettingsController::class, 'check'])->middleware('throttle:12,1')->name('system.check');

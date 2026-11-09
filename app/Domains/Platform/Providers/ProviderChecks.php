@@ -18,7 +18,7 @@ use Throwable;
 /** Live checks for every provider. Results are kept so the System overview shows the last outcome. */
 final class ProviderChecks
 {
-    public const PROVIDERS = ['mail' => 'Email', 'sms' => 'Text messages', 'payments' => 'Payments', 'storage' => 'Storage', 'ai' => 'AI'];
+    public const PROVIDERS = ['mail' => 'Email', 'sms' => 'Text messages', 'payments' => 'Payments', 'storage' => 'Storage', 'cdn' => 'CDN', 'ai' => 'AI'];
 
     public function __construct(private readonly Settings $settings, private readonly Stripe $stripe, private readonly AiProvider $ai) {}
 
@@ -32,6 +32,7 @@ final class ProviderChecks
                 'payments' => $this->payments(),
                 'storage' => $this->storage(),
                 'ai' => $this->aiCheck(),
+                'cdn' => $this->cdn(),
                 default => [null, 'Unknown provider'],
             };
         } catch (Throwable $e) {
@@ -117,6 +118,19 @@ final class ProviderChecks
         $where = config('filesystems.disks.private.driver') === 's3' ? 'bucket '.config('filesystems.disks.private.bucket') : 'this server';
 
         return $read === 'ok' ? [true, "Wrote, read and deleted a test file on {$where}."] : [false, 'The test file came back different.'];
+    }
+
+    /** @return array{0: bool|null, 1: string} */
+    private function cdn(): array
+    {
+        if ($this->settings->get('cdn.driver') !== 'cloudflare') {
+            return [null, 'No CDN purge configured.'];
+        }
+        $res = Http::withToken((string) $this->settings->get('cdn.cloudflare.api_token'))->timeout(10)->get('https://api.cloudflare.com/client/v4/user/tokens/verify');
+
+        return $res->successful() && $res->json('result.status') === 'active'
+            ? [true, 'Cloudflare token is active; changed public pages will be purged automatically.']
+            : [false, 'Cloudflare refused the token: '.($res->json('errors.0.message') ?? $res->status())];
     }
 
     /** @return array{0: bool|null, 1: string} */

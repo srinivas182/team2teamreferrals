@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
             'module' => App\Domains\Platform\Http\Middleware\RequireModule::class,
+            'edge.cache' => App\Domains\Platform\Http\Middleware\EdgeCacheable::class,
         ]);
         $middleware->trustProxies(at: '*');
         $middleware->prepend(App\Http\Middleware\AssignRequestId::class);
@@ -34,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', Illuminate\Session\Middleware\AuthenticateSession::class);
         // Admin-controlled maintenance page for members (staff and webhooks pass through).
         $middleware->appendToGroup('web', App\Domains\Platform\Http\Middleware\MaintenanceGate::class);
+        // Outermost in the web group so it sees (and can drop) the session cookies on edge-cacheable pages.
+        $middleware->prependToGroup('web', App\Domains\Platform\Http\Middleware\EdgeCache::class);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/app');
     })
