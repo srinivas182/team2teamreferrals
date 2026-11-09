@@ -1,0 +1,45 @@
+import { Link } from '@inertiajs/react';
+import { ScrollText, UserCog } from 'lucide-react';
+import { SeoHead } from '@/components/seo/SeoHead';
+import { Card } from '@/components/ui/card';
+import { Kpi } from '@/components/ui/data';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import type { Seo } from '@/types/seo';
+
+type Stats = { members: number; staff: number; signInsToday: number; failedToday: number };
+
+export default function Dashboard({ stats, seo }: { stats: Stats; seo: Seo }) {
+    return (
+        <AdminLayout title="Admin">
+            <SeoHead seo={seo} />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <Kpi label="Members" value={stats.members.toLocaleString()} />
+                <Kpi label="Staff and super admins" value={stats.staff.toLocaleString()} />
+                <Kpi label="Sign-ins today" value={stats.signInsToday.toLocaleString()} />
+                <Kpi label="Failed sign-ins today" value={stats.failedToday.toLocaleString()} hint="Spikes can mean someone is guessing passwords." />
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {[
+                    ['Staff', 'Invite people and choose what each can do.', '/admin/staff', UserCog],
+                    ['Audit log', 'Every sign-in, security change and admin action.', '/admin/audit', ScrollText],
+                ].map(([t, d, h, I]) => {
+                    const Icon = I as typeof UserCog;
+                    return (
+                        <Link key={h as string} href={h as string} className="block">
+                            <Card className="flex items-start gap-4 p-5 hover:shadow-md">
+                                <Icon className="mt-0.5 size-5 text-primary" aria-hidden />
+                                <div>
+                                    <h2 className="font-semibold">{t as string}</h2>
+                                    <p className="text-sm text-muted">{d as string}</p>
+                                </div>
+                            </Card>
+                        </Link>
+                    );
+                })}
+            </div>
+            <p className="mt-6 text-sm text-muted">
+                The full network dashboard (referrals, revenue, response-time trends) arrives with the reporting sprints.
+            </p>
+        </AdminLayout>
+    );
+}

@@ -36,6 +36,7 @@ docker compose up
 - App: http://localhost:8000 (Vite on 5173, Mailpit on http://localhost:8025)
 - First run installs dependencies, creates `.env` from `.env.docker`, generates the key and migrates. Seed a test member with `docker compose exec app php artisan db:seed` (jordan@example.com / correct horse battery staple).
 - Text messages are written to `storage/logs/laravel.log` in development.
+- Create the first super admin: `php artisan t2t:super-admin you@example.com --first=Srini --last=Owner` (they get a set-password email, then must turn on two-step sign-in).
 - Enable the pre-commit checks once: `composer hooks`
 - Run all checks: `composer check` · front end: `npm run lint && npm run types && npm test`
 - Component library: `npm run storybook` (http://localhost:6006)
@@ -49,7 +50,7 @@ Every public page is server-rendered with title, description, canonical, Open Gr
 
 ## Status
 
-Phase A (Foundation). Sprint 4a — accounts and sign-in (password, passkeys, email links, two-step). See [CHANGELOG.md](CHANGELOG.md).
+Phase A (Foundation). Sprint 4b — roles, staff management, audit log and new-device alerts. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Brand assets
 

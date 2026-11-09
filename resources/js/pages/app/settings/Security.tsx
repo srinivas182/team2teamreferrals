@@ -55,7 +55,7 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
         <PortalLayout title="Security" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
             <div className="max-w-3xl space-y-6">
-                {status && <Alert tone="success">{statusMessage(status)}</Alert>}
+                {status && <Alert tone={status === 'two-factor-required' ? 'info' : 'success'}>{statusMessage(status)}</Alert>}
 
                 <Section
                     icon={Fingerprint}

@@ -22,7 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CanonicalUrl::class);
         $middleware->appendToGroup('web', [HandleInertiaRequests::class, NoIndex::class]);
         $middleware->append(SecurityHeaders::class);
-        $middleware->alias(['noindex' => NoIndex::class]);
+        $middleware->alias([
+            'noindex' => NoIndex::class,
+            'role' => Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
+        ]);
         $middleware->trustProxies(at: '*');
         // Lets "sign out of other devices" invalidate those sessions.
         $middleware->appendToGroup('web', Illuminate\Session\Middleware\AuthenticateSession::class);

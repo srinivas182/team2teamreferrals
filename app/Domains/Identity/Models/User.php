@@ -15,6 +15,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\PasskeyAuthenticatable;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -35,7 +38,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
 final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUlids, Notifiable, PasskeyAuthenticatable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasUlids, LogsActivity, Notifiable, PasskeyAuthenticatable, SoftDeletes, TwoFactorAuthenticatable;
 
     /** Mirrors the column defaults so new, unsaved-then-saved users behave the same as loaded ones. */
     protected $attributes = [
@@ -97,6 +100,28 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function devices(): HasMany
     {
         return $this->hasMany(UserDevice::class);
+    }
+
+    /** Audit trail of account changes (before and after), never including secrets. */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('accounts')
+            ->logOnly(['first_name', 'last_name', 'email', 'phone', 'phone_verified_at', 'email_verified_at', 'is_active', 'timezone'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn (string $event) => match ($event) {
+                'created' => 'Account created',
+                'updated' => 'Account details changed',
+                'deleted' => 'Account deleted',
+                'restored' => 'Account restored',
+                default => ucfirst($event),
+            });
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasAnyRole([\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN, \App\Domains\Identity\Authorization\Permissions::STAFF]);
     }
 
     public function getPasskeyDisplayName(): string

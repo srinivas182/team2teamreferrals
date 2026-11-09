@@ -28,6 +28,11 @@ final class HandleInertiaRequests extends Middleware
                     'name' => $u->name,
                     'firstName' => $u->first_name,
                     'email' => $u->email,
+                    'isStaff' => $u->isStaff(),
+                    // Admin navigation shows only what this person may open.
+                    'permissions' => $u->isStaff()
+                        ? ($u->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ? \App\Domains\Identity\Authorization\Permissions::all() : $u->getAllPermissions()->pluck('name')->values()->all())
+                        : [],
                 ] : null,
             ],
             'flash' => ['status' => fn () => $request->session()->get('status')],
