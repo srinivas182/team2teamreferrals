@@ -141,3 +141,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('company-invites/{token}/accept', [App\Domains\Network\Companies\CompanyController::class, 'accept'])->name('company.invite.accept');
 });
 Route::middleware(['web', 'noindex:always'])->get('company-invites/{token}', [App\Domains\Network\Companies\CompanyController::class, 'invitation'])->name('company.invite.show');
+
+// Pre-launch "Reserve your city" (switch: Admin → System → Modules → Pre-launch reservations).
+Route::middleware(['web', 'module:prelaunch'])->group(function (): void {
+    Route::get('reserve', [App\Domains\Network\Prelaunch\ReserveController::class, 'page'])->name('reserve');
+    Route::get('reserve/check', [App\Domains\Network\Prelaunch\ReserveController::class, 'check'])->middleware('throttle:60,1')->name('reserve.check');
+    Route::post('reserve', [App\Domains\Network\Prelaunch\ReserveController::class, 'store'])->middleware('throttle:10,60')->name('reserve.store');
+    Route::get('reserve/confirm/{token}', [App\Domains\Network\Prelaunch\ReserveController::class, 'confirm'])->middleware('noindex:always')->name('reserve.confirm');
+    Route::post('reserve/claim/{token}', [App\Domains\Network\Prelaunch\ReserveController::class, 'claim'])->middleware(['auth', 'verified'])->name('reserve.claim');
+    Route::get('reserve/claim/{token}', fn (string $token) => redirect('/reserve/confirm/'.$token))->middleware(['auth']);
+});
