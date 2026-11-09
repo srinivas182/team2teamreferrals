@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo, Container, Button, cn } from "../ui/kit";
 
-const nav = [["How it works", "how-it-works"], ["Groups", "groups"], ["Find a pro", "city"], ["Pricing", "pricing"], ["Blog", "blog"]] as const;
+const nav = [["Industries", "industries"], ["How it works", "how-it-works"], ["Find a pro", "city"], ["Pricing", "pricing"], ["Blog", "blog"]] as const;
 
 export function PublicLayout({ children, current }: { children: React.ReactNode; current: string }) {
   const [open, setOpen] = useState(false);
@@ -18,7 +18,7 @@ export function PublicLayout({ children, current }: { children: React.ReactNode;
           </nav>
           <div className="ml-auto hidden items-center gap-2 md:flex">
             <Button variant="ghost" size="sm" href="#login">Log in</Button>
-            <Button size="sm" href="#signup">Claim your city</Button>
+            <Button size="sm" href="#signup">Reserve your city</Button>
           </div>
           <button className="ml-auto rounded-md p-2 md:hidden" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? <X /> : <Menu />}

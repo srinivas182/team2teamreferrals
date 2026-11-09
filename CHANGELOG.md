@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 2c part 1 — Multi-industry public design (prototype)
+- Industry catalogue for the 46 launch industries: families, compliance tiers, territories and terminology (agent, installer, advisor…).
+- Brand kit start: industry icon tiles with family accents and the t2t relay corner (placeholder for the custom icon family).
+- National map: every metro's seat (claimed, reserved by a founding member, open) per industry, filling in on load.
+- New Home: industry picker with search, live counters, map with industry switcher and most-claimed states, the 46 industries by family, a no-signup "send a referral" demo, value guarantee and "seats are earned".
+- Pricing: per-seat pricing, 3-month trial, "no referrals, no charge", multi-city and annual savings, company plan and a live calculator.
+- Industry hub, industry × state (Solar in Texas) and city page (Solar in Austin) with seat holder, ratings, city report card and request form.
+- Checked at 375 px (no horizontal scroll) and desktop, light and dark. Published to the prototype link.
+
 ### Sprint 5a — Settings, providers and delivery log
 - Platform settings store: admin-edited, cached, secrets encrypted at rest and shown masked (last four characters only); blank secret fields keep the saved value.
 - Admin → System: General (company and support details), Email (log, SMTP, Amazon SES, Postmark, Mailgun; from name and address) and Text messages (log, Twilio number or Messaging Service). Changes apply on the next request, with no deploy, and are audited without revealing secrets.
