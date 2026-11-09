@@ -1,0 +1,148 @@
+/* Generated from design/tokens.json by scripts/build-tokens.mjs — do not edit by hand. */
+
+:root {
+    --t-bg: #F6F7FB;
+    --t-surface: #FFFFFF;
+    --t-surface-raised: #FFFFFF;
+    --t-border: #E3E7F0;
+    --t-text: #0E1B3D;
+    --t-text-muted: #5B6785;
+    --t-text-subtle: #6B7896;
+    --t-primary: #2451F5;
+    --t-primary-hover: #1A3FD6;
+    --t-on-primary: #FFFFFF;
+    --t-accent: #FF7A1A;
+    --t-on-accent: #0E1B3D;
+    --t-focus-ring: #5C80FA;
+    color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --t-bg: #08112A;
+        --t-surface: #0E1B3D;
+        --t-surface-raised: #26304D;
+        --t-border: #3F4A66;
+        --t-text: #FFFFFF;
+        --t-text-muted: #AAB4CE;
+        --t-text-subtle: #9AA5BE;
+        --t-primary: #5C80FA;
+        --t-primary-hover: #8DA9FF;
+        --t-on-primary: #08112A;
+        --t-accent: #FF8A3D;
+        --t-on-accent: #08112A;
+        --t-focus-ring: #8DA9FF;
+        color-scheme: dark;
+    }
+}
+:root[data-theme="dark"] {
+    --t-bg: #08112A;
+    --t-surface: #0E1B3D;
+    --t-surface-raised: #26304D;
+    --t-border: #3F4A66;
+    --t-text: #FFFFFF;
+    --t-text-muted: #AAB4CE;
+    --t-text-subtle: #9AA5BE;
+    --t-primary: #5C80FA;
+    --t-primary-hover: #8DA9FF;
+    --t-on-primary: #08112A;
+    --t-accent: #FF8A3D;
+    --t-on-accent: #08112A;
+    --t-focus-ring: #8DA9FF;
+    color-scheme: dark;
+}
+
+@custom-variant dark {
+    @media (prefers-color-scheme: dark) {
+        &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+            @slot;
+        }
+    }
+    &:where([data-theme="dark"], [data-theme="dark"] *) {
+        @slot;
+    }
+}
+
+@theme {
+    --color-cobalt-50: #EEF3FF;
+    --color-cobalt-100: #DCE6FF;
+    --color-cobalt-200: #B9CCFF;
+    --color-cobalt-300: #8DA9FF;
+    --color-cobalt-400: #5C80FA;
+    --color-cobalt-500: #2451F5;
+    --color-cobalt-600: #1A3FD6;
+    --color-cobalt-700: #1532AD;
+    --color-cobalt-800: #132A8A;
+    --color-cobalt-900: #12266E;
+    --color-orange-50: #FFF4EC;
+    --color-orange-100: #FFE4D1;
+    --color-orange-200: #FFC7A1;
+    --color-orange-300: #FFA366;
+    --color-orange-400: #FF8A3D;
+    --color-orange-500: #FF7A1A;
+    --color-orange-600: #E8630A;
+    --color-orange-700: #C04F08;
+    --color-orange-800: #983F0C;
+    --color-orange-900: #7A350E;
+    --color-navy-0: #FFFFFF;
+    --color-navy-25: #FBFCFE;
+    --color-navy-50: #F6F7FB;
+    --color-navy-100: #EDF0F6;
+    --color-navy-200: #E3E7F0;
+    --color-navy-300: #C9D0DF;
+    --color-navy-400: #9AA5BE;
+    --color-navy-500: #6B7896;
+    --color-navy-600: #5B6785;
+    --color-navy-700: #3F4A66;
+    --color-navy-800: #26304D;
+    --color-navy-900: #0E1B3D;
+    --color-navy-950: #08112A;
+    --color-success: #15803D;
+    --color-success-bg: #ECFDF3;
+    --color-warning: #A16207;
+    --color-warning-bg: #FEF9E7;
+    --color-danger: #D7263D;
+    --color-danger-bg: #FDECEE;
+    --color-info: #1D6FD8;
+    --color-info-bg: #EDF4FF;
+    --color-hot: #D7263D;
+    --color-warm: #B45309;
+    --color-future: #6D28D9;
+    --color-sender: #2451F5;
+    --color-receiver: #FF7A1A;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+    --shadow-sm: 0 1px 2px rgba(14,27,61,0.06);
+    --shadow-md: 0 4px 12px rgba(14,27,61,0.08), 0 1px 2px rgba(14,27,61,0.04);
+    --shadow-lg: 0 16px 40px rgba(14,27,61,0.14);
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 320ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-enter: cubic-bezier(0, 0, 0, 1);
+    --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+    --container-content: 1200px;
+}
+
+@theme inline {
+    --color-bg: var(--t-bg);
+    --color-surface: var(--t-surface);
+    --color-surface-raised: var(--t-surface-raised);
+    --color-border: var(--t-border);
+    --color-text: var(--t-text);
+    --color-text-muted: var(--t-text-muted);
+    --color-text-subtle: var(--t-text-subtle);
+    --color-primary: var(--t-primary);
+    --color-primary-hover: var(--t-primary-hover);
+    --color-on-primary: var(--t-on-primary);
+    --color-accent: var(--t-accent);
+    --color-on-accent: var(--t-on-accent);
+    --color-focus-ring: var(--t-focus-ring);
+    --color-ink: var(--t-text);
+    --color-muted: var(--t-text-muted);
+    --color-subtle: var(--t-text-subtle);
+    --color-line: var(--t-border);
+    --color-raised: var(--t-surface-raised);
+}

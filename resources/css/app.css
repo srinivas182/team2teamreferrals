@@ -1,16 +1,64 @@
 @import 'tailwindcss';
-
-/* Design tokens become the full Tailwind theme in Sprint 3b (generated from design/tokens.json). */
-@theme {
-    --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
+@import './theme.css';
 
 @source '../js/**/*.tsx';
 @source '../views/**/*.blade.php';
 
-body {
-    font-family: var(--font-sans);
-    font-optical-sizing: auto;
-    background: #f6f7fb;
-    color: #0e1b3d;
+@theme {
+    --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+    :root {
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html {
+        scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
+    }
+    body {
+        @apply bg-bg text-ink antialiased;
+        font-family: var(--font-sans);
+        font-optical-sizing: auto;
+    }
+    :focus-visible {
+        outline: 2px solid var(--t-focus-ring);
+        outline-offset: 2px;
+    }
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+}
+
+@utility tabular {
+    font-variant-numeric: tabular-nums;
+}
+@utility display {
+    letter-spacing: -0.022em;
+}
+
+/* Signature relay animation (sender cobalt → receiver orange). */
+@keyframes relay {
+    from {
+        stroke-dashoffset: 260;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+.relay-path {
+    stroke-dasharray: 260;
+    animation: relay 1.4s var(--ease-standard) 0.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
