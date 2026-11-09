@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 7b — Industry engine (part 1)
+- Industries: name, family (8), terminology (what a pro and a client are called), icon, description, territory unit (city, county, metro or state) and whether a license is required.
+- Compliance tiers as one rule set in code (`Tier`): A open, B restricted, C directory only, deciding member referral fees, referral routing, consumer requests, the value guarantee, disclosures and whether a platform fee can ever exist.
+- Compliance gate: an industry can only go live after a super admin records approval with a sign-off note. Changing the tier removes the approval, takes the industry offline and switches off any platform fee.
+- Platform referral fee per industry (and later per group): none, percentage or flat, charged at acceptance or closing. Locked platform-wide until a super admin unlocks it with a record of the licenses and fund routing in place; never available for Tier B or C; locking again switches every fee off.
+- Licensing per state: required or not, issuing body, license-number format (validated), public lookup page, notes. Coverage map in the builder shows configured and missing states.
+- Licensing CSV export and import for counsel's state-by-state review (one industry or all); bad rows are skipped and reported.
+- Territory preview: how many seats each territory choice creates nationwide before committing.
+- Admin → Industries list with tier, territory, coverage and status; every change audited.
+- 139 PHP tests in total (8 new).
+
 ### Sprint 7a — Locations
 - US locations loaded: 51 states and DC (Puerto Rico loaded but switched off), 3,220 counties with FIPS codes, 29,738 cities and towns with county, coordinates and population. Sources and licences in `database/data/us/SOURCES.md` (Census via us-atlas, kelvins/US-Cities-Database, GeoNames population with attribution).
 - `php artisan t2t:locations:import` is safe to re-run: names, coordinates and population refresh, while admin decisions (switched off, corrected county, aliases) are kept. Runs in the database seeder.

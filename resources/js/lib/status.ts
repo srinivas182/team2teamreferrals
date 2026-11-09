@@ -26,6 +26,17 @@ const messages: Record<string, string> = {
     'maintenance-on': 'Maintenance mode is on. Members see the “We’ll be right back” page.',
     'maintenance-off': 'Maintenance mode is off. Everyone can use the platform again.',
     'settings-imported': 'Settings imported. Enter API keys separately: they are never exported.',
+    'industry-created': 'Industry created as a draft. Configure licensing, then record compliance approval to go live.',
+    'industry-saved': 'Industry saved.',
+    'licensing-saved': 'Licensing rule saved.',
+    'licensing-imported': 'Licensing rules imported.',
+    'industry-approved': 'Compliance approval recorded. You can now take this industry live.',
+    'industry-revoked': 'Approval revoked. The industry is offline and any platform fee is switched off.',
+    'industry-live': 'This industry is live.',
+    'industry-offline': 'This industry is offline.',
+    'fee-saved': 'Platform fee settings saved.',
+    'fees-unlocked': 'Platform fees unlocked. Each Tier A industry still needs its fee switched on individually.',
+    'fees-locked': 'Platform fees locked. Every fee has been switched off.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

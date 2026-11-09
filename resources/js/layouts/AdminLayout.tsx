@@ -34,7 +34,7 @@ type Item = { label: string; href: string; icon: typeof LayoutDashboard; permiss
 /** Full admin map (docs/design/information-architecture.md). Items appear when built and permitted. */
 const nav: Item[] = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, permission: null, ready: true },
-    { label: 'Industries', href: '/admin/industries', icon: Factory, permission: 'industries.manage', ready: false },
+    { label: 'Industries', href: '/admin/industries', icon: Factory, permission: 'industries.manage', ready: true },
     { label: 'Groups and seats', href: '/admin/groups', icon: Network, permission: 'groups.manage', ready: false },
     { label: 'Locations', href: '/admin/locations', icon: MapPin, permission: 'locations.manage', ready: true },
     { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: false },
