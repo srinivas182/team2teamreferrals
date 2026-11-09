@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 2c part 2 — Member screens (prototype)
+- Network page (Solar Installers Network): stats, search, list or map, "Send referral" on every installer, reserved and open cities, network rules (deadlines, seat challenge, company cap) and top installers.
+- Team profile: verified-license and founding-member badges, client and peer ratings, response time, update rate, 6-month report card, verified-only reviews, "Refer to me" code.
+- Claim flow: "My team" or "A company with several cities"; industry and cities with held/reserved/open status; per-seat payer and city-leader invite for companies; license check; confirmation with trial end dates and founding price.
+- Company dashboard: seats by city with city leader, payer, trial end, referrals and "quiet month" status; state caps; private-network offer.
+- Billing: seats with trial dates and free-month credits, next invoice, annual switch, invoices.
+- All five screens checked at 375 px with no horizontal scroll.
+
 ### Sprint 2c part 1 — Multi-industry public design (prototype)
 - Industry catalogue for the 46 launch industries: families, compliance tiers, territories and terminology (agent, installer, advisor…).
 - Brand kit start: industry icon tiles with family accents and the t2t relay corner (placeholder for the custom icon family).

@@ -1,4 +1,4 @@
-import { Gauge, Map, UserPlus, ShieldAlert, Home, Inbox, KanbanSquare, Send, Wallet, Users, MessagesSquare, UserCog, BadgeCheck, CreditCard, Plug, LifeBuoy, Bell, Search, Plus, MoreHorizontal } from "lucide-react";
+import { Building2, Gauge, Map, UserPlus, ShieldAlert, Home, Inbox, KanbanSquare, Send, Wallet, Users, MessagesSquare, UserCog, BadgeCheck, CreditCard, Plug, LifeBuoy, Bell, Search, Plus, MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Logo, Avatar, cn } from "../ui/kit";
 import { CommandPalette, NotificationList } from "../system/System";
@@ -6,7 +6,7 @@ import { CommandPalette, NotificationList } from "../system/System";
 const nav = [
   [Home, "Home", "dashboard"], [Inbox, "Inbox", "inbox"], [KanbanSquare, "Pipeline", "pipeline"], [Send, "Sent", "sent"],
   [Wallet, "Earnings", "earnings"], [Users, "Groups", "my-groups"], [MessagesSquare, "Community", "community"],
-  [UserCog, "Team", "team"], [BadgeCheck, "Profile and licenses", "pro"], [CreditCard, "Billing", "billing"], [Plug, "Integrations", "integrations"], [LifeBuoy, "Help", "help"],
+  [UserCog, "Team", "team"], [BadgeCheck, "Profile and licenses", "pro"], [Building2, "Company", "company"], [CreditCard, "Billing", "billing"], [Plug, "Integrations", "integrations"], [LifeBuoy, "Help", "help"],
 ] as const;
 const ownerNav = [[Gauge, "Group overview", "owner"], [Map, "Seat map", "seat-map"], [UserPlus, "Applications", "applications"], [ShieldAlert, "Members and enforcement", "enforcement"]] as const;
 
