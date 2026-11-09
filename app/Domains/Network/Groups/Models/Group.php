@@ -64,16 +64,23 @@ final class Group extends Model
         return $user !== null && $this->owners()->whereKey($user->getKey())->exists();
     }
 
+    /** A rule with its default, so groups created before a rule existed still behave correctly. */
+    public function rule(string $key): int|string|bool
+    {
+        /** @var int|string|bool */
+        return [...self::defaultRules(), ...$this->rules][$key];
+    }
+
     /** @return BelongsTo<Industry, $this> */
     public function industry(): BelongsTo
     {
         return $this->belongsTo(Industry::class);
     }
 
-    /** @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string} */
+    /** @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string, grace_days: int, release_days: int, offer_hours: int, auto_approve: bool} */
     public static function defaultRules(): array
     {
-        return ['accept_hours' => 24, 'first_contact_hours' => 24, 'update_days' => 7, 'challenge_days' => 60, 'challenge_threshold' => 70, 'company_cap_pct' => 25, 'waitlist' => 'trust'];
+        return ['accept_hours' => 24, 'first_contact_hours' => 24, 'update_days' => 7, 'challenge_days' => 60, 'challenge_threshold' => 70, 'company_cap_pct' => 25, 'waitlist' => 'trust', 'grace_days' => 7, 'release_days' => 30, 'offer_hours' => 72, 'auto_approve' => false];
     }
 
     /** @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} */

@@ -45,7 +45,7 @@ final class GroupSettings
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string}
+     * @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string, grace_days: int, release_days: int, offer_hours: int, auto_approve: bool}
      */
     public static function rules(array $input): array
     {
@@ -57,10 +57,15 @@ final class GroupSettings
             'challenge_threshold' => ['required', 'integer', 'min:0', 'max:100'],
             'company_cap_pct' => ['required', 'integer', 'min:1', 'max:100'],
             'waitlist' => ['required', 'in:trust,date'],
-        ])->validate();
+            'grace_days' => ['sometimes', 'integer', 'min:1', 'max:30'],
+            'release_days' => ['sometimes', 'integer', 'min:7', 'max:90', 'gt:grace_days'],
+            'offer_hours' => ['sometimes', 'integer', 'min:24', 'max:168'],
+            'auto_approve' => ['sometimes', 'boolean'],
+        ], ['release_days.gt' => 'A seat must be released after the grace period ends.'])->validate();
 
         return ['accept_hours' => (int) $v['accept_hours'], 'first_contact_hours' => (int) $v['first_contact_hours'], 'update_days' => (int) $v['update_days'],
-            'challenge_days' => (int) $v['challenge_days'], 'challenge_threshold' => (int) $v['challenge_threshold'], 'company_cap_pct' => (int) $v['company_cap_pct'], 'waitlist' => (string) $v['waitlist']];
+            'challenge_days' => (int) $v['challenge_days'], 'challenge_threshold' => (int) $v['challenge_threshold'], 'company_cap_pct' => (int) $v['company_cap_pct'], 'waitlist' => (string) $v['waitlist'],
+            'grace_days' => (int) ($v['grace_days'] ?? 7), 'release_days' => (int) ($v['release_days'] ?? 30), 'offer_hours' => (int) ($v['offer_hours'] ?? 72), 'auto_approve' => (bool) ($v['auto_approve'] ?? false)];
     }
 
     /**
@@ -70,7 +75,9 @@ final class GroupSettings
      */
     public static function affected(Group $group): array
     {
-        return ['seats' => 0, 'trial' => 0, 'paying' => 0];
+        $q = \App\Domains\Network\Seats\Models\Seat::query()->where('group_id', $group->id)->whereNotNull('primary_team_id');
+
+        return ['seats' => (clone $q)->count(), 'trial' => (clone $q)->where('status', 'trial')->count(), 'paying' => (clone $q)->whereIn('status', ['active', 'grace'])->count()];
     }
 
     /**
@@ -80,6 +87,6 @@ final class GroupSettings
      */
     public static function health(Group $group): array
     {
-        return ['owners' => $group->owners()->count(), 'seats' => 0, 'referralsThisMonth' => null, 'avgAcceptMinutes' => null, 'quietSeats' => null];
+        return ['owners' => $group->owners()->count(), 'seats' => \App\Domains\Network\Seats\Models\Seat::query()->where('group_id', $group->id)->whereNotNull('primary_team_id')->count(), 'referralsThisMonth' => null, 'avgAcceptMinutes' => null, 'quietSeats' => null];
     }
 }

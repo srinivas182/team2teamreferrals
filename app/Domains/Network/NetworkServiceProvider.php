@@ -13,10 +13,14 @@ final class NetworkServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, fn (\Illuminate\Console\Scheduling\Schedule $s) => $s->command('t2t:groups:scheduled')->dailyAt('06:00')->onOneServer());
+        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {
+            $s->command('t2t:groups:scheduled')->dailyAt('06:00')->onOneServer();
+            // Hourly so 72-hour offers pass on promptly; grace and release use whole days.
+            $s->command('t2t:seats:lifecycle')->hourly()->onOneServer();
+        });
         $this->loadRoutesFrom(__DIR__.'/routes.php');
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class]);
+            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class]);
         }
     }
 }

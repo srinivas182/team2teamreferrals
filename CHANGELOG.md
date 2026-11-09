@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 11a part 2 — Seats, applications and the automated seat lifecycle
+- Seats: one per territory per group (city, county, metro or state, found from the team's city), with a holder, one backup and a waitlist. Teams (minimal until onboarding in Sprint 12) apply from the portal; the license number is required where the industry needs one and checked against the state's format.
+- Applications queue for group owners and staff: approve (the team gets the seat on its free trial, becomes backup, or joins the waitlist, shown before approving) or decline with a reason the team sees. Open groups can auto-approve.
+- Automated non-payment lifecycle (agreed policy): failed payment → 7 days' grace → inactive (new referrals go to the backup; not charged) → released on day 30 (founding price lost). Paying before release reactivates instantly. Grace, release and claim-window lengths are group rules.
+- Seat offers: a released seat goes to the backup first, then the waitlist in rank order, each with 72 hours to claim; unclaimed or declined offers pass on automatically (checked hourly). When the backup takes the seat, the top waitlisted team becomes the new backup.
+- Notifications at every stage, by email and in-app: the team (decisions, payment problems, inactive, released, offers), the group's owners and the platform owners (every application, claim, grace, inactive, release and offer).
+- Seat history: every application, claim, backup, waitlist, payment, inactive, release and offer event, shown per seat in Admin → Groups → Seats.
+- Group admin now shows real seat counts in health and "who this change affects". Billing (Sprint 22) calls the payment hooks.
+- 216 PHP tests in total (9 new).
+
 ### Sprint 11a part 1 — $10 pricing and bulk pricing
 - Agreed launch pricing as the default: $10 per city per group per month; founding members $10, locked while they hold the seat; multi-city discounts off by default.
 - The 46 launch groups move from the $79 sample price to $10 (only groups still on the untouched sample price; any price an admin set is kept).

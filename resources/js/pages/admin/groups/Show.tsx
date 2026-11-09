@@ -1,6 +1,6 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import { CalendarClock, Check, Info, Trash2, UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,23 @@ type Rules = {
     challenge_threshold: number;
     company_cap_pct: number;
     waitlist: string;
+    grace_days: number;
+    release_days: number;
+    offer_hours: number;
+    auto_approve: boolean;
 };
+type SeatRow = {
+    id: number;
+    territory: string;
+    status: string;
+    primary: string | null;
+    backup: string | null;
+    waitlist: number;
+    trialEnds: string | null;
+    founding: boolean;
+    history: { event: string; when: string; team: string | null }[];
+};
+
 type Props = {
     group: {
         slug: string;
@@ -48,6 +64,8 @@ type Props = {
     owners: { id: string; name: string; email: string }[];
     scheduled: { id: number; section: string; values: Record<string, unknown>; effectiveOn: string; notified: boolean }[];
     overrides: { kind: string; label: string; version: number | null }[];
+    seats: SeatRow[];
+    pendingApplications: number;
     affected: { seats: number; trial: number; paying: number };
     health: { owners: number; seats: number; referralsThisMonth: number | null; avgAcceptMinutes: number | null; quietSeats: number | null };
     status?: string;
@@ -87,7 +105,7 @@ function When({
     );
 }
 
-export default function GroupShow({ group, owners, scheduled, overrides, affected, health, status, seo }: Props) {
+export default function GroupShow({ group, owners, scheduled, overrides, seats, pendingApplications, affected, health, status, seo }: Props) {
     const g = group;
     const details = useForm<{ name: string; description: string; status: string; visibility: string; photo: File | null }>({
         name: g.name,
@@ -97,9 +115,14 @@ export default function GroupShow({ group, owners, scheduled, overrides, affecte
         photo: null,
     });
     const pricing = useForm({ when: 'now', effective_on: '', values: g.pricing });
-    const rules = useForm({ when: 'now', effective_on: '', values: g.rules });
+    const rules = useForm({
+        when: 'now',
+        effective_on: '',
+        values: g.rules,
+    });
+    const [openSeat, setOpenSeat] = useState<number | null>(null);
     const owner = useForm({ email: '' });
-    const [tab, setTab] = useState<'details' | 'pricing' | 'rules' | 'overrides' | 'owners'>('details');
+    const [tab, setTab] = useState<'details' | 'seats' | 'pricing' | 'rules' | 'overrides' | 'owners'>('details');
     const p = pricing.data.values;
     const errs = (f: { errors: Record<string, string> }, k: string) => f.errors[`values.${k}`] ?? f.errors[k];
     const setP = (k: keyof Pricing, v: unknown) => pricing.setData('values', { ...p, [k]: v });
@@ -140,7 +163,7 @@ export default function GroupShow({ group, owners, scheduled, overrides, affecte
             </div>
 
             <div className="mb-5 flex gap-1 border-b border-line" role="tablist">
-                {(['details', 'pricing', 'rules', 'overrides', 'owners'] as const).map((t) => (
+                {(['details', 'seats', 'pricing', 'rules', 'overrides', 'owners'] as const).map((t) => (
                     <button
                         key={t}
                         role="tab"
@@ -315,6 +338,9 @@ export default function GroupShow({ group, owners, scheduled, overrides, affecte
                                 ['challenge_days', 'Seat challenge after (days below threshold)'],
                                 ['challenge_threshold', 'Challenge threshold (trust score)'],
                                 ['company_cap_pct', 'Company cap (% of a state’s seats)'],
+                                ['grace_days', 'Grace after a failed payment (days)'],
+                                ['release_days', 'Release an unpaid seat after (days)'],
+                                ['offer_hours', 'Time to claim an offered seat (hours)'],
                             ] as [keyof Rules, string][]
                         ).map(([k, l]) => (
                             <Field key={k} label={l} error={errs(rules, k)}>
@@ -328,6 +354,10 @@ export default function GroupShow({ group, owners, scheduled, overrides, affecte
                             </Select>
                         </Field>
                     </div>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={!!rules.data.values.auto_approve} onChange={(e) => setR('auto_approve', e.target.checked)} />{' '}
+                        Approve applications automatically when the license format checks out (open groups only)
+                    </label>
                     <When
                         when={rules.data.when}
                         date={rules.data.effective_on}
@@ -338,6 +368,87 @@ export default function GroupShow({ group, owners, scheduled, overrides, affecte
                     <Button loading={rules.processing} onClick={() => rules.put(`/admin/groups/${g.slug}/rules`, { preserveScroll: true })}>
                         {rules.data.when === 'now' ? 'Save rules' : 'Schedule rule change'}
                     </Button>
+                </Card>
+            )}
+
+            {tab === 'seats' && (
+                <Card className="overflow-x-auto">
+                    <div className="flex items-center gap-3 border-b border-line p-4 text-sm">
+                        <span className="text-muted">{seats.length} seats with a holder, backup or waitlist</span>
+                        <Link href={`/admin/groups/${g.slug}/applications`} className="ml-auto font-medium text-primary">
+                            Applications{pendingApplications ? ` (${pendingApplications} pending)` : ''}
+                        </Link>
+                    </div>
+                    <table className="w-full min-w-[820px] text-sm">
+                        <thead className="text-left text-muted">
+                            <tr>
+                                {['Territory', 'Holder', 'Backup', 'Waitlist', 'Status', 'Trial ends', ''].map((h) => (
+                                    <th key={h} scope="col" className="px-4 py-3 font-medium">
+                                        {h}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {seats.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-10 text-center text-muted">
+                                        No seats yet. They appear as teams apply.
+                                    </td>
+                                </tr>
+                            )}
+                            {seats.map((s) => (
+                                <Fragment key={s.id}>
+                                    <tr key={s.id} className="border-t border-line">
+                                        <td className="px-4 py-3 font-medium">
+                                            {s.territory} {s.founding && <Badge tone="sender">Founding</Badge>}
+                                        </td>
+                                        <td className="px-4 py-3">{s.primary ?? '—'}</td>
+                                        <td className="px-4 py-3">{s.backup ?? '—'}</td>
+                                        <td className="px-4 py-3 tabular">{s.waitlist}</td>
+                                        <td className="px-4 py-3">
+                                            <Badge
+                                                tone={
+                                                    s.status === 'active' || s.status === 'trial'
+                                                        ? 'success'
+                                                        : s.status === 'grace'
+                                                          ? 'warning'
+                                                          : s.status === 'inactive'
+                                                            ? 'danger'
+                                                            : 'neutral'
+                                                }
+                                            >
+                                                {s.status}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-muted">{s.trialEnds ?? '—'}</td>
+                                        <td className="px-4 py-3 text-right">
+                                            <Button size="sm" variant="ghost" onClick={() => setOpenSeat(openSeat === s.id ? null : s.id)}>
+                                                History
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                    {openSeat === s.id && (
+                                        <tr key={`${s.id}-h`} className="bg-bg">
+                                            <td colSpan={7} className="px-4 py-3">
+                                                <ol className="space-y-1 text-xs">
+                                                    {s.history.map((e, i) => (
+                                                        <li key={i}>
+                                                            <span className="text-muted">
+                                                                {new Date(e.when.replace(' ', 'T') + 'Z').toLocaleString()}
+                                                            </span>{' '}
+                                                            · {e.event.replace('_', ' ')}
+                                                            {e.team ? ` · ${e.team}` : ''}
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
+                            ))}
+                        </tbody>
+                    </table>
                 </Card>
             )}
 

@@ -42,7 +42,7 @@ final class AdminGroupsController
             'group' => [
                 'slug' => $group->slug, 'name' => $group->name, 'description' => $group->description, 'status' => $group->status, 'visibility' => $group->visibility,
                 'photo' => $group->photo_path ? Storage::disk('public')->url($group->photo_path) : null, 'launch' => $group->is_launch, 'private' => $group->is_private, 'region' => $group->region,
-                'pricing' => $group->pricing, 'rules' => $group->rules,
+                'pricing' => $group->pricing, 'rules' => [...Group::defaultRules(), ...$group->rules],
                 'industry' => ['slug' => $group->industry->slug, 'name' => $group->industry->name, 'tier' => $group->industry->tier->value, 'guaranteeAllowed' => $group->industry->tier->allowsValueGuarantee(), 'terms' => $group->industry->terms()],
             ],
             'owners' => $group->owners()->orderBy('first_name')->get()->map(fn (User $u) => ['id' => $u->ulid, 'name' => $u->name, 'email' => $u->email]),
@@ -52,6 +52,12 @@ final class AdminGroupsController
                 'kind' => $kind, 'label' => $label,
                 'version' => DB::table('industry_templates')->where(['kind' => $kind, 'scope_type' => 'group', 'scope_id' => $group->id, 'is_active' => true])->value('version'),
             ])->values(),
+            'seats' => \App\Domains\Network\Seats\Models\Seat::query()->with(['primary:id,name', 'backup:id,name'])->withCount('waitlist')->where('group_id', $group->id)->orderBy('territory_name')->limit(500)->get()
+                ->map(fn ($s) => ['id' => $s->id, 'territory' => $s->territory_name, 'status' => $s->status, 'primary' => $s->primary?->name, 'backup' => $s->backup?->name, 'waitlist' => (int) $s->getAttribute('waitlist_count'),
+                    'trialEnds' => $s->trial_ends_at?->toDateString(), 'founding' => $s->founding,
+                    'history' => DB::table('seat_events')->leftJoin('teams', 'teams.id', '=', 'seat_events.team_id')->where('seat_id', $s->id)->orderByDesc('seat_events.id')->limit(10)->get(['seat_events.event', 'seat_events.created_at', 'teams.name as team'])
+                        ->map(fn ($e) => ['event' => (string) $e->event, 'when' => (string) $e->created_at, 'team' => $e->team])]),
+            'pendingApplications' => DB::table('seat_applications')->where(['group_id' => $group->id, 'status' => 'pending'])->count(),
             'affected' => GroupSettings::affected($group),
             'health' => GroupSettings::health($group),
             'status' => session('status'),

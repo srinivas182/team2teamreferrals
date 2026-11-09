@@ -51,6 +51,13 @@ const messages: Record<string, string> = {
     'private-network-created': 'Private network created. Its owner can now invite their branches.',
     'bulk-pricing-applied': 'Pricing applied.',
     'bulk-pricing-scheduled': 'Pricing change scheduled. Members are told 30 days before it takes effect.',
+    'seat-applied': 'Application sent. You’ll hear back by email.',
+    'seat-claimed': 'The seat is yours. Your free trial has started.',
+    'seat-offer-declined': 'Offer declined. It goes to the next team.',
+    'application-approved-primary': 'Approved: the team holds the seat.',
+    'application-approved-backup': 'Approved as backup for the seat.',
+    'application-approved-waitlist': 'Approved and added to the waitlist.',
+    'application-declined': 'Application declined. The team has been told why.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
