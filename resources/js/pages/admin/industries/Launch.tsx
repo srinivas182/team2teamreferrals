@@ -17,7 +17,7 @@ const cols: [string, string, string][] = [
     ['agreement', 'Agreement', 'agreement'],
     ['licensing', 'Licensing', ''],
     ['compliance', 'Compliance', ''],
-    ['group', 'Group', ''],
+    ['group', 'Group', '/admin/groups'],
 ];
 
 function Cell({ c, href }: { c: Check; href?: string }) {
@@ -62,6 +62,17 @@ export default function Launch({ board, summary, seo }: { board: Row[]; summary:
                         <div className="h-3 rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#2451F5,#FF7A1A)' }} />
                     </div>
                     <div className="mt-1 text-sm text-muted tabular">{pct}%</div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-sm">
+                    {(['a', 'b', 'c'] as const).map((t) => (
+                        <a
+                            key={t}
+                            href={`/admin/industries/counsel-pack/tier-${t}.pdf`}
+                            className="rounded-md border border-line px-3 py-1.5 font-medium hover:border-primary"
+                        >
+                            Tier {t.toUpperCase()} counsel pack
+                        </a>
+                    ))}
                 </div>
                 <Segmented
                     label="Show"

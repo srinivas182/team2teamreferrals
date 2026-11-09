@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Network\Industries\Catalogue;
 
+use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Agreements\Agreements;
 use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Network\Industries\Tier;
@@ -21,7 +22,9 @@ final class Readiness
     public function board(): array
     {
         $states = State::query()->where('is_enabled', true)->count();
-        $licensing = DB::table('industry_licensing')->selectRaw('industry_id, count(*) as n')->groupBy('industry_id')->pluck('n', 'industry_id');
+        $licensing = DB::table('industry_licensing')->where('needs_review', false)->selectRaw('industry_id, count(*) as n')->groupBy('industry_id')->pluck('n', 'industry_id');
+        $pending = DB::table('industry_licensing')->where('needs_review', true)->selectRaw('industry_id, count(*) as n')->groupBy('industry_id')->pluck('n', 'industry_id');
+        $groups = Group::query()->where('is_launch', true)->pluck('name', 'industry_id');
         $out = [];
         foreach (Industry::query()->orderBy('name')->get() as $i) {
             $agreement = $i->tier === Tier::Directory ? null : $this->agreements->forSigning($i);
@@ -29,9 +32,9 @@ final class Readiness
             $checks = [
                 'terms' => ['ok' => true, 'detail' => "{$i->terms()['pro']} · {$i->terms()['client']} · {$i->terms()['referral']}"],
                 'agreement' => $i->tier === Tier::Directory ? ['ok' => null, 'detail' => 'Not needed (directory)'] : ($agreement ? ['ok' => true, 'detail' => "v{$agreement['version']} approved"] : ['ok' => false, 'detail' => 'Not approved yet']),
-                'licensing' => ! $i->license_required ? ['ok' => null, 'detail' => 'No license required'] : ['ok' => $states > 0 && $done >= $states, 'detail' => "{$done} of {$states} states"],
+                'licensing' => ! $i->license_required ? ['ok' => null, 'detail' => 'No license required'] : ['ok' => $states > 0 && $done >= $states, 'detail' => "{$done} of {$states} states".(($pending[$i->id] ?? 0) > 0 ? ' · '.$pending[$i->id].' to review' : '')],
                 'compliance' => $i->isApproved() ? ['ok' => true, 'detail' => 'Signed off'] : ['ok' => false, 'detail' => 'Needs sign-off'],
-                'group' => ['ok' => null, 'detail' => 'Created in Sprint 9b'],
+                'group' => isset($groups[$i->id]) ? ['ok' => true, 'detail' => (string) $groups[$i->id]] : ['ok' => false, 'detail' => 'No launch group'],
             ];
             $ready = collect($checks)->every(fn ($c) => $c['ok'] !== false);
             $out[] = ['slug' => $i->slug, 'name' => $i->name, 'tier' => $i->tier->value, 'family' => $i->family, 'status' => (string) $i->getAttribute('status'), 'checks' => $checks, 'ready' => $ready];

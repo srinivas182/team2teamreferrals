@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\Network\Industries\Catalogue;
 
+use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Network\Industries\Templates\FamilyDefaults;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Industries\Templates\Schemas;
 use App\Domains\Network\Industries\Tier;
+use App\Domains\Network\Locations\Models\State;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use LogicException;
 
 /**
@@ -66,8 +69,45 @@ final class CatalogueSync
                 $stats['updated'] += (int) $changed;
             });
         }
+        $this->groups();
+        $this->licensingStarter();
 
         return $stats;
+    }
+
+    /** One launch group per industry, named as agreed; created once and never overwritten. */
+    private function groups(): void
+    {
+        $names = collect(LaunchCatalogue::all())->pluck('group', 'slug');
+        foreach (Industry::query()->get() as $industry) {
+            if (Group::query()->where(['industry_id' => $industry->id, 'is_launch' => true])->exists() || ! isset($names[$industry->slug])) {
+                continue;
+            }
+            $name = (string) $names[$industry->slug];
+            Group::create([
+                'industry_id' => $industry->id, 'slug' => Str::slug($name), 'name' => $name, 'is_launch' => true,
+                'description' => $industry->description, 'rules' => Group::defaultRules(), 'pricing' => Group::defaultPricing($industry),
+            ]);
+        }
+    }
+
+    /** Suggested licensing rows, marked "needs review"; existing rows are never touched. */
+    private function licensingStarter(): void
+    {
+        $states = State::query()->where('is_enabled', true)->get(['id', 'name']);
+        foreach (LicensingStarter::templates() as $slug => $t) {
+            $industry = Industry::query()->where('slug', $slug)->first();
+            if ($industry === null || ! $industry->license_required) {
+                continue;
+            }
+            foreach ($states as $state) {
+                DB::table('industry_licensing')->insertOrIgnore([
+                    'industry_id' => $industry->id, 'state_id' => $state->id, 'required' => true,
+                    'issuing_body' => str_replace('{state}', (string) $state->name, $t['body']), 'lookup_url' => $t['lookup'],
+                    'notes' => 'Starter data: needs review. '.$t['note'], 'needs_review' => true, 'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        }
     }
 
     /** @param array<string, mixed> $check */

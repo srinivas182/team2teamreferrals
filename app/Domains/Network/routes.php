@@ -27,6 +27,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     ->prefix('admin/industries')->name('admin.industries.')->group(function (): void {
         Route::get('/', [AdminIndustriesController::class, 'index'])->name('index');
         Route::get('launch', AdminLaunchController::class)->name('launch');
+        Route::get('counsel-pack/tier-{tier}.pdf', [AdminAgreementController::class, 'tierPack'])->whereIn('tier', ['a', 'b', 'c'])->name('counsel-pack.tier');
         Route::post('/', [AdminIndustriesController::class, 'store'])->name('store');
         Route::get('licensing.csv', [AdminIndustriesController::class, 'exportAllLicensing'])->name('licensing.export-all');
         Route::post('licensing/import', [AdminIndustriesController::class, 'importLicensing'])->name('licensing.import');
@@ -55,3 +56,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::put('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'save'])->whereIn('kind', ['form', 'stages'])->name('templates.save');
         Route::delete('{industry}/{kind}', [AdminIndustryTemplatesController::class, 'reset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');
     });
+
+// Admin → Groups: the launch groups (full group management arrives in Sprint 10).
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:groups.manage'])
+    ->get('admin/groups', App\Domains\Network\Groups\Http\AdminGroupsController::class)->name('admin.groups.index');

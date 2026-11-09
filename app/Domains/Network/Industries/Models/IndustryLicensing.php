@@ -23,13 +23,13 @@ final class IndustryLicensing extends Model
 {
     protected $table = 'industry_licensing';
 
-    protected $fillable = ['industry_id', 'state_id', 'required', 'issuing_body', 'number_pattern', 'lookup_url', 'notes'];
+    protected $fillable = ['needs_review', 'industry_id', 'state_id', 'required', 'issuing_body', 'number_pattern', 'lookup_url', 'notes'];
 
-    protected $attributes = ['required' => true, 'issuing_body' => null, 'number_pattern' => null, 'lookup_url' => null, 'notes' => null];
+    protected $attributes = ['needs_review' => false, 'required' => true, 'issuing_body' => null, 'number_pattern' => null, 'lookup_url' => null, 'notes' => null];
 
     protected function casts(): array
     {
-        return ['required' => 'boolean'];
+        return ['required' => 'boolean', 'needs_review' => 'boolean'];
     }
 
     /** @return BelongsTo<State, $this> */
