@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Identity\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\PasswordSetupToken;
 use App\Domains\Identity\Authorization\Permissions;
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Notifications\StaffInvitationNotification;
@@ -11,7 +12,6 @@ use App\Domains\Seo\SeoData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -59,7 +59,7 @@ final class StaffController
         ]);
         $user->assignRole(Permissions::STAFF);
         $user->syncPermissions($data['permissions'] ?? []);
-        $user->notify(new StaffInvitationNotification(Password::broker()->createToken($user), (string) $request->user()?->getAttribute('first_name')));
+        $user->notify(new StaffInvitationNotification(PasswordSetupToken::for($user), (string) $request->user()?->getAttribute('first_name')));
         activity('admin')->causedBy($request->user())->performedOn($user)->event('staff-invited')
             ->withProperties(['permissions' => $data['permissions'] ?? []])->log('Invited '.$user->name.' as staff');
 

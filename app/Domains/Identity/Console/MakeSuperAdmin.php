@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Identity\Console;
 
+use App\Domains\Identity\Actions\PasswordSetupToken;
 use App\Domains\Identity\Authorization\Permissions;
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Notifications\StaffInvitationNotification;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 /** Bootstraps the first super admin. They receive an email to set a password, then must turn on two-step sign-in. */
@@ -29,7 +29,7 @@ final class MakeSuperAdmin extends Command
             'password' => Str::password(40),
         ]);
         $user->syncRoles([Permissions::SUPER_ADMIN]);
-        $token = Password::broker()->createToken($user);
+        $token = PasswordSetupToken::for($user);
         $user->notify(new StaffInvitationNotification($token, invitedBy: 'Team to Team', superAdmin: true));
         activity('admin')->performedOn($user)->event('super-admin-granted')->log('Super admin role granted from the command line');
         $this->info("{$email} is a super admin. A set-password email has been sent.");
