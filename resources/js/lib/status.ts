@@ -37,6 +37,10 @@ const messages: Record<string, string> = {
     'fee-saved': 'Platform fee settings saved.',
     'fees-unlocked': 'Platform fees unlocked. Each Tier A industry still needs its fee switched on individually.',
     'fees-locked': 'Platform fees locked. Every fee has been switched off.',
+    'agreement-saved': 'Saved as a new version. It needs a super admin’s approval before members can sign it.',
+    'agreement-approved': 'Approved. Members sign this version from now on.',
+    'agreement-reset': 'The draft is back to the default wording. The last approved version is still in use.',
+    'addendum-saved': 'State addendum saved.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

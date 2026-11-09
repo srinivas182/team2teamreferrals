@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 8b part 1 — Referral agreements
+- Agreement templates per industry (kind "agreement" in the industry template engine), with versions and reset to the default wording.
+- Defaults by tier: Tier A referral fee agreement (parties and licenses, client, fee, protection period, fee paid business to business, governing law, signatures); Tier B reciprocal introduction agreement (no fee, consent, reciprocity credits); Tier C no agreement, only client consent.
+- Editor: required clauses locked; optional clause library (protection period, confidentiality, mediation, non-solicitation, cancellation) switched on or off; custom clauses; reorder; merge-field picker; live preview with sample data in the industry's own words.
+- Compliance enforced on save: Tier B and C cannot contain fee clauses, fee merge fields or wording describing a referral payment; required clauses can't be removed; unknown merge fields are rejected.
+- Approval gate: every saved version waits for a super admin's approval, recorded with the reviewing attorney and a note. Members only ever sign the newest approved version; drafts never reach them.
+- State addenda: extra wording per state, added automatically when the receiving team is in that state.
+- Plain-English summary shown to both parties before signing; if the fee wording has been edited, the summary quotes it rather than paraphrasing.
+- Compare any two versions clause by clause with word-level changes highlighted.
+- PDF preview (watermarked sample) and a counsel review pack PDF: summary, wording, all state addenda, version and approval history. Every save, approval, addendum and pack download is audited.
+- 166 PHP tests in total (12 new).
+
 ### Sprint 8a — Referral forms and pipelines
 - Default referral form and pipeline for each of the eight industry families: a shared core (client, mobile, email, timeline, notes) plus family questions (price range for property, budget and home ownership for home services, coverage needs for insurance and financial, care type for care, and more).
 - Referral form builder (Admin → Industries → Referral form): questions with eight field types, required, sensitive (never on public pages), choices, and roles (estimated value, timeline); reorder, add, remove; live preview at phone or desktop size in the industry's own words.
