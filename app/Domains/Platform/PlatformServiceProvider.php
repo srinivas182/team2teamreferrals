@@ -22,7 +22,8 @@ final class PlatformServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(Settings::class);
+        // Scoped, not singleton: under Octane a singleton would keep one request's settings for the next.
+        $this->app->scoped(Settings::class);
 
         // The SMS driver follows the admin setting; every driver is wrapped so sends are logged.
         $this->app->bind(SmsSender::class, function ($app): SmsSender {

@@ -1,0 +1,45 @@
+# Production-like stack: Octane web, Horizon queues, scheduler, SSR, MySQL, Redis.
+# docker compose -f compose.prod.yaml up --build
+x-app: &app
+  build: { context: ., dockerfile: docker/prod/Dockerfile, target: app }
+  env_file: .env
+  environment:
+    DB_HOST: mysql
+    REDIS_HOST: redis
+    CACHE_STORE: redis
+    SESSION_DRIVER: redis
+    QUEUE_CONNECTION: redis
+    INERTIA_SSR_URL: http://ssr:13714
+  depends_on:
+    mysql: { condition: service_healthy }
+    redis: { condition: service_started }
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *app
+    ports: ["8000:8000"]
+  horizon:
+    <<: *app
+    command: ["php", "artisan", "horizon"]
+    healthcheck: { disable: true }
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck: { disable: true }
+  ssr:
+    build: { context: ., dockerfile: docker/prod/Dockerfile, target: ssr }
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.4
+    environment: { MYSQL_DATABASE: t2t, MYSQL_USER: t2t, MYSQL_PASSWORD: secret, MYSQL_ROOT_PASSWORD: secret }
+    volumes: [mysql-prod:/var/lib/mysql]
+    healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"], interval: 5s, retries: 20 }
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redis-prod:/data]
+
+volumes:
+  mysql-prod:
+  redis-prod:

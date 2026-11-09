@@ -34,7 +34,7 @@ jobs:
           echo "$files"
           code=false; docker=false
           if echo "$files" | grep -qvE '^(docs/|brand/|design/|prototype/|tools/brand/|.*\.md$)'; then code=true; fi
-          if echo "$files" | grep -qE '^(docker/|compose\.yaml$)'; then docker=true; fi
+          if echo "$files" | grep -qE '^(docker/|compose\.yaml$|compose\.prod\.yaml$)'; then docker=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "docker=$docker" >> "$GITHUB_OUTPUT"
 
@@ -96,8 +96,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.docker == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - run: docker compose config --quiet
+      - uses: docker/setup-buildx-action@v3
+      - run: docker compose config --quiet && cp .env.example .env && docker compose -f compose.prod.yaml config --quiet
       - run: docker build -f docker/dev/Dockerfile .
+      - name: Production image (Octane on FrankenPHP)
+        uses: docker/build-push-action@v6
+        with: { context: ., file: docker/prod/Dockerfile, target: app, push: false, cache-from: type=gha, cache-to: 'type=gha,mode=max' }

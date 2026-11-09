@@ -14,6 +14,10 @@ Route::post('webhooks/twilio/status', [TwilioWebhookController::class, 'status']
 Route::post('webhooks/twilio/inbound', [TwilioWebhookController::class, 'inbound'])->name('webhooks.twilio.inbound');
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
+// Monitoring: JSON health for uptime monitors, and a public status page.
+Route::get('health', [App\Domains\Platform\Http\Controllers\StatusController::class, 'health'])->middleware('throttle:60,1')->name('health');
+Route::middleware(['web'])->get('status', [App\Domains\Platform\Http\Controllers\StatusController::class, 'page'])->name('status');
+
 // Private files: signed, expiring links for signed-in users only.
 Route::middleware(['web', 'auth', 'signed'])->get('files/{path}', PrivateFileController::class)->where('path', '.*')->name('files.private');
 

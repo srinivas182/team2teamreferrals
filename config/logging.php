@@ -50,7 +50,18 @@ return [
     |
     */
 
+    'slow_query_ms' => (int) env('LOG_SLOW_QUERY_MS', 500),
+
     'channels' => [
+
+        // Structured logs for production: one JSON object per line, with request ID and user ID from Context.
+        'json' => [
+            'driver' => 'monolog',
+            'handler' => StreamHandler::class,
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'with' => ['stream' => 'php://stderr'],
+            'level' => env('LOG_LEVEL', 'info'),
+        ],
 
         'stack' => [
             'driver' => 'stack',

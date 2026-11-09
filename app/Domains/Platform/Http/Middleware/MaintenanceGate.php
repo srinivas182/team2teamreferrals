@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class MaintenanceGate
 {
-    private const OPEN = ['login', 'logout', 'two-factor-challenge', 'user/confirm-password', 'admin', 'admin/*', 'webhooks/*', 'up', 'build/*', 'brand/*', 'sw.js', 'robots.txt', 'favicon.ico', 'site.webmanifest', 'passkeys/*'];
+    private const OPEN = ['login', 'logout', 'two-factor-challenge', 'user/confirm-password', 'admin', 'admin/*', 'webhooks/*', 'up', 'health', 'status', 'build/*', 'brand/*', 'sw.js', 'robots.txt', 'favicon.ico', 'site.webmanifest', 'passkeys/*'];
 
     public function __construct(private readonly Settings $settings) {}
 
