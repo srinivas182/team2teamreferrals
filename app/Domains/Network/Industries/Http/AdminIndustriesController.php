@@ -109,7 +109,8 @@ final class AdminIndustriesController
             'lookup_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-        IndustryLicensing::query()->updateOrCreate(['industry_id' => $industry->id, 'state_id' => $state->id], $data);
+        // Saving a row from the builder is the admin's review: starter suggestions stop being "needs review".
+        IndustryLicensing::query()->updateOrCreate(['industry_id' => $industry->id, 'state_id' => $state->id], [...$data, 'needs_review' => false]);
         activity('admin')->causedBy($request->user())->performedOn($industry)->event('licensing-saved')->withProperties(['state' => $state->code])->log("Licensing for {$industry->name} in {$state->code}");
 
         return back()->with('status', 'licensing-saved');

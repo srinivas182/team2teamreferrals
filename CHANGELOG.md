@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 9b — Launch groups, tier counsel packs and licensing starter data
+- One launch group per industry (46), with the agreed names ("Residential Agent Alliance", "Solar Installers Network"…), description, default rules (24-hour accept and first contact, 7-day updates, seat challenge after 60 days below trust 70, 25% company cap, waitlist by trust) and sample pricing ($79 seat, $59 founding, 3-month trial, 2 months free annually, multi-city discounts; value guarantee off in Tier C). Created once and never overwritten.
+- Admin → Groups and seats lists every group with pricing and rules (editing, owners and seats arrive in Sprint 10). The readiness board's Group column now shows each launch group.
+- Tier counsel packs: one PDF per tier (A, B, C) with every industry's agreement, plain-English summary, state addenda and messages, for review in one sitting (Tier A, 30 industries: about 3 seconds).
+- Licensing starter data for real estate, commercial real estate, land, ranch and farm, property management, mortgage (NMLS), insurance and Medicare: each state's likely licensing body and a national lookup link, marked "needs review". Starter rows never count as coverage until an admin saves them; existing rows are never touched.
+- Fixed in review: the tier pack used the tier inside a closure without capturing it.
+- 188 PHP tests in total (7 new).
+
 ### Sprint 9a — Launch catalogue
 - All 46 launch industries (30 Tier A, 12 Tier B, 4 Tier C) with names, families, tiers, territories, icons, terminology, descriptions and licensing, from `php artisan t2t:catalogue:sync` (also run by the database seeder).
 - Safe to re-run: the sync remembers what it last wrote, so values an admin changed are always kept, while catalogue improvements reach values nobody touched.

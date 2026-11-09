@@ -69,7 +69,7 @@ it('shows exactly what is left before each industry can go live', function () {
     app(Agreements::class)->approve($re, null, 'Counsel', 'OK');
     $re->forceFill(['compliance_approved_at' => now(), 'compliance_note' => 'Approved'])->save();
     foreach (App\Domains\Network\Locations\Models\State::where('is_enabled', true)->get() as $s) {
-        DB::table('industry_licensing')->insert(['industry_id' => $re->id, 'state_id' => $s->id, 'required' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('industry_licensing')->updateOrInsert(['industry_id' => $re->id, 'state_id' => $s->id], ['required' => true, 'needs_review' => false, 'created_at' => now(), 'updated_at' => now()]);
     }
     $row = collect(app(Readiness::class)->board())->firstWhere('slug', 'real-estate');
     expect($row['ready'])->toBeTrue()->and(app(Readiness::class)->summary())->toBe(['ready' => 1, 'total' => 46]);

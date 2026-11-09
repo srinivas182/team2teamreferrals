@@ -8,6 +8,7 @@ use App\Domains\Network\Industries\Agreements\AgreementDefaults;
 use App\Domains\Network\Industries\Agreements\AgreementRenderer;
 use App\Domains\Network\Industries\Agreements\Agreements;
 use App\Domains\Network\Industries\Models\Industry;
+use App\Domains\Network\Industries\Tier;
 use App\Domains\Network\Locations\Models\State;
 use App\Domains\Seo\SeoData;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -115,6 +116,27 @@ final class AdminAgreementController
             'addenda' => $this->addenda($industry), 'history' => $this->agreements->history($industry), 'generated' => now()->toDayDateTimeString(),
             'messages' => AdminIndustryMessagesController::pack($industry, app(\App\Domains\Messaging\Templates::class)), 'terms' => $industry->terms(),
         ])->download("{$industry->slug}-counsel-review-pack.pdf");
+    }
+
+    /** One PDF for every industry in a tier, so counsel can review similar industries in one sitting. */
+    public function tierPack(Request $request, string $tier): HttpResponse
+    {
+        $t = Tier::tryFrom(strtoupper($tier));
+        abort_if($t === null, 404);
+        $industries = Industry::query()->where('tier', $t->value)->orderBy('name')->get()->map(function (Industry $i) use ($t) {
+            $current = $this->agreements->current($i);
+            $data = $this->sample($i);
+
+            return [
+                'industry' => $i, 'terms' => $i->terms(), 'version' => $current['version'], 'approved' => $current['approved'],
+                'sections' => AgreementRenderer::render($current['clauses'], $data), 'summary' => $t === Tier::Directory ? [] : AgreementRenderer::summary($current['clauses'], $data),
+                'addenda' => $this->addenda($i), 'messages' => AdminIndustryMessagesController::pack($i, app(\App\Domains\Messaging\Templates::class)),
+            ];
+        });
+        activity('admin')->causedBy($request->user())->event('counsel-pack')->withProperties(['tier' => $t->value, 'industries' => $industries->count()])->log("Downloaded the Tier {$t->value} counsel review pack");
+
+        return Pdf::loadView('pdf.counsel-pack-tier', ['tier' => $t, 'industries' => $industries, 'generated' => now()->toDayDateTimeString()])
+            ->download('tier-'.strtolower($t->value).'-counsel-review-pack.pdf');
     }
 
     /** @return array<string, string> */
