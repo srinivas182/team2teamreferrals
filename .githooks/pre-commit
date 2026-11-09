@@ -1,0 +1,14 @@
+#!/bin/sh
+# Local checks before every commit, so CI rarely fails (and Actions minutes are saved).
+set -e
+php_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
+js_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^resources/js/.*\.(ts|tsx)$' || true)
+if [ -n "$php_files" ]; then
+  vendor/bin/pint --test $php_files
+  php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress --error-format=table $php_files
+fi
+if [ -n "$js_files" ]; then
+  npx eslint $js_files
+  npx prettier --check $js_files
+  npx tsc --noEmit
+fi

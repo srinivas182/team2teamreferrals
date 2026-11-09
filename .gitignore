@@ -1,16 +1,39 @@
-/vendor/
-/node_modules/
-/public/build/
+# Dependencies and builds
+/vendor
+/node_modules
+/public/build
 /public/hot
-/storage/*.key
+/public/storage
+/public/fonts-manifest.dev.json
+/bootstrap/ssr
 /bootstrap/cache/*.php
+/prototype/node_modules
+/prototype/dist
+
+# Environment (examples are committed)
 .env
 .env.*
 !.env.example
+!.env.docker
+
+# Local tooling
+/storage/*.key
+/storage/pail
+/storage/framework/phpstan
 .phpunit.result.cache
+/.phpunit.cache
+/auth.json
+_ide_helper.php
+/.idea
+/.vscode
+/.zed
+/.nova
+/.cursor/
+/.codex
+.phpactor.json
+Homestead.json
+Homestead.yaml
+__pycache__/
+*.log
 .DS_Store
 Thumbs.db
-*.log
-/.idea/
-/.vscode/
-__pycache__/
