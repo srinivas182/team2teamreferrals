@@ -8,6 +8,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use PDOException;
 
 /**
  * Key/value settings edited from the admin. Values are cached as one map; secrets are
@@ -77,19 +78,21 @@ final class Settings
         if ($this->loaded !== null) {
             return $this->loaded;
         }
-        $cached = Cache::get(self::CACHE_KEY);
-        if (is_array($cached)) {
-            /** @var array<string, array{value: ?string, secret: bool}> $cached */
-            return $this->loaded = $cached;
-        }
+        // The app also boots where no database exists yet (composer's package:discover in CI, a fresh
+        // install before migrations): then fall back to environment defaults and cache nothing.
         try {
+            $cached = Cache::get(self::CACHE_KEY);
+            if (is_array($cached)) {
+                /** @var array<string, array{value: ?string, secret: bool}> $cached */
+                return $this->loaded = $cached;
+            }
             $map = DB::table('settings')->get(['key', 'value', 'is_secret'])
                 ->mapWithKeys(fn ($r) => [(string) $r->key => ['value' => $r->value === null ? null : (string) $r->value, 'secret' => (bool) $r->is_secret]])
                 ->all();
-        } catch (QueryException) {
-            return []; // Before migrations run (fresh install, first deploy): use environment defaults, cache nothing.
+            Cache::forever(self::CACHE_KEY, $map);
+        } catch (QueryException|PDOException) {
+            return [];
         }
-        Cache::forever(self::CACHE_KEY, $map);
 
         return $this->loaded = $map;
     }

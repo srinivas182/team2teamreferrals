@@ -143,3 +143,18 @@ it('validates Twilio signatures exactly as Twilio computes them', function () {
     $r->headers->set('X-Twilio-Signature', base64_encode(hash_hmac('sha1', 'https://example.com/webhooks/twilio/status'.'a1b2', 'k', true)));
     expect(TwilioWebhookController::validSignature($r, 'k'))->toBeTrue()->and(TwilioWebhookController::validSignature($r, 'wrong'))->toBeFalse();
 });
+
+it('falls back to environment defaults when no database is reachable', function () {
+    $default = config('database.default');
+    config([
+        'database.connections.unreachable' => ['driver' => 'sqlite', 'database' => '/nonexistent/path/db.sqlite', 'prefix' => ''],
+        'database.default' => 'unreachable',
+        'cache.default' => 'database',
+    ]);
+    try {
+        $settings = new Settings;
+        expect($settings->get('mail.driver', 'log'))->toBe('log')->and($settings->has('sms.twilio.sid'))->toBeFalse();
+    } finally {
+        config(['database.default' => $default, 'cache.default' => 'array']);
+    }
+});

@@ -11,7 +11,8 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 - Delivery log: every email and text with provider, status and error; Twilio delivery receipts update status via signed webhooks (X-Twilio-Signature verified).
 - Live provider health (healthy, some failures, failing, idle) from the last hour of sends, on the System screen and the delivery log.
 - Phone verification: "Text not arriving? Email me the code instead" appears after 30 seconds.
-- 81 PHP tests in total (11 new).
+- Settings fall back to environment defaults when no database is reachable (CI install step, fresh installs).
+- 82 PHP tests in total (12 new).
 
 ### Sprint 4b — Roles, staff and audit log
 - Roles (super admin, staff, member) and an admin permission catalogue of 17 permissions in five areas, kept in sync on every deploy; super admins pass every check; new members get the member role.
