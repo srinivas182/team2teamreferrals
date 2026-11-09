@@ -33,7 +33,7 @@ it('logs in with a password and lands on the portal', function () {
     $user = User::factory()->create();
     $this->post('/login', ['email' => $user->email, 'password' => 'correct horse battery staple'])->assertRedirect('/app');
     $this->assertAuthenticatedAs($user);
-    $this->get('/app')->assertOk()->assertInertia(fn ($page) => $page->component('app/Home')->has('checklist', 4));
+    $this->get('/app')->assertOk()->assertInertia(fn ($page) => $page->component('app/Home')->has('checklist', 7));
     expect($user->fresh()->last_login_at)->not->toBeNull()->and($user->devices()->count())->toBe(1);
 });
 

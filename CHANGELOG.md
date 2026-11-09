@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 12c — Guided onboarding, profile strength and nudges
+- Portal home walks new members from sign-up to first seat in 7 linked steps (email, mobile, two-step sign-in, team profile, license, apply, first seat) with "Next:" pointing at the next one.
+- Profile strength out of 100 (team name, logo, about, areas served, website or phone, social link, verified license, a teammate), shown with what's missing and the points each adds. It now feeds waitlist ranking with licenses until the trust score (Sprint 34).
+- Find your network (Portal → Groups): every public network with price, trial, founding-seat and invite-only badges, search, and "Apply" in the right words (city, county, metro area or state). Private networks are never listed.
+- Profile preview: the team's public profile as others will see it (logo, about, verified licenses, founding member, seats), marked as a preview until public profiles go live (Sprint 26).
+- Onboarding nudges: a reminder 2 and 7 days after sign-up to members who haven't applied for a seat (once each; never staff).
+- 235 PHP tests in total (5 new).
+
 ### Sprint 12b — Licenses and verification
 - Licenses (Portal → Profile and licenses): leaders and assistants add a license per industry and state with number, expiry, name on the license and an optional copy (PDF or photo, kept on private storage). The number is checked against the state's format when one is configured.
 - License queue (Admin → License queue, `licenses.verify`): pending, verified, rejected and expired; "Check on the state's site" using the licensing lookup links; the document opens through a link that expires in 15 minutes; a warning when another team uses the same number in the same state. Rejecting needs a note the team sees; every decision is audited and the team is told by email and in-app.

@@ -8,9 +8,11 @@ import { cn } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type Item = { label: string; done: boolean };
+type Item = { label: string; done: boolean; href: string | null };
+type Strength = { score: number; items: { label: string; points: number; done: boolean }[] };
 
-export default function Home({ checklist, seo }: { checklist: Item[]; seo: Seo }) {
+export default function Home({ checklist, strength, seo }: { checklist: Item[]; strength: Strength; seo: Seo }) {
+    const next = checklist.find((i) => !i.done);
     const { auth } = usePage<SharedProps>().props;
     const done = checklist.filter((i) => i.done).length;
     const r = 30;
@@ -35,9 +37,18 @@ export default function Home({ checklist, seo }: { checklist: Item[]; seo: Seo }
                             />
                         </svg>
                         <div>
-                            <h2 className="text-lg font-semibold">Let’s get your account ready</h2>
+                            <h2 className="text-lg font-semibold">{next ? 'Let’s get you to your first seat' : 'You’re all set up'}</h2>
                             <p className="text-muted">
-                                {done} of {checklist.length} setup steps done.
+                                {done} of {checklist.length} steps done.
+                                {next?.href && (
+                                    <>
+                                        {' '}
+                                        Next:{' '}
+                                        <Link href={next.href} className="font-medium text-primary">
+                                            {next.label}
+                                        </Link>
+                                    </>
+                                )}
                             </p>
                         </div>
                     </Card>
@@ -52,11 +63,48 @@ export default function Home({ checklist, seo }: { checklist: Item[]; seo: Seo }
                                         )}
                                         aria-hidden
                                     />
-                                    <span className={cn('font-medium', i.done && 'text-muted line-through')}>{i.label}</span>
+                                    {i.href && !i.done ? (
+                                        <Link href={i.href} className="font-medium text-primary hover:underline">
+                                            {i.label}
+                                        </Link>
+                                    ) : (
+                                        <span className={cn('font-medium', i.done && 'text-muted line-through')}>{i.label}</span>
+                                    )}
                                     <span className="sr-only">{i.done ? '(done)' : '(to do)'}</span>
                                 </li>
                             ))}
                         </ul>
+                    </Card>
+                    <Card className="p-6">
+                        <div className="flex items-center gap-3">
+                            <h2 className="font-semibold">Profile strength</h2>
+                            <span className="ml-auto font-display text-2xl font-bold tabular">{strength.score}</span>
+                            <span className="text-sm text-muted">/ 100</span>
+                        </div>
+                        <div className="mt-3 h-2 rounded-full bg-bg">
+                            <div className="h-2 rounded-full bg-primary" style={{ width: `${strength.score}%` }} />
+                        </div>
+                        <p className="mt-3 text-sm text-muted">
+                            A stronger profile moves you up waitlists and helps other pros trust you with their clients.
+                        </p>
+                        <ul className="mt-3 space-y-1.5 text-sm">
+                            {strength.items
+                                .filter((x) => !x.done)
+                                .map((x) => (
+                                    <li key={x.label} className="flex justify-between gap-3">
+                                        <span>{x.label}</span>
+                                        <span className="text-muted tabular">+{x.points}</span>
+                                    </li>
+                                ))}
+                        </ul>
+                        <div className="mt-4 flex gap-3 text-sm">
+                            <Link href="/app/team" className="font-medium text-primary">
+                                Edit team profile
+                            </Link>
+                            <Link href="/app/team/preview" className="font-medium text-primary">
+                                Preview public profile
+                            </Link>
+                        </div>
                     </Card>
                 </div>
                 <Card className="h-fit p-6">
