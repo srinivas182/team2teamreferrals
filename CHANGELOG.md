@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 11a part 1 — $10 pricing and bulk pricing
+- Agreed launch pricing as the default: $10 per city per group per month; founding members $10, locked while they hold the seat; multi-city discounts off by default.
+- The 46 launch groups move from the $79 sample price to $10 (only groups still on the untouched sample price; any price an admin set is kept).
+- Bulk pricing: select groups in Admin → Groups and set pricing for all of them at once, now or on a date (members told 30 days ahead). Tier C groups always keep the value guarantee off; an invalid change leaves every group untouched.
+- PRD and sprint breakdown updated with the pricing decisions, the non-payment policy (7 days' grace, inactive and not charged, released on day 30, founding price lost on release) and who is notified at each stage.
+- 207 PHP tests in total (5 new).
+
 ### Sprint 10b — Group overrides, private networks and overflow demand
 - Per-group overrides: a group can replace its industry's referral form, pipeline or agreement (Admin → Groups → a group → Overrides), using the same editors as industries, with versions and "Use the industry's version". Resolution: group → industry → family default.
 - Group agreements need their own super-admin approval; until then the group's members keep signing the industry's approved agreement, never a draft. The agreement screen says which version members sign.

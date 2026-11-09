@@ -102,6 +102,41 @@ final class AdminGroupsController
         return back()->with('status', 'group-saved');
     }
 
+    /** One pricing change applied to many groups (now or scheduled). Tier C groups always keep the value guarantee off. */
+    public function bulkPricing(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'groups' => ['required', 'array', 'min:1'],
+            'groups.*' => ['string', 'exists:groups,slug'],
+            'when' => ['required', 'in:now,scheduled'],
+            'effective_on' => ['required_if:when,scheduled', 'nullable', 'date', 'after:today'],
+        ]);
+        $groups = Group::query()->with('industry')->whereIn('slug', $data['groups'])->get();
+        $applied = 0;
+        $forcedOff = [];
+        DB::transaction(function () use ($groups, $request, $data, &$applied, &$forcedOff) {
+            foreach ($groups as $group) {
+                $input = (array) $request->input('values');
+                if (! $group->industry->tier->allowsValueGuarantee() && ! empty($input['value_guarantee'])) {
+                    $input['value_guarantee'] = false;
+                    $forcedOff[] = $group->name;
+                }
+                $values = GroupSettings::pricing($group, $input);
+                if ($data['when'] === 'scheduled') {
+                    DB::table('group_scheduled_changes')->insert(['group_id' => $group->id, 'section' => 'pricing', 'values' => json_encode($values), 'effective_on' => $data['effective_on'], 'created_by' => $request->user()?->getKey(), 'created_at' => now(), 'updated_at' => now()]);
+                } else {
+                    $before = $group->pricing;
+                    $group->forceFill(['pricing' => $values])->save();
+                    activity('admin')->causedBy($request->user())->performedOn($group)->event('group-pricing-changed')->withProperties(['old' => $before, 'attributes' => $values, 'bulk' => true])->log("Changed {$group->name} pricing (bulk)");
+                }
+                $applied++;
+            }
+        });
+        $note = $forcedOff === [] ? '' : ' The value guarantee stays off for '.count($forcedOff).' Tier C group(s).';
+
+        return back()->with('status', 'bulk-pricing-'.($data['when'] === 'scheduled' ? 'scheduled' : 'applied'))->with('bulkNote', "{$applied} groups updated.{$note}");
+    }
+
     public function cancelScheduled(Request $request, Group $group, int $change): RedirectResponse
     {
         $n = DB::table('group_scheduled_changes')->where(['id' => $change, 'group_id' => $group->id])->whereNull('applied_at')->update(['cancelled_at' => now()]);

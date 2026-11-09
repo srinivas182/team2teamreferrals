@@ -49,6 +49,8 @@ const messages: Record<string, string> = {
     'group-owner-removed': 'Owner removed.',
     'group-opened': 'New group opened. It copies the rules, pricing and customisations of the group it grew from.',
     'private-network-created': 'Private network created. Its owner can now invite their branches.',
+    'bulk-pricing-applied': 'Pricing applied.',
+    'bulk-pricing-scheduled': 'Pricing change scheduled. Members are told 30 days before it takes effect.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

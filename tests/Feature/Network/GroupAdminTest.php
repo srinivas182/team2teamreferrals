@@ -27,14 +27,14 @@ function pricingPayload(array $over = []): array
 
 it('shows a group with its pricing, rules, owners and health', function () {
     $this->actingAs($this->admin)->get('/admin/groups/solar-installers-network')->assertOk()
-        ->assertInertia(fn ($p) => $p->component('admin/groups/Show')->where('group.pricing.seat_price', 79)->where('group.industry.guaranteeAllowed', true)->where('health.owners', 0)->where('affected.seats', 0));
+        ->assertInertia(fn ($p) => $p->component('admin/groups/Show')->where('group.pricing.seat_price', 10)->where('group.industry.guaranteeAllowed', true)->where('health.owners', 0)->where('affected.seats', 0));
 });
 
 it('updates pricing now and audits before and after', function () {
     $this->actingAs($this->admin)->put('/admin/groups/solar-installers-network/pricing', pricingPayload())->assertSessionHas('status', 'group-saved');
     expect($this->solar->fresh()->pricing['seat_price'])->toBe(89);
     $a = Activity::where('event', 'group-pricing-changed')->firstOrFail();
-    expect($a->properties['old']['seat_price'])->toBe(79)->and($a->properties['attributes']['seat_price'])->toBe(89);
+    expect($a->properties['old']['seat_price'])->toBe(10)->and($a->properties['attributes']['seat_price'])->toBe(89);
 });
 
 it('rejects invalid pricing and keeps the value guarantee off in Tier C', function () {
@@ -70,7 +70,7 @@ it('schedules a change, notifies owners 30 days ahead, applies it on the day, an
     $this->delete("/admin/groups/solar-installers-network/scheduled/{$id}")->assertSessionHas('status', 'group-change-cancelled');
     $this->travel(70)->days();
     Artisan::call('t2t:groups:scheduled');
-    expect($this->solar->fresh()->pricing['seat_price'])->toBe(79);
+    expect($this->solar->fresh()->pricing['seat_price'])->toBe(10);
 });
 
 it('refuses to schedule changes in the past', function () {
