@@ -10,7 +10,7 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 - Security baseline: nonce-based Content Security Policy, HSTS in production, frame, content-type, referrer and permissions headers; `/up` health check; strict Eloquent mode outside production.
 - Modular monolith structure (`app/Domains`) with architecture tests; ADRs 0001–0005.
 - Docker Compose development environment (PHP 8.4, MySQL 8.4, Redis, Mailpit, Vite).
-- Quality: Pint, Larastan level 8, Pest (18 tests), ESLint, Prettier, TypeScript; pre-commit hook; GitHub Actions per the agreed minutes rules; weekly grouped Dependabot updates.
+- Quality: Pint, Larastan level 8, Pest (20 tests), ESLint, Prettier, TypeScript; pre-commit hook; GitHub Actions per the agreed minutes rules; weekly grouped Dependabot updates.
 - Laravel Pennant (feature flags), Sentry hook (enabled by DSN), Telescope and Debugbar registered in local only.
 
 ### Sprint 3a — Application foundation
@@ -19,7 +19,7 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 - Security baseline: nonce-based Content Security Policy, HSTS in production, frame, content-type, referrer and permissions headers; `/up` health check; strict Eloquent mode outside production.
 - Modular monolith structure (`app/Domains`) with architecture tests; ADRs 0001–0005.
 - Docker Compose development environment (PHP 8.4, MySQL 8.4, Redis, Mailpit, Vite).
-- Quality: Pint, Larastan level 8, Pest (18 tests), ESLint, Prettier, TypeScript; pre-commit hook; GitHub Actions per the agreed minutes rules; weekly grouped Dependabot updates.
+- Quality: Pint, Larastan level 8, Pest (20 tests), ESLint, Prettier, TypeScript; pre-commit hook; GitHub Actions per the agreed minutes rules; weekly grouped Dependabot updates.
 - Laravel Pennant (feature flags), Sentry hook (enabled by DSN), Telescope and Debugbar registered in local only.
 
 ### Sprint 1 — Brand, design system and user flows
