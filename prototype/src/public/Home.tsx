@@ -1,6 +1,10 @@
-import { ArrowRight, Clock, FileSignature, ShieldCheck, MapPin, X, Check } from "lucide-react";
-import { Container, Button, Card, TempBadge, TrustRing, Avatar, money } from "../ui/kit";
-import { network } from "../data/mock";
+import { useState } from "react";
+import { ArrowRight, Check, Search, ShieldCheck, Trophy, Timer, Send, Sparkles, MapPin } from "lucide-react";
+import { Container, Button, Card, TempBadge, Badge, Select, money, cn } from "../ui/kit";
+import { industries, families, totalClaimed, bySlug, type FamilyKey } from "../data/industries";
+import { IndustryIcon } from "../ui/brand";
+import { NationalMap, MapLegend } from "../ui/national";
+import { CountUp } from "../ui/count";
 
 /** Hero visual: a real referral moving from St. George to Houston (the product’s signature relay). */
 function RelayCard() {
@@ -35,135 +39,147 @@ function RelayCard() {
   );
 }
 
+
+const popular = ["real-estate", "solar", "mortgage", "insurance", "roofing", "hvac", "financial-advisors", "moving"];
+
+function IndustryPicker() {
+  const [q, setQ] = useState("");
+  const hits = q.trim() ? industries.filter(i => (i.name + " " + i.group).toLowerCase().includes(q.toLowerCase())).slice(0, 6) : [];
+  return (
+    <div className="relative mt-8 max-w-xl">
+      <label className="sr-only" htmlFor="ind-search">Find your industry</label>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-md focus-within:border-primary sm:flex-nowrap">
+        <Search size={20} className="ml-2 text-subtle" aria-hidden />
+        <input id="ind-search" value={q} onChange={e => setQ(e.target.value)} placeholder="What do you do? Solar, mortgage, roofing…" className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-subtle" autoComplete="off" />
+        <Button className="w-full sm:w-auto" href={hits[0] ? `#industry-${hits[0].slug}` : "#industry-real-estate"}>Find my network</Button>
+      </div>
+      {hits.length > 0 && (
+        <ul className="absolute inset-x-0 z-10 mt-2 overflow-hidden rounded-xl border border-line bg-surface shadow-lg" role="listbox">
+          {hits.map(i => <li key={i.slug}><a href={`#industry-${i.slug}`} className="flex items-center gap-3 px-4 py-3 hover:bg-bg"><IndustryIcon industry={i} size={32} /><span className="font-medium">{i.name}</span><span className="ml-auto text-sm text-muted">{i.group}</span></a></li>)}
+        </ul>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {popular.map(slug => { const i = bySlug(slug); return <a key={slug} href={`#industry-${slug}`} className="inline-flex items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-sm font-medium hover:border-primary"><IndustryIcon industry={i} size={26} />{i.name}</a>; })}
+        <a href="#industries" className="inline-flex items-center px-2 text-sm font-semibold text-primary">All 46 industries <ArrowRight size={14} /></a>
+      </div>
+    </div>
+  );
+}
+
+const demoSteps = [["Sent", "0:00"], ["Seen by Ana Ruiz, SunPath Solar", "0:02"], ["Accepted", "0:14"], ["First call with the homeowner", "0:39"]] as const;
+function SendDemo() {
+  const [ind, setInd] = useState("solar"); const [temp, setTemp] = useState<"hot" | "warm" | "future">("hot"); const [sent, setSent] = useState(false); const i = bySlug(ind);
+  return (
+    <Card className="grid overflow-hidden lg:grid-cols-2">
+      <div className="p-6 sm:p-8">
+        <Badge tone="orange">Try it, no sign-up</Badge>
+        <h3 className="display mt-3 font-display text-2xl font-bold">Send a referral in three taps</h3>
+        <div className="mt-6 space-y-4">
+          <label className="block"><span className="mb-1.5 block text-sm font-medium">Industry</span><Select value={ind} onChange={e => { setInd(e.target.value); setSent(false); }}>{industries.filter(x => x.tier !== "C").map(x => <option key={x.slug} value={x.slug}>{x.name}</option>)}</Select></label>
+          <div><span className="mb-1.5 block text-sm font-medium">City</span><div className="flex h-11 items-center gap-2 rounded-md border border-line bg-bg px-3 text-[15px]"><MapPin size={16} className="text-muted" />Austin, TX <span className="ml-auto text-sm text-success">Seat held · trust 93</span></div></div>
+          <div><span className="mb-1.5 block text-sm font-medium">How soon is the {i.client} ready?</span>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Lead temperature">{(["hot", "warm", "future"] as const).map(t => <button key={t} role="radio" aria-checked={temp === t} onClick={() => setTemp(t)} className={cn("rounded-md border p-2", temp === t ? "border-primary ring-2 ring-primary/20" : "border-line")}><TempBadge t={t} /></button>)}</div></div>
+          <Button className="w-full" size="lg" onClick={() => setSent(true)}><Send size={18} />Send to Austin</Button>
+        </div>
+      </div>
+      <div className="border-t border-line bg-bg p-6 sm:p-8 lg:border-l lg:border-t-0">
+        {!sent ? (
+          <div className="flex h-full flex-col items-center justify-center text-center text-muted"><Sparkles className="text-primary" /><p className="mt-3 max-w-xs">Press send to watch a referral travel to a verified {i.pro} in Austin, with every step tracked.</p></div>
+        ) : (
+          <div>
+            <svg viewBox="0 0 320 90" className="h-20 w-full" aria-hidden><path className="relay-path" d="M24 70 C 110 -6, 210 -6, 296 62" fill="none" stroke="url(#rg2)" strokeWidth="3" strokeLinecap="round" /><defs><linearGradient id="rg2" x1="0" x2="1"><stop offset="0" stopColor="#2451F5" /><stop offset="1" stopColor="#FF7A1A" /></linearGradient></defs><circle cx="24" cy="70" r="7" fill="#2451F5" /><circle cx="296" cy="62" r="7" fill="#FF7A1A" className="pop" style={{ animationDelay: "1.6s", transformOrigin: "296px 62px" }} /></svg>
+            <ol className="mt-4 space-y-3">{demoSteps.map(([a, b], k) => <li key={a} className="pop flex items-center gap-3 text-sm" style={{ animationDelay: `${0.5 + k * 0.45}s` }}><span className="flex h-6 w-6 items-center justify-center rounded-full bg-success text-white"><Check size={14} /></span><span className="font-medium">{a}</span><span className="ml-auto tabular text-muted">{b}</span></li>)}</ol>
+            <p className="mt-5 rounded-md bg-surface p-3 text-sm text-muted">In the real product you’d see every status change live, message the {i.pro}, and get a closing report. Minutes shown are typical for this network.</p>
+            <Button className="mt-4 w-full" variant="secondary" href="#signup">Claim my city to send real referrals</Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+const states = [["Texas", 71], ["Florida", 68], ["Arizona", 64], ["California", 58], ["Georgia", 55], ["Utah", 52]] as const;
+
 export default function Home() {
+  const [mapInd, setMapInd] = useState("real-estate");
+  const fams = Object.keys(families) as FamilyKey[];
   return (
     <>
-      <section className="border-b border-line bg-surface">
-        <Container className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:py-24">
-          <div>
-            <h1 className="display font-display text-[40px] font-extrabold leading-[1.08] sm:text-[52px] lg:text-[60px]">
-              Your out-of-area leads, handed to teams you trust.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-muted">
-              When a buyer calls about a city you don’t serve, send them to a vetted team there in under a minute. Track every step, and collect your referral fee when they close.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" href="#signup">Claim your city free <ArrowRight size={18} /></Button>
-              <Button size="lg" variant="secondary" href="#how-it-works">See how it works</Button>
-            </div>
-            <p className="mt-6 text-sm text-muted">Free during the pilot. Verified licenses only. We never take a share of your commission.</p>
+      <section className="relative overflow-hidden border-b border-line bg-surface">
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full opacity-[.10]" style={{ background: "radial-gradient(circle,#2451F5,transparent 65%)" }} />
+        <Container className="grid gap-12 py-14 sm:py-20 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+          <div className="min-w-0">
+            <span className="inline-flex flex-wrap items-center gap-2 rounded-2xl bg-cobalt-50 px-3 py-1 text-sm font-semibold text-cobalt-700 dark:bg-cobalt-500/15 dark:text-cobalt-200">46 industries · every US city · one verified pro per city</span>
+            <h1 className="display mt-5 break-words font-display text-[38px] font-extrabold leading-[1.05] sm:text-[56px] lg:text-[64px]">Every out-of-area client, handed to a pro you trust.</h1>
+            <p className="mt-6 max-w-xl text-lg text-muted">Licensed and verified professionals hold one seat per city in their industry’s network. Send a client anywhere in the country in seconds, track every step, and get the credit you’re owed.</p>
+            <IndustryPicker />
           </div>
           <RelayCard />
         </Container>
       </section>
 
-      <section>
-        <Container className="grid gap-10 py-20 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <h2 className="display font-display text-3xl font-bold sm:text-4xl">Every top team leaks out-of-area leads.</h2>
-            <p className="mt-4 text-lg text-muted">A buyer in Houston calls your St. George office. You’re not licensed in Texas, so the lead goes to junk — or to a friend-of-a-friend you can’t hold to anything. Either way, the referral fee walks out the door.</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="p-5">
-              <h3 className="font-semibold">Today</h3>
-              <ul className="mt-4 space-y-3 text-sm text-muted">
-                {["Lead parked in a spreadsheet", "Referral texted to a contact", "No idea if anyone called", "Fee chased months later, if ever"].map(t => <li key={t} className="flex gap-2"><X size={16} className="mt-0.5 shrink-0 text-danger" />{t}</li>)}
-              </ul>
-            </Card>
-            <Card className="border-cobalt-200 p-5 dark:border-cobalt-700">
-              <h3 className="font-semibold">With Team to Team</h3>
-              <ul className="mt-4 space-y-3 text-sm">
-                {["One verified team per city", "Signed agreement on acceptance", "Live status on every step", "Closing reported, fee tracked"].map(t => <li key={t} className="flex gap-2"><Check size={16} className="mt-0.5 shrink-0 text-success" />{t}</li>)}
-              </ul>
-            </Card>
-          </div>
+      <section className="border-b border-line">
+        <Container className="grid grid-cols-2 gap-6 py-10 sm:grid-cols-4">
+          {[[<CountUp key="a" to={totalClaimed} />, "city seats claimed"], [<CountUp key="b" to={46} />, "industries, one network each"], [<span key="c" className="tabular">16 min</span>, "average time to accept"], [<span key="d">$0</span>, "for any month without a referral"]].map(([v, l], k) => (
+            <div key={k}><div className="font-display text-3xl font-extrabold sm:text-4xl">{v}</div><div className="mt-1 text-sm text-muted">{l as string}</div></div>))}
         </Container>
       </section>
 
-      <section className="border-y border-line bg-surface">
-        <Container className="py-20">
-          <h2 className="display max-w-2xl font-display text-3xl font-bold sm:text-4xl">Three steps from “not my market” to “fee received”.</h2>
-          <ol className="mt-12 grid gap-8 md:grid-cols-3">
-            {[
-              ["Join a group and claim your city", "Groups are networks of vetted teams, one per city. Your license is verified before you go live."],
-              ["Send the lead to the right team", "Pick the city, mark the lead Hot, Warm or Future, and send. The team there sees its value before accepting."],
-              ["Track it to closing", "Accepting signs the referral agreement. You see every call and update, and the closing report shows your fee."],
-            ].map(([t, d], i) => (
-              <li key={t}>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cobalt-50 font-display text-lg font-bold text-cobalt-700 dark:bg-cobalt-500/20 dark:text-cobalt-200">{i + 1}</span>
-                <h3 className="mt-4 text-lg font-semibold">{t}</h3>
-                <p className="mt-2 text-muted">{d}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
-
-      <section>
-        <Container className="py-20">
-          <h2 className="display max-w-2xl font-display text-3xl font-bold sm:text-4xl">Accountability is built in, not promised.</h2>
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
-            <Card className="p-6">
-              <Clock className="text-primary" />
-              <h3 className="mt-4 text-lg font-semibold">Deadlines your group sets</h3>
-              <p className="mt-2 text-muted">Accept within 24 hours, call within 2 for Hot leads, update weekly. Miss twice and the city goes to the backup team.</p>
-              <div className="mt-5 flex items-center justify-between rounded-md border border-line p-3 text-sm"><span>Accept referral #4822</span><span className="rounded-full bg-[#FEF9E7] px-2 py-0.5 font-semibold tabular text-warning dark:bg-warning/20 dark:text-[#FCD34D]">2h 14m left</span></div>
-            </Card>
-            <Card className="p-6">
-              <FileSignature className="text-primary" />
-              <h3 className="mt-4 text-lg font-semibold">An agreement on every referral</h3>
-              <p className="mt-2 text-muted">Both brokerages, license numbers, fee and protection period, signed in the app the moment a team accepts.</p>
-              <div className="mt-5 flex items-center gap-3 rounded-md border border-line p-3 text-sm"><ShieldCheck size={18} className="text-success" /><span>Signed by both teams</span><span className="ml-auto text-muted">9:17 AM</span></div>
-            </Card>
-            <Card className="p-6">
-              <ShieldCheck className="text-primary" />
-              <h3 className="mt-4 text-lg font-semibold">A trust score everyone can see</h3>
-              <p className="mt-2 text-muted">Response time, updates, conversions and fees paid on time, rolled into one score from 0 to 100.</p>
-              <div className="mt-5 flex items-center gap-3 rounded-md border border-line p-3 text-sm"><Avatar name="Chris Delgado" size={32} tone="orange" /><div><div className="font-medium">Bayou City Homes</div><div className="text-muted">Houston, TX</div></div><span className="ml-auto"><TrustRing score={94} size={40} /></span></div>
-            </Card>
-          </div>
-        </Container>
-      </section>
-
-      <section className="bg-navy-900 text-white">
-        <Container className="grid gap-10 py-16 lg:grid-cols-[1fr_1.4fr] lg:items-center">
-          <div>
-            <h2 className="display font-display text-3xl font-bold">The network today</h2>
-            <p className="mt-3 text-[#AAB4CE]">Sample figures for the prototype.</p>
-            <Button variant="accent" className="mt-6" href="#groups">Browse groups <MapPin size={16} /></Button>
-          </div>
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
-            {[["Verified teams", network.teams.toLocaleString()], ["States covered", network.states], ["Referrals sent", network.referrals.toLocaleString()], ["Median time to accept", network.avgAccept]].map(([k, v]) => (
-              <div key={k as string} className="border-l border-navy-700 pl-4"><dt className="text-sm text-[#AAB4CE]">{k}</dt><dd className="mt-1 font-display text-3xl font-bold tabular">{v}</dd></div>
-            ))}
-          </dl>
-        </Container>
-      </section>
-
-      <section>
-        <Container className="grid gap-6 py-20 lg:grid-cols-2">
-          {[
-            ["We used to lose a dozen relocation leads a quarter. Last quarter four of them closed through our group, and every fee was on the closing report.", "Jordan Hale", "Red Rock Realty Group, St. George"],
-            ["I know a referral is real before I accept it — the budget, the timeline, whether they’re pre-approved. That alone changed how fast we respond.", "Chris Delgado", "Bayou City Homes, Houston"],
-          ].map(([q, n, r]) => (
-            <figure key={n} className="rounded-lg border border-line bg-surface p-8">
-              <blockquote className="text-lg leading-relaxed">“{q}”</blockquote>
-              <figcaption className="mt-6 flex items-center gap-3"><Avatar name={n} tone={n === "Jordan Hale" ? "cobalt" : "orange"} /><div><div className="font-semibold">{n}</div><div className="text-sm text-muted">{r}</div></div></figcaption>
-            </figure>
-          ))}
-        </Container>
-      </section>
-
-      <section>
+      <section className="py-20">
         <Container>
-          <div className="flex flex-col items-start gap-6 rounded-xl bg-cobalt-500 px-8 py-12 text-white sm:px-12 lg:flex-row lg:items-center">
-            <div>
-              <h2 className="display font-display text-3xl font-bold">Your city might still be open.</h2>
-              <p className="mt-2 text-cobalt-100">Claiming is free during the pilot. One team per city, per group.</p>
-            </div>
-            <div className="flex gap-3 lg:ml-auto">
-              <Button variant="accent" size="lg" href="#groups">Check your city</Button>
-            </div>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="max-w-2xl"><h2 className="display font-display text-3xl font-bold sm:text-4xl">Cities are being claimed right now</h2><p className="mt-3 text-muted">Each city has one seat per industry. When it’s gone, the next pro joins the waitlist, ranked by reputation, not sign-up order.</p></div>
+            <div className="ml-auto w-full sm:w-64"><label className="text-sm font-medium" htmlFor="map-ind">Industry</label><Select id="map-ind" value={mapInd} onChange={e => setMapInd(e.target.value)}>{industries.map(i => <option key={i.slug} value={i.slug}>{i.name}</option>)}</Select></div>
+          </div>
+          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
+            <Card className="p-4 sm:p-6"><NationalMap industry={mapInd} /><div className="mt-3"><MapLegend /></div></Card>
+            <Card className="p-6">
+              <h3 className="flex items-center gap-2 font-semibold"><Trophy size={18} className="text-orange-500" />Most claimed states</h3>
+              <ul className="mt-4 space-y-4">{states.map(([s, p]) => <li key={s}><div className="flex justify-between text-sm"><span className="font-medium">{s}</span><span className="tabular text-muted">{p}% claimed</span></div><div className="mt-1.5 h-2 rounded-full bg-bg"><div className="h-2 rounded-full" style={{ width: `${p}%`, background: "linear-gradient(90deg,#2451F5,#FF7A1A)" }} /></div></li>)}</ul>
+              <Button className="mt-6 w-full" href={`#industry-${mapInd}`}>See open cities in {bySlug(mapInd).name.toLowerCase()}</Button>
+            </Card>
+          </div>
+        </Container>
+      </section>
+
+      <section id="industries" className="border-y border-line bg-surface py-20">
+        <Container>
+          <h2 className="display max-w-2xl font-display text-3xl font-bold sm:text-4xl">One trusted network for every licensed, local profession</h2>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {fams.map(f => (
+              <div key={f}>
+                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide" style={{ color: families[f].accent }}>{families[f].name}</h3>
+                <ul className="mt-3 space-y-1">{industries.filter(i => i.family === f).map(i => <li key={i.slug}><a href={`#industry-${i.slug}`} className="flex items-center gap-3 rounded-md p-1.5 hover:bg-bg"><IndustryIcon industry={i} size={30} /><span className="text-sm font-medium">{i.name}</span></a></li>)}</ul>
+              </div>))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-20"><Container><SendDemo /></Container></section>
+
+      <section className="pb-20">
+        <Container className="grid gap-6 lg:grid-cols-2">
+          <Card className="p-8">
+            <ShieldCheck className="text-success" size={28} />
+            <h2 className="display mt-4 font-display text-2xl font-bold">No referrals, no charge</h2>
+            <p className="mt-3 text-muted">Every seat starts with 3 months free. After that, any month in which no referral reaches you is free, automatically. You only ever pay for a network that’s working for you.</p>
+            <Button className="mt-6" variant="secondary" href="#pricing">See pricing</Button>
+          </Card>
+          <Card className="p-8">
+            <Timer className="text-primary" size={28} />
+            <h2 className="display mt-4 font-display text-2xl font-bold">Seats are earned, not owned</h2>
+            <p className="mt-3 text-muted">Every month, each pro gets a city report card: response time, conversion and rank. Fast, reliable pros keep their city. Slow ones can be challenged by the best pro on the waitlist.</p>
+            <div className="mt-6 grid grid-cols-3 gap-3 text-center text-sm">{[["11 min", "response"], ["38%", "conversion"], ["#2", "in Texas"]].map(([a, b]) => <div key={b} className="rounded-md bg-bg p-3"><div className="font-display text-xl font-bold">{a}</div><div className="text-muted">{b}</div></div>)}</div>
+          </Card>
+        </Container>
+      </section>
+
+      <section className="pb-8">
+        <Container>
+          <div className="overflow-hidden rounded-2xl bg-navy-900 p-10 text-white sm:p-14" style={{ backgroundImage: "radial-gradient(circle at 85% 20%,rgba(255,122,26,.35),transparent 45%),radial-gradient(circle at 10% 90%,rgba(36,81,245,.45),transparent 50%)" }}>
+            <h2 className="display max-w-2xl font-display text-3xl font-extrabold sm:text-5xl">Your city is open today. It may not be tomorrow.</h2>
+            <p className="mt-4 max-w-xl text-[#C9D2EA]">Reserve your seat now as a founding member and lock in founding pricing for as long as you hold it.</p>
+            <div className="mt-8 flex flex-wrap gap-3"><Button size="lg" variant="accent" href="#signup">Reserve my city <ArrowRight size={18} /></Button><Button size="lg" variant="secondary" href="#how-it-works">How it works</Button></div>
           </div>
         </Container>
       </section>
