@@ -33,7 +33,7 @@ final class AdminAgreementController
         }
 
         return Inertia::render('admin/industries/Agreement', [
-            'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'tierLabel' => $industry->tier->label(), 'allowsFees' => $industry->tier->allowsMemberReferralFees(), 'terminology' => $industry->terminology],
+            'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'tierLabel' => $industry->tier->label(), 'allowsFees' => $industry->tier->allowsMemberReferralFees(), 'terminology' => $industry->terms()],
             'current' => $current,
             'signing' => $this->agreements->forSigning($industry)['version'] ?? null,
             'history' => $history,
@@ -113,15 +113,14 @@ final class AdminAgreementController
             'industry' => $industry, 'version' => $current['version'], 'approved' => $current['approved'],
             'sections' => AgreementRenderer::render($current['clauses'], $data), 'summary' => AgreementRenderer::summary($current['clauses'], $data),
             'addenda' => $this->addenda($industry), 'history' => $this->agreements->history($industry), 'generated' => now()->toDayDateTimeString(),
+            'messages' => AdminIndustryMessagesController::pack($industry, app(\App\Domains\Messaging\Templates::class)), 'terms' => $industry->terms(),
         ])->download("{$industry->slug}-counsel-review-pack.pdf");
     }
 
     /** @return array<string, string> */
     private function sample(Industry $industry): array
     {
-        $t = $industry->terminology;
-
-        return [...AgreementDefaults::sample(), 'pro' => $t['pro'], 'client_term' => $t['client']];
+        return [...AgreementDefaults::sample(), ...$industry->mergeTerms()];
     }
 
     /** @return array<int, array{stateId: int, code: string, name: string, text: string}> */

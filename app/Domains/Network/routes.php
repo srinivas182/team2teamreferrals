@@ -4,6 +4,7 @@ use App\Domains\Identity\Http\Middleware\EnsureAccountIsActive;
 use App\Domains\Identity\Http\Middleware\EnsureStaff;
 use App\Domains\Network\Industries\Http\AdminAgreementController;
 use App\Domains\Network\Industries\Http\AdminIndustriesController;
+use App\Domains\Network\Industries\Http\AdminIndustryMessagesController;
 use App\Domains\Network\Industries\Http\AdminIndustryTemplatesController;
 use App\Domains\Network\Locations\Http\AdminLocationsController;
 use App\Domains\Network\Locations\Http\LocationLookupController;
@@ -37,6 +38,10 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('{industry}/revoke', [AdminIndustriesController::class, 'revoke'])->name('revoke');
         Route::post('{industry}/status', [AdminIndustriesController::class, 'status'])->name('status');
         Route::put('{industry}/fee', [AdminIndustriesController::class, 'saveFee'])->name('fee');
+        Route::get('{industry}/messages', [AdminIndustryMessagesController::class, 'show'])->name('messages.show');
+        Route::post('{industry}/messages', [AdminIndustryMessagesController::class, 'save'])->name('messages.save');
+        Route::post('{industry}/messages/reset', [AdminIndustryMessagesController::class, 'reset'])->name('messages.reset');
+        Route::post('{industry}/messages/{template}/activate', [AdminIndustryMessagesController::class, 'activate'])->name('messages.activate');
         Route::get('{industry}/agreement', [AdminAgreementController::class, 'show'])->name('agreement.show');
         Route::put('{industry}/agreement', [AdminAgreementController::class, 'save'])->name('agreement.save');
         Route::delete('{industry}/agreement', [AdminAgreementController::class, 'reset'])->name('agreement.reset');

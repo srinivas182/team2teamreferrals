@@ -15,10 +15,15 @@
 @foreach ($sections as $i => $s)<h3>{{ $i + 1 }}. {{ $s['title'] }}</h3><p>{{ $s['text'] }}</p>@endforeach
 <h2>3. State addenda</h2>
 @forelse ($addenda as $a)<h3>{{ $a['name'] }}</h3><p>{{ $a['text'] }}</p>@empty<p class="muted">No state addenda yet.</p>@endforelse
-<h2>4. Version and approval history</h2>
+<h2>4. Messages members and clients receive</h2>
+<p class="muted">Terms used: a {{ $terms['pro'] }} serves a {{ $terms['client'] }}; a {{ $terms['referral'] }}{{ $industry->tier->allowsMemberReferralFees() ? '; fee called a '.$terms['fee'] : '' }}. Sample data shown.</p>
+<table><tr><th style="width:24%">Notification</th><th style="width:10%">Channel</th><th>Wording</th></tr>
+@foreach ($messages as $m)<tr><td>{{ $m['label'] }}<br><span class="muted">{{ $m['source'] === 'industry' ? 'Industry wording' : ($m['source'] === 'platform' ? 'Platform wording' : 'Default wording') }}</span></td><td>{{ $m['channel'] }}</td><td>@if ($m['subject'])<strong>{{ $m['subject'] }}</strong><br>@endif{{ $m['body'] }}</td></tr>@endforeach
+</table>
+<h2>5. Version and approval history</h2>
 <table><tr><th>Version</th><th>Saved</th><th>Approved</th><th>Reviewed by</th><th>Note</th></tr>
 @forelse ($history as $h)<tr><td>v{{ $h['version'] }}{{ $h['active'] ? ' (draft)' : '' }}</td><td>{{ $h['when'] }}</td><td>{{ $h['approvedAt'] ?? '—' }}</td><td>{{ $h['counsel'] ?? '—' }}</td><td>{{ $h['note'] ?? '' }}</td></tr>
 @empty<tr><td colspan="5" class="muted">Default wording, never saved.</td></tr>@endforelse
 </table>
-<p class="muted" style="margin-top:18px">To approve: review sections 1–3, then record your name, firm and any conditions. Approval applies to this exact version only.</p>
+<p class="muted" style="margin-top:18px">To approve: review sections 1–4, then record your name, firm and any conditions. Approval applies to this exact version only.</p>
 </body></html>

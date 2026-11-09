@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $type
  * @property string $channel
+ * @property ?int $industry_id
  * @property int $version
  * @property ?string $subject
  * @property string $body
@@ -19,9 +20,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class NotificationTemplate extends Model
 {
-    protected $fillable = ['type', 'channel', 'version', 'subject', 'body', 'is_active', 'created_by'];
+    protected $fillable = ['type', 'channel', 'industry_id', 'version', 'subject', 'body', 'is_active', 'created_by'];
 
-    protected $attributes = ['subject' => null, 'is_active' => false, 'created_by' => null];
+    protected $attributes = ['industry_id' => null, 'subject' => null, 'is_active' => false, 'created_by' => null];
 
     protected function casts(): array
     {

@@ -8,6 +8,7 @@ use App\Domains\Identity\Models\User;
 use App\Domains\Messaging\Mail\PlatformMessage;
 use App\Domains\Messaging\Models\OutboxItem;
 use App\Domains\Messaging\Push\PushSender;
+use App\Domains\Network\Industries\Models\Industry;
 use App\Support\Sms\SmsSender;
 use Carbon\CarbonImmutable;
 use Throwable;
@@ -29,10 +30,13 @@ final class Notifier
     ) {}
 
     /** @param array<string, scalar|null> $data */
-    public function send(User $user, string $type, array $data = [], ?string $url = null): void
+    public const DEFAULT_TERMS = ['pro' => 'pro', 'pros' => 'pros', 'client_term' => 'client', 'clients_term' => 'clients', 'referral_term' => 'referral', 'fee_term' => 'referral fee'];
+
+    /** @param array<string, scalar|null> $data */
+    public function send(User $user, string $type, array $data = [], ?string $url = null, ?Industry $industry = null): void
     {
         $def = NotificationCatalogue::get($type);
-        $data = ['first_name' => $user->first_name, 'url' => $url, ...$data];
+        $data = [...self::DEFAULT_TERMS, ...($industry?->mergeTerms() ?? []), 'first_name' => $user->first_name, 'url' => $url, ...$data];
         $now = CarbonImmutable::now();
         $quietUntil = $def['urgent'] ? null : Preferences::quietUntil($user, $now);
 
@@ -40,7 +44,7 @@ final class Notifier
             if (! $this->prefs->allows($user, $type, $channel)) {
                 continue;
             }
-            $w = $this->templates->wording($type, $channel);
+            $w = $this->templates->wording($type, $channel, $industry?->id);
             $title = NotificationCatalogue::render($w['subject'], $data);
             $body = NotificationCatalogue::render($w['body'], $data);
 
