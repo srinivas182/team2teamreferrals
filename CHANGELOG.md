@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 12a — Team profiles and members
+- Team profile (Portal → Team): name, logo, about, areas served, website, phone, founding year and social links (LinkedIn, Facebook, Instagram, YouTube, X).
+- Members with roles: leader, assistant (edits the profile) and member. Every new pro starts as the leader of a team of one, created the first time they need it.
+- Invitations by email (14 days): the invited person sees the team before signing in, comes back after signing in or creating an account, and can only accept with the invited email. Leaders can cancel invitations and remove members.
+- Fixed in review: a new pro inviting someone before ever opening the Team page was refused; their team is now created on first use from any screen.
+- 225 PHP tests in total (4 new).
+
 ### Sprint 11b — Seat map, invitations and real demand numbers
 - Seat map for owners and staff (Admin → Groups → a group → Seats → Seat map, or the owner overview): every territory as held, backup only, waitlisted or open, with counts, hover details, labels and a list view.
 - Invitations (bulk seat seeding): owners and staff invite pros to specific territories, one or many at once, by email; invitations last 14 days and are how invite-only groups get members. The public invitation page shows the offer before signing in, and returns the pro there after signing in or creating an account. Accepting runs through the normal seat rules (seat, backup or waitlist) and must be from the invited email. Every invitation is in the seat's history.
