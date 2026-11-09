@@ -6,12 +6,13 @@ import Home from "./public/Home";
 import { HowItWorks, Groups } from "./public/Pages1";
 import { Pricing } from "./public/Pricing";
 import { IndustryHub, StatePage, CityPage2 } from "./public/Industry";
-import { GroupPage, ProfilePage, AuthPage, BlogPost } from "./public/Pages2";
+import { GroupPage2, ProfilePage2, ClaimFlow, CompanyDashboard, Billing2 } from "./public/Members";
+import { AuthPage, BlogPost } from "./public/Pages2";
 import { Wizard, TrainingGate, Welcome } from "./onboarding/Onboarding";
 import { Shell } from "./app/Shell";
 import { Dashboard, Inbox, AcceptSign } from "./portal/Core";
 import { SendReferral, Pipeline, ReferralDetail } from "./portal/Work";
-import { SentList, Earnings, MyGroups, Billing } from "./portal/More";
+import { SentList, Earnings, MyGroups } from "./portal/More";
 import { OwnerOverview, SeatMap, Applications, Enforcement } from "./portal/Owner";
 import { AdminDashboard, IndustryBuilder, SiteBuilder, NetworkCrm, LicenseQueue } from "./admin/Admin";
 import { ClientPortal, RequestDone } from "./public/Client";
@@ -19,15 +20,16 @@ import { NotificationsPage, Gallery } from "./system/System";
 import { Card, Logo, Badge, Button } from "./ui/kit";
 
 type Screen = { route: string; title: string; area: string; part: "2a" | "2b" | "2c" };
-const updated2c = new Set(["home", "pricing", "industry-solar", "industry-real-estate", "state-texas", "city"]);
+const updated2c = new Set(["home", "pricing", "industry-solar", "industry-real-estate", "state-texas", "city", "group", "pro", "claim", "company", "billing"]);
 export const screens: Screen[] = [
   ["home", "Home (multi-industry)"], ["pricing", "Pricing and calculator"], ["industry-solar", "Industry hub: Solar"], ["industry-real-estate", "Industry hub: Real estate"], ["state-texas", "Industry × state: Solar in Texas"], ["city", "City page: Solar in Austin"],
+  ["group", "Network page: Solar Installers Network"], ["pro", "Team profile with ratings"], ["claim", "Claim flow: team or company"], ["company", "Company dashboard"], ["billing", "Billing: trials and free months"],
 ].map(([route, title]) => ({ route, title, area: "Sprint 2c — multi-industry update", part: "2c" as Screen["part"] })).concat([
-  ["how-it-works", "How it works"], ["groups", "Group directory"], ["group", "Group page"],
-  ["pro", "“Refer to me” team profile"], ["signup", "Sign up"], ["login", "Log in"], ["blog", "Blog post"],
+  ["how-it-works", "How it works"], ["groups", "Group directory"],
+  ["signup", "Sign up"], ["login", "Log in"], ["blog", "Blog post"],
 ].map(([route, title]) => ({ route, title, area: "Public site", part: "2a" as Screen["part"] })))
   .concat([["onboarding", "Setup wizard (6 steps)"], ["training", "Training video gate"], ["welcome", "First-run dashboard and checklist"]].map(([route, title]) => ({ route, title, area: "Onboarding", part: "2a" as const })))
-  .concat([["dashboard", "Home dashboard and Today view"], ["inbox", "Inbox: accept or reject"], ["accept", "Accept and e-sign"], ["send", "Send referral"], ["pipeline", "Pipeline board"], ["referral", "Referral detail"], ["sent", "Sent referrals"], ["earnings", "Earnings"], ["my-groups", "Groups and network map"], ["billing", "Billing"]].map(([route, title]) => ({ route, title, area: "Team leader", part: "2b" as const })))
+  .concat([["dashboard", "Home dashboard and Today view"], ["inbox", "Inbox: accept or reject"], ["accept", "Accept and e-sign"], ["send", "Send referral"], ["pipeline", "Pipeline board"], ["referral", "Referral detail"], ["sent", "Sent referrals"], ["earnings", "Earnings"], ["my-groups", "Groups and network map"], ].map(([route, title]) => ({ route, title, area: "Team leader", part: "2b" as const })))
   .concat([["owner", "Group overview"], ["seat-map", "Seat map"], ["applications", "Applications"], ["enforcement", "Members and enforcement"]].map(([route, title]) => ({ route, title, area: "Group owner", part: "2b" as const })))
   .concat([["admin", "Network dashboard"], ["industry-builder", "Industry builder"], ["site-builder", "Website builder"], ["network-crm", "Network CRM"], ["license-queue", "License verification queue"], ["portal", "Client portal"], ["request-done", "Consumer request confirmation"], ["palette", "Command palette"], ["notifications", "Notification centre"], ["gallery", "Component gallery"]].map(([route, title]) => ({ route, title, area: "Admin, client and system", part: "2c" as const })));
 
@@ -71,11 +73,11 @@ function Controls() {
 export default function App() {
   const route = useRoute("home");
   const publicPages: Record<string, JSX.Element> = {
-    home: <Home />, "how-it-works": <HowItWorks />, pricing: <Pricing />, groups: <Groups />, group: <GroupPage />, city: <CityPage2 />, "state-texas": <StatePage />, pro: <ProfilePage />, blog: <BlogPost />,
+    home: <Home />, "how-it-works": <HowItWorks />, pricing: <Pricing />, groups: <Groups />, group: <GroupPage2 />, city: <CityPage2 />, pro: <ProfilePage2 />, "state-texas": <StatePage />, blog: <BlogPost />,
   };
   const portal: Record<string, JSX.Element> = {
     dashboard: <Dashboard />, inbox: <Inbox />, accept: <AcceptSign />, send: <SendReferral />, pipeline: <Pipeline />, referral: <ReferralDetail />,
-    sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing />,
+    sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing2 />, company: <CompanyDashboard />,
     palette: <Dashboard palette />, notifications: <Shell current="notifications" title="Notifications"><NotificationsPage /></Shell>,
     gallery: <Shell current="gallery" title="Component gallery"><Gallery /></Shell>,
     admin: <AdminDashboard />, "industry-builder": <IndustryBuilder />, "site-builder": <SiteBuilder />, "network-crm": <NetworkCrm />, "license-queue": <LicenseQueue />,
@@ -88,6 +90,7 @@ export default function App() {
   else if (route === "industries") view = <PublicLayout current="industries"><Home /></PublicLayout>;
   else if (publicPages[route]) view = <PublicLayout current={route}>{publicPages[route]}</PublicLayout>;
   else if (route === "login" || route === "signup") view = <AuthPage mode={route} />;
+  else if (route === "claim") view = <ClaimFlow />;
   else if (route === "onboarding") view = <Wizard />;
   else if (route === "training") view = <TrainingGate />;
   else if (route === "welcome") view = <Welcome />;
