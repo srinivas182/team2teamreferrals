@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 4b — Roles, staff and audit log
+- Roles (super admin, staff, member) and an admin permission catalogue of 17 permissions in five areas, kept in sync on every deploy; super admins pass every check; new members get the member role.
+- Admin area at `/admin` for staff and super admins only, and only with two-step sign-in on (staff without it are sent to set it up). Navigation shows only built screens each person may open.
+- Staff management: invite by email with chosen permissions (set-password link, email verified on first password), edit permissions, deactivate and reactivate; nobody can change their own access, and only super admins can change super admins.
+- `php artisan t2t:super-admin email` bootstraps the first super admin.
+- Audit log (7-year retention): sign-ins, failed attempts, lockouts, password resets, email verification, two-step and passkey changes, account changes with before and after values (never secrets), and admin actions, each with IP and device. Filter by person, type and dates; CSV export (itself audited).
+- New-device alerts by email with a “This wasn’t me” link (signed, 7 days) that ends every session, removes devices and passkeys, and sends a password reset.
+- Admin dashboard with member, staff and sign-in counts.
+- 70 PHP tests in total.
+
 ### Sprint 4a — Accounts and sign-in
 - Sign-up with first and last name, work email, US mobile (normalised to E.164) and a 12+ character password checked against known breaches; terms and SMS consent.
 - Sign-in: password with lockout after 5 failures, passkeys (Face ID, Touch ID, Windows Hello, security keys; autofill-ready), and one-tap email sign-in links (single-use, 15 minutes).

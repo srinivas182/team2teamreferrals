@@ -10,6 +10,11 @@ const messages: Record<string, string> = {
     'password-updated': 'Your password has been changed.',
     'device-removed': 'Device removed.',
     'other-devices-signed-out': 'You’ve been signed out everywhere else.',
+    'two-factor-required': 'Admin access needs two-step sign-in. Turn it on below, then open the admin again.',
+    'staff-invited': 'Invitation sent. They’ll set a password, then turn on two-step sign-in.',
+    'permissions-saved': 'Permissions saved.',
+    'staff-deactivated': 'Staff member deactivated. They’ve been signed out.',
+    'staff-reactivated': 'Staff member reactivated.',
 };
 
 export const statusMessage = (status?: string | null) => (status ? (messages[status] ?? status) : null);
