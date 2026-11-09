@@ -37,7 +37,7 @@ const nav: Item[] = [
     { label: 'Industries', href: '/admin/industries', icon: Factory, permission: 'industries.manage', ready: true },
     { label: 'Groups and seats', href: '/admin/groups', icon: Network, permission: 'groups.manage', ready: true },
     { label: 'Locations', href: '/admin/locations', icon: MapPin, permission: 'locations.manage', ready: true },
-    { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: false },
+    { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: true },
     { label: 'Network CRM', href: '/admin/referrals', icon: ArrowLeftRight, permission: 'referrals.view', ready: false },
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: false },
     { label: 'Growth', href: '/admin/growth', icon: Rocket, permission: 'growth.manage', ready: false },

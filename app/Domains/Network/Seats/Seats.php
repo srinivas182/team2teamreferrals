@@ -197,8 +197,8 @@ final class Seats
 
     private function addToWaitlist(Seat $seat, Team $team, bool $licensed): string
     {
-        // Ranking until the trust score exists (Sprint 34): a license on file counts most, then time waited.
-        SeatWaitlist::query()->firstOrCreate(['seat_id' => $seat->id, 'team_id' => $team->id], ['score' => $licensed ? 50 : 10, 'joined_at' => now()]);
+        // Ranking until the trust score exists (Sprint 34): verified licenses first (Licenses::rankScore), then time waited.
+        SeatWaitlist::query()->firstOrCreate(['seat_id' => $seat->id, 'team_id' => $team->id], ['score' => max(\App\Domains\Network\Licenses\Licenses::rankScore($team), $licensed ? 20 : 10), 'joined_at' => now()]);
         $this->event($seat, $team, 'waitlisted');
 
         return 'waitlist';

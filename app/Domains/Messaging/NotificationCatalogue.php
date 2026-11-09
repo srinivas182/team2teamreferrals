@@ -39,6 +39,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => 't2t: {headline}. {url}'],
         'seat.update' => ['group' => 'Network', 'label' => 'Seat activity in groups you run', 'description' => 'For group owners and platform owners: applications, claims, grace, inactive and released seats.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{group}: {headline}', 'body' => '{body}', 'sms' => ''],
+        'license.update' => ['group' => 'Account and security', 'label' => 'License verification and expiry', 'description' => 'When a license is verified or rejected, and before it expires.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

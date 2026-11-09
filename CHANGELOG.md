@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 12b — Licenses and verification
+- Licenses (Portal → Profile and licenses): leaders and assistants add a license per industry and state with number, expiry, name on the license and an optional copy (PDF or photo, kept on private storage). The number is checked against the state's format when one is configured.
+- License queue (Admin → License queue, `licenses.verify`): pending, verified, rejected and expired; "Check on the state's site" using the licensing lookup links; the document opens through a link that expires in 15 minutes; a warning when another team uses the same number in the same state. Rejecting needs a note the team sees; every decision is audited and the team is told by email and in-app.
+- Expiry: reminders 30 and 7 days before (once each), then the license is marked expired and the team told (daily job).
+- Waitlist ranking now uses licenses: verified licenses rank highest, pending ones next; scores update when a license is verified, rejected or expires.
+- 230 PHP tests in total (5 new).
+
 ### Sprint 12a — Team profiles and members
 - Team profile (Portal → Team): name, logo, about, areas served, website, phone, founding year and social links (LinkedIn, Facebook, Instagram, YouTube, X).
 - Members with roles: leader, assistant (edits the profile) and member. Every new pro starts as the leader of a team of one, created the first time they need it.
