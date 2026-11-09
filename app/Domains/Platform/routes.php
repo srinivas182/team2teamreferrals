@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 // Provider webhooks: no session or CSRF; each verifies the provider's signature.
 Route::post('webhooks/twilio/status', [TwilioWebhookController::class, 'status'])->name('webhooks.twilio.status');
+Route::post('webhooks/twilio/inbound', [TwilioWebhookController::class, 'inbound'])->name('webhooks.twilio.inbound');
 
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:settings.manage'])
     ->prefix('admin')->name('admin.')->group(function (): void {

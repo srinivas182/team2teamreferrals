@@ -33,6 +33,7 @@ export const portalNav: NavItem[] = [
     { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
+    { label: 'Notifications', href: '/app/notifications', icon: Bell },
     { label: 'Help', href: '/app/help', icon: LifeBuoy },
 ];
 

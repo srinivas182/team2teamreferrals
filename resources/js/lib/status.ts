@@ -18,6 +18,11 @@ const messages: Record<string, string> = {
     'settings-saved': 'Settings saved. They apply immediately, with no deploy needed.',
     'test-email-sent': 'Test email sent. Check the inbox, and the delivery log for its status.',
     'test-sms-sent': 'Test text sent. Check the phone, and the delivery log for its status.',
+    'notification-settings-saved': 'Notification settings saved.',
+    'push-turned-off': 'Push notifications are off on all your browsers.',
+    'template-saved': 'Saved as a new version. It’s used for every message from now on.',
+    'template-restored': 'That version is active again.',
+    'template-reset': 'Back to the default wording.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

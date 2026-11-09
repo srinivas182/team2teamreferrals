@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { mobileTabs, ownerNav, portalNav, type NavItem } from './nav';
+import type { SharedProps } from '@/types/auth';
 
 type Props = { title: string; actions?: ReactNode; children: ReactNode; user?: { name: string; team: string }; isGroupOwner?: boolean };
 
@@ -35,7 +36,9 @@ function NavLink({ item, current }: { item: NavItem; current: boolean }) {
 
 /** Signed-in member area: sidebar on desktop, bottom tabs on phones, command palette on Ctrl/⌘ K. */
 export function PortalLayout({ title, actions, children, user = { name: 'Member', team: '' }, isGroupOwner = false }: Props) {
-    const { url } = usePage();
+    const { url, props } = usePage<SharedProps>();
+    const unread = props.notifications?.unread ?? 0;
+    const latest = props.notifications?.latest ?? [];
     const [palette, setPalette] = useState(false);
 
     useEffect(() => {
@@ -124,14 +127,63 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         <div className="ml-auto flex items-center gap-1">
                             <ThemeToggle />
                             <Popover>
-                                <PopoverTrigger className="rounded-md p-2 text-muted hover:bg-bg hover:text-ink" aria-label="Notifications">
+                                <PopoverTrigger
+                                    className="relative rounded-md p-2 text-muted hover:bg-bg hover:text-ink"
+                                    aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+                                >
                                     <Bell className="size-5" />
+                                    {unread > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 min-w-5 rounded-full bg-orange-500 px-1 text-center text-[11px] leading-5 font-bold text-navy-900 tabular">
+                                            {unread > 99 ? '99+' : unread}
+                                        </span>
+                                    )}
                                 </PopoverTrigger>
                                 <PopoverContent>
-                                    <div className="border-b border-line px-4 py-3 font-semibold">Notifications</div>
-                                    <p className="px-4 py-8 text-center text-sm text-muted">
-                                        You're all caught up. New referrals and updates appear here.
-                                    </p>
+                                    <div className="flex items-center border-b border-line px-4 py-3">
+                                        <span className="font-semibold">Notifications</span>
+                                        {unread > 0 && (
+                                            <button
+                                                className="ml-auto text-sm font-medium text-primary"
+                                                onClick={() => router.post('/app/notifications/read-all', {}, { preserveScroll: true })}
+                                            >
+                                                Mark all read
+                                            </button>
+                                        )}
+                                    </div>
+                                    {latest.length === 0 ? (
+                                        <p className="px-4 py-8 text-center text-sm text-muted">
+                                            You’re all caught up. New referrals and updates appear here.
+                                        </p>
+                                    ) : (
+                                        <ul className="max-h-96 divide-y divide-line overflow-y-auto">
+                                            {latest.map((n) => (
+                                                <li key={n.id}>
+                                                    <button
+                                                        onClick={() => router.post(`/app/notifications/${n.id}/read`)}
+                                                        className={cn(
+                                                            'block w-full px-4 py-3 text-left hover:bg-bg',
+                                                            !n.read && 'bg-cobalt-50/60 dark:bg-cobalt-500/10',
+                                                        )}
+                                                    >
+                                                        <div className="text-sm font-medium">{n.title}</div>
+                                                        <div className="line-clamp-2 text-sm text-muted">{n.body}</div>
+                                                        <div className="mt-1 text-xs text-subtle">{n.ago}</div>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    <div className="flex border-t border-line text-sm">
+                                        <Link href="/app/notifications" className="flex-1 px-4 py-3 text-center font-medium text-primary hover:bg-bg">
+                                            See all
+                                        </Link>
+                                        <Link
+                                            href="/app/settings/notifications"
+                                            className="flex-1 border-l border-line px-4 py-3 text-center text-muted hover:bg-bg"
+                                        >
+                                            Settings
+                                        </Link>
+                                    </div>
                                 </PopoverContent>
                             </Popover>
                         </div>

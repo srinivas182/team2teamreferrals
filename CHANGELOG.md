@@ -4,6 +4,19 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 5b — Notification framework
+- Notification catalogue: 11 types in four groups (referrals, network, billing, account and security), each with default channels (email, text, in-app, push), urgency and whether members can turn it off. One `Notifier` sends everything.
+- Member settings: channel grid per type ("Urgent" and "Always on" labelled), quiet hours in the member's own time zone (urgent items still come through), and an optional daily summary at 7:00.
+- Smart bundling: non-urgent emails that arrive within 10 minutes are sent as one ("3 updates on your referrals"); held items go out when quiet hours end.
+- "Why am I getting this?" link in every email, opening that notification's own setting.
+- Notification centre: real bell with unread count, latest five, mark read and mark all read; full page with All/Unread.
+- Browser push (standard Web Push with VAPID keys, no third-party service), service worker, expired subscriptions removed automatically.
+- Texting compliance: STOP-type replies opt a number out of every text (logged as "suppressed" in the delivery log), START opts back in, HELP gets an answer; inbound webhook verified with Twilio's signature.
+- Admin → Templates: edit email, text and in-app wording with merge fields and live preview; every save is a new version; restore any version or reset to default; text length limit; all audited.
+- Seeded wording for trial ending and "free month credited" for billing in Sprint 22.
+- Fixed in review: restoring a template version could leave no version active; now written directly to the database.
+- 97 PHP tests in total (16 new).
+
 ### Sprint 2c part 3 — Admin pricing, pre-launch and brand kit (prototype)
 - Admin → Groups and pricing: seat price, founding price, trial length, multi-city discounts, annual months free, value guarantee (forced off in Tier C), company cap, seat-challenge rules, waitlist ranking, locked platform-fee mode, member preview and projected revenue.
 - Admin → Overflow demand: waitlisted teams and metro fill per network, "ready for a second group" flags, and "Open next group" (region, name, inherits rules, offers seats to waitlisted teams).

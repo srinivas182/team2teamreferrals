@@ -36,6 +36,11 @@ final class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'flash' => ['status' => fn () => $request->session()->get('status')],
+            // The bell: unread count and the five latest, on every signed-in page.
+            'notifications' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? [
+                'unread' => $u->unreadNotifications()->count(),
+                'latest' => $u->notifications()->latest()->limit(5)->get()->map(fn ($n) => \App\Domains\Messaging\Http\Controllers\NotificationController::present($n)),
+            ] : null,
             'app' => [
                 'name' => config('seo.site_name'),
                 'shortName' => config('seo.short_name'),
