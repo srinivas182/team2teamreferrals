@@ -20,6 +20,7 @@ type App = {
     team: string;
     territory: string;
     wouldBe: string;
+    cap: { held: number; of: number; pct: number; cap: number; over: boolean } | null;
 };
 
 const would: Record<string, string> = { primary: 'Gets the seat', backup: 'Becomes backup', waitlist: 'Joins the waitlist' };
@@ -86,6 +87,12 @@ export default function Applications({
                                         <Badge>{a.status}</Badge>
                                     )}
                                     {a.reason && <div className="mt-1 text-xs text-muted">{a.reason}</div>}
+                                    {a.cap && (
+                                        <div className={a.cap.over ? 'mt-1 text-xs font-medium text-danger' : 'mt-1 text-xs text-muted'}>
+                                            Company would hold {a.cap.held} of {a.cap.of} seats in this state ({a.cap.pct}%, limit {a.cap.cap}%)
+                                            {a.cap.over ? ': it becomes backup or waitlisted instead' : ''}
+                                        </div>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                     {a.status === 'pending' &&

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $primary_team_id
  * @property ?int $backup_team_id
  * @property bool $founding
+ * @property string $payer
  * @property ?\Illuminate\Support\Carbon $trial_ends_at
  * @property ?\Illuminate\Support\Carbon $grace_started_at
  * @property ?\Illuminate\Support\Carbon $inactive_at
@@ -31,9 +32,9 @@ final class Seat extends Model
 {
     public const RECEIVES_REFERRALS = ['trial', 'active', 'grace'];
 
-    protected $fillable = ['group_id', 'territory_type', 'territory_id', 'territory_name', 'state_code', 'status', 'primary_team_id', 'backup_team_id', 'founding', 'trial_ends_at', 'grace_started_at', 'inactive_at'];
+    protected $fillable = ['group_id', 'territory_type', 'territory_id', 'territory_name', 'state_code', 'status', 'primary_team_id', 'backup_team_id', 'founding', 'payer', 'trial_ends_at', 'grace_started_at', 'inactive_at'];
 
-    protected $attributes = ['status' => 'open', 'founding' => false, 'primary_team_id' => null, 'backup_team_id' => null, 'trial_ends_at' => null, 'grace_started_at' => null, 'inactive_at' => null, 'state_code' => null];
+    protected $attributes = ['status' => 'open', 'founding' => false, 'payer' => 'team', 'primary_team_id' => null, 'backup_team_id' => null, 'trial_ends_at' => null, 'grace_started_at' => null, 'inactive_at' => null, 'state_code' => null];
 
     protected function casts(): array
     {

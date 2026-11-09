@@ -45,6 +45,8 @@ final class MemberGroupsController
             'seats' => DB::table('seats')->join('groups', 'groups.id', '=', 'seats.group_id')->where('primary_team_id', $team->id)->get(['groups.name', 'seats.territory_name', 'seats.founding'])
                 ->map(fn ($s) => ['group' => (string) $s->name, 'territory' => (string) $s->territory_name, 'founding' => (bool) $s->founding]),
             'strength' => ProfileStrength::for($team),
+            'company' => $team->company_id ? ['name' => (string) DB::table('companies')->where('id', $team->company_id)->value('name'),
+                'cities' => DB::table('seats')->join('teams', 'teams.id', '=', 'seats.primary_team_id')->where('teams.company_id', $team->company_id)->count()] : null,
             'seo' => SeoData::private('Profile preview')->toArray(),
         ]);
     }

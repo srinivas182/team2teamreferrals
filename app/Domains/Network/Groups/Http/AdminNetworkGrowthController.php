@@ -94,6 +94,7 @@ final class AdminNetworkGrowthController
         $group = Group::create([
             'industry_id' => $industry->id, 'slug' => self::uniqueSlug((string) $data['name']), 'name' => $data['name'], 'is_private' => true, 'visibility' => 'invite_only',
             'rules' => Group::defaultRules(), 'pricing' => Group::defaultPricing($industry),
+            'company_id' => \App\Domains\Network\Companies\Company::administeredBy($owner)?->id,
         ]);
         $group->owners()->attach($owner->id, ['added_by' => $request->user()?->getKey()]);
         activity('admin')->causedBy($request->user())->performedOn($group)->event('private-network-created')->withProperties(['owner' => $owner->ulid])->log("Created private network {$group->name}");

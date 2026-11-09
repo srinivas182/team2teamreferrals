@@ -29,9 +29,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class Group extends Model
 {
-    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'photo_path', 'visibility', 'status', 'is_launch', 'is_private', 'region', 'parent_group_id', 'rules', 'pricing'];
+    protected $fillable = ['industry_id', 'slug', 'name', 'description', 'photo_path', 'visibility', 'status', 'is_launch', 'is_private', 'region', 'parent_group_id', 'company_id', 'rules', 'pricing'];
 
-    protected $attributes = ['status' => 'draft', 'visibility' => 'open', 'is_launch' => false, 'is_private' => false, 'region' => null, 'parent_group_id' => null, 'description' => null, 'photo_path' => null];
+    protected $attributes = ['status' => 'draft', 'visibility' => 'open', 'is_launch' => false, 'is_private' => false, 'region' => null, 'parent_group_id' => null, 'company_id' => null, 'description' => null, 'photo_path' => null];
 
     protected function casts(): array
     {

@@ -55,8 +55,13 @@ final class Seats
             abort_if($app === null || $app->status !== 'pending', 422, 'This application has already been decided.');
             $seat = Seat::query()->lockForUpdate()->findOrFail((int) $app->seat_id);
             $team = Team::query()->findOrFail((int) $app->team_id);
+            $cap = $seat->primary_team_id === null ? \App\Domains\Network\Companies\CompanyCap::ifHeld($seat, $team) : null;
+            if ($cap !== null && $cap['over']) {
+                // Holding this seat would put the company over its share of the state: it can back up or wait instead.
+                $this->event($seat, $team, 'cap_limited', $cap, $actor);
+            }
             $outcome = match (true) {
-                $seat->primary_team_id === null => $this->makePrimary($seat, $team, $actor),
+                $seat->primary_team_id === null && ! ($cap['over'] ?? false) => $this->makePrimary($seat, $team, $actor),
                 $seat->backup_team_id === null => $this->makeBackup($seat, $team, $actor),
                 default => $this->addToWaitlist($seat, $team, $app->license_number !== null),
             };
@@ -153,6 +158,10 @@ final class Seats
             abort_if($offer === null || (int) $offer->team_id !== $team->id, 404);
             abort_if($offer->status !== 'pending' || now()->greaterThan((string) $offer->expires_at), 422, 'This offer has expired.');
             $seat = Seat::query()->lockForUpdate()->with('group')->findOrFail((int) $offer->seat_id);
+            $cap = \App\Domains\Network\Companies\CompanyCap::ifHeld($seat, $team);
+            if ($cap !== null && $cap['over']) {
+                throw ValidationException::withMessages(['offer' => "Your company already holds {$cap['held']} of {$cap['of']} seats in this state, over the {$cap['cap']}% limit for one company."]);
+            }
             DB::table('seat_offers')->where('id', $offerId)->update(['status' => 'accepted', 'responded_at' => now(), 'updated_at' => now()]);
             if ($seat->backup_team_id === $team->id) {
                 $seat->backup_team_id = null;
@@ -273,6 +282,13 @@ final class Seats
     private function tellTeam(Team $team, Seat $seat, string $type, string $headline, string $body, ?string $url = null): void
     {
         $this->notifier->send($team->leader, $type, ['group' => $seat->group->name, 'headline' => $headline, 'body' => $body], $url ?? url('/app'), $seat->group->industry);
+        // A company that pays for this seat hears about payment problems too, alongside the city leader.
+        if ($type === 'seat.payment' && $seat->payer === 'company' && $team->company_id !== null) {
+            $admin = \App\Domains\Network\Companies\Company::query()->find($team->company_id)?->admin;
+            if ($admin !== null && $admin->id !== $team->leader_id) {
+                $this->notifier->send($admin, $type, ['group' => $seat->group->name, 'headline' => "{$team->name}: {$headline}", 'body' => $body], url('/app/company'), $seat->group->industry);
+            }
+        }
     }
 
     /** Group owners and platform owners (super admins) hear about every seat change. */

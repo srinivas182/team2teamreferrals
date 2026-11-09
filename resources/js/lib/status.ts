@@ -68,6 +68,10 @@ const messages: Record<string, string> = {
     'license-removed': 'License removed.',
     'license-verified': 'License verified. The team has been told.',
     'license-rejected': 'License rejected. The team has been told why.',
+    'company-created': 'Company created. Add your branches below.',
+    'company-invites-sent': 'Invitations sent.',
+    'company-joined': 'You’re now a branch of the company.',
+    'payer-changed': 'Who pays for this seat has been updated.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

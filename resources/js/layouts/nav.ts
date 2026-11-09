@@ -1,4 +1,5 @@
 import {
+    Building2,
     BadgeCheck,
     Bell,
     CreditCard,
@@ -30,6 +31,7 @@ export const portalNav: NavItem[] = [
     { label: 'Groups', href: '/app/groups', icon: Users },
     { label: 'Community', href: '/app/community', icon: MessagesSquare },
     { label: 'Team', href: '/app/team', icon: UserCog },
+    { label: 'Company', href: '/app/company', icon: Building2 },
     { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },

@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 13 — Companies
+- Companies (Portal → Company): create one, and your team becomes its first branch. The company admin sees every branch and city leader, every seat (group, branch, trial end, status), branches waiting for seats, and the company's private network.
+- Who pays: per seat, the company centrally or the city team, switchable by the company admin only (billing uses it in Sprint 22). Payment problems on company-paid seats also notify the company admin.
+- Add branches in bulk: invite city leaders by email (14 days), optionally offering each a seat in a group and city at the same time. They join from the invitation page with the invited email only.
+- Company cap enforced: approving, accepting an invitation or claiming an offer can't take a company over its share of a state's seats in a group (default 25%); the team becomes backup or waitlisted instead. A company can always hold at least one seat per state.
+- Cap warning in the applications queue ("would hold 3 of 9 seats in this state, 33%, limit 25%"), company badge on branch profiles ("Part of SunPath Solar, 7 cities"), and private networks linked to the owning company.
+- Fixed in review: in small states (few counties or cities) the cap blocked a company's very first seat.
+- 241 PHP tests in total (6 new).
+
 ### Sprint 12c — Guided onboarding, profile strength and nudges
 - Portal home walks new members from sign-up to first seat in 7 linked steps (email, mobile, two-step sign-in, team profile, license, apply, first seat) with "Next:" pointing at the next one.
 - Profile strength out of 100 (team name, logo, about, areas served, website or phone, social link, verified license, a teammate), shown with what's missing and the points each adds. It now feeds waitlist ranking with licenses until the trust score (Sprint 34).
