@@ -8,10 +8,26 @@ import type { Seo } from '@/types/seo';
 
 type Stats = { members: number; staff: number; signInsToday: number; failedToday: number };
 
-export default function Dashboard({ stats, seo }: { stats: Stats; seo: Seo }) {
+export default function Dashboard({ stats, launch, seo }: { stats: Stats; launch: { ready: number; total: number } | null; seo: Seo }) {
     return (
         <AdminLayout title="Admin">
             <SeoHead seo={seo} />
+            {launch && (
+                <Link href="/admin/industries/launch" className="mb-4 block">
+                    <Card className="flex flex-wrap items-center gap-4 p-5 hover:shadow-md">
+                        <div className="font-display text-2xl font-bold tabular">
+                            {launch.ready} of {launch.total}
+                        </div>
+                        <div className="text-sm text-muted">industries ready to go live</div>
+                        <div className="h-2 min-w-40 flex-1 rounded-full bg-bg">
+                            <div
+                                className="h-2 rounded-full bg-primary"
+                                style={{ width: `${launch.total ? (launch.ready / launch.total) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </Card>
+                </Link>
+            )}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Kpi label="Members" value={stats.members.toLocaleString()} />
                 <Kpi label="Staff and super admins" value={stats.staff.toLocaleString()} />

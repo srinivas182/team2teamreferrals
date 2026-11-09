@@ -6,6 +6,7 @@ use App\Domains\Network\Industries\Http\AdminAgreementController;
 use App\Domains\Network\Industries\Http\AdminIndustriesController;
 use App\Domains\Network\Industries\Http\AdminIndustryMessagesController;
 use App\Domains\Network\Industries\Http\AdminIndustryTemplatesController;
+use App\Domains\Network\Industries\Http\AdminLaunchController;
 use App\Domains\Network\Locations\Http\AdminLocationsController;
 use App\Domains\Network\Locations\Http\LocationLookupController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:industries.manage'])
     ->prefix('admin/industries')->name('admin.industries.')->group(function (): void {
         Route::get('/', [AdminIndustriesController::class, 'index'])->name('index');
+        Route::get('launch', AdminLaunchController::class)->name('launch');
         Route::post('/', [AdminIndustriesController::class, 'store'])->name('store');
         Route::get('licensing.csv', [AdminIndustriesController::class, 'exportAllLicensing'])->name('licensing.export-all');
         Route::post('licensing/import', [AdminIndustriesController::class, 'importLicensing'])->name('licensing.import');

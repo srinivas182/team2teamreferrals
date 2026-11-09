@@ -17,6 +17,8 @@ final class DashboardController
     public function __invoke(): Response
     {
         return Inertia::render('admin/Dashboard', [
+            // Launch progress across the 46 industries (only for staff who manage industries).
+            'launch' => fn () => request()->user()?->can('industries.manage') ? app(\App\Domains\Network\Industries\Catalogue\Readiness::class)->summary() : null,
             'stats' => [
                 'members' => User::role(Permissions::MEMBER)->count(),
                 'staff' => User::role([Permissions::STAFF, Permissions::SUPER_ADMIN])->count(),

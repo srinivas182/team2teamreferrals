@@ -60,6 +60,9 @@ export default function Industries({
             actions={
                 <>
                     <Button variant="secondary" asChild>
+                        <Link href="/admin/industries/launch">Launch readiness</Link>
+                    </Button>
+                    <Button variant="secondary" asChild>
                         <a href="/admin/industries/licensing.csv">
                             <Download /> Licensing CSV
                         </a>

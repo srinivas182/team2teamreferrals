@@ -37,11 +37,11 @@ final class Industry extends Model
 
     protected $fillable = ['slug', 'name', 'family', 'tier', 'territory_unit', 'terminology', 'icon', 'description', 'license_required'];
 
-    protected $attributes = ['status' => 'draft', 'icon' => 'Briefcase', 'license_required' => true, 'description' => null, 'compliance_approved_at' => null, 'compliance_approved_by' => null, 'compliance_note' => null];
+    protected $attributes = ['status' => 'draft', 'icon' => 'Briefcase', 'license_required' => true, 'description' => null, 'compliance_approved_at' => null, 'compliance_approved_by' => null, 'compliance_note' => null, 'catalogue_snapshot' => null];
 
     protected function casts(): array
     {
-        return ['tier' => Tier::class, 'terminology' => 'array', 'license_required' => 'boolean', 'compliance_approved_at' => 'datetime'];
+        return ['tier' => Tier::class, 'terminology' => 'array', 'license_required' => 'boolean', 'compliance_approved_at' => 'datetime', 'catalogue_snapshot' => 'array'];
     }
 
     public function getRouteKeyName(): string

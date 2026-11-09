@@ -15,7 +15,7 @@ final class NetworkServiceProvider extends ServiceProvider
     {
         $this->loadRoutesFrom(__DIR__.'/routes.php');
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportLocations::class, ImportMetros::class]);
+            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class]);
         }
     }
 }

@@ -31,10 +31,10 @@ final class AdminIndustryMessagesController
         return Inertia::render('admin/industries/Messages', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'terms' => $industry->terms()],
             'types' => collect(NotificationCatalogue::TYPES)->map(fn ($d, $k) => [
-                'key' => $k, 'group' => $d['group'], 'label' => $d['label'],
+                'key' => $k, 'group' => self::inTerms($d['group'], $industry), 'label' => self::inTerms($d['label'], $industry),
                 'overridden' => NotificationTemplate::query()->where(['type' => $k, 'industry_id' => $industry->id, 'is_active' => true])->exists(),
             ])->values(),
-            'type' => ['key' => $type, 'label' => NotificationCatalogue::TYPES[$type]['label'], 'description' => NotificationCatalogue::TYPES[$type]['description']],
+            'type' => ['key' => $type, 'label' => self::inTerms(NotificationCatalogue::TYPES[$type]['label'], $industry), 'description' => NotificationCatalogue::TYPES[$type]['description']],
             'channels' => collect($channels)->map(fn (string $c) => [
                 'channel' => $c,
                 'label' => NotificationCatalogue::CHANNELS[$c],
@@ -98,12 +98,23 @@ final class AdminIndustryMessagesController
         foreach (NotificationCatalogue::TYPES as $type => $def) {
             foreach (array_intersect($def['channels'], self::EDITABLE) as $channel) {
                 $w = $templates->wording($type, $channel, $industry->id);
-                $out[] = ['label' => $def['label'], 'channel' => NotificationCatalogue::CHANNELS[$channel], 'source' => $w['source'],
+                $out[] = ['label' => self::inTerms($def['label'], $industry), 'channel' => NotificationCatalogue::CHANNELS[$channel], 'source' => $w['source'],
                     'subject' => $channel === 'sms' ? '' : NotificationCatalogue::render($w['subject'], $sample), 'body' => NotificationCatalogue::render($w['body'], $sample)];
             }
         }
 
         return $out;
+    }
+
+    /** Admin labels in the industry's words: "Your referral was accepted" becomes "Your introduction was accepted". */
+    public static function inTerms(string $label, Industry $industry): string
+    {
+        $term = $industry->terms()['referral'];
+        if ($term === 'referral') {
+            return $label;
+        }
+
+        return (string) preg_replace_callback('/\b([Rr])eferral(s?)\b/', fn ($m) => ($m[1] === 'R' ? ucfirst($term) : $term).($m[2] !== '' ? 's' : ''), $label);
     }
 
     /** @return array<string, string> */
