@@ -8,7 +8,7 @@ import { incoming, pipeline, sent, monthly } from "../data/portal";
 export const estValue = (mid: number, fee: number) => Math.round(mid * 0.025 * (fee / 100));
 
 /* ---------------- Dashboard with Today view ---------------- */
-export function Dashboard() {
+export function Dashboard({ palette }: { palette?: boolean }) {
   const today = [
     { icon: InboxIcon, tone: "text-orange-600", title: "Accept or reject Hannah Price's Hot buyer", meta: "Austin → St. George · est. " + money(estValue(560000, 30)), due: <Countdown minutesLeft={134} total={1440} />, href: "#inbox" },
     { icon: Phone, tone: "text-hot", title: "First call: Rachel Stone", meta: "Hot buyer from Alamo Front Door", due: <Countdown minutesLeft={80} total={120} />, href: "#referral" },
@@ -17,7 +17,7 @@ export function Dashboard() {
     { icon: CheckCircle2, tone: "text-success", title: "Confirm closing report from Capitol Key Realty", meta: "Lucy Nguyen · " + money(3210) + " due to you", due: <Badge>Since Nov 2</Badge>, href: "#sent" },
   ];
   return (
-    <Shell current="dashboard" title="Good morning, Jordan" actions={<Button href="#send" className="hidden sm:inline-flex">Send referral</Button>}>
+    <Shell current="dashboard" startPalette={palette} title="Good morning, Jordan" actions={<Button href="#send" className="hidden sm:inline-flex">Send referral</Button>}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Referrals received this month" value="3" change={-25} spark={monthly.map(m => m.received)} href="#inbox" />
         <Kpi label="Your median time to accept" value="14 min" hint="Group requires 24 hours" />

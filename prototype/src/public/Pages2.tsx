@@ -135,7 +135,7 @@ export function CityPage() {
                 <Button variant="secondary" className="mt-5" href="#portal">Preview your client page</Button>
               </div>
             ) : (
-              <form onSubmit={e => { e.preventDefault(); setSent(true); }} className="space-y-4">
+              <form onSubmit={e => { e.preventDefault(); location.hash = "request-done"; }} className="space-y-4">
                 <div><h2 className="text-xl font-semibold">Looking for an agent in Houston?</h2><p className="mt-1 text-sm text-muted">Tell us what you need. A verified local team will contact you.</p></div>
                 <Field label="I want to"><Select><option>Buy a home</option><option>Sell a home</option><option>Buy and sell</option></Select></Field>
                 <fieldset><legend className="mb-1.5 text-sm font-medium">When?</legend>

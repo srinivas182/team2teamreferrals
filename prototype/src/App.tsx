@@ -11,6 +11,9 @@ import { Dashboard, Inbox, AcceptSign } from "./portal/Core";
 import { SendReferral, Pipeline, ReferralDetail } from "./portal/Work";
 import { SentList, Earnings, MyGroups, Billing } from "./portal/More";
 import { OwnerOverview, SeatMap, Applications, Enforcement } from "./portal/Owner";
+import { AdminDashboard, IndustryBuilder, SiteBuilder, NetworkCrm, LicenseQueue } from "./admin/Admin";
+import { ClientPortal, RequestDone } from "./public/Client";
+import { NotificationsPage, Gallery } from "./system/System";
 import { Card, Logo, Badge, Button } from "./ui/kit";
 
 type Screen = { route: string; title: string; area: string; part: "2a" | "2b" | "2c" };
@@ -29,14 +32,14 @@ function ScreenIndex() {
     <div className="mx-auto max-w-4xl px-5 py-10">
       <Logo className="h-9 w-auto" />
       <h1 className="display mt-8 font-display text-3xl font-extrabold">Prototype screens</h1>
-      <p className="mt-2 text-muted">Sprint 2 — high-fidelity, clickable prototype with sample content. Parts 2a and 2b are ready; 2c follows.</p>
+      <p className="mt-2 text-muted">Sprint 2 — high-fidelity, clickable prototype with sample content. All 37 screens are ready. Admin screens use a separate admin area.</p>
       {areas.map(a => (
         <section key={a} className="mt-8">
           <h2 className="text-lg font-semibold">{a}</h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {screens.filter(s => s.area === a).map(s => (
               <a key={s.route} href={`#${s.route}`} className="flex items-center justify-between rounded-md border border-line bg-surface px-4 py-3 hover:border-primary">
-                <span className="font-medium">{s.title}</span>{s.part !== "2c" ? <Badge tone="success">Ready</Badge> : <Badge>Part {s.part}</Badge>}
+                <span className="font-medium">{s.title}</span>{true ? <Badge tone="success">Ready</Badge> : <Badge>Part {s.part}</Badge>}
               </a>))}
           </div>
         </section>))}
@@ -68,6 +71,10 @@ export default function App() {
   const portal: Record<string, JSX.Element> = {
     dashboard: <Dashboard />, inbox: <Inbox />, accept: <AcceptSign />, send: <SendReferral />, pipeline: <Pipeline />, referral: <ReferralDetail />,
     sent: <SentList />, earnings: <Earnings />, "my-groups": <MyGroups />, billing: <Billing />,
+    palette: <Dashboard palette />, notifications: <Shell current="notifications" title="Notifications"><NotificationsPage /></Shell>,
+    gallery: <Shell current="gallery" title="Component gallery"><Gallery /></Shell>,
+    admin: <AdminDashboard />, "industry-builder": <IndustryBuilder />, "site-builder": <SiteBuilder />, "network-crm": <NetworkCrm />, "license-queue": <LicenseQueue />,
+    portal: <ClientPortal />, "request-done": <RequestDone />,
     owner: <OwnerOverview />, "seat-map": <SeatMap />, applications: <Applications />, enforcement: <Enforcement />,
   };
   let view: JSX.Element;

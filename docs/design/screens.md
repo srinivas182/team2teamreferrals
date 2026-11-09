@@ -19,7 +19,7 @@ Live prototype: https://claude.ai/artifact/3EQAgJ7x6N2yxWVN7xTdxe (private). Ope
 | `#training` | Training video gate | No seeking ahead, captions; unlocks the dashboard |
 | `#welcome` | First-run dashboard | Setup checklist with progress ring, guided empty states |
 
-## Part 2b — team leader and group owner (ready for review)
+## Part 2b — team leader and group owner (approved)
 
 | Route | Screen | Notes |
 | --- | --- | --- |
@@ -38,6 +38,17 @@ Live prototype: https://claude.ai/artifact/3EQAgJ7x6N2yxWVN7xTdxe (private). Ope
 | `#applications` | Applications | Approve to seat, as backup, waitlist, schedule call, decline |
 | `#enforcement` | Members and enforcement | Breach meter per team; reactivate or remove decision with notes and seat reassignment |
 
-## Part 2c — admin, client and system (next)
+## Part 2c — admin, client and system (ready for review)
 
-Network dashboard, industry builder, website builder, network CRM, license queue, client portal, consumer confirmation, command palette, notification centre, component gallery.
+| Route | Screen | Notes |
+| --- | --- | --- |
+| `#admin` | Network dashboard | Separate admin area (navy sidebar). KPIs, revenue by source, “Needs attention” queue, SEO/AEO health, groups table |
+| `#industry-builder` | Industry builder | Industries list with Live/Draft; tabs for referral form (field builder with live preview), licensing, fees, territory unit, templates, and compliance gate that blocks going Live until a legal review is recorded |
+| `#site-builder` | Website builder | Section palette, live canvas with desktop/mobile preview, properties panel (edit the hero headline and see it change), versions, draft/publish |
+| `#network-crm` | Network CRM | Every referral across the network with sender (cobalt) → receiver (orange), filters, flags for SLA breaches, fee disputes and outcome mismatches |
+| `#license-queue` | License verification | Queue with wait times; detail with state lookup link, checklist, expired-license warning, verify or reject |
+| `#portal` | Client portal | Mobile-first page for the referred client, branded from the referring agent: agent card, contact buttons, progress, next appointment, quality check-in |
+| `#request-done` | Consumer confirmation | Phone code verification, then confirmation with next steps |
+| `#palette` | Command palette | Works anywhere in the portal with Ctrl/⌘ K or the search bar: actions, pages, referrals, teams; full keyboard control |
+| `#notifications` | Notification centre | Bell dropdown on every portal screen plus a full page with unread filter and per-channel settings with quiet hours |
+| `#gallery` | Component gallery | Buttons, inputs, choice, badges, temperature, countdowns, people and trust, KPI, feedback, loading and empty states, in light and dark |
