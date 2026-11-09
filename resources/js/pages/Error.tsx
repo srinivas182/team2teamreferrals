@@ -32,7 +32,7 @@ const copy: Record<number, { title: string; body: string; action: [string, strin
     },
 };
 
-export default function Error({ status, seo }: { status: number; seo: Seo }) {
+export default function Error({ status, seo, requestId }: { status: number; seo: Seo; requestId?: string | null }) {
     const c = copy[status] ?? copy[500]!;
     const [label, href] = c.action;
     return (
@@ -59,6 +59,11 @@ export default function Error({ status, seo }: { status: number; seo: Seo }) {
                         </Button>
                     )}
                 </div>
+                {requestId && (
+                    <p className="mt-10 text-xs text-subtle">
+                        Reference <span className="font-mono tabular select-all">{requestId}</span>. Quote it if you contact support.
+                    </p>
+                )}
             </main>
         </>
     );

@@ -63,8 +63,9 @@ final class IdentityServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView($page('auth/TwoFactorChallenge', 'Two-step sign-in'));
         Fortify::confirmPasswordView($page('auth/ConfirmPassword', 'Confirm your password'));
 
-        // Super admins can do everything; staff only what they've been granted.
-        Gate::before(fn ($user) => $user instanceof User && $user->hasRole(Permissions::SUPER_ADMIN) ? true : null);
+        // Super admins can do everything; staff only what they've been granted. Abilities that also require
+        // two-step sign-in (dashboards outside /admin, like Horizon) are never short-circuited.
+        Gate::before(fn ($user, string $ability) => $ability !== 'viewHorizon' && $user instanceof User && $user->hasRole(Permissions::SUPER_ADMIN) ? true : null);
 
         // Every audit entry records where it came from.
         Activity::creating(function (Activity $activity): void {

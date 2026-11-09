@@ -1,15 +1,10 @@
 <?php
 
-use App\Domains\Identity\IdentityServiceProvider;
-use App\Domains\Messaging\MessagingServiceProvider;
-use App\Domains\Platform\PlatformServiceProvider;
-use App\Domains\Seo\SeoServiceProvider;
-use App\Providers\AppServiceProvider;
-
 return [
-    AppServiceProvider::class,
-    SeoServiceProvider::class,
-    PlatformServiceProvider::class,
-    IdentityServiceProvider::class,
-    MessagingServiceProvider::class,
+    App\Domains\Identity\IdentityServiceProvider::class,
+    App\Domains\Messaging\MessagingServiceProvider::class,
+    App\Domains\Platform\PlatformServiceProvider::class,
+    App\Domains\Seo\SeoServiceProvider::class,
+    App\Providers\AppServiceProvider::class,
+    App\Providers\HorizonServiceProvider::class,
 ];

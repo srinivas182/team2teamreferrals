@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 6a — Runtime and observability
+- Laravel Octane on FrankenPHP (worker mode keeps the app in memory). Production image: multi-stage, non-root, opcache tuned, health-checked; separate targets for the app and server-side rendering; `compose.prod.yaml` runs web, Horizon, scheduler, SSR, MySQL and Redis. CI builds the production image whenever Docker files change.
+- Octane safety: the settings store is now request-scoped, so one request's settings can never leak into the next (verified under Octane workers: maintenance on and off took effect on the very next request).
+- Redis queues with Horizon at `/horizon`, for super admins with two-step sign-in only; long queue waits email the support address.
+- `/health` for uptime monitors (database, cache, queue, storage; 200 or 503) and a public `/status` page with an optional incident message.
+- Request IDs on every response (`X-Request-Id`, valid incoming IDs kept), added to every log line and error report, and shown on error pages as a reference for support.
+- Error tracking with Sentry (set `SENTRY_LARAVEL_DSN`): no personal data, the member identified only by their public ID.
+- Structured JSON logs for production and a slow-query log (over 500 ms, configurable).
+- N+1 watchdog: key pages have query budgets in the test suite.
+- Fixed in review: the super-admin shortcut could open the queue dashboard without two-step sign-in.
+- 115 PHP tests in total (9 new).
+
 ### Sprint 5c — Payments, storage, AI, modules and launch tools
 - Admin → System → Overview: one card per provider (email, text, payments, storage, AI) with its last check and live health; **Test everything** checks all providers in one click and remembers the results.
 - Payments: Stripe keys and webhook signing secret (encrypted), "Test connection" shows the account name and test/live mode; signed webhook endpoint `/webhooks/stripe` stores each event once (retries are harmless) for billing in Sprint 22.

@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'module' => App\Domains\Platform\Http\Middleware\RequireModule::class,
         ]);
         $middleware->trustProxies(at: '*');
+        $middleware->prepend(App\Http\Middleware\AssignRequestId::class);
         // Lets "sign out of other devices" invalidate those sessions.
         $middleware->appendToGroup('web', Illuminate\Session\Middleware\AuthenticateSession::class);
         // Admin-controlled maintenance page for members (staff and webhooks pass through).
@@ -50,6 +51,6 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             $seo = (new SeoData(title: 'Error '.$status, description: 'Team to Team Referrals', index: false))->toArray();
 
-            return Inertia::render('Error', ['status' => $status, 'seo' => $seo])->toResponse($request)->setStatusCode($status);
+            return Inertia::render('Error', ['status' => $status, 'seo' => $seo, 'requestId' => $request->attributes->get('request_id')])->toResponse($request)->setStatusCode($status);
         });
     })->create();

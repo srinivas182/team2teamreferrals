@@ -27,6 +27,24 @@ final class AppServiceProvider extends ServiceProvider
         // Catch lazy-loading, silently discarded attributes and missing attributes during development.
         Model::shouldBeStrict(! $this->app->isProduction());
 
+        // Error reports identify the member only by their public ULID, never by name or email.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Authenticated::class, function ($e): void {
+            $ulid = $e->user instanceof \App\Domains\Identity\Models\User ? $e->user->ulid : null;
+            if ($ulid !== null) {
+                \Sentry\configureScope(fn (\Sentry\State\Scope $scope) => $scope->setUser(['id' => $ulid]));
+                \Illuminate\Support\Facades\Context::add('user', $ulid);
+            }
+        });
+
+        // Slow-query log: anything over 500 ms is written with its SQL and the request ID.
+        if (! $this->app->runningUnitTests()) {
+            \Illuminate\Support\Facades\DB::listen(function (\Illuminate\Database\Events\QueryExecuted $q): void {
+                if ($q->time >= (float) config('logging.slow_query_ms', 500)) {
+                    \Illuminate\Support\Facades\Log::warning('Slow query', ['ms' => $q->time, 'sql' => $q->sql, 'connection' => $q->connectionName]);
+                }
+            });
+        }
+
         // Start loading assets for links as soon as the user shows intent.
         Vite::prefetch(concurrency: 3);
     }
