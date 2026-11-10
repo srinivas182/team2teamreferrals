@@ -58,4 +58,32 @@ final class Stripe
 
         return false;
     }
+
+    /**
+     * A call to the Stripe API (form-encoded, as Stripe expects). Throws on errors so callers never mistake a failure
+     * for success.
+     *
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    public function api(string $method, string $path, array $params = [], ?string $idempotencyKey = null): array
+    {
+        $req = Http::withToken((string) $this->settings->get('payments.stripe.secret_key'))->asForm()->timeout(20)->acceptJson();
+        if ($idempotencyKey !== null) {
+            $req = $req->withHeaders(['Idempotency-Key' => $idempotencyKey]);
+        }
+        $res = $method === 'GET' ? $req->get('https://api.stripe.com/v1/'.$path, $params) : $req->post('https://api.stripe.com/v1/'.$path, $params);
+        /** @var array<string, mixed> $json */
+        $json = (array) $res->json();
+        if ($res->failed()) {
+            throw new RuntimeException('Stripe: '.((string) data_get($json, 'error.message', 'request failed')), $res->status());
+        }
+
+        return $json;
+    }
+
+    public function publishableKey(): string
+    {
+        return (string) $this->settings->get('payments.stripe.publishable_key');
+    }
 }

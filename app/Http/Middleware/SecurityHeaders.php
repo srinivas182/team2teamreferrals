@@ -21,18 +21,21 @@ final class SecurityHeaders
         $response = $next($request);
 
         $dev = app()->environment('local') ? ' http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173' : '';
-        $csp = implode('; ', [
+        // Stripe's secure card form loads only on the billing pages, keeping the rest of the site's policy tight.
+        $stripe = $request->is('app/billing*', 'app/company/billing*');
+        $csp = implode('; ', array_filter([
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}'".$dev,
+            "script-src 'self' 'nonce-{$nonce}'".($stripe ? ' https://js.stripe.com' : '').$dev,
             "style-src 'self' 'unsafe-inline'".$dev,
-            "img-src 'self' data: blob:",
+            "img-src 'self' data: blob:".($stripe ? ' https://*.stripe.com' : ''),
             "font-src 'self' data:",
-            "connect-src 'self'".$dev,
+            "connect-src 'self'".($stripe ? ' https://api.stripe.com' : '').$dev,
+            $stripe ? 'frame-src https://js.stripe.com https://hooks.stripe.com' : null,
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
             "object-src 'none'",
-        ]);
+        ]));
 
         $headers = [
             'Content-Security-Policy' => $csp,

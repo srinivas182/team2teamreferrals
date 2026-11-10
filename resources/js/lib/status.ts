@@ -117,6 +117,7 @@ const messages: Record<string, string> = {
     'fee-default-saved': 'Default referral fee saved.',
     'fee-disputed': 'Fee disputed. The group owner will decide; the referring team has been told.',
     'dispute-decided': 'Decided. Both teams have been told.',
+    'card-saved': 'Card saved. Thank you!',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
