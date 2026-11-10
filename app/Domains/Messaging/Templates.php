@@ -11,8 +11,15 @@ use Illuminate\Support\Facades\DB;
 final class Templates
 {
     /** @return array{subject: string, body: string, source: string} the industry's wording, else the platform's, else the catalogue default */
-    public function wording(string $type, string $channel, ?int $industryId = null): array
+    public function wording(string $type, string $channel, ?int $industryId = null, ?int $groupId = null): array
     {
+        if ($groupId !== null) {
+            // Owners word a message once for email; in-app and push use the same words. Texts have their own.
+            $g = DB::table('group_message_wording')->where(['group_id' => $groupId, 'type' => $type, 'channel' => $channel === 'sms' ? 'sms' : 'mail'])->first();
+            if ($g !== null) {
+                return ['subject' => (string) $g->subject, 'body' => (string) $g->body, 'source' => 'group'];
+            }
+        }
         foreach (array_filter([$industryId, 0], fn ($v) => $v !== null) as $scope) {
             $t = $this->scoped($type, $channel, $scope === 0 ? null : $scope)->where('is_active', true)->first();
             if ($t !== null) {

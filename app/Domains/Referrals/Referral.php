@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon $consent_at
  * @property string $consent_method
  * @property string $consent_text
+ * @property ?\Illuminate\Support\Carbon $consent_requested_at
+ * @property ?\Illuminate\Support\Carbon $client_confirmed_at
  * @property \Illuminate\Support\Carbon $respond_by
  * @property ?\Illuminate\Support\Carbon $accepted_at
  * @property ?string $decline_reason
@@ -49,7 +51,7 @@ final class Referral extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime'];
     }
 
     /** @return list<string> */

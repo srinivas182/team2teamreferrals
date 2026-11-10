@@ -47,6 +47,9 @@ final class TwilioWebhookController
         if (in_array($word, ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'], true)) {
             SmsOptOut::query()->updateOrCreate(['phone' => $from], ['opted_out_at' => now()]);
             activity('security')->event('sms-opted-out')->withProperties(['phone' => $from])->log('Number replied STOP');
+        } elseif ($word === 'YES' && app(\App\Domains\Referrals\Referrals::class)->confirmByReply($from)) {
+            // A client confirming a referral by text (the confirmation sends their status link).
+            return response('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', 200, ['Content-Type' => 'text/xml']);
         } elseif (in_array($word, ['START', 'YES', 'UNSTOP'], true)) {
             SmsOptOut::query()->where('phone', $from)->delete();
             activity('security')->event('sms-opted-in')->withProperties(['phone' => $from])->log('Number replied START');

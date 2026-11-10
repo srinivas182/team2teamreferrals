@@ -18,6 +18,7 @@ type Rule = { required: boolean; issuingBody: string | null; pattern: string | n
 type StateCov = { id: number; code: string; name: string; rule: Rule | null };
 type Props = {
     industry: {
+        clientTextingApproved: boolean;
         slug: string;
         name: string;
         family: string;
@@ -137,6 +138,17 @@ export default function IndustryShow({
                 <Link href={`/admin/industries/${i.slug}/agreement`} className="text-sm font-medium text-primary">
                     Agreement
                 </Link>
+                <button
+                    className="text-sm font-medium text-primary"
+                    onClick={() => {
+                        const on = !i.clientTextingApproved;
+                        const note = on ? window.prompt('Who approved texting clients in this industry? (e.g. counsel’s name and date)') : '';
+                        if (on && !note) return;
+                        router.post(`/admin/industries/${i.slug}/client-texting`, { approved: on, note }, { preserveScroll: true });
+                    }}
+                >
+                    {i.clientTextingApproved ? 'Client texting: on' : 'Client texting: off'}
+                </button>
                 <Link href={`/admin/industries/${i.slug}/training`} className="text-sm font-medium text-primary">
                     Training
                 </Link>

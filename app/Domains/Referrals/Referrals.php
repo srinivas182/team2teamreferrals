@@ -56,7 +56,7 @@ final class Referrals
      * @param  array<string, mixed>  $answers
      * @return array{referral: Referral, duplicate: false}|array{referral: null, duplicate: true}
      */
-    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false): array
+    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false, bool $textClient = false): array
     {
         $team = Team::of($sender) ?? Team::forLeader($sender);
         if ($group->industry->tier === \App\Domains\Network\Industries\Tier::Directory) {
@@ -118,6 +118,9 @@ final class Referrals
             return $ref;
         });
         $this->tellReceiver($ref);
+        if ($textClient) {
+            $this->requestClientConsent($ref);
+        }
 
         return ['referral' => $ref, 'duplicate' => false];
     }
@@ -129,7 +132,7 @@ final class Referrals
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);
-        $this->notifier->send($ref->sender->leader, 'referral.accepted', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'team' => (string) $ref->receiver?->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+        $this->notifier->send($ref->sender->leader, 'referral.accepted', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'team' => (string) $ref->receiver?->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
     }
 
     public function decline(Referral $ref, User $user, string $reason): void
@@ -176,8 +179,57 @@ final class Referrals
             $toReceiverEarly = $other->id === $ref->receiver_team_id && $ref->status !== 'accepted';
             $excerpt = mb_strimwidth($toReceiverEarly ? Referral::maskContacts($body) : $body, 0, 160, '…');
             $name = $toReceiverEarly ? $ref->shortClientName() : $ref->client_name;
-            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
         }
+    }
+
+    /** Whether the client can be asked to confirm by text: industry approved, a mobile on file, not opted out. */
+    public static function canTextClient(Referral $ref): bool
+    {
+        return $ref->group->industry->client_texting_approved && $ref->client_phone !== null && $ref->consent_requested_at === null
+            && ! DB::table('sms_opt_outs')->where('phone', $ref->client_phone)->whereNotNull('opted_out_at')->exists();
+    }
+
+    /** One text per referral asking the client to confirm they want to be contacted. */
+    public function requestClientConsent(Referral $ref): bool
+    {
+        $ref->loadMissing(['group.industry', 'seat', 'sender']);
+        if (! self::canTextClient($ref)) {
+            return false;
+        }
+        $token = \Illuminate\Support\Str::random(40);
+        $ref->forceFill(['consent_token_hash' => hash('sha256', $token), 'consent_requested_at' => now()])->save();
+        $t = $ref->group->industry->terms();
+        app(\App\Support\Sms\SmsSender::class)->send((string) $ref->client_phone, "{$ref->sender->name} would like to connect you with a verified {$t['pro']} in {$ref->seat->territory_name} via Team to Team Referrals. Reply YES or tap to confirm: ".url('/c/'.$token).' Reply STOP to opt out.');
+        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'consent_requested', 'team_id' => $ref->sender_team_id, 'actor_id' => null, 'meta' => null, 'created_at' => now()]);
+
+        return true;
+    }
+
+    public function confirmClient(Referral $ref, string $via): void
+    {
+        if ($ref->client_confirmed_at !== null) {
+            return;
+        }
+        $ref->loadMissing(['group.industry', 'sender.leader']);
+        $ref->forceFill(['client_confirmed_at' => now(), 'consent_method' => 'client_confirmed', 'consent_token_hash' => null])->save();
+        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'client_confirmed', 'team_id' => null, 'actor_id' => null, 'meta' => json_encode(['via' => $via]), 'created_at' => now()]);
+        if ($ref->client_phone !== null && $ref->client_token !== null) {
+            app(\App\Support\Sms\SmsSender::class)->send($ref->client_phone, 'Thanks! See who will contact you and track your introduction: '.url('/r/'.$ref->client_token));
+        }
+        $this->notifier->send($ref->sender->leader, 'referral.message', ['headline' => "{$ref->client_name} confirmed by text", 'body' => 'Your client confirmed they want to be contacted. Their consent is now recorded as client-confirmed.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+    }
+
+    /** A YES reply to our number confirms the newest pending request from that phone (within 7 days). */
+    public function confirmByReply(string $fromE164): bool
+    {
+        $ref = Referral::query()->where('client_phone', $fromE164)->whereNull('client_confirmed_at')->where('consent_requested_at', '>=', now()->subDays(7))->latest('consent_requested_at')->first();
+        if ($ref === null) {
+            return false;
+        }
+        $this->confirmClient($ref, 'reply');
+
+        return true;
     }
 
     public static function consentText(Group $group): string
@@ -198,13 +250,13 @@ final class Referrals
         if ($next !== null) {
             $ref->forceFill(['receiver_team_id' => $next->id, 'routed_to' => 'backup', 'respond_by' => now()->addHours((int) $ref->group->rule('accept_hours')), 'decline_reason' => $reason])->save();
             $this->event($ref, 'passed_to_backup', $next, null);
-            $this->notifier->send($ref->sender->leader, 'referral.declined', $data, url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+            $this->notifier->send($ref->sender->leader, 'referral.declined', $data, url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
             $this->tellReceiver($ref->fresh() ?? $ref);
 
             return;
         }
         $ref->forceFill(['status' => $why === 'expired' ? 'expired' : 'declined', 'decline_reason' => $reason])->save();
-        $this->notifier->send($ref->sender->leader, 'network.announcement', ['body' => "Your referral for {$ref->client_name} in {$ref->seat->territory_name} couldn’t be placed: {$reason}. No backup was available. You can send it again later or contact us."], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+        $this->notifier->send($ref->sender->leader, 'network.announcement', ['body' => "Your referral for {$ref->client_name} in {$ref->seat->territory_name} couldn’t be placed: {$reason}. No backup was available. You can send it again later or contact us."], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
     }
 
     private function tellReceiver(Referral $ref): void
@@ -215,7 +267,7 @@ final class Referrals
         }
         $this->notifier->send($ref->receiver->leader, 'referral.waiting', [
             'client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours'),
-        ], self::quickLink($ref), $ref->group->industry);
+        ], self::quickLink($ref), $ref->group->industry, $ref->group_id);
     }
 
     private function mustReceive(Referral $ref, User $user): void

@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 16b part 2b — Client consent by text and group message wording
+- Consent by text: senders can tick "Also text my client to confirm". The client gets one text naming the referring team, the kind of pro and the city, with a confirm link and STOP wording; they confirm by tapping (a confirm button, so link previews can't confirm for them) or by replying YES. The referral is then marked "Client confirmed" (consent method changes from sender-attested), the client is texted their status-page link, and the sender is told. Senders can also ask later from the referral page.
+- Safeguards: client texting is off per industry until an admin switches it on with a note recording who approved it (audited); one consent text per referral; opted-out numbers are never texted; YES replies are matched only to requests from the last 7 days and only through the signed Twilio webhook.
+- Group message wording: group owners reword the referral messages for their network (new referral, accepted, declined, messages, agreements) for email, in-app and push, plus a separate text version, falling back to the industry's wording. Placeholders the message can't fill are refused with a list of the ones it can.
+- Fixed in review: a group owner's wording reached email but not in-app or push.
+- 295 PHP tests in total (5 new).
+
 ### Sprint 16b part 2a — Messages, one-tap accept and the client status page
 - Messages on every referral, built into the platform (no third-party chat): only the two teams can read or post; new messages appear every 10 seconds while the referral is open; the other team is notified by email, push and in-app with an excerpt, respecting their preferences and quiet hours. Messages are part of the referral's record.
 - Privacy: phone numbers and emails in messages are masked for the receiver until they accept ("[phone shown after accepting]"); notifications carry the masked excerpt and the client's short name. Dates, budgets, reference numbers and ZIP codes are left alone.

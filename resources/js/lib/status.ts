@@ -82,6 +82,11 @@ const messages: Record<string, string> = {
     'referral-accepted': 'Accepted. The sender has been told; the client’s full details are now visible.',
     'referral-declined': 'Declined. It has moved to the backup pro if there is one, and the sender has been told.',
     'agreement-signed': 'Signed. When both sides have signed, the signed PDF will be on the referral.',
+    'client-asked': 'We’ve texted your client to confirm. You’ll be told when they do.',
+    'wording-saved': 'Saved. Your network’s messages now use this wording.',
+    'wording-reset': 'Back to the industry’s wording.',
+    'texting-approved': 'Texting clients is now on for this industry.',
+    'texting-stopped': 'Texting clients is now off for this industry.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
