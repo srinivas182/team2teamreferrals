@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 17a — Working the referral: stages, calls, deadlines and nudges
+- Accepted referrals move through the group's (or industry's) pipeline. A Progress panel shows the stage path; the receiving team moves it on, posts progress notes, and the sender is told each time ("Hurricane Sun: Tom Brennan is now at “Site survey”"). Stages can carry a client-friendly label and an optional time limit (editor in 17b).
+- "Log a call": one tap records first contact, stops the first-contact clock, and moves a brand-new referral to the first working stage.
+- Stage prompts: Won asks for the closing date and value (kept for closing and fees in Sprint 20); Lost asks for a reason the sender sees.
+- Deadlines (every 15 minutes, each reminder once): a reminder 2 hours before first contact is due and a recorded miss after it; a gentle "No update for 6 days" a day before the update deadline and a recorded miss after it; a nudge when a referral sits in a stage past its time limit. Misses are on the timeline for the trust score.
+- Sender's "Nudge for an update" button, at most every 3 days, shows when the next nudge is possible.
+- The client status page shows the current stage in plain words.
+- Fixed in review: timeline entries showed raw codes ("call_logged", and the consent and signing events from 16b); now "Logged a call", "Moved to Contacted", "Client confirmed", "Signed the agreement", with notes shown.
+- 302 PHP tests in total (7 new).
+
 ### Sprint 16b part 2b — Client consent by text and group message wording
 - Consent by text: senders can tick "Also text my client to confirm". The client gets one text naming the referring team, the kind of pro and the city, with a confirm link and STOP wording; they confirm by tapping (a confirm button, so link previews can't confirm for them) or by replying YES. The referral is then marked "Client confirmed" (consent method changes from sender-attested), the client is texted their status-page link, and the sender is told. Senders can also ask later from the referral page.
 - Safeguards: client texting is off per industry until an admin switches it on with a note recording who approved it (audited); one consent text per referral; opted-out numbers are never texted; YES replies are matched only to requests from the last 7 days and only through the signed Twilio webhook.

@@ -130,6 +130,7 @@ final class Referrals
         $this->mustReceive($ref, $user);
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
+        app(Pipeline::class)->start($ref);
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);
         $this->notifier->send($ref->sender->leader, 'referral.accepted', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'team' => (string) $ref->receiver?->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);

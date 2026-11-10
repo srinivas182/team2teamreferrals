@@ -87,6 +87,10 @@ const messages: Record<string, string> = {
     'wording-reset': 'Back to the industry’s wording.',
     'texting-approved': 'Texting clients is now on for this industry.',
     'texting-stopped': 'Texting clients is now off for this industry.',
+    'call-logged': 'Call logged. The first-contact clock has stopped and the sender has been told.',
+    'stage-moved': 'Moved. The sender has been told.',
+    'update-posted': 'Update posted for the sender.',
+    nudged: 'Nudge sent. They’ve been asked for a quick update.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

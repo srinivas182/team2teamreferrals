@@ -98,6 +98,12 @@ final class Schemas
             if (trim((string) ($s['label'] ?? '')) === '') {
                 $errors[] = 'Stage '.($i + 1).': add a name.';
             }
+            if (isset($s['client_label']) && mb_strlen((string) $s['client_label']) > 80) {
+                $errors[] = 'Stage '.($i + 1).': keep the client-friendly name under 80 characters.';
+            }
+            if (isset($s['limit_days']) && $s['limit_days'] !== '' && (! is_numeric($s['limit_days']) || (int) $s['limit_days'] < 1 || (int) $s['limit_days'] > 90)) {
+                $errors[] = 'Stage '.($i + 1).': a time limit must be between 1 and 90 days.';
+            }
             $kind = (string) ($s['kind'] ?? '');
             if (! isset($kinds[$kind])) {
                 $errors[] = 'Stage '.($i + 1).': choose open, won or lost.';

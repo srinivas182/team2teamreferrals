@@ -34,7 +34,7 @@ final class NotificationCatalogue
         'referral.message' => ['group' => 'Referrals', 'label' => 'Messages on a referral', 'description' => 'When the other team sends you a message about a referral.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'referral.update' => ['group' => 'Referrals', 'label' => 'Progress updates', 'description' => 'Stage changes and notes on referrals you sent.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
-            'title' => 'Update on {client}', 'body' => '{team} moved {client} forward. See the latest notes.', 'sms' => ''],
+            'title' => 'Update on {client}', 'body' => '{team}: {client} is now at “{stage}”. {note}', 'sms' => ''],
         'seat.offered' => ['group' => 'Network', 'label' => 'A seat opened for you', 'description' => 'A city you are waitlisted for became available.', 'channels' => ['mail', 'sms', 'database'], 'urgent' => true, 'locked' => false,
             'title' => '{city} is available to you', 'body' => 'The {industry} seat in {city} is yours to claim for the next {hours} hours.', 'sms' => 't2t: the {city} seat is available to you for {hours}h. Claim it: {url}'],
         'seat.decision' => ['group' => 'Network', 'label' => 'Your seat applications', 'description' => 'Approved, waitlisted or declined, and when you claim a seat.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

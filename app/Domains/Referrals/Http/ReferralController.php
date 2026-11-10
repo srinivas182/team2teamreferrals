@@ -105,6 +105,14 @@ final class ReferralController
             ],
             'isReceiver' => $isReceiver,
             'agreement' => $this->agreementFor($referral, $user),
+            'pipeline' => $referral->status === 'accepted' ? [
+                'stages' => app(\App\Domains\Referrals\Pipeline::class)->stages($referral), 'current' => $referral->stage,
+                'canWork' => $isReceiver, 'firstContact' => $referral->first_contact_at?->toIso8601String(),
+                'firstContactDue' => $referral->accepted_at?->copy()->addHours((int) $referral->group->rule('first_contact_hours'))->toIso8601String(),
+                'closingDate' => $referral->closing_date?->toDateString(), 'closingValue' => $referral->closing_value_cents !== null ? $referral->closing_value_cents / 100 : null, 'lostReason' => $referral->lost_reason,
+                'canNudge' => $team?->id === $referral->sender_team_id && $referral->closed_at === null && ($referral->last_nudged_at === null || $referral->last_nudged_at->lte(now()->subDays(\App\Domains\Referrals\Pipeline::NUDGE_EVERY_DAYS))),
+                'nextNudge' => $referral->last_nudged_at?->copy()->addDays(\App\Domains\Referrals\Pipeline::NUDGE_EVERY_DAYS)->toIso8601String(),
+            ] : null,
             'messages' => DB::table('referral_messages')->join('users', 'users.id', '=', 'referral_messages.user_id')->join('teams', 'teams.id', '=', 'referral_messages.team_id')
                 ->where('referral_id', $referral->id)->orderBy('referral_messages.id')->get(['referral_messages.id', 'referral_messages.body', 'referral_messages.created_at', 'referral_messages.team_id', 'users.first_name', 'teams.name as team'])
                 ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
@@ -117,6 +125,35 @@ final class ReferralController
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
         ]);
+    }
+
+    public function logCall(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
+    {
+        $pipeline->logCall($referral, $this->user($request), $request->validate(['note' => ['nullable', 'string', 'max:1000']])['note'] ?? null);
+
+        return back()->with('status', 'call-logged');
+    }
+
+    public function stage(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
+    {
+        $d = $request->validate(['stage' => ['required', 'string', 'max:40'], 'note' => ['nullable', 'string', 'max:1000'], 'closing_date' => ['nullable', 'date'], 'closing_value' => ['nullable', 'numeric', 'min:0', 'max:1000000000'], 'lost_reason' => ['nullable', 'string', 'max:500']]);
+        $pipeline->move($referral, $this->user($request), (string) $d['stage'], $d['note'] ?? null, $d);
+
+        return back()->with('status', 'stage-moved');
+    }
+
+    public function note(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
+    {
+        $pipeline->note($referral, $this->user($request), (string) $request->validate(['note' => ['required', 'string', 'max:1000']])['note']);
+
+        return back()->with('status', 'update-posted');
+    }
+
+    public function nudge(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
+    {
+        $pipeline->nudge($referral, $this->user($request));
+
+        return back()->with('status', 'nudged');
     }
 
     public function askClient(Request $request, Referral $referral): RedirectResponse
@@ -192,6 +229,11 @@ final class ReferralController
                 'trained' => app(\App\Domains\Network\Training\Training::class)->teamTrained($receiver),
             ] : null,
             'contactHours' => (int) $r->group->rule('first_contact_hours'),
+            'stage' => $r->status === 'accepted' && $r->stage !== null ? (function () use ($r) {
+                $st = app(\App\Domains\Referrals\Pipeline::class)->stage($r);
+
+                return $st ? ['label' => (string) (($st['client_label'] ?? null) ?: $st['label']), 'kind' => $st['kind']] : null;
+            })() : null,
             'seo' => (new SeoData(title: 'Your introduction', description: 'Team to Team Referrals', index: false))->toArray(),
         ]);
     }
