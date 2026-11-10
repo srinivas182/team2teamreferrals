@@ -91,6 +91,9 @@ const messages: Record<string, string> = {
     'stage-moved': 'Moved. The sender has been told.',
     'update-posted': 'Update posted for the sender.',
     nudged: 'Nudge sent. They’ve been asked for a quick update.',
+    'pipeline-saved': 'Pipeline saved. Members have been told, and referrals in removed stages were moved.',
+    'pipeline-locked': 'Pipeline locked: owners can no longer change it.',
+    'pipeline-unlocked': 'Pipeline unlocked.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

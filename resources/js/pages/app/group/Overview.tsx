@@ -82,6 +82,9 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                     <a href={`/app/group/${group.slug}/messages`} className="float-right text-sm font-medium text-primary">
                         Message wording
                     </a>
+                    <a href={`/app/group/${group.slug}/pipeline`} className="float-right mr-4 text-sm font-medium text-primary">
+                        Pipeline stages
+                    </a>
                     <h2 className="font-semibold">Network training</h2>
                     <p className="mt-1 text-sm text-muted">
                         {group.trainingRequired

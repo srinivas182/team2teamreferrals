@@ -204,3 +204,11 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/group/{group}/messages', [App\Domains\Referrals\Http\GroupWordingController::class, 'save'])->name('group.wording.save');
     Route::delete('app/group/{group}/messages/{type}', [App\Domains\Referrals\Http\GroupWordingController::class, 'reset'])->name('group.wording.reset');
 });
+
+// Pipeline board, and the owners' pipeline editor (admins can lock it).
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/pipeline', [App\Domains\Referrals\Http\PipelineController::class, 'board'])->name('pipeline.board');
+    Route::get('app/group/{group}/pipeline', [App\Domains\Referrals\Http\PipelineController::class, 'edit'])->name('group.pipeline');
+    Route::put('app/group/{group}/pipeline', [App\Domains\Referrals\Http\PipelineController::class, 'save'])->name('group.pipeline.save');
+    Route::post('app/group/{group}/pipeline/lock', [App\Domains\Referrals\Http\PipelineController::class, 'lock'])->name('group.pipeline.lock');
+});
