@@ -45,17 +45,18 @@ final class Reservations
         return ['open' => ! $taken, 'territory' => $t['territory_name'], 'reason' => $taken ? 'Already reserved. Reserve anyway to back it up or join the waitlist.' : null];
     }
 
-    public function reserve(Industry $industry, City $city, string $email, string $name, ?string $business, bool $onWall): void
+    public function reserve(Industry $industry, City $city, string $email, string $name, ?string $business, bool $onWall, ?string $ref = null): void
     {
         $group = $this->launchGroup($industry);
+        $territory = Territory::fromCity($industry->territory_unit, $city)['territory_name']; // also refuses switched-off places
         $email = strtolower(trim($email));
         if (DB::table('reservations')->where(['group_id' => $group->id, 'city_id' => $city->id, 'email' => $email])->exists()) {
             throw ValidationException::withMessages(['email' => 'You’ve already reserved this city. Check your email for the confirmation link.']);
         }
         $token = Str::random(48);
-        DB::table('reservations')->insert(['group_id' => $group->id, 'city_id' => $city->id, 'email' => $email, 'name' => $name, 'business' => $business, 'on_wall' => $onWall,
+        $referrer = $ref ? DB::table('reservations')->where('share_id', $ref)->whereIn('status', ['confirmed', 'claimed'])->value('id') : null;
+        DB::table('reservations')->insert(['share_id' => (string) Str::ulid(), 'referred_by' => $referrer, 'group_id' => $group->id, 'city_id' => $city->id, 'email' => $email, 'name' => $name, 'business' => $business, 'on_wall' => $onWall,
             'token_hash' => hash('sha256', $token), 'created_at' => now(), 'updated_at' => now()]);
-        $territory = Territory::fromCity($industry->territory_unit, $city)['territory_name'];
         Notification::route('mail', $email)->notify(new ConfirmReservationNotification($territory, $group->name, url('/reserve/confirm/'.$token)));
     }
 
@@ -95,6 +96,37 @@ final class Reservations
             DB::table('seat_events')->insert(['seat_id' => $seat->id, 'team_id' => $team->id, 'event' => 'reserved', 'meta' => json_encode(['reservation' => $r->id]), 'actor_id' => $user->id, 'created_at' => now()]);
             DB::table('reservations')->where('id', $r->id)->update(['status' => 'claimed', 'application_id' => (int) $appId, 'updated_at' => now()]);
         });
+    }
+
+    /** @return array<int, array{lat: float, lon: float, industry: string}> confirmed reservations for the live map */
+    public function points(): array
+    {
+        return DB::table('reservations')->join('cities', 'cities.id', '=', 'reservations.city_id')->join('groups', 'groups.id', '=', 'reservations.group_id')->join('industries', 'industries.id', '=', 'groups.industry_id')
+            ->whereIn('reservations.status', ['confirmed', 'claimed'])->whereNotNull('cities.lat')->limit(5000)
+            ->get(['cities.lat', 'cities.lon', 'industries.slug'])->map(fn ($r) => ['lat' => (float) $r->lat, 'lon' => (float) $r->lon, 'industry' => (string) $r->slug])->values()->all();
+    }
+
+    /** @return array<int, array{state: string, name: string, count: int}> the states with the most reservations */
+    public function race(int $limit = 8): array
+    {
+        return DB::table('reservations')->join('cities', 'cities.id', '=', 'reservations.city_id')->join('states', 'states.id', '=', 'cities.state_id')
+            ->whereIn('reservations.status', ['confirmed', 'claimed'])->groupBy('states.code', 'states.name')->selectRaw('states.code, states.name, count(*) as n')->orderByDesc('n')->limit($limit)->get()
+            ->map(fn ($r) => ['state' => (string) $r->code, 'name' => (string) $r->name, 'count' => (int) $r->n])->values()->all();
+    }
+
+    /** @return ?array{business: string, territory: string, industry: string, group: string, shareId: string, invited: int} */
+    public function shared(string $shareId): ?array
+    {
+        $r = DB::table('reservations')->join('groups', 'groups.id', '=', 'reservations.group_id')->join('industries', 'industries.id', '=', 'groups.industry_id')
+            ->where('reservations.share_id', $shareId)->whereIn('reservations.status', ['confirmed', 'claimed'])
+            ->first(['reservations.id', 'reservations.business', 'reservations.name', 'reservations.city_id', 'groups.name as group', 'industries.name as industry', 'industries.territory_unit']);
+        if ($r === null) {
+            return null;
+        }
+        $city = City::query()->find((int) $r->city_id);
+
+        return ['business' => (string) ($r->business ?: Str::before((string) $r->name, ' ')), 'territory' => $city ? Territory::fromCity((string) $r->territory_unit, $city)['territory_name'] : '',
+            'industry' => (string) $r->industry, 'group' => (string) $r->group, 'shareId' => $shareId, 'invited' => DB::table('reservations')->where('referred_by', $r->id)->whereIn('status', ['confirmed', 'claimed'])->count()];
     }
 
     /** @return array{reservations: int, cities: int, states: int} */

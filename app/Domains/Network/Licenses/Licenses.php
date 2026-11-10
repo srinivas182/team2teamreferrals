@@ -68,13 +68,34 @@ final class Licenses
         $verified = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'verified'])->count();
         $pending = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'pending'])->count();
 
-        // Licenses up to 60, profile strength up to 30, plus 10 for being on the platform.
-        return min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + (int) round(\App\Domains\Network\Onboarding\ProfileStrength::for($team)['score'] * 0.3) + 10);
+        // Licenses up to 60, profile strength up to 30, 10 for being on the platform, and up to 20 for pros they invited
+        // before launch who claimed a reservation and got a license verified. Capped at 100.
+        return min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + (int) round(\App\Domains\Network\Onboarding\ProfileStrength::for($team)['score'] * 0.3) + 10 + min(20, 5 * self::verifiedInvites($team)));
+    }
+
+    /** Pros this team invited (through its reservation links) who claimed and have a verified license. */
+    public static function verifiedInvites(Team $team): int
+    {
+        $mine = DB::table('reservations')->join('seat_applications', 'seat_applications.id', '=', 'reservations.application_id')->where('seat_applications.team_id', $team->id)->pluck('reservations.id');
+        if ($mine->isEmpty()) {
+            return 0;
+        }
+
+        return DB::table('reservations')->join('seat_applications', 'seat_applications.id', '=', 'reservations.application_id')
+            ->whereIn('reservations.referred_by', $mine)->where('reservations.status', 'claimed')
+            ->whereExists(fn ($q) => $q->from('team_licenses')->whereColumn('team_licenses.team_id', 'seat_applications.team_id')->where('team_licenses.status', 'verified'))
+            ->distinct()->count('seat_applications.team_id');
     }
 
     public static function rerank(Team $team): void
     {
         DB::table('seat_waitlist')->where('team_id', $team->id)->update(['score' => self::rankScore($team)]);
+        // Whoever invited this team may move up too.
+        $inviters = DB::table('reservations as mine')->join('seat_applications as a', 'a.id', '=', 'mine.application_id')->where('a.team_id', $team->id)
+            ->join('reservations as theirs', 'theirs.id', '=', 'mine.referred_by')->join('seat_applications as b', 'b.id', '=', 'theirs.application_id')->pluck('b.team_id')->unique();
+        foreach (Team::query()->whereIn('id', $inviters)->get() as $inviter) {
+            DB::table('seat_waitlist')->where('team_id', $inviter->id)->update(['score' => self::rankScore($inviter)]);
+        }
     }
 
     /** Daily: reminders 30 and 7 days before expiry, then mark expired licenses. */

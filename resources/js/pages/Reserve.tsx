@@ -13,6 +13,8 @@ type Props = {
     launchAt: string;
     counters: { reservations: number; cities: number; states: number };
     wall: { name: string; city: string; industry: string }[];
+    points: { lat: number; lon: number; industry: string }[];
+    race: { state: string; name: string; count: number }[];
     industries: { slug: string; name: string; territory: string }[];
     status?: string;
     seo: Seo;
@@ -43,10 +45,14 @@ function Countdown({ to }: { to: string }) {
     );
 }
 
-export default function Reserve({ launchAt, counters, wall, industries, status, seo }: Props) {
+const inFrame = (p: { lat: number; lon: number }) => p.lon > -125 && p.lon < -66 && p.lat > 24 && p.lat < 50;
+
+export default function Reserve({ launchAt, counters, wall, points, race, industries, status, seo }: Props) {
+    const [mapIndustry, setMapIndustry] = useState('all');
+    const ref = typeof window === 'undefined' ? '' : (new URLSearchParams(window.location.search).get('ref') ?? '');
     const [city, setCity] = useState<CityOption | null>(null);
     const [avail, setAvail] = useState<{ open: boolean; territory: string; reason: string | null } | null>(null);
-    const form = useForm({ industry: industries[0]?.slug ?? '', city_id: 0, name: '', business: '', email: '', on_wall: true, website: '' });
+    const form = useForm({ industry: industries[0]?.slug ?? '', city_id: 0, name: '', business: '', email: '', on_wall: true, website: '', ref });
     const e = form.errors as Record<string, string>;
     useEffect(() => {
         if (!city || !form.data.industry) return;
@@ -205,6 +211,74 @@ export default function Reserve({ launchAt, counters, wall, industries, status, 
                         </Card>
                     );
                 })}
+            </section>
+            <section className="mx-auto grid max-w-6xl gap-6 px-5 pb-10 lg:grid-cols-[1fr_320px]">
+                <Card className="p-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="font-semibold">Live reservations</h2>
+                        <Select
+                            aria-label="Industry on the map"
+                            className="ml-auto h-9 w-56"
+                            value={mapIndustry}
+                            onChange={(ev) => setMapIndustry(ev.target.value)}
+                        >
+                            <option value="all">All industries</option>
+                            {industries.map((i) => (
+                                <option key={i.slug} value={i.slug}>
+                                    {i.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <svg viewBox="0 0 960 520" className="mt-3 h-auto w-full" role="img" aria-label={`${points.length} reservations on the map`}>
+                        <rect width="960" height="520" rx="14" className="fill-bg" />
+                        {points
+                            .filter((p) => inFrame(p) && (mapIndustry === 'all' || p.industry === mapIndustry))
+                            .map((p, i) => (
+                                <circle
+                                    key={i}
+                                    cx={((p.lon + 125) / 59) * 960}
+                                    cy={((50 - p.lat) / 26) * 520}
+                                    r="7"
+                                    fill="#FF7A1A"
+                                    fillOpacity="0.8"
+                                    stroke="#0E1B3D"
+                                    strokeOpacity="0.3"
+                                />
+                            ))}
+                    </svg>
+                </Card>
+                <Card className="p-6">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                        <Trophy className="size-5 text-orange-500" aria-hidden /> State race
+                    </h2>
+                    {race.length === 0 ? (
+                        <p className="mt-3 text-sm text-muted">Be the first in your state.</p>
+                    ) : (
+                        <ol className="mt-4 space-y-3">
+                            {race.map((r, i) => (
+                                <li key={r.state}>
+                                    <div className="flex justify-between text-sm">
+                                        <span>
+                                            <span className="mr-2 font-display font-bold text-muted">{i + 1}</span>
+                                            {r.name}
+                                        </span>
+                                        <span className="text-muted tabular">{r.count}</span>
+                                    </div>
+                                    <div className="mt-1 h-1.5 rounded-full bg-bg">
+                                        <div
+                                            className="h-1.5 rounded-full"
+                                            style={{
+                                                width: `${(r.count / race[0]!.count) * 100}%`,
+                                                background: 'linear-gradient(90deg,#2451F5,#FF7A1A)',
+                                            }}
+                                        />
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </Card>
             </section>
             {wall.length > 0 && (
                 <section className="mx-auto max-w-6xl px-5 pb-16">

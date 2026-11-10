@@ -14,7 +14,11 @@ final class Territory
     /** @return array{territory_type: string, territory_id: int, territory_name: string, state_code: string} */
     public static function fromCity(string $unit, City $city): array
     {
-        $state = DB::table('states')->where('id', $city->state_id)->first(['id', 'code', 'name']);
+        $state = DB::table('states')->where('id', $city->state_id)->first(['id', 'code', 'name', 'is_enabled']);
+        // Switched-off places (Admin → Locations) never get seats, whichever way someone tries: apply, invite, reserve.
+        if (! $city->is_enabled || ! (bool) ($state->is_enabled ?? false)) {
+            throw ValidationException::withMessages(['city_id' => 'We’re not taking seats in this location yet.']);
+        }
         $code = (string) ($state->code ?? '');
         $county = $city->county_id ? DB::table('counties')->where('id', $city->county_id)->first(['id', 'name']) : null;
 
