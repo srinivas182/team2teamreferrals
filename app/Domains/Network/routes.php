@@ -178,6 +178,10 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/call', [App\Domains\Referrals\Http\ReferralController::class, 'logCall'])->name('referrals.call');
+    Route::post('app/referrals/{referral}/stage', [App\Domains\Referrals\Http\ReferralController::class, 'stage'])->name('referrals.stage');
+    Route::post('app/referrals/{referral}/note', [App\Domains\Referrals\Http\ReferralController::class, 'note'])->middleware('throttle:60,60')->name('referrals.note');
+    Route::post('app/referrals/{referral}/nudge', [App\Domains\Referrals\Http\ReferralController::class, 'nudge'])->name('referrals.nudge');
     Route::post('app/referrals/{referral}/ask-client', [App\Domains\Referrals\Http\ReferralController::class, 'askClient'])->middleware('throttle:10,60')->name('referrals.ask-client');
     Route::post('app/referrals/{referral}/messages', [App\Domains\Referrals\Http\ReferralController::class, 'message'])->middleware('throttle:60,60')->name('referrals.message');
     Route::post('app/referrals/{referral}/sign', [App\Domains\Referrals\Http\ReferralController::class, 'sign'])->middleware('throttle:20,60')->name('referrals.sign');

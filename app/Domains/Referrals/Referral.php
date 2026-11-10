@@ -22,6 +22,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $receiver_team_id
  * @property string $routed_to
  * @property string $status
+ * @property ?string $stage
+ * @property ?\Illuminate\Support\Carbon $stage_changed_at
+ * @property ?\Illuminate\Support\Carbon $first_contact_at
+ * @property ?\Illuminate\Support\Carbon $last_update_at
+ * @property ?\Illuminate\Support\Carbon $closing_date
+ * @property ?int $closing_value_cents
+ * @property ?string $lost_reason
+ * @property ?\Illuminate\Support\Carbon $closed_at
+ * @property ?\Illuminate\Support\Carbon $last_nudged_at
  * @property string $client_name
  * @property ?string $client_phone
  * @property ?string $client_email
@@ -51,7 +60,7 @@ final class Referral extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime'];
     }
 
     /** @return list<string> */

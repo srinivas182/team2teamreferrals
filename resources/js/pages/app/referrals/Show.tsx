@@ -11,6 +11,7 @@ import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
+import { Progress, type PipelineInfo } from '@/components/referrals/Progress';
 import { left, tone, useNow } from './List';
 
 type Props = {
@@ -34,6 +35,7 @@ type Props = {
         answers: { label: string; value: unknown }[];
     };
     isReceiver: boolean;
+    pipeline: PipelineInfo | null;
     messages: { id: number; mine: boolean; who: string; when: string; body: string }[];
     clientLink: string | null;
     agreement: {
@@ -54,6 +56,14 @@ type Props = {
 };
 
 const words: Record<string, string> = {
+    consent_requested: 'Client asked to confirm by text',
+    client_confirmed: 'Client confirmed',
+    signed: 'Signed the agreement',
+    call_logged: 'Logged a call',
+    update: 'Progress note',
+    nudged: 'Asked for an update',
+    missed_first_contact: 'First contact deadline missed',
+    missed_update: 'Update deadline missed',
     sent: 'Sent',
     accepted: 'Accepted',
     declined: 'Declined',
@@ -62,7 +72,18 @@ const words: Record<string, string> = {
 };
 const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v));
 
-export default function ReferralShow({ referral: r, isReceiver, agreement: ag, messages, clientLink, terms, timeline, status, seo }: Props) {
+export default function ReferralShow({
+    referral: r,
+    isReceiver,
+    agreement: ag,
+    pipeline,
+    messages,
+    clientLink,
+    terms,
+    timeline,
+    status,
+    seo,
+}: Props) {
     // New messages appear without reloading while the referral is open.
     usePoll(10000, { only: ['messages', 'timeline', 'referral'] });
     const [msg, setMsg] = useState('');
@@ -131,6 +152,7 @@ export default function ReferralShow({ referral: r, isReceiver, agreement: ag, m
                             Consent recorded {new Date(r.consentAt).toLocaleString()}: “{r.consentText}”
                         </p>
                     </Card>
+                    {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {ag && (
                         <Card className="space-y-3 p-6">
                             <div className="flex items-center gap-2">
@@ -297,11 +319,14 @@ export default function ReferralShow({ referral: r, isReceiver, agreement: ag, m
                             {timeline.map((t, i) => (
                                 <li key={i}>
                                     <div className="font-medium">
-                                        {words[t.event] ?? t.event}
+                                        {t.event === 'stage' && typeof t.meta?.to === 'string'
+                                            ? `Moved to ${pipeline?.stages.find((x) => x.key === t.meta?.to)?.label ?? t.meta.to}`
+                                            : (words[t.event] ?? t.event.replace(/_/g, ' '))}
                                         {t.team ? ` · ${t.team}` : ''}
                                     </div>
                                     <div className="text-xs text-muted">{new Date(t.when.replace(' ', 'T') + 'Z').toLocaleString()}</div>
                                     {t.meta && typeof t.meta.reason === 'string' && <div className="text-xs text-muted">“{t.meta.reason}”</div>}
+                                    {t.meta && typeof t.meta.note === 'string' && <div className="text-xs text-muted">“{t.meta.note}”</div>}
                                 </li>
                             ))}
                         </ol>

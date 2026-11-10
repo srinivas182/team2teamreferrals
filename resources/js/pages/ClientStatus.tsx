@@ -13,16 +13,21 @@ type Props = {
     pro: string;
     receiver: { name: string; licenses: string[]; trained: boolean } | null;
     contactHours: number;
+    stage: { label: string; kind: string } | null;
     seo: Seo;
 };
 
 /** What the client sees: who will contact them, why they can trust them, and where things stand. */
-export default function ClientStatus({ status, firstName, territory, sender, pro, receiver, contactHours, seo }: Props) {
+export default function ClientStatus({ status, firstName, territory, sender, pro, receiver, contactHours, stage, seo }: Props) {
     const accepted = status === 'accepted';
     const steps: [string, boolean][] = [
         [`${sender} introduced you to a verified ${pro} in ${territory}`, true],
         [receiver ? `${receiver.name} accepted` : `A verified ${pro} is reviewing your request`, accepted],
-        [accepted ? `They’ll contact you within ${contactHours} hours` : 'They’ll contact you soon after accepting', false],
+        stage && stage.kind !== 'open'
+            ? [stage.kind === 'won' ? `${stage.label}: all done` : stage.label, true]
+            : stage && stage.label !== 'New'
+              ? [`Now: ${stage.label}`, true]
+              : [accepted ? `They’ll contact you within ${contactHours} hours` : 'They’ll contact you soon after accepting', false],
     ];
     return (
         <PublicLayout>
