@@ -118,6 +118,8 @@ const messages: Record<string, string> = {
     'fee-disputed': 'Fee disputed. The group owner will decide; the referring team has been told.',
     'dispute-decided': 'Decided. Both teams have been told.',
     'card-saved': 'Card saved. Thank you!',
+    'invoice-paid': 'Paid. Thank you! Your seats are active.',
+    'invoice-failed': 'The payment didn’t go through. Please check your card, or add a new one.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
