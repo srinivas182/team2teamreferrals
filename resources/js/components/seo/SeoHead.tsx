@@ -19,6 +19,8 @@ export function SeoHead({ seo }: { seo: Seo }) {
             <meta head-key="og:description" property="og:description" content={seo.description} />
             <meta head-key="og:url" property="og:url" content={seo.canonical} />
             <meta head-key="og:image" property="og:image" content={seo.image} />
+            <meta head-key="og:image:width" property="og:image:width" content="1200" />
+            <meta head-key="og:image:height" property="og:image:height" content="630" />
             <meta head-key="twitter:card" name="twitter:card" content="summary_large_image" />
             {seo.modifiedAt && <meta head-key="article:modified_time" property="article:modified_time" content={seo.modifiedAt} />}
             {seo.schema.map((item, i) => (

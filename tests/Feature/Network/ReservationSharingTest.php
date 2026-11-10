@@ -15,6 +15,7 @@ beforeEach(function () {
     Artisan::call('t2t:locations:import', ['--path' => base_path('tests/fixtures/locations')]);
     Artisan::call('t2t:catalogue:sync');
     Notification::fake();
+    Illuminate\Support\Facades\Storage::fake('public');
     app()->instance(PushSender::class, new class implements PushSender
     {
         public function send(User $user, string $title, string $body, ?string $url): int

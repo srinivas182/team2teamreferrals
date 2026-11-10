@@ -145,6 +145,7 @@ Route::middleware(['web', 'noindex:always'])->get('company-invites/{token}', [Ap
 // Pre-launch "Reserve your city" (switch: Admin → System → Modules → Pre-launch reservations).
 Route::middleware(['web', 'module:prelaunch'])->group(function (): void {
     Route::get('reserve', [App\Domains\Network\Prelaunch\ReserveController::class, 'page'])->name('reserve');
+    Route::get('reserve/c/{shareId}/{size}.png', [App\Domains\Network\Prelaunch\ReserveController::class, 'image'])->where('shareId', '[0-9A-Za-z]{26}')->whereIn('size', ['og', 'square', 'story'])->middleware('throttle:120,1')->name('reserve.share.image');
     Route::get('reserve/c/{shareId}', [App\Domains\Network\Prelaunch\ReserveController::class, 'share'])->where('shareId', '[0-9A-Za-z]{26}')->name('reserve.share');
     Route::get('reserve/check', [App\Domains\Network\Prelaunch\ReserveController::class, 'check'])->middleware('throttle:60,1')->name('reserve.check');
     Route::post('reserve', [App\Domains\Network\Prelaunch\ReserveController::class, 'store'])->middleware('throttle:10,60')->name('reserve.store');
