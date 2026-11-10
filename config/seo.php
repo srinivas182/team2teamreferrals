@@ -54,6 +54,6 @@ return [
     ],
 
     'llms' => [
-        'summary' => 'Team to Team Referrals is a referral network where licensed teams join trusted groups, hold one seat per city, and send out-of-area clients to verified teams with consent, signed broker-to-broker agreements, response deadlines and tracking to closing. Referral fees are paid broker to broker; the platform charges flat fees only.',
+        'summary' => 'Team to Team Referrals is a US referral network for licensed professionals in 46 industries. Each industry network has one verified pro per territory; pros send out-of-area clients to the verified pro there, with the client’s consent, and track every step to closing. Seats cost $10 per city per network per month after a free trial, and months with no referral offered are free. Where an industry allows referral fees, they are paid business to business; Team to Team never holds them.',
     ],
 ];

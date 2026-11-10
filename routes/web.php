@@ -10,6 +10,7 @@ Route::get('/', fn () => Inertia::render('Home', [
         title: 'Team to Team Referrals — hand out-of-area leads to teams you trust',
         description: (string) config('seo.default_description'),
         path: '/',
-        schema: [Schema::organization(), Schema::website()],
+        schema: [Schema::organization(), Schema::website(), Schema::faq(array_map(fn ($x) => [$x['q'], $x['a']], App\Domains\Seo\Aeo::faq()))],
     ))->toArray(),
+    'faq' => App\Domains\Seo\Aeo::faq(),
 ]))->middleware('edge.cache')->name('home');

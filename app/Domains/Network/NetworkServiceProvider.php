@@ -13,6 +13,7 @@ final class NetworkServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->callAfterResolving(\App\Domains\Seo\Sitemap\SitemapRegistry::class, fn ($r) => $r->register(new Prelaunch\PrelaunchSitemapProvider));
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {
             $s->command('t2t:groups:scheduled')->dailyAt('06:00')->onOneServer();
             // Hourly so 72-hour offers pass on promptly; grace and release use whole days.

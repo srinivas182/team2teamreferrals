@@ -17,7 +17,7 @@ it('server-renders the home page with SEO props', function () {
         ->assertInertia(fn ($page) => $page->component('Home')
             ->where('seo.canonical', 'https://teamtoteamreferrals.com/')
             ->where('seo.robots', 'index, follow, max-image-preview:large, max-snippet:-1')
-            ->has('seo.schema', 2));
+            ->has('seo.schema', 3));
 });
 
 it('appends the site name to inner page titles and trims descriptions to 160 characters', function () {
