@@ -123,6 +123,21 @@ final class ReferralController
                 ->where('referral_id', $referral->id)->orderBy('referral_messages.id')->get(['referral_messages.id', 'referral_messages.body', 'referral_messages.created_at', 'referral_messages.team_id', 'users.first_name', 'teams.name as team'])
                 ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'seen' => (int) $m->team_id === $team?->id && (int) $m->id <= $seenUpTo, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
                     'body' => $hide ? Referral::maskContacts((string) $m->body) : (string) $m->body, 'files' => $files[(int) $m->id] ?? []]),
+            'closing' => $referral->closed_at === null ? null : (function () use ($referral, $team, $user) {
+                $mine = $team?->id === $referral->sender_team_id ? 'sender' : ($team?->id === $referral->receiver_team_id ? 'receiver' : null);
+                $ratings = DB::table('referral_ratings')->where('referral_id', $referral->id)->get()->keyBy('rater');
+                $role = $team?->roleOf($user);
+
+                return [
+                    'status' => $referral->close_status, 'dispute' => $referral->close_dispute,
+                    'canConfirm' => $mine === 'sender' && in_array($role, ['leader', 'assistant'], true) && in_array($referral->close_status, ['awaiting', 'disputed'], true),
+                    'mySide' => $mine,
+                    'myRating' => $mine && isset($ratings[$mine]) ? ['stars' => (int) $ratings[$mine]->stars, 'comment' => $ratings[$mine]->comment, 'editable' => now()->lte((string) $ratings[$mine]->editable_until)] : null,
+                    'clientRated' => isset($ratings['client']),
+                    'thanks' => $referral->thanks_note !== null ? ['note' => $referral->thanks_note, 'public' => $referral->thanks_public] : null,
+                    'canThank' => $mine === 'receiver' && $referral->close_status !== null && $referral->thanks_note === null,
+                ];
+            })(),
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
             'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
@@ -147,6 +162,59 @@ final class ReferralController
 
         // Always a download (never rendered in the browser), and the browser must not guess the type.
         return \Illuminate\Support\Facades\Storage::disk('private')->download((string) $a->path, (string) $a->original_name, ['X-Content-Type-Options' => 'nosniff', 'Content-Type' => 'application/octet-stream']);
+    }
+
+    public function confirmClose(Request $request, Referral $referral, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $closing->confirm($referral, $this->user($request));
+
+        return back()->with('status', 'close-confirmed');
+    }
+
+    public function disputeClose(Request $request, Referral $referral, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $closing->dispute($referral, $this->user($request), (string) $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']])['reason']);
+
+        return back()->with('status', 'close-disputed');
+    }
+
+    public function rate(Request $request, Referral $referral, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $d = $request->validate(['stars' => ['required', 'integer', 'between:1,5'], 'aspects' => ['nullable', 'array'], 'aspects.*' => ['integer', 'between:1,5'], 'comment' => ['nullable', 'string', 'max:1000']]);
+        $aspects = array_intersect_key(array_map('intval', (array) ($d['aspects'] ?? [])), array_flip(['communication', 'speed', 'outcome', 'quality']));
+        $closing->rate($referral, $this->user($request), (int) $d['stars'], $aspects, $d['comment'] ?? null);
+
+        return back()->with('status', 'rated');
+    }
+
+    public function thank(Request $request, Referral $referral, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $closing->thank($referral, $this->user($request), (string) $request->validate(['note' => ['required', 'string', 'max:500']])['note']);
+
+        return back()->with('status', 'thanked');
+    }
+
+    public function thanksPublic(Request $request, Referral $referral, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $closing->setThanksPublic($referral, $this->user($request), $request->boolean('public'));
+
+        return back()->with('status', $request->boolean('public') ? 'thanks-public' : 'thanks-private');
+    }
+
+    /** The client's one optional question (public, private link, never indexed). */
+    public function clientRate(string $token): Response
+    {
+        $r = Referral::query()->with('receiver')->where('client_rating_token_hash', hash('sha256', $token))->first();
+
+        return Inertia::render('ClientRate', ['pro' => $r?->receiver?->name, 'token' => $r ? $token : null, 'seo' => (new SeoData(title: 'Rate your experience', description: 'Team to Team Referrals', index: false))->toArray()]);
+    }
+
+    public function clientRateStore(Request $request, string $token, \App\Domains\Referrals\Closing $closing): RedirectResponse
+    {
+        $d = $request->validate(['stars' => ['required', 'integer', 'between:1,5'], 'comment' => ['nullable', 'string', 'max:1000']]);
+        $closing->rateAsClient($token, (int) $d['stars'], $d['comment'] ?? null);
+
+        return back()->with('status', 'client-rated');
     }
 
     public function mute(Request $request, Referral $referral): RedirectResponse

@@ -104,6 +104,12 @@ const messages: Record<string, string> = {
     'challenge-upheld': 'Decided: the seat moves to the challenger. Both teams have been told.',
     'challenge-overturned': 'Decided: the seat stays with the holder. Both teams have been told.',
     'challenge-cancelled': 'Challenge cancelled. Both teams have been told.',
+    'close-confirmed': 'Close confirmed. Thank you!',
+    'close-disputed': 'Dispute sent to the receiving team and the group owner.',
+    rated: 'Rating saved.',
+    thanked: 'Thank-you sent.',
+    'thanks-public': 'This thank-you now shows on your profile.',
+    'thanks-private': 'This thank-you is now private.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

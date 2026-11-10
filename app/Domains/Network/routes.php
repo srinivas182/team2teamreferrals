@@ -179,6 +179,11 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
     Route::get('app/referrals/{referral}/files/{attachment}', [App\Domains\Referrals\Http\ReferralController::class, 'attachment'])->middleware('signed')->whereNumber('attachment')->name('referrals.attachment');
+    Route::post('app/referrals/{referral}/close/confirm', [App\Domains\Referrals\Http\ReferralController::class, 'confirmClose'])->name('referrals.close.confirm');
+    Route::post('app/referrals/{referral}/close/dispute', [App\Domains\Referrals\Http\ReferralController::class, 'disputeClose'])->name('referrals.close.dispute');
+    Route::post('app/referrals/{referral}/rate', [App\Domains\Referrals\Http\ReferralController::class, 'rate'])->name('referrals.rate');
+    Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
+    Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
     Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');
     Route::post('app/team/quick-replies', [App\Domains\Referrals\Http\ReferralController::class, 'quickReplies'])->name('team.quick-replies');
     Route::get('app/messages/search', [App\Domains\Referrals\Http\ReferralController::class, 'search'])->middleware('throttle:60,1')->name('messages.search');
@@ -199,6 +204,8 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
     Route::post('q/{referral}/{team}', [App\Domains\Referrals\Http\ReferralController::class, 'quickAccept'])->middleware(['signed', 'throttle:20,1'])->whereNumber('team')->name('referrals.quick.accept');
     Route::get('c/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientConsent'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client-consent');
     Route::post('c/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientConsentConfirm'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:20,1')->name('referrals.client-consent.confirm');
+    Route::get('rate/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientRate'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client-rate');
+    Route::post('rate/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientRateStore'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('referrals.client-rate.store');
     Route::get('r/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'client'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client');
 });
 

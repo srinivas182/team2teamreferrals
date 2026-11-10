@@ -79,7 +79,14 @@ final class Pipeline
         if ($stage['kind'] === 'open') {
             $ref->forceFill(['closed_at' => null, 'closing_date' => null, 'closing_value_cents' => null, 'lost_reason' => null]);
         }
+        $wasWon = $ref->close_status !== null;
         $this->moveTo($ref, $team, $user, $key, $note);
+        // A Won close asks the sender to confirm; moving back to an open stage reopens it.
+        if ($stage['kind'] === 'won') {
+            app(Closing::class)->onWon($ref);
+        } elseif ($wasWon) {
+            app(Closing::class)->reopened($ref);
+        }
     }
 
     public function note(Referral $ref, User $user, string $note): void

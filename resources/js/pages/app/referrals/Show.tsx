@@ -13,6 +13,7 @@ import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
+import { ClosingPanel, type ClosingInfo } from '@/components/referrals/ClosingPanel';
 import { Progress, type PipelineInfo } from '@/components/referrals/Progress';
 import { left, tone, useNow } from './List';
 
@@ -38,6 +39,7 @@ type Props = {
     };
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
+    closing: ClosingInfo | null;
     muted: boolean;
     quickReplies: string[];
     messages: {
@@ -68,6 +70,9 @@ type Props = {
 };
 
 const words: Record<string, string> = {
+    close_confirmed: 'Close confirmed',
+    close_auto_confirmed: 'Close confirmed automatically',
+    close_disputed: 'Close disputed',
     consent_requested: 'Client asked to confirm by text',
     client_confirmed: 'Client confirmed',
     signed: 'Signed the agreement',
@@ -88,6 +93,7 @@ export default function ReferralShow({
     referral: r,
     isReceiver,
     agreement: ag,
+    closing,
     muted,
     quickReplies,
     pipeline,
@@ -175,6 +181,7 @@ export default function ReferralShow({
                         </p>
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
+                    {closing && <ClosingPanel id={r.id} c={closing} />}
                     {ag && (
                         <Card className="space-y-3 p-6">
                             <div className="flex items-center gap-2">

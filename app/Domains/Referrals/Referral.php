@@ -31,6 +31,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $lost_reason
  * @property ?\Illuminate\Support\Carbon $closed_at
  * @property ?\Illuminate\Support\Carbon $last_nudged_at
+ * @property ?string $close_status
+ * @property ?\Illuminate\Support\Carbon $close_confirmed_at
+ * @property ?string $close_dispute
+ * @property ?string $thanks_note
+ * @property ?\Illuminate\Support\Carbon $thanks_at
+ * @property bool $thanks_public
  * @property string $client_name
  * @property ?string $client_phone
  * @property ?string $client_email
@@ -56,11 +62,11 @@ final class Referral extends Model
 
     protected $fillable = ['client_token', 'group_id', 'seat_id', 'sender_team_id', 'sender_user_id', 'receiver_team_id', 'routed_to', 'status', 'client_name', 'client_phone', 'client_email', 'answers', 'notes', 'consent_at', 'consent_method', 'consent_text', 'respond_by', 'accepted_at', 'decline_reason'];
 
-    protected $attributes = ['client_token' => null, 'status' => 'sent', 'notes' => null, 'client_phone' => null, 'client_email' => null, 'accepted_at' => null, 'decline_reason' => null];
+    protected $attributes = ['thanks_public' => false, 'client_token' => null, 'status' => 'sent', 'notes' => null, 'client_phone' => null, 'client_email' => null, 'accepted_at' => null, 'decline_reason' => null];
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean'];
     }
 
     /** @return list<string> */
