@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 14b — Live map, share cards and invite-to-move-up
+- Live reservations map on `/reserve` (switch by industry) and a state race leaderboard of the busiest states.
+- Share cards: "We claimed Houston" in link-preview (1200×630), square (1080×1080) and story (1080×1920) sizes, drawn in the browser and downloaded as PNG; LinkedIn, Facebook and X share links and a copyable link on the confirmation page. (Social networks don't accept SVG link previews, so shared links use a custom title and description with the brand image.)
+- Each founding member's share page (`/reserve/c/…`) previews their reservation and doubles as their invite link: reservations made through it are credited to them.
+- Move up by inviting: every invited pro who claims a reservation and gets a license verified adds to the inviter's waitlist ranking (up to +20); rankings refresh automatically when the license is verified.
+- Fixed in review: switched-off states or cities (e.g. Puerto Rico at launch) could still take reservations and seats; every path (apply, invite, reserve) now refuses them. Also guarded the confirmation page for server-side rendering.
+- 251 PHP tests in total (5 new).
+
 ### Sprint 14a — Reserve your city
 - Public "Reserve your city" page (`/reserve`): launch countdown (Settings `prelaunch.launch_at`), live counters (reservations, cities, states), founding member wall, and a two-minute reservation with no card: industry, city (with instant availability), name, business and email. A honeypot stops bots.
 - Double opt-in: the reservation counts once the email link is clicked; then the pro creates an account or signs in (brought straight back) and claims it, which files a founding application in the industry's launch group and renames their team to the business name. The license is collected and verified before launch.

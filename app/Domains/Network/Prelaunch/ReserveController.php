@@ -24,6 +24,8 @@ final class ReserveController
             'launchAt' => $this->reservations->launchAt(),
             'counters' => $this->reservations->counters(),
             'wall' => $this->reservations->wall(),
+            'points' => $this->reservations->points(),
+            'race' => $this->reservations->race(),
             'industries' => Industry::query()->orderBy('name')->get(['slug', 'name', 'territory_unit'])->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name, 'territory' => $i->territory_unit]),
             'status' => session('status'),
             'seo' => (new SeoData(title: 'Reserve your city before launch', description: 'One verified pro per city, per industry. Founding members keep their price for as long as they hold the seat.'))->toArray(),
@@ -47,8 +49,9 @@ final class ReserveController
             'email' => ['required', 'email'],
             'on_wall' => ['boolean'],
             'website' => ['prohibited'], // honeypot
+            'ref' => ['nullable', 'string', 'size:26'],
         ]);
-        $this->reservations->reserve(Industry::query()->where('slug', $d['industry'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (string) $d['email'], (string) $d['name'], $d['business'] ?? null, (bool) ($d['on_wall'] ?? true));
+        $this->reservations->reserve(Industry::query()->where('slug', $d['industry'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (string) $d['email'], (string) $d['name'], $d['business'] ?? null, (bool) ($d['on_wall'] ?? true), $d['ref'] ?? null);
 
         return back()->with('status', 'reservation-sent');
     }
@@ -62,7 +65,20 @@ final class ReserveController
         }
 
         return Inertia::render('ReserveConfirmed', ['token' => $token, 'email' => (string) $r->email, 'status' => (string) $r->status, 'signedIn' => $request->user() !== null,
+            'share' => $r->share_id ? $this->reservations->shared((string) $r->share_id) : null,
             'seo' => (new SeoData(title: 'Reservation confirmed', description: 'Team to Team Referrals', index: false))->toArray()]);
+    }
+
+    /** Public share page: the link members post. It previews nicely and doubles as their invite link. */
+    public function share(string $shareId): Response
+    {
+        $s = $this->reservations->shared($shareId);
+        abort_if($s === null, 404);
+
+        return Inertia::render('ReserveShare', [
+            'share' => $s,
+            'seo' => (new SeoData(title: "{$s['business']} reserved {$s['territory']}", description: "Founding member of {$s['group']} on Team to Team Referrals. Reserve your city before launch: one verified pro per city, per industry."))->toArray(),
+        ]);
     }
 
     public function claim(Request $request, string $token): RedirectResponse
