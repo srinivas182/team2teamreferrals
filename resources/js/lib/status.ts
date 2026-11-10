@@ -123,6 +123,12 @@ const messages: Record<string, string> = {
     'cycle-annual': 'Annual billing chosen: it starts on your next invoice.',
     'cycle-monthly': 'Monthly billing chosen.',
     'coupon-applied': 'Coupon applied to your next invoices.',
+    'premium-on': 'Premium membership is on.',
+    'premium-off': 'Premium membership is off.',
+    'billing-settings-saved': 'Billing settings saved.',
+    'coupon-created': 'Coupon created.',
+    'coupon-updated': 'Coupon updated.',
+    refunded: 'Refund issued. The payer has been told.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

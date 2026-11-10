@@ -63,6 +63,7 @@ final class BillingController
             ->filter(fn (Seat $s) => BillingAccounts::payerFor($s) === ['type' => $type, 'id' => $id]);
 
         return [
+            'premium' => $type === 'team' ? ['on' => DB::table('teams')->where('id', $id)->whereNotNull('premium_since')->exists(), 'price' => \App\Domains\Billing\PricingRules::price('premium')] : null,
             'type' => $type, 'name' => $name, 'needsNewCard' => (bool) ($acc->needs_new_card ?? false),
             'invoices' => DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id])->orderByDesc('period')->limit(24)->get()
                 ->map(fn ($i) => ['id' => (int) $i->id, 'number' => (string) $i->number, 'period' => (string) $i->period, 'total' => $i->total_cents / 100, 'status' => (string) $i->status, 'failure' => $i->failure,
@@ -103,6 +104,18 @@ final class BillingController
         $s->forceFill(['billing_cycle' => $cycle])->save();
 
         return back()->with('status', $cycle === 'annual' ? 'cycle-annual' : 'cycle-monthly');
+    }
+
+    /** Premium membership for the team (billed monthly from the day it starts; stop any time). */
+    public function premium(Request $request): RedirectResponse
+    {
+        $id = $this->payerId($request, 'team', needsStripe: false);
+        $on = $request->boolean('on');
+        // The application's clock (not the database's), and only stamped when premium is first switched on.
+        $on ? DB::table('teams')->where('id', $id)->whereNull('premium_since')->update(['premium_since' => now()])
+            : DB::table('teams')->where('id', $id)->update(['premium_since' => null]);
+
+        return back()->with('status', $on ? 'premium-on' : 'premium-off');
     }
 
     public function redeem(Request $request, string $type): RedirectResponse

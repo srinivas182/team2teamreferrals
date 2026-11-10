@@ -19,6 +19,7 @@ import {
     ScrollText,
     Sparkles,
     UserCog,
+    CreditCard,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -37,6 +38,7 @@ const nav: Item[] = [
     { label: 'Industries', href: '/admin/industries', icon: Factory, permission: 'industries.manage', ready: true },
     { label: 'Groups and seats', href: '/admin/groups', icon: Network, permission: 'groups.manage', ready: true },
     { label: 'Locations', href: '/admin/locations', icon: MapPin, permission: 'locations.manage', ready: true },
+    { label: 'Billing', href: '/admin/billing', icon: CreditCard, permission: 'billing.manage', ready: true },
     { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: true },
     { label: 'Network CRM', href: '/admin/referrals', icon: ArrowLeftRight, permission: 'referrals.view', ready: false },
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: false },

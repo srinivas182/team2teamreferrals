@@ -20,6 +20,19 @@ final class PricingRules
         return app(Settings::class)->get('billing.platform_fee_collection', '0') === '1';
     }
 
+    /** Plan prices from Admin → Billing (defaults until changed). */
+    public static function price(string $plan): float
+    {
+        $default = ['premium' => '19', 'private_network' => '49'][$plan] ?? '0';
+
+        return (float) app(Settings::class)->get("billing.{$plan}_price", $default);
+    }
+
+    public static function stripeTaxOn(): bool
+    {
+        return app(Settings::class)->get('billing.stripe_tax', '0') === '1';
+    }
+
     /** Annual price for a seat: 12 months less the group's free months (default 2). */
     public static function annualCents(Seat $seat): int
     {

@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 22b part 2 — Plans, Stripe Tax, card-expiry warnings and admin billing
+- Premium membership (per team; switched on the Billing page) and private network plans (per owning company) at default prices ($19 and $49 a month), prorated by day from their start, editable in Admin → Billing.
+- Stripe Tax switch (off until launch): when on, sales tax is calculated by Stripe for each invoice and shown as its own line. If Stripe can't calculate it, the invoice still goes out without tax and the error is reported, rather than blocking the payer.
+- Card-expiry warnings 30 days before a saved card expires, once per card.
+- Admin → Billing (billing.manage): revenue this month and year (net of refunds), free months credited in the last run, failed payments, accounts needing a new card, platform fees collected; switches and plan prices; coupons (create, switch on/off); refunds through Stripe, full or partial, never more than was paid, with a required reason the payer sees, audited. The platform-fee collection switch stays super-admin only.
+- Fixed in review: premium start was stamped with the database server's clock instead of the application's.
+- 368 PHP tests in total (5 new).
+
 ### Sprint 22b part 1 — Annual prepay, discounts, coupons, credits and platform fee collection
 - Annual prepay per seat (Billing page → "Switch to annual"): billed on the next monthly invoice at 12 months less the group's free months (default 2), covering the 12 months from the start of the coming month once paid; monthly lines stop while covered. A covered month with no referral offered becomes an account credit, so annual payers keep the value guarantee.
 - Multi-city discounts per network, by how many of its seats the payer holds (highest tier reached; off by default).

@@ -16,6 +16,7 @@ final class RunBilling extends Command
     public function handle(Invoicing $invoicing): int
     {
         $invoicing->retryDue();
+        $invoicing->cardExpiryWarnings();
         if ($this->option('retries')) {
             return self::SUCCESS;
         }

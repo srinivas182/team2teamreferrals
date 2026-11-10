@@ -28,6 +28,7 @@ type SeatRow = {
 type Inv = { id: number; number: string; period: string; total: number; status: string; failure: string | null; canPay: boolean };
 type Account = {
     type: 'team' | 'company';
+    premium: { on: boolean; price: number } | null;
     credit: number;
     coupon: string | null;
     name: string;
