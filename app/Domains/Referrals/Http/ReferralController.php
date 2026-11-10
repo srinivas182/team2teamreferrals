@@ -96,6 +96,8 @@ final class ReferralController
             \App\Domains\Referrals\Conversations::markRead($referral, $team);
         }
         $seenUpTo = $team !== null ? \App\Domains\Referrals\Conversations::otherRead($referral, $team) : 0;
+        // The receiver sees file names only until they accept (like contact details).
+        $files = \App\Domains\Referrals\Attachments::forViewer($referral, $hide);
 
         return Inertia::render('app/referrals/Show', [
             'referral' => [
@@ -120,7 +122,7 @@ final class ReferralController
             'messages' => DB::table('referral_messages')->join('users', 'users.id', '=', 'referral_messages.user_id')->join('teams', 'teams.id', '=', 'referral_messages.team_id')
                 ->where('referral_id', $referral->id)->orderBy('referral_messages.id')->get(['referral_messages.id', 'referral_messages.body', 'referral_messages.created_at', 'referral_messages.team_id', 'users.first_name', 'teams.name as team'])
                 ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'seen' => (int) $m->team_id === $team?->id && (int) $m->id <= $seenUpTo, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
-                    'body' => $hide ? Referral::maskContacts((string) $m->body) : (string) $m->body]),
+                    'body' => $hide ? Referral::maskContacts((string) $m->body) : (string) $m->body, 'files' => $files[(int) $m->id] ?? []]),
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
             'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
@@ -131,6 +133,20 @@ final class ReferralController
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
         ]);
+    }
+
+    /** Download an attachment: signed short-lived link, a member of either team, scanned clean, and after accepting. */
+    public function attachment(Request $request, Referral $referral, int $attachment): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $user = $this->user($request);
+        abort_unless($this->referrals->canView($referral, $user), 404);
+        $a = DB::table('referral_attachments')->where(['id' => $attachment, 'referral_id' => $referral->id])->first();
+        abort_if($a === null, 404);
+        abort_if(Team::of($user)?->id === $referral->receiver_team_id && $referral->status !== 'accepted', 403, 'Files open after you accept the referral.');
+        abort_unless(\App\Domains\Referrals\Attachments::openable($a), 423, 'This file is still being checked for viruses, or failed the check.');
+
+        // Always a download (never rendered in the browser), and the browser must not guess the type.
+        return \Illuminate\Support\Facades\Storage::disk('private')->download((string) $a->path, (string) $a->original_name, ['X-Content-Type-Options' => 'nosniff', 'Content-Type' => 'application/octet-stream']);
     }
 
     public function mute(Request $request, Referral $referral): RedirectResponse
@@ -221,8 +237,12 @@ final class ReferralController
     public function message(Request $request, Referral $referral): RedirectResponse
     {
         abort_unless($this->referrals->canView($referral, $this->user($request)), 404);
-        $body = (string) $request->validate(['body' => ['required', 'string', 'max:4000']])['body'];
-        $this->referrals->message($referral, $this->user($request), $body);
+        $d = $request->validate([
+            'body' => ['nullable', 'required_without:files', 'string', 'max:4000'],
+            'files' => ['nullable', 'array', 'max:'.config('attachments.max_files')],
+            'files.*' => ['file', 'max:'.config('attachments.max_kb'), 'mimes:'.implode(',', (array) config('attachments.mimes'))],
+        ], ['files.*.mimes' => 'Photos, PDFs, Word, Excel, CSV or text files only.', 'files.*.max' => 'Each file can be up to 10 MB.']);
+        $this->referrals->message($referral, $this->user($request), (string) ($d['body'] ?? ''), array_values(array_filter((array) $request->file('files', []))));
 
         return back();
     }

@@ -7,6 +7,8 @@ x-app: &app
     DB_HOST: mysql
     # Real-time: Mercure runs inside FrankenPHP (no extra container); set MERCURE_JWT_SECRET in the deployment's .env.
     BROADCAST_CONNECTION: mercure
+    # Uploaded files are scanned by ClamAV before anyone can open them.
+    CLAMAV_HOST: clamav
     REDIS_HOST: redis
     CACHE_STORE: redis
     SESSION_DRIVER: redis
@@ -47,6 +49,12 @@ services:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes: [redis-prod:/data]
+
+  # Virus scanning for referral attachments (streamed over the network; nothing shared on disk).
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    healthcheck: { test: ["CMD", "clamdcheck.sh"], interval: 60s, retries: 3, start_period: 120s }
 
 volumes:
   meili-prod:

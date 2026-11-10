@@ -12,6 +12,10 @@ final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Virus scanning for uploads: ClamAV when configured, otherwise nothing (files then wait unless scanning is optional).
+        $this->app->singleton(\App\Support\Scanning\VirusScanner::class, fn () => filled(config('attachments.clamav_host'))
+            ? new \App\Support\Scanning\ClamdScanner((string) config('attachments.clamav_host'), (int) config('attachments.clamav_port'))
+            : new \App\Support\Scanning\NoScanner);
         // Debug tools are installed as dev dependencies and only ever registered locally.
         if ($this->app->environment('local')) {
             foreach (['Laravel\\Telescope\\TelescopeServiceProvider', 'Barryvdh\\Debugbar\\ServiceProvider'] as $provider) {

@@ -40,6 +40,9 @@ final class Notifier
         $now = CarbonImmutable::now();
         $quietUntil = $def['urgent'] ? null : Preferences::quietUntil($user, $now);
 
+        // A reply-by-email address travels with the email only; it's never shown in other channels.
+        $replyTo = isset($data['_reply_to']) && is_string($data['_reply_to']) ? $data['_reply_to'] : null;
+        unset($data['_reply_to']);
         foreach ($def['channels'] as $channel) {
             if (! $this->prefs->allows($user, $type, $channel)) {
                 continue;
@@ -51,22 +54,22 @@ final class Notifier
             match ($channel) {
                 'database' => $user->notify(new InAppNotification($type, $title, $body, $url)),
                 'push' => $quietUntil === null && app(\App\Domains\Platform\Modules\Modules::class)->enabled('push') ? $this->safely(fn () => $this->push->send($user, $title, $body, $url)) : null,
-                'mail' => $this->mail($user, $type, $title, $body, $url, $def['urgent'], $quietUntil, $now),
+                'mail' => $this->mail($user, $type, $title, $body, $url, $def['urgent'], $quietUntil, $now, $replyTo),
                 'sms' => $this->text($user, $type, $title, $body, $url, $quietUntil),
                 default => null,
             };
         }
     }
 
-    private function mail(User $user, string $type, string $title, string $body, ?string $url, bool $urgent, ?CarbonImmutable $quietUntil, CarbonImmutable $now): void
+    private function mail(User $user, string $type, string $title, string $body, ?string $url, bool $urgent, ?CarbonImmutable $quietUntil, CarbonImmutable $now, ?string $replyTo = null): void
     {
         if ($urgent) {
-            $user->notify(new PlatformMessage($type, [['title' => $title, 'body' => $body, 'url' => $url]]));
+            $user->notify(new PlatformMessage($type, [['title' => $title, 'body' => $body, 'url' => $url, 'reply_to' => $replyTo]]));
 
             return;
         }
         $after = $user->email_digest ? Preferences::nextDigest($user, $now) : ($quietUntil ?? $now->addMinutes(self::BUNDLE_MINUTES));
-        OutboxItem::create(['user_id' => $user->id, 'type' => $type, 'channel' => 'mail', 'title' => $title, 'body' => $body, 'url' => $url, 'deliver_after' => $after]);
+        OutboxItem::create(['user_id' => $user->id, 'type' => $type, 'channel' => 'mail', 'title' => $title, 'body' => $body, 'url' => $url, 'reply_to' => $replyTo, 'deliver_after' => $after]);
     }
 
     private function text(User $user, string $type, string $title, string $body, ?string $url, ?CarbonImmutable $quietUntil): void

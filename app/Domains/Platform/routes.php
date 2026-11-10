@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // Provider webhooks: no session or CSRF; each verifies the provider's signature.
 Route::post('webhooks/twilio/status', [TwilioWebhookController::class, 'status'])->name('webhooks.twilio.status');
+Route::post('webhooks/inbound-email', App\Domains\Referrals\Http\InboundEmailController::class)->middleware('throttle:120,1')->name('webhooks.inbound-email');
 Route::post('webhooks/twilio/inbound', [TwilioWebhookController::class, 'inbound'])->name('webhooks.twilio.inbound');
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 

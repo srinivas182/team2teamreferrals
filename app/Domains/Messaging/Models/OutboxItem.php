@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $title
  * @property string $body
  * @property ?string $url
+ * @property ?string $reply_to
  * @property \Illuminate\Support\Carbon $deliver_after
  * @property ?\Illuminate\Support\Carbon $sent_at
  */
@@ -23,7 +24,7 @@ final class OutboxItem extends Model
 {
     protected $table = 'notification_outbox';
 
-    protected $fillable = ['user_id', 'type', 'channel', 'title', 'body', 'url', 'deliver_after', 'sent_at'];
+    protected $fillable = ['user_id', 'type', 'channel', 'title', 'body', 'url', 'reply_to', 'deliver_after', 'sent_at'];
 
     protected $attributes = ['url' => null, 'sent_at' => null];
 

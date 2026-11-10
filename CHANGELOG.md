@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 18b — Attachments and reply by email
+- Attachments on referral messages: up to 3 files (photos, PDF, Word, Excel, CSV, text; 10 MB each) in private storage. Each file is virus-scanned in the background by ClamAV (streamed over its network protocol) and can only be opened once scanned clean; infected files are moved to quarantine and never served. The receiver sees file names only until they accept. Downloads use short-lived signed links, are always downloads (never rendered in the browser) and are refused to anyone outside the two teams.
+- Production runs a ClamAV container; if no scanner is reachable, files wait (ATTACHMENTS_REQUIRE_SCAN=true by default).
+- Reply by email: message notifications about one referral carry a personal, signed Reply-To (reply+…@MAIL_INBOUND_DOMAIN), so pressing Reply answers in the referral's conversation; bundled emails give each item its own reply link. Inbound webhook (/webhooks/inbound-email) understands Postmark's parsed JSON or a simple {to, from, text, message_id}, is protected by MAIL_INBOUND_SECRET, strips quoted history and signatures, accepts only the member's registered email on a referral they can see, and handles each email once. Replies go through the normal message path (masking, notifications, real-time).
+- 322 PHP tests in total (8 new), including the ClamAV protocol against a local stand-in that flags the standard EICAR test file.
+
 ### Sprint 18a — Real-time conversations
 - Real-time updates through Mercure, the hub built into FrankenPHP (our production server), using Laravel 13's own Mercure broadcaster and Laravel Echo: no extra service or container, plain HTTPS (passes proxies and firewalls), automatic reconnects. Laravel Reverb could not be used: every Reverb release requires an older HTTP library than our Guzzle 8.
 - Private channels: each team listens to its own channel; a referral's channel is only for the two teams on it (checked through the real driver in tests). Events say only "referral X changed"; the page then reloads its data through the normal request, so masking and short client names always apply. A 10-second refresh takes over if real-time is off.
