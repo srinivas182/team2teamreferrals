@@ -251,4 +251,21 @@ return [
         'http_middleware' => env('OCTANE_ROADRUNNER_HTTP_MIDDLEWARE', 'static'),
     ],
 
+    /*
+    | Mercure hub (FrankenPHP). Octane can derive this from the broadcasting connection, but it writes the keys as
+    | runtime placeholders ({env.…}) that current FrankenPHP releases don't expand, so every token is refused.
+    | We pass the resolved secret instead. Active only when broadcasting uses Mercure and a secret is set.
+    */
+    'mercure' => env('BROADCAST_CONNECTION') === 'mercure' && filled(env('MERCURE_JWT_SECRET')) ? [
+        'issuer '.rtrim((string) env('APP_URL'), '/') => [
+            'publisher' => ['jwt' => env('MERCURE_JWT_SECRET').' HS256'],
+            'subscriber' => ['jwt' => env('MERCURE_JWT_SECRET').' HS256'],
+        ],
+        // Tokens are issued for this hub URL (their audience); Mercure 1.0 checks it.
+        'resource_identifier' => rtrim((string) env('APP_URL'), '/').'/.well-known/mercure',
+        'subscriptions' => true,
+        // Browsers publish typing indicators (client events) from the site itself.
+        'publish_origins' => rtrim((string) preg_replace('#^(https?://[^/]+).*$#', '$1', (string) env('APP_URL')), '/'),
+        'cookie_name' => env('MERCURE_COOKIE_NAME') ?: false,
+    ] : null,
 ];

@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/people';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useTeamLive } from '@/lib/realtime';
 import { mobileTabs, ownerNav, portalNav, type NavItem } from './nav';
 import type { SharedProps } from '@/types/auth';
 
@@ -40,6 +41,12 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
     const unread = props.notifications?.unread ?? 0;
     const latest = props.notifications?.latest ?? [];
     const [palette, setPalette] = useState(false);
+    useTeamLive();
+    const counts = (props as unknown as { referralUnread?: { inbox: number; sent: number } }).referralUnread ?? { inbox: 0, sent: 0 };
+    const withBadge = (n: NavItem): NavItem => ({
+        ...n,
+        badge: n.href === '/app/inbox' ? counts.inbox || undefined : n.href === '/app/sent' ? counts.sent || undefined : n.badge,
+    });
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -91,7 +98,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                     </div>
                     <nav className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Portal">
                         {portalNav.map((n) => (
-                            <NavLink key={n.href} item={n} current={isCurrent(url, n.href)} />
+                            <NavLink key={n.href} item={withBadge(n)} current={isCurrent(url, n.href)} />
                         ))}
                         {isGroupOwner && (
                             <>

@@ -37,6 +37,12 @@ final class HandleInertiaRequests extends Middleware
             ],
             'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
+            // Real-time (Mercure): which team channel to listen on; null when broadcasting is off (tests, local).
+            'realtime' => fn () => config('broadcasting.default') === 'mercure' && ($u = $request->user()) instanceof \App\Domains\Identity\Models\User
+                ? ['team' => \App\Domains\Network\Seats\Models\Team::of($u)?->ulid] : null,
+            // Unread referral messages from the other team, for the Inbox and Sent badges.
+            'referralUnread' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User && ($t = \App\Domains\Network\Seats\Models\Team::of($u)) !== null
+                ? \App\Domains\Referrals\Conversations::unread($t) : ['inbox' => 0, 'sent' => 0],
             // The bell: unread count and the five latest, on every signed-in page.
             'notifications' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? [
                 'unread' => $u->unreadNotifications()->count(),

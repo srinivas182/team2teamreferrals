@@ -131,6 +131,7 @@ final class Referrals
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         app(Pipeline::class)->start($ref);
+        Events\ReferralChanged::dispatch($ref, 'status');
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);
         $this->notifier->send($ref->sender->leader, 'referral.accepted', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'team' => (string) $ref->receiver?->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
@@ -176,7 +177,8 @@ final class Referrals
         DB::table('referral_messages')->insert(['referral_id' => $ref->id, 'team_id' => $team->id, 'user_id' => $user->id, 'body' => mb_substr(trim($body), 0, 4000), 'created_at' => now()]);
         $ref->loadMissing(['sender.leader', 'receiver.leader', 'group.industry']);
         $other = $team->id === $ref->sender_team_id ? $ref->receiver : $ref->sender;
-        if ($other !== null) {
+        Events\ReferralChanged::dispatch($ref, 'message');
+        if ($other !== null && ! Conversations::muted($ref, $other->leader)) {
             $toReceiverEarly = $other->id === $ref->receiver_team_id && $ref->status !== 'accepted';
             $excerpt = mb_strimwidth($toReceiverEarly ? Referral::maskContacts($body) : $body, 0, 160, '…');
             $name = $toReceiverEarly ? $ref->shortClientName() : $ref->client_name;
@@ -242,6 +244,7 @@ final class Referrals
 
     private function passOn(Referral $ref, ?User $actor, string $why, string $reason): void
     {
+        Events\ReferralChanged::dispatch($ref, 'status');
         $from = $ref->receiver;
         $this->event($ref, $why, $from, $actor, ['reason' => $reason]);
         $backup = $ref->seat->backup;

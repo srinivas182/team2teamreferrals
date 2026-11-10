@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 18a — Real-time conversations
+- Real-time updates through Mercure, the hub built into FrankenPHP (our production server), using Laravel 13's own Mercure broadcaster and Laravel Echo: no extra service or container, plain HTTPS (passes proxies and firewalls), automatic reconnects. Laravel Reverb could not be used: every Reverb release requires an older HTTP library than our Guzzle 8.
+- Private channels: each team listens to its own channel; a referral's channel is only for the two teams on it (checked through the real driver in tests). Events say only "referral X changed"; the page then reloads its data through the normal request, so masking and short client names always apply. A 10-second refresh takes over if real-time is off.
+- Typing indicators and "Seen" read receipts between the two teams only; live unread badges on Inbox and Sent.
+- Quick replies (defaults, editable by leaders and assistants on the Team page), search within a conversation and across the team's conversations (same privacy rules), and mute per thread (deadline reminders still arrive).
+- Production: BROADCAST_CONNECTION=mercure and MERCURE_JWT_SECRET (32+ characters), served over HTTPS.
+- Verified end to end on a real FrankenPHP server: sign-in, channel authorisation (cookie issued), subscription, and a message delivered instantly with no client data in the event. That check found two production-breaking issues no unit test could: Octane wrote the hub key as an unexpanded placeholder (every token refused; we now pass the resolved key), and token audiences were relative while Mercure 1.0 checks the full hub URL.
+- Also fixed in review: blank lines in the quick-replies editor blocked saving; the live event loaded partial team data onto the referral and broke the notification after it.
+- 314 PHP tests in total (8 new).
+
 ### Sprint 17b — Pipeline board and owners' pipeline editor
 - Pipeline board (Portal → Pipeline): the team's accepted referrals in stage columns, one network at a time, with counts and "needs attention" flags (call due, first contact overdue, update due, over time in stage) and a "Needs attention only" filter. Drag and drop between columns on desktop; on a phone, swipe between stages (one column fills the screen). Every card also has a "Move to…" menu; Won and Lost open the closing prompt (date and value, or reason).
 - Group owners edit their network's pipeline (group page → Pipeline stages): rename, add, reorder and remove stages, set what the client sees and an optional time limit per stage, or start again from the industry's stages. The editor keeps the rules (first stage open, one Won, one Lost).

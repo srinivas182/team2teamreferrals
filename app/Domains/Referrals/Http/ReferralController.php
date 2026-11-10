@@ -92,6 +92,10 @@ final class ReferralController
         $form = collect($this->templates->resolve('form', $referral->group->industry, $referral->group_id)['body'])->keyBy('key');
         // The receiver sees sensitive details (contact info) only after accepting.
         $hide = $isReceiver && $referral->status !== 'accepted';
+        if ($team !== null) {
+            \App\Domains\Referrals\Conversations::markRead($referral, $team);
+        }
+        $seenUpTo = $team !== null ? \App\Domains\Referrals\Conversations::otherRead($referral, $team) : 0;
 
         return Inertia::render('app/referrals/Show', [
             'referral' => [
@@ -115,8 +119,10 @@ final class ReferralController
             ] : null,
             'messages' => DB::table('referral_messages')->join('users', 'users.id', '=', 'referral_messages.user_id')->join('teams', 'teams.id', '=', 'referral_messages.team_id')
                 ->where('referral_id', $referral->id)->orderBy('referral_messages.id')->get(['referral_messages.id', 'referral_messages.body', 'referral_messages.created_at', 'referral_messages.team_id', 'users.first_name', 'teams.name as team'])
-                ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
+                ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'seen' => (int) $m->team_id === $team?->id && (int) $m->id <= $seenUpTo, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
                     'body' => $hide ? Referral::maskContacts((string) $m->body) : (string) $m->body]),
+            'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
+            'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
             'terms' => $referral->group->industry->terms(),
             'timeline' => DB::table('referral_events')->leftJoin('teams', 'teams.id', '=', 'referral_events.team_id')->where('referral_id', $referral->id)->orderBy('referral_events.id')
@@ -125,6 +131,35 @@ final class ReferralController
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
         ]);
+    }
+
+    public function mute(Request $request, Referral $referral): RedirectResponse
+    {
+        abort_unless($this->referrals->canView($referral, $this->user($request)), 404);
+        $on = \App\Domains\Referrals\Conversations::toggleMute($referral, $this->user($request));
+
+        return back()->with('status', $on ? 'thread-muted' : 'thread-unmuted');
+    }
+
+    public function quickReplies(Request $request): RedirectResponse
+    {
+        $user = $this->user($request);
+        $team = Team::of($user);
+        abort_unless($team !== null && in_array($team->roleOf($user), ['leader', 'assistant'], true), 403);
+        // Blank lines arrive as null (ConvertEmptyStringsToNull) and are simply skipped.
+        $d = $request->validate(['replies' => ['present', 'array', 'max:20'], 'replies.*' => ['nullable', 'string', 'max:200']]);
+        $replies = array_slice(array_values(array_filter(array_map(fn ($r) => trim((string) $r), (array) $d['replies']))), 0, 10);
+        DB::table('teams')->where('id', $team->id)->update(['quick_replies' => $replies === [] ? null : json_encode($replies)]);
+
+        return back()->with('status', 'quick-replies-saved');
+    }
+
+    public function search(Request $request): Response
+    {
+        $team = Team::of($this->user($request));
+        $q = (string) $request->query('q', '');
+
+        return Inertia::render('app/referrals/Search', ['q' => $q, 'results' => $team ? \App\Domains\Referrals\Conversations::search($team, $q) : [], 'seo' => SeoData::private('Search messages')->toArray()]);
     }
 
     public function logCall(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse

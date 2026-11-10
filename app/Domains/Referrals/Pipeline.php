@@ -101,7 +101,8 @@ final class Pipeline
         $ref->forceFill(['last_nudged_at' => now()])->save();
         $this->event($ref, 'nudged', $team, $user);
         $ref->loadMissing(['receiver.leader', 'group.industry']);
-        if ($ref->receiver !== null) {
+        Events\ReferralChanged::dispatch($ref, 'progress');
+        if ($ref->receiver !== null && ! Conversations::muted($ref, $ref->receiver->leader)) {
             $this->notifier->send($ref->receiver->leader, 'referral.message', ['headline' => "{$team->name} would love an update on {$ref->client_name}", 'body' => 'A quick note or stage change on the referral keeps them in the loop.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
         }
     }
@@ -154,6 +155,10 @@ final class Pipeline
     private function tellSender(Referral $ref, Team $team, string $note): void
     {
         $ref->loadMissing(['sender.leader', 'group.industry']);
+        Events\ReferralChanged::dispatch($ref, 'progress');
+        if (Conversations::muted($ref, $ref->sender->leader)) {
+            return;
+        }
         $this->notifier->send($ref->sender->leader, 'referral.update', ['client' => $ref->client_name, 'team' => $team->name, 'stage' => (string) ($this->stage($ref)['label'] ?? ''), 'note' => $note], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
     }
 

@@ -178,6 +178,9 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');
+    Route::post('app/team/quick-replies', [App\Domains\Referrals\Http\ReferralController::class, 'quickReplies'])->name('team.quick-replies');
+    Route::get('app/messages/search', [App\Domains\Referrals\Http\ReferralController::class, 'search'])->middleware('throttle:60,1')->name('messages.search');
     Route::post('app/referrals/{referral}/call', [App\Domains\Referrals\Http\ReferralController::class, 'logCall'])->name('referrals.call');
     Route::post('app/referrals/{referral}/stage', [App\Domains\Referrals\Http\ReferralController::class, 'stage'])->name('referrals.stage');
     Route::post('app/referrals/{referral}/note', [App\Domains\Referrals\Http\ReferralController::class, 'note'])->middleware('throttle:60,60')->name('referrals.note');
