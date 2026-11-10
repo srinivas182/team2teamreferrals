@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 20a — Closing confirmation, ratings and thank-you
+- A Won close (with its date and value) asks the sender to confirm it, or dispute it with a reason (the receiving team and group owners are told). Undisputed closes confirm themselves after 7 days. Moving the referral back to an open stage reopens it.
+- Once confirmed, the client is asked one optional question ("How was your experience?") through a private link: by email when we have it, by text only where client texting is approved and the client confirmed consent. One rating per client.
+- Ratings both ways after closing: the sender rates the receiver (overall, plus communication, speed and client outcome), the receiver rates the sender (overall, plus referral quality). One per side, editable for 7 days; teams in the same company can't rate each other. Ratings feed the trust score (Sprint 34).
+- Thank-you: the receiver can thank the referring team after closing; it shows on the sender's profile only if the sender chooses.
+- 335 PHP tests in total (5 new).
+
 ### Sprint 19b — Seat challenges
 - Seats are earned: when a holder's service score stays below the group's threshold (default 70) for the challenge period (default 60 days), the top waitlisted team challenges for the seat. Checked daily.
 - Fairness guards: a holder's first 90 days are exempt; a score needs at least 5 referrals (otherwise nothing is tracked); approved time off pauses the clock; recovering above the threshold at any daily check resets it.

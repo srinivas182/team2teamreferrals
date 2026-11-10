@@ -35,6 +35,7 @@ final class PerformanceJobs extends Command
             }
         }
         app(SeatChallenges::class)->daily();
+        app(\App\Domains\Referrals\Closing::class)->autoConfirm();
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             foreach ($holders as $team) {
