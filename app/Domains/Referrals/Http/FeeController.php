@@ -32,12 +32,16 @@ final class FeeController
 
         return Inertia::render('app/Earnings', [
             'fees' => $rows->map(fn ($f) => ['id' => (int) $f->id, 'referral' => (string) $f->ulid, 'client' => (string) $f->client_name, 'incoming' => (int) $f->payee_team_id === $team->id,
-                'other' => (int) $f->payee_team_id === $team->id ? (string) $f->payer : (string) $f->payee, 'amount' => $f->amount_cents / 100, 'due' => (string) $f->due_on, 'status' => (string) $f->status,
+                'other' => (int) $f->payee_team_id === $team->id ? (string) $f->payer : (string) $f->payee, 'amount' => $f->amount_cents / 100,
+                'platformFee' => (int) $f->payee_team_id === $team->id ? $f->platform_fee_cents / 100 : 0, 'basis' => $f->basis_cents !== null ? $f->basis_cents / 100 : null, 'due' => (string) $f->due_on, 'status' => (string) $f->status,
                 'reference' => $f->paid_reference]),
             'totals' => [
                 'toPay' => $sum($rows->where('payer_team_id', $team->id)->where('status', 'due')) / 100,
                 'toReceive' => $sum($rows->where('payee_team_id', $team->id)->whereIn('status', ['due', 'paid'])) / 100,
-                'receivedThisYear' => $sum($rows->where('payee_team_id', $team->id)->where('status', 'received')->filter(fn ($f) => str_starts_with((string) $f->received_at, (string) now()->year))) / 100,
+                // Net of the platform fee: what the referring team actually keeps.
+                'receivedThisYear' => ($sum($rows->where('payee_team_id', $team->id)->where('status', 'received')->filter(fn ($f) => str_starts_with((string) $f->received_at, (string) now()->year)))
+                    - (int) $rows->where('payee_team_id', $team->id)->where('status', 'received')->filter(fn ($f) => str_starts_with((string) $f->received_at, (string) now()->year))->sum('platform_fee_cents')) / 100,
+                'platformOwed' => (int) $rows->where('payee_team_id', $team->id)->where('platform_fee_status', 'owed')->sum('platform_fee_cents') / 100,
             ],
             'canAct' => in_array($team->roleOf($this->user($request)), ['leader', 'assistant'], true),
             'status' => session('status'),

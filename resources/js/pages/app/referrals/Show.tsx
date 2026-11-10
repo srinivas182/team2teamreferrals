@@ -489,7 +489,7 @@ function FeePanel({
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                     Propose a different fee:
                     <Select aria-label="Fee type" className="h-9 w-40" value={type} onChange={(e) => setType(e.target.value)}>
-                        <option value="percent">% of closing value</option>
+                        <option value="percent">% of the receiving team’s earnings</option>
                         <option value="flat">Flat amount ($)</option>
                     </Select>
                     <Input

@@ -23,7 +23,13 @@ type Fee = {
     status: string;
     reference: string | null;
 };
-type Props = { fees: Fee[]; totals: { toPay: number; toReceive: number; receivedThisYear: number }; canAct: boolean; status?: string; seo: Seo };
+type Props = {
+    fees: Fee[];
+    totals: { toPay: number; toReceive: number; receivedThisYear: number; platformOwed: number };
+    canAct: boolean;
+    status?: string;
+    seo: Seo;
+};
 
 const usd = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 
@@ -44,7 +50,7 @@ export default function Earnings({ fees, totals, canAct, status, seo }: Props) {
                 {[
                     ['To pay', totals.toPay],
                     ['To receive', totals.toReceive],
-                    ['Received this year', totals.receivedThisYear],
+                    ['Received this year (net)', totals.receivedThisYear],
                 ].map(([l, v]) => (
                     <Card key={l as string} className="p-5">
                         <div className="font-display text-2xl font-bold tabular">{usd(v as number)}</div>

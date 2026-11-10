@@ -59,9 +59,10 @@ function deal($test, string $slug): array
     return [$r, $a, $b, $g];
 }
 
-function closeWon(Referral $r, Team $b, Team $a): void
+function closeWon(Referral $r, Team $b, Team $a, float $earnings = 5000): void
 {
-    app(Pipeline::class)->move($r->fresh(), $b->leader, 'won', null, ['closing_date' => '2026-12-20', 'closing_value' => 31500]);
+    // B sells a $100,000 home and earns a $5,000 commission.
+    app(Pipeline::class)->move($r->fresh(), $b->leader, 'won', null, ['closing_date' => '2026-12-20', 'closing_value' => 100000, 'earnings' => $earnings]);
     app(Closing::class)->confirm($r->fresh(), $a->leader);
 }
 
@@ -70,7 +71,8 @@ it('lets owners set a default fee in open industries only, stated in the agreeme
     $this->actingAs($this->owner)->post('/app/group/solar-installers-network/fee', ['type' => 'percent', 'value' => 95, 'due_days' => 10])->assertSessionHasErrors('value');
     $this->post('/app/group/solar-installers-network/fee', ['type' => 'percent', 'value' => 25, 'due_days' => 10])->assertSessionHas('status', 'fee-default-saved');
     app(Referrals::class)->accept($r->fresh(), $b->leader);
-    expect((string) DB::table('referral_agreements')->value('sections'))->toContain('25% of the closing value');
+    $text = implode(' ', array_column(json_decode((string) DB::table('referral_agreements')->value('sections'), true), 'text'));
+    expect($text)->toContain('pay the referring party 25% of the gross earnings the receiving party receives from this referral (for example, its commission)')->not->toContain('closing value');
     Group::where('slug', 'mortgage-lenders-circle')->firstOrFail()->owners()->attach($this->owner->id);
     $this->post('/app/group/mortgage-lenders-circle/fee', ['type' => 'percent', 'value' => 10, 'due_days' => 10])->assertSessionHasErrors('type');
 });
@@ -83,30 +85,38 @@ it('agrees a different fee for one referral before signing, and regenerates the 
     $this->actingAs($b->leader)->post("{$url}/fee", ['type' => 'flat', 'value' => 750])->assertSessionHas('status', 'fee-proposed');
     $this->post("{$url}/fee/accept")->assertStatus(422); // can't accept your own proposal
     $this->actingAs($a->leader)->post("{$url}/fee/accept")->assertSessionHas('status', 'fee-agreed');
-    expect($r->fresh()->fee_type)->toBe('flat')->and((string) DB::table('referral_agreements')->value('sections'))->toContain('$750.00 per closed referral');
+    expect($r->fresh()->fee_type)->toBe('flat')->and((string) DB::table('referral_agreements')->value('sections'))->toContain('$750.00 per referral that closes');
 
     $this->post("{$url}/sign", ['name' => 'Jordan Hale', 'consent' => true]);
     $this->post("{$url}/fee", ['type' => 'percent', 'value' => 30])->assertSessionHasErrors('value');
 });
 
-it('calculates the fee on a confirmed close; the receiver pays, the sender confirms', function () {
-    [$r, $a, $b] = deal($this, 'solar-installers-network');
-    $this->actingAs($this->owner)->post('/app/group/solar-installers-network/fee', ['type' => 'percent', 'value' => 25, 'due_days' => 10]);
+it('bases the fee on the receiving team’s earnings, and takes the platform fee from the referring team’s fee once received', function () {
+    [$r, $a, $b, $g] = deal($this, 'solar-installers-network');
+    // The group's fee: 30% of the receiving team's earnings. The admin's platform fee: 10% of the referral fee.
+    $this->actingAs($this->owner)->post('/app/group/solar-installers-network/fee', ['type' => 'percent', 'value' => 30, 'due_days' => 10]);
+    (new App\Domains\Network\Industries\Models\PlatformFeeRule)->forceFill(['industry_id' => $g->industry_id, 'group_id' => null, 'mode' => 'percent', 'percent' => 10, 'charge_at' => 'closing', 'enabled' => true, 'enabled_at' => now()])->save();
     app(Referrals::class)->accept($r->fresh(), $b->leader);
+    expect(fn () => app(Pipeline::class)->move($r->fresh(), $b->leader, 'won', null, ['closing_date' => '2026-12-20', 'closing_value' => 100000]))->toThrow(Illuminate\Validation\ValidationException::class);
     closeWon($r, $b, $a);
     $fee = DB::table('referral_fees')->first();
-    expect((int) $fee->amount_cents)->toBe(787500)->and((int) $fee->payer_team_id)->toBe($b->id)->and($fee->due_on)->toBe(now()->addDays(10)->toDateString());
+    expect((int) $fee->basis_cents)->toBe(500000)->and((int) $fee->amount_cents)->toBe(150000)->and((int) $fee->platform_fee_cents)->toBe(15000)
+        ->and($fee->platform_fee_status)->toBe('pending')->and((int) $fee->payer_team_id)->toBe($b->id)->and($fee->due_on)->toBe(now()->addDays(10)->toDateString());
     Storage::disk('private')->assertExists($fee->statement_path);
-    Notification::assertSentTo($b->leader, InAppNotification::class, fn ($n) => str_contains($n->title, 'Referral fee due: $7,875.00'));
+    Notification::assertSentTo($b->leader, InAppNotification::class, fn ($n) => str_contains($n->title, 'Referral fee due: $1,500.00'));
+    Notification::assertSentTo($a->leader, InAppNotification::class, fn ($n) => str_contains($n->body, 'Platform fee $150.00, so you net $1,350.00'));
 
     $this->actingAs($a->leader)->post("/app/earnings/{$fee->id}/paid")->assertForbidden();
     $this->actingAs($b->leader)->post("/app/earnings/{$fee->id}/paid", ['reference' => 'ACH 4417'])->assertSessionHas('status', 'fee-paid');
+    expect(DB::table('referral_fees')->value('platform_fee_status'))->toBe('pending'); // not owed until the money arrives
     $this->actingAs($a->leader)->post("/app/earnings/{$fee->id}/received")->assertSessionHas('status', 'fee-received');
-    $this->get('/app/earnings')->assertInertia(fn ($p) => $p->component('app/Earnings')->where('fees.0.incoming', true)->where('totals.receivedThisYear', 7875));
+    expect(DB::table('referral_fees')->value('platform_fee_status'))->toBe('owed');
+    $this->get('/app/earnings')->assertInertia(fn ($p) => $p->component('app/Earnings')->where('fees.0.incoming', true)->where('fees.0.platformFee', 150)
+        ->where('totals.receivedThisYear', 1350)->where('totals.platformOwed', 150));
     $this->get("/app/earnings/{$fee->id}/statement.pdf")->assertOk();
     $this->actingAs(User::factory()->create())->get("/app/earnings/{$fee->id}/statement.pdf")->assertNotFound();
     $csv = $this->actingAs($a->leader)->get('/app/earnings/export.csv?month='.now()->format('Y-m'))->assertOk()->getContent();
-    expect($csv)->toContain('Receivable')->toContain('7875.00')->toContain('ACH 4417');
+    expect($csv)->toContain('Receiving team earnings')->toContain('5000.00,1500.00,150.00,1350.00')->toContain('ACH 4417');
 });
 
 it('reminds the payer on the due date and a week later, once each', function () {

@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 20b fix — Fees are based on the receiving team's earnings; platform fee from the referring team's fee
+- Corrected (reported by the product owner): a percentage referral fee is a share of the receiving team's earnings from the referral (in real estate, their commission), never of the sale or job price. Example: B earns a $5,000 commission on a $100,000 sale; at 30%, A earns $1,500 (not $30,000).
+- At Won, the receiving team enters the sale or job value (for the record) and their earnings from the referral; earnings are required whenever a percentage fee applies.
+- Platform fee: from the admin's platform fee rule (group override, else industry default; percentage or flat; Tier A only), taken from the referral fee the referring team earns and never more than it. Example: 10% of $1,500 = $150, so A nets $1,350. Owed only once the referring team confirms receipt (billed with their account in Sprint 22); never on a fee that isn't received.
+- Wording everywhere: "30% of the receiving team's earnings from this referral" on screens; the agreement says "30% of the gross earnings the receiving party receives from this referral (for example, its commission)" so the basis is unambiguous. Flat fees read "$500 per referral that closes".
+- Statements, the Earnings page and the CSV show the receiving team's earnings, the referral fee, the platform fee and the referring team's net. The admin platform-fee screen now takes dollars (not cents) and explains when the fee is charged.
+- 340 PHP tests in total (the fee tests are rewritten around the real-estate example).
+
 ### Sprint 20b part 1 — Referral fees
 - Open (Tier A) networks only: the group owner sets the default referral fee, a percentage of the closing value (up to 90%) or a flat amount, plus the days to pay (default 10). The agreement states it in words ("25% of the closing value"). Restricted and directory industries can't have fees.
 - A different fee for one referral: either team proposes, the other accepts, before anyone signs; the unsigned agreement is regenerated to state the fee actually agreed. After a signature the fee is fixed.

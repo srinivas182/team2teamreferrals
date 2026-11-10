@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?\Illuminate\Support\Carbon $last_update_at
  * @property ?\Illuminate\Support\Carbon $closing_date
  * @property ?int $closing_value_cents
+ * @property ?int $earnings_cents
  * @property ?string $lost_reason
  * @property ?\Illuminate\Support\Carbon $closed_at
  * @property ?\Illuminate\Support\Carbon $last_nudged_at

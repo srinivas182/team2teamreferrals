@@ -15,6 +15,8 @@ export type PipelineInfo = {
     canWork: boolean;
     firstContact: string | null;
     firstContactDue: string | null;
+    askEarnings: boolean;
+    earnings: number | null;
     closingDate: string | null;
     closingValue: number | null;
     lostReason: string | null;
@@ -27,7 +29,7 @@ export function Progress({ id, p, clientTerm }: { id: string; p: PipelineInfo; c
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const [target, setTarget] = useState<Stage | null>(null);
     const [note, setNote] = useState('');
-    const [closing, setClosing] = useState({ date: '', value: '', reason: '' });
+    const [closing, setClosing] = useState({ date: '', value: '', earnings: '', reason: '' });
     const idx = p.stages.findIndex((s) => s.key === p.current);
     const current = p.stages[idx];
     const closed = current?.kind !== 'open';
@@ -60,6 +62,9 @@ export function Progress({ id, p, clientTerm }: { id: string; p: PipelineInfo; c
                 <p className="text-sm">
                     Closed {p.closingDate}
                     {p.closingValue !== null ? ` · value ${p.closingValue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}` : ''}
+                    {p.earnings !== null
+                        ? ` · receiving team’s earnings ${p.earnings.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}`
+                        : ''}
                 </p>
             )}
             {p.lostReason && <p className="text-sm text-muted">Didn’t go ahead: {p.lostReason}</p>}
