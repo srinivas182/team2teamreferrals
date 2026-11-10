@@ -12,6 +12,7 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Props = {
+    quickReplies?: string[];
     team: {
         id: string;
         name: string;
@@ -36,7 +37,7 @@ type Props = {
 
 const socials = ['linkedin', 'facebook', 'instagram', 'youtube', 'x'] as const;
 
-export default function Team({ team, canEdit, canManage, members, teamTrained, invites, roles, status, seo }: Props) {
+export default function Team({ quickReplies = [], team, canEdit, canManage, members, teamTrained, invites, roles, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const form = useForm<{
         name: string;
@@ -218,6 +219,26 @@ export default function Team({ team, canEdit, canManage, members, teamTrained, i
                         </Card>
                     )}
                 </div>
+                {canEdit && (
+                    <Card id="quick-replies" className="mt-6 max-w-5xl space-y-3 p-6">
+                        <h2 className="font-semibold">Quick replies</h2>
+                        <p className="text-sm text-muted">One-tap phrases for referral messages, one per line (up to 10).</p>
+                        <Textarea rows={5} defaultValue={quickReplies.join('\n')} id="qr" aria-label="Quick replies" />
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                                router.post(
+                                    '/app/team/quick-replies',
+                                    { replies: (document.getElementById('qr') as HTMLTextAreaElement).value.split('\n') },
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            Save quick replies
+                        </Button>
+                    </Card>
+                )}
             </div>
         </PortalLayout>
     );

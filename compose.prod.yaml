@@ -5,6 +5,8 @@ x-app: &app
   env_file: .env
   environment:
     DB_HOST: mysql
+    # Real-time: Mercure runs inside FrankenPHP (no extra container); set MERCURE_JWT_SECRET in the deployment's .env.
+    BROADCAST_CONNECTION: mercure
     REDIS_HOST: redis
     CACHE_STORE: redis
     SESSION_DRIVER: redis

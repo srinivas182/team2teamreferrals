@@ -43,3 +43,6 @@ Thumbs.db
 frankenphp
 frankenphp-worker.php
 .lighthouseci/
+
+# FrankenPHP binary Octane downloads for local runs
+/frankenphp

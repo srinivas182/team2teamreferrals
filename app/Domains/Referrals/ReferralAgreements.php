@@ -73,6 +73,7 @@ final class ReferralAgreements
         }
         DB::table('referral_agreements')->where('id', $a->id)->update([$side.'_signer_id' => $user->id, $side.'_signed_name' => $user->name, $side.'_signed_at' => now(), $side.'_ip' => $ip, $side.'_device' => mb_substr($device, 0, 255), 'updated_at' => now()]);
         DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'signed', 'team_id' => $team->id, 'actor_id' => $user->id, 'meta' => json_encode(['side' => $side]), 'created_at' => now()]);
+        Events\ReferralChanged::dispatch($ref, 'agreement');
         $a = DB::table('referral_agreements')->where('id', $a->id)->first();
         if ($a !== null && $a->sender_signed_at !== null && $a->receiver_signed_at !== null) {
             $this->complete($ref, $a);

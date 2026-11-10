@@ -1,4 +1,6 @@
-import { router, usePage, usePoll } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BellOff, Search } from 'lucide-react';
+import { useReferralLive } from '@/lib/realtime';
 import { Lock } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -36,7 +38,9 @@ type Props = {
     };
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
-    messages: { id: number; mine: boolean; who: string; when: string; body: string }[];
+    muted: boolean;
+    quickReplies: string[];
+    messages: { id: number; seen: boolean; mine: boolean; who: string; when: string; body: string }[];
     clientLink: string | null;
     agreement: {
         status: string;
@@ -76,6 +80,8 @@ export default function ReferralShow({
     referral: r,
     isReceiver,
     agreement: ag,
+    muted,
+    quickReplies,
     pipeline,
     messages,
     clientLink,
@@ -84,8 +90,14 @@ export default function ReferralShow({
     status,
     seo,
 }: Props) {
-    // New messages appear without reloading while the referral is open.
-    usePoll(10000, { only: ['messages', 'timeline', 'referral'] });
+    // Live: anything that changes on this referral reloads here instantly (10-second refresh if real-time is off).
+    const [typing, setTyping] = useState<string | null>(null);
+    const [filter, setFilter] = useState('');
+    const sendTyping = useReferralLive(r.id, ['messages', 'timeline', 'referral', 'pipeline', 'agreement'], (who) => {
+        setTyping(who);
+        window.setTimeout(() => setTyping(null), 4000);
+    });
+    const [lastTyped, setLastTyped] = useState(0);
     const [msg, setMsg] = useState('');
     const [copied, setCopied] = useState(false);
     const [signName, setSignName] = useState('');
@@ -267,20 +279,69 @@ export default function ReferralShow({
                 </div>
                 <div className="space-y-6">
                     <Card className="p-6">
-                        <h2 className="font-semibold">Messages</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="font-semibold">Messages</h2>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto"
+                                onClick={() => router.post(`/app/referrals/${r.id}/mute`, {}, { preserveScroll: true })}
+                            >
+                                <BellOff /> {muted ? 'Unmute' : 'Mute'}
+                            </Button>
+                            <Link href="/app/messages/search" aria-label="Search all messages" className="text-muted hover:text-ink">
+                                <Search className="size-4" />
+                            </Link>
+                        </div>
+                        {muted && (
+                            <p className="mt-1 text-xs text-muted">
+                                Muted: you won’t be notified of messages here. Deadline reminders still come through.
+                            </p>
+                        )}
+                        {messages.length > 5 && (
+                            <Input
+                                aria-label="Search this conversation"
+                                placeholder="Search this conversation"
+                                className="mt-2 h-8"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                            />
+                        )}
                         <ol className="mt-3 max-h-80 space-y-2 overflow-y-auto text-sm" aria-live="polite">
                             {messages.length === 0 && (
                                 <li className="text-muted">Questions about this {terms.client}? Ask here; the other team is notified.</li>
                             )}
-                            {messages.map((m) => (
-                                <li key={m.id} className={m.mine ? 'ml-6 rounded-md bg-primary/10 p-2' : 'mr-6 rounded-md bg-bg p-2'}>
-                                    <div className="text-xs text-muted">{m.who}</div>
-                                    <p className="whitespace-pre-wrap">{m.body}</p>
-                                </li>
-                            ))}
+                            {messages
+                                .filter((m) => !filter || m.body.toLowerCase().includes(filter.toLowerCase()))
+                                .map((m) => (
+                                    <li key={m.id} className={m.mine ? 'ml-6 rounded-md bg-primary/10 p-2' : 'mr-6 rounded-md bg-bg p-2'}>
+                                        <div className="text-xs text-muted">{m.who}</div>
+                                        <p className="whitespace-pre-wrap">{m.body}</p>
+                                        {m.mine && m.seen && <div className="text-right text-[11px] text-muted">Seen</div>}
+                                    </li>
+                                ))}
                         </ol>
-                        <div className="mt-3 flex gap-2">
-                            <Input aria-label="Message" placeholder="Write a message" value={msg} onChange={(e) => setMsg(e.target.value)} />
+                        {typing && <p className="mt-1 text-xs text-muted">{typing} is typing…</p>}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                            {quickReplies.map((q) => (
+                                <button key={q} className="rounded-full border border-line px-2.5 py-1 text-xs hover:bg-bg" onClick={() => setMsg(q)}>
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                            <Input
+                                aria-label="Message"
+                                placeholder="Write a message"
+                                value={msg}
+                                onChange={(e) => {
+                                    setMsg(e.target.value);
+                                    if (Date.now() - lastTyped > 3000) {
+                                        setLastTyped(Date.now());
+                                        sendTyping(auth.user?.firstName ?? 'Someone');
+                                    }
+                                }}
+                            />
                             <Button
                                 disabled={!msg.trim()}
                                 onClick={() =>

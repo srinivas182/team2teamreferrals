@@ -40,6 +40,7 @@ final class TeamController
             'invites' => $role === 'leader' ? DB::table('team_invites')->where(['team_id' => $team->id, 'status' => 'pending'])->where('expires_at', '>', now())->get(['id', 'email', 'role', 'expires_at'])
                 ->map(fn ($i) => ['id' => (int) $i->id, 'email' => (string) $i->email, 'role' => (string) $i->role, 'expires' => (string) $i->expires_at]) : [],
             'roles' => Team::ROLES,
+            'quickReplies' => \App\Domains\Referrals\Conversations::quickReplies($team),
             'status' => session('status'),
             'seo' => SeoData::private('Team')->toArray(),
         ]);

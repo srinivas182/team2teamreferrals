@@ -94,6 +94,9 @@ const messages: Record<string, string> = {
     'pipeline-saved': 'Pipeline saved. Members have been told, and referrals in removed stages were moved.',
     'pipeline-locked': 'Pipeline locked: owners can no longer change it.',
     'pipeline-unlocked': 'Pipeline unlocked.',
+    'thread-muted': 'Muted. Deadline reminders will still come through.',
+    'thread-unmuted': 'Unmuted.',
+    'quick-replies-saved': 'Quick replies saved.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
