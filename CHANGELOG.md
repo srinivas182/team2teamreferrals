@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 17b — Pipeline board and owners' pipeline editor
+- Pipeline board (Portal → Pipeline): the team's accepted referrals in stage columns, one network at a time, with counts and "needs attention" flags (call due, first contact overdue, update due, over time in stage) and a "Needs attention only" filter. Drag and drop between columns on desktop; on a phone, swipe between stages (one column fills the screen). Every card also has a "Move to…" menu; Won and Lost open the closing prompt (date and value, or reason).
+- Group owners edit their network's pipeline (group page → Pipeline stages): rename, add, reorder and remove stages, set what the client sees and an optional time limit per stage, or start again from the industry's stages. The editor keeps the rules (first stage open, one Won, one Lost).
+- Safe for work in progress: a stage that still holds referrals can only be removed once the owner chooses where those referrals go; they are moved with a timeline entry. Every save is a new version, audited, and seat holders are told.
+- Admins can lock a network's pipeline (owners then can't change it; admins still can).
+- 306 PHP tests in total (4 new).
+
 ### Sprint 17a — Working the referral: stages, calls, deadlines and nudges
 - Accepted referrals move through the group's (or industry's) pipeline. A Progress panel shows the stage path; the receiving team moves it on, posts progress notes, and the sender is told each time ("Hurricane Sun: Tom Brennan is now at “Site survey”"). Stages can carry a client-friendly label and an optional time limit (editor in 17b).
 - "Log a call": one tap records first contact, stops the first-contact clock, and moves a brand-new referral to the first working stage.
