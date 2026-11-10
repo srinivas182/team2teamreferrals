@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { CalendarClock } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,9 @@ import type { Seo } from '@/types/seo';
 type Props = {
     group: {
         slug: string;
+        trainingRequired: boolean;
+        trainingLocked: boolean;
+        trainingFrom: string;
         name: string;
         description: string | null;
         status: string;
@@ -74,6 +77,29 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                         Seat price {money(Number(group.pricing.seat_price))}/month after a {String(group.pricing.trial_months)}-month free trial.
                         Pricing is set by Team to Team.
                     </p>
+                </Card>
+                <Card className="p-6">
+                    <h2 className="font-semibold">Network training</h2>
+                    <p className="mt-1 text-sm text-muted">
+                        {group.trainingRequired
+                            ? `Required: members who haven’t passed can’t send or receive new referrals from ${new Date(group.trainingFrom + 'T00:00').toLocaleDateString()}. Work in progress is never affected, and new referrals go to the backup meanwhile.`
+                            : 'Optional: members who pass earn the “Network trained” badge and move up waitlists.'}
+                    </p>
+                    {group.trainingLocked ? (
+                        <p className="mt-3 text-sm font-medium">Required by the platform for this industry.</p>
+                    ) : (
+                        <label className="mt-3 flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                checked={group.trainingRequired}
+                                onChange={(e) =>
+                                    router.post(`/app/group/${group.slug}/training`, { required: e.target.checked }, { preserveScroll: true })
+                                }
+                            />{' '}
+                            Require training before members send or receive referrals
+                        </label>
+                    )}
                 </Card>
                 <Card className="p-6">
                     <h2 className="flex items-center gap-2 font-semibold">
