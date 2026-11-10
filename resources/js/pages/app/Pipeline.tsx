@@ -15,21 +15,29 @@ import type { Seo } from '@/types/seo';
 
 type Stage = { key: string; label: string; kind: 'open' | 'won' | 'lost' };
 type CardT = { id: string; stage: string; client: string; territory: string; sender: string; days: number; flags: string[] };
-type Props = { groups: { slug: string; name: string }[]; group: string | null; stages: Stage[]; cards: CardT[]; status?: string; seo: Seo };
+type Props = {
+    askEarnings?: boolean;
+    groups: { slug: string; name: string }[];
+    group: string | null;
+    stages: Stage[];
+    cards: CardT[];
+    status?: string;
+    seo: Seo;
+};
 
 /** Received referrals by stage: drag and drop on desktop, swipe between stages on a phone. */
-export default function Pipeline({ groups, group, stages, cards, status, seo }: Props) {
+export default function Pipeline({ askEarnings = false, groups, group, stages, cards, status, seo }: Props) {
     const { auth, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     const [attention, setAttention] = useState(false);
     const [over, setOver] = useState<string | null>(null);
     const [closing, setClosing] = useState<{ card: CardT; stage: Stage } | null>(null);
-    const [form, setForm] = useState({ date: '', value: '', reason: '' });
+    const [form, setForm] = useState({ date: '', value: '', earnings: '', reason: '' });
     const shown = attention ? cards.filter((c) => c.flags.length > 0) : cards;
     const move = (card: CardT, key: string) => {
         const stage = stages.find((s) => s.key === key);
         if (!stage || key === card.stage) return;
         if (stage.kind !== 'open') {
-            setForm({ date: '', value: '', reason: '' });
+            setForm({ date: '', value: '', earnings: '', reason: '' });
             setClosing({ card, stage });
             return;
         }
@@ -158,8 +166,20 @@ export default function Pipeline({ groups, group, stages, cards, status, seo }: 
                                 <Field label="Closing date" error={errors.closing_date}>
                                     <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
                                 </Field>
-                                <Field label="Value (USD)" error={errors.closing_value}>
+                                <Field label="Sale or job value (USD)" error={errors.closing_value}>
                                     <Input type="number" min="0" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                                </Field>
+                                <Field
+                                    label={`Your earnings from this referral (USD)${askEarnings ? '' : ' (optional)'}`}
+                                    hint="E.g. your commission."
+                                    error={errors.earnings}
+                                >
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={form.earnings}
+                                        onChange={(e) => setForm({ ...form, earnings: e.target.value })}
+                                    />
                                 </Field>
                             </div>
                         ) : (
@@ -169,7 +189,11 @@ export default function Pipeline({ groups, group, stages, cards, status, seo }: 
                         )}
                         <div className="flex gap-2">
                             <Button
-                                disabled={closing.stage.kind === 'won' ? !form.date || form.value === '' : !form.reason.trim()}
+                                disabled={
+                                    closing.stage.kind === 'won'
+                                        ? !form.date || form.value === '' || (askEarnings && form.earnings === '')
+                                        : !form.reason.trim()
+                                }
                                 onClick={() =>
                                     router.post(
                                         `/app/referrals/${closing.card.id}/stage`,

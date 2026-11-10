@@ -142,7 +142,7 @@ final class ReferralAgreements
             'receiver_team' => (string) $receiver?->name, 'receiver_name' => (string) $receiver?->leader->name, 'receiver_license' => $receiver ? ($lic($receiver) ?: 'on file') : '', 'receiver_state' => $stateName,
             'client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'date' => now()->toFormattedDateString(), 'governing_state' => $stateName,
             'protection_months' => (string) data_get($ref->group->rules, 'protection_months', 12),
-            'fee_terms' => Fees::describe(Fees::forReferral($ref)), 'fee_due_days' => (string) data_get($ref->group->rules, 'fee_due_days', 10),
+            'fee_terms' => Fees::describe(Fees::forReferral($ref), legal: true), 'fee_due_days' => (string) data_get($ref->group->rules, 'fee_due_days', 10),
         ];
     }
 }

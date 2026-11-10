@@ -154,8 +154,8 @@ function FeeDefault({ slug, fee, dueDays }: { slug: string; fee: { type: string;
                     value={type}
                     onChange={(e) => setType(e.target.value)}
                 >
-                    <option value="percent">% of closing value</option>
-                    <option value="flat">Flat amount ($)</option>
+                    <option value="percent">% of the receiving team’s earnings from the referral</option>
+                    <option value="flat">Flat amount ($) per referral that closes</option>
                 </select>
                 <input
                     aria-label="Fee value"

@@ -115,6 +115,7 @@ final class ReferralController
                 'stages' => app(\App\Domains\Referrals\Pipeline::class)->stages($referral), 'current' => $referral->stage,
                 'canWork' => $isReceiver, 'firstContact' => $referral->first_contact_at?->toIso8601String(),
                 'firstContactDue' => $referral->accepted_at?->copy()->addHours((int) $referral->group->rule('first_contact_hours'))->toIso8601String(),
+                'askEarnings' => app(\App\Domains\Referrals\Pipeline::class)->feeIsPercent($referral), 'earnings' => $referral->earnings_cents !== null ? $referral->earnings_cents / 100 : null,
                 'closingDate' => $referral->closing_date?->toDateString(), 'closingValue' => $referral->closing_value_cents !== null ? $referral->closing_value_cents / 100 : null, 'lostReason' => $referral->lost_reason,
                 'canNudge' => $team?->id === $referral->sender_team_id && $referral->closed_at === null && ($referral->last_nudged_at === null || $referral->last_nudged_at->lte(now()->subDays(\App\Domains\Referrals\Pipeline::NUDGE_EVERY_DAYS))),
                 'nextNudge' => $referral->last_nudged_at?->copy()->addDays(\App\Domains\Referrals\Pipeline::NUDGE_EVERY_DAYS)->toIso8601String(),
@@ -261,7 +262,7 @@ final class ReferralController
 
     public function stage(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
     {
-        $d = $request->validate(['stage' => ['required', 'string', 'max:40'], 'note' => ['nullable', 'string', 'max:1000'], 'closing_date' => ['nullable', 'date'], 'closing_value' => ['nullable', 'numeric', 'min:0', 'max:1000000000'], 'lost_reason' => ['nullable', 'string', 'max:500']]);
+        $d = $request->validate(['stage' => ['required', 'string', 'max:40'], 'note' => ['nullable', 'string', 'max:1000'], 'closing_date' => ['nullable', 'date'], 'closing_value' => ['nullable', 'numeric', 'min:0', 'max:1000000000'], 'earnings' => ['nullable', 'numeric', 'min:0', 'max:1000000000'], 'lost_reason' => ['nullable', 'string', 'max:500']]);
         $pipeline->move($referral, $this->user($request), (string) $d['stage'], $d['note'] ?? null, $d);
 
         return back()->with('status', 'stage-moved');

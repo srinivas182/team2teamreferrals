@@ -405,8 +405,8 @@ export default function IndustryShow({
                                 <Field label="Mode">
                                     <Select value={feeForm.data.mode} onChange={(e) => feeForm.setData('mode', e.target.value)}>
                                         <option value="none">None</option>
-                                        <option value="percent">Percentage of the referral commission</option>
-                                        <option value="flat">Flat amount per referral</option>
+                                        <option value="percent">Percentage of the referral fee the referring team earns</option>
+                                        <option value="flat">Flat amount from each referral fee earned</option>
                                     </Select>
                                 </Field>
                                 {feeForm.data.mode === 'percent' && (
@@ -420,20 +420,29 @@ export default function IndustryShow({
                                     </Field>
                                 )}
                                 {feeForm.data.mode === 'flat' && (
-                                    <Field label="Amount (cents)" error={feeForm.errors.flat_cents}>
+                                    <Field label="Amount (USD)" error={feeForm.errors.flat_cents}>
                                         <Input
                                             type="number"
-                                            value={feeForm.data.flat_cents}
-                                            onChange={(e) => feeForm.setData('flat_cents', e.target.value)}
+                                            min="0"
+                                            step="0.01"
+                                            value={
+                                                feeForm.data.flat_cents === '' || feeForm.data.flat_cents === null
+                                                    ? ''
+                                                    : Number(feeForm.data.flat_cents) / 100
+                                            }
+                                            onChange={(e) =>
+                                                feeForm.setData(
+                                                    'flat_cents',
+                                                    e.target.value === '' ? '' : String(Math.round(parseFloat(e.target.value) * 100)),
+                                                )
+                                            }
                                         />
                                     </Field>
                                 )}
-                                <Field label="Charged at">
-                                    <Select value={feeForm.data.charge_at} onChange={(e) => feeForm.setData('charge_at', e.target.value)}>
-                                        <option value="closing">Closing</option>
-                                        <option value="acceptance">Acceptance</option>
-                                    </Select>
-                                </Field>
+                                <p className="text-sm text-muted">
+                                    Taken from the referral fee the referring team earns (never more than that fee), and owed once they confirm
+                                    they’ve received it. Example: a 10% platform fee on a $1,500 referral fee is $150.
+                                </p>
                                 <label className="flex items-center gap-2 text-sm">
                                     <input
                                         type="checkbox"

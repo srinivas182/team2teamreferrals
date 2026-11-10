@@ -48,6 +48,7 @@ final class PipelineController
         return Inertia::render('app/Pipeline', [
             'groups' => $groups->map(fn (Group $g) => ['slug' => $g->slug, 'name' => $g->name])->all(),
             'group' => $group?->slug,
+            'askEarnings' => $group instanceof Group && (\App\Domains\Referrals\Fees::groupDefault($group)['type'] ?? null) === 'percent',
             'stages' => $group instanceof Group ? $this->pipeline->stages($refs->firstWhere('group_id', $group->id)) : [],
             'cards' => $cards,
             'status' => session('status'),

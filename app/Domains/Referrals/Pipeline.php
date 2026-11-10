@@ -59,16 +59,27 @@ final class Pipeline
         $this->tellSender($ref, $team, $note ?? 'They contacted your client.');
     }
 
-    /** @param array{closing_date?: ?string, closing_value?: mixed, lost_reason?: ?string} $details */
+    public function feeIsPercent(Referral $ref): bool
+    {
+        return (Fees::forReferral($ref)['type'] ?? null) === 'percent';
+    }
+
+    /** @param array{closing_date?: ?string, closing_value?: mixed, earnings?: mixed, lost_reason?: ?string} $details */
     public function move(Referral $ref, User $user, string $key, ?string $note, array $details = []): void
     {
         $team = $this->mustWork($ref, $user);
         $stage = $this->stage($ref, $key) ?? throw ValidationException::withMessages(['stage' => 'That stage isn’t in this network’s pipeline.']);
         if ($stage['kind'] === 'won') {
             if (empty($details['closing_date']) || ! is_numeric($details['closing_value'] ?? null) || (float) $details['closing_value'] < 0) {
-                throw ValidationException::withMessages(['closing_date' => 'Add the closing date and value: they’re needed to close the referral (and any fee).']);
+                throw ValidationException::withMessages(['closing_date' => 'Add the closing date and value: they’re needed to close the referral.']);
             }
-            $ref->forceFill(['closing_date' => $details['closing_date'], 'closing_value_cents' => (int) round((float) $details['closing_value'] * 100), 'closed_at' => now()]);
+            // A percentage fee is based on the receiving team's earnings from the referral, so they're needed then.
+            $earnings = $details['earnings'] ?? null;
+            if (($this->feeIsPercent($ref)) && (! is_numeric($earnings) || (float) $earnings <= 0)) {
+                throw ValidationException::withMessages(['earnings' => 'Add your earnings from this referral (for example, your commission): the referral fee is a percentage of it.']);
+            }
+            $ref->forceFill(['closing_date' => $details['closing_date'], 'closing_value_cents' => (int) round((float) $details['closing_value'] * 100),
+                'earnings_cents' => is_numeric($earnings) ? (int) round((float) $earnings * 100) : null, 'closed_at' => now()]);
         }
         if ($stage['kind'] === 'lost') {
             if (trim((string) ($details['lost_reason'] ?? '')) === '') {
@@ -77,7 +88,7 @@ final class Pipeline
             $ref->forceFill(['lost_reason' => mb_substr(trim((string) ($details['lost_reason'] ?? '')), 0, 500), 'closed_at' => now()]);
         }
         if ($stage['kind'] === 'open') {
-            $ref->forceFill(['closed_at' => null, 'closing_date' => null, 'closing_value_cents' => null, 'lost_reason' => null]);
+            $ref->forceFill(['closed_at' => null, 'closing_date' => null, 'closing_value_cents' => null, 'earnings_cents' => null, 'lost_reason' => null]);
         }
         $wasWon = $ref->close_status !== null;
         $this->moveTo($ref, $team, $user, $key, $note);
