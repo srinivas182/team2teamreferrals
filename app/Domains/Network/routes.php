@@ -178,6 +178,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::get('app/referrals/{referral}/files/{attachment}', [App\Domains\Referrals\Http\ReferralController::class, 'attachment'])->middleware('signed')->whereNumber('attachment')->name('referrals.attachment');
     Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');
     Route::post('app/team/quick-replies', [App\Domains\Referrals\Http\ReferralController::class, 'quickReplies'])->name('team.quick-replies');
     Route::get('app/messages/search', [App\Domains\Referrals\Http\ReferralController::class, 'search'])->middleware('throttle:60,1')->name('messages.search');

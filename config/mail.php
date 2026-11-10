@@ -115,4 +115,13 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    | Reply by email: replies to referral messages arrive at reply+…@<domain> through an inbound email provider
+    | (Postmark by default; any provider that posts parsed JSON). Off until a domain and secret are set.
+    */
+    'inbound' => [
+        'domain' => env('MAIL_INBOUND_DOMAIN'),
+        'secret' => env('MAIL_INBOUND_SECRET'),
+    ],
+
 ];

@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { BellOff, Search } from 'lucide-react';
+import { BellOff, Paperclip, Search } from 'lucide-react';
 import { useReferralLive } from '@/lib/realtime';
 import { Lock } from 'lucide-react';
 import { useState } from 'react';
@@ -40,7 +40,15 @@ type Props = {
     pipeline: PipelineInfo | null;
     muted: boolean;
     quickReplies: string[];
-    messages: { id: number; seen: boolean; mine: boolean; who: string; when: string; body: string }[];
+    messages: {
+        id: number;
+        seen: boolean;
+        mine: boolean;
+        who: string;
+        when: string;
+        body: string;
+        files: { id: number; name: string; size: number; status: string; url: string | null }[];
+    }[];
     clientLink: string | null;
     agreement: {
         status: string;
@@ -98,6 +106,8 @@ export default function ReferralShow({
         window.setTimeout(() => setTyping(null), 4000);
     });
     const [lastTyped, setLastTyped] = useState(0);
+    const [files, setFiles] = useState<File[]>([]);
+    const fileError = (usePage().props.errors as Record<string, string> | undefined)?.['files.0'];
     const [msg, setMsg] = useState('');
     const [copied, setCopied] = useState(false);
     const [signName, setSignName] = useState('');
@@ -316,12 +326,36 @@ export default function ReferralShow({
                                 .map((m) => (
                                     <li key={m.id} className={m.mine ? 'ml-6 rounded-md bg-primary/10 p-2' : 'mr-6 rounded-md bg-bg p-2'}>
                                         <div className="text-xs text-muted">{m.who}</div>
-                                        <p className="whitespace-pre-wrap">{m.body}</p>
+                                        {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
+                                        {m.files.map((f) => (
+                                            <div key={f.id} className="mt-1 flex items-center gap-1.5 text-xs">
+                                                <Paperclip className="size-3" aria-hidden />
+                                                {f.url ? (
+                                                    <a href={f.url} className="font-medium text-primary hover:underline">
+                                                        {f.name}
+                                                    </a>
+                                                ) : (
+                                                    <span className="font-medium">{f.name}</span>
+                                                )}
+                                                <span className="text-muted">
+                                                    {Math.max(1, Math.round(f.size / 1024))} KB
+                                                    {f.status === 'pending'
+                                                        ? ' · checking for viruses…'
+                                                        : f.status === 'infected'
+                                                          ? ' · blocked: failed the virus check'
+                                                          : !f.url
+                                                            ? ' · opens after you accept'
+                                                            : ''}
+                                                </span>
+                                            </div>
+                                        ))}
                                         {m.mine && m.seen && <div className="text-right text-[11px] text-muted">Seen</div>}
                                     </li>
                                 ))}
                         </ol>
                         {typing && <p className="mt-1 text-xs text-muted">{typing} is typing…</p>}
+                        {fileError && <p className="mt-1 text-xs text-danger">{fileError}</p>}
+                        {files.length > 0 && <p className="mt-1 text-xs text-muted">Attaching: {files.map((f) => f.name).join(', ')}</p>}
                         <div className="mt-3 flex flex-wrap gap-1.5">
                             {quickReplies.map((q) => (
                                 <button key={q} className="rounded-full border border-line px-2.5 py-1 text-xs hover:bg-bg" onClick={() => setMsg(q)}>
@@ -342,13 +376,26 @@ export default function ReferralShow({
                                     }
                                 }}
                             />
+                            <label
+                                className="flex cursor-pointer items-center rounded-md border border-line px-2.5 hover:bg-bg"
+                                aria-label="Attach files"
+                            >
+                                <Paperclip className="size-4" aria-hidden />
+                                <input
+                                    type="file"
+                                    multiple
+                                    className="sr-only"
+                                    accept=".jpg,.jpeg,.png,.webp,.heic,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                                    onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 3))}
+                                />
+                            </label>
                             <Button
-                                disabled={!msg.trim()}
+                                disabled={!msg.trim() && files.length === 0}
                                 onClick={() =>
                                     router.post(
                                         `/app/referrals/${r.id}/messages`,
-                                        { body: msg },
-                                        { preserveScroll: true, onSuccess: () => setMsg('') },
+                                        { body: msg, files },
+                                        { forceFormData: true, preserveScroll: true, onSuccess: () => (setMsg(''), setFiles([])) },
                                     )
                                 }
                             >

@@ -170,11 +170,16 @@ final class Referrals
         return \Illuminate\Support\Facades\URL::temporarySignedRoute('referrals.quick', $ref->respond_by, ['referral' => $ref->ulid, 'team' => (int) $ref->receiver_team_id]);
     }
 
-    public function message(Referral $ref, User $user, string $body): void
+    /** @param list<\Illuminate\Http\UploadedFile> $files */
+    public function message(Referral $ref, User $user, string $body, array $files = []): void
     {
         $team = Team::of($user);
         abort_unless($team !== null && in_array($team->id, [$ref->sender_team_id, $ref->receiver_team_id], true), 403);
-        DB::table('referral_messages')->insert(['referral_id' => $ref->id, 'team_id' => $team->id, 'user_id' => $user->id, 'body' => mb_substr(trim($body), 0, 4000), 'created_at' => now()]);
+        $messageId = DB::table('referral_messages')->insertGetId(['referral_id' => $ref->id, 'team_id' => $team->id, 'user_id' => $user->id, 'body' => mb_substr(trim($body), 0, 4000), 'created_at' => now()]);
+        if ($files !== []) {
+            Attachments::store($ref, $team, $user, (int) $messageId, $files);
+            $body = trim($body.' ['.count($files).' file'.(count($files) > 1 ? 's' : '').' attached]');
+        }
         $ref->loadMissing(['sender.leader', 'receiver.leader', 'group.industry']);
         $other = $team->id === $ref->sender_team_id ? $ref->receiver : $ref->sender;
         Events\ReferralChanged::dispatch($ref, 'message');
@@ -182,7 +187,7 @@ final class Referrals
             $toReceiverEarly = $other->id === $ref->receiver_team_id && $ref->status !== 'accepted';
             $excerpt = mb_strimwidth($toReceiverEarly ? Referral::maskContacts($body) : $body, 0, 160, '…');
             $name = $toReceiverEarly ? $ref->shortClientName() : $ref->client_name;
-            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt, '_reply_to' => ReplyAddress::for($ref, $other->leader)], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
         }
     }
 

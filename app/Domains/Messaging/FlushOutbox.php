@@ -28,7 +28,7 @@ final class FlushOutbox extends Command
             // Everything pending for this member goes in the same email, including items not yet due.
             $mail = OutboxItem::query()->where('user_id', $user->id)->whereNull('sent_at')->where('channel', 'mail')->orderBy('id')->get();
             if ($mail->isNotEmpty() && $mail->contains(fn (OutboxItem $i) => $i->deliver_after->lessThanOrEqualTo(now()))) {
-                $items = array_values($mail->map(fn (OutboxItem $i) => ['title' => $i->title, 'body' => $i->body, 'url' => $i->url])->all());
+                $items = array_values($mail->map(fn (OutboxItem $i) => ['title' => $i->title, 'body' => $i->body, 'url' => $i->url, 'reply_to' => $i->reply_to])->all());
                 /** @var OutboxItem $first */
                 $first = $mail->first();
                 $user->notify(new PlatformMessage($first->type, $items, digest: $user->email_digest));
