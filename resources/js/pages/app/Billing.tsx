@@ -12,10 +12,19 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type SeatRow = { territory: string; group: string; team: string; status: string; founding: boolean; price: number; trialEnds: string | null };
-type Account = { type: 'team' | 'company'; name: string; card: { brand: string; last4: string; exp: string } | null; seats: SeatRow[] };
+type Inv = { id: number; number: string; period: string; total: number; status: string; failure: string | null; canPay: boolean };
+type Account = {
+    type: 'team' | 'company';
+    name: string;
+    needsNewCard: boolean;
+    invoices: Inv[];
+    card: { brand: string; last4: string; exp: string } | null;
+    seats: SeatRow[];
+};
 
 // Stripe.js is loaded from Stripe only on this page (the security policy allows it here alone).
 type StripeJs = {
+    handleNextAction: (o: { clientSecret: string }) => Promise<{ error?: { message: string } }>;
     elements: (o: { clientSecret: string }) => { create: (t: string) => { mount: (el: HTMLElement) => void } };
     confirmSetup: (o: {
         elements: unknown;
@@ -96,10 +105,42 @@ function CardForm({ type, stripeKey, onDone }: { type: string; stripeKey: string
     );
 }
 
+async function payNow(type: string, id: number, stripeKey: string | null, setError: (e: string | null) => void) {
+    setError(null);
+    const res = await fetch(`/app/billing/${type}/invoices/${id}/pay`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() },
+    });
+    const json = (await res.json().catch(() => null)) as { clientSecret?: string } | null;
+    // The bank wants the customer to confirm: Stripe shows its own authentication screen.
+    if (json?.clientSecret && stripeKey) {
+        const stripe = await loadStripe(stripeKey);
+        const r = await stripe.handleNextAction({ clientSecret: json.clientSecret });
+        if (r.error) setError(r.error.message);
+    }
+    router.reload();
+}
+
+const invTone: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
+    paid: 'success',
+    zero: 'success',
+    failed: 'danger',
+    action_required: 'warning',
+    open: 'warning',
+};
+const invWords: Record<string, string> = {
+    paid: 'Paid',
+    zero: 'Nothing to pay',
+    failed: 'Payment failed',
+    action_required: 'Needs your confirmation',
+    open: 'Processing',
+};
+
 /** Portal → Billing: cards and seats for each account this person pays for. */
 export default function Billing({ accounts, stripeKey, status, seo }: { accounts: Account[]; stripeKey: string | null; status?: string; seo: Seo }) {
     const { auth } = usePage<SharedProps>().props;
     const [open, setOpen] = useState<string | null>(null);
+    const [payError, setPayError] = useState<string | null>(null);
     return (
         <PortalLayout title="Billing" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
@@ -177,6 +218,37 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                             </table>
                         </div>
                         <p className="text-xs text-muted">Any month in which no referral is offered to a seat is free.</p>
+                        {a.needsNewCard && (
+                            <Alert tone="danger">
+                                Payments failed three times this year, so a new card is needed before seats can be reactivated.
+                            </Alert>
+                        )}
+                        {a.invoices.length > 0 && (
+                            <div className="border-t border-line pt-4">
+                                <h3 className="mb-2 text-sm font-semibold">Invoices</h3>
+                                <ul className="divide-y divide-line text-sm">
+                                    {a.invoices.map((i) => (
+                                        <li key={i.id} className="flex flex-wrap items-center gap-3 py-2">
+                                            <span className="font-medium">
+                                                {new Date(i.period + '-01T00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                                            </span>
+                                            <span className="tabular">${i.total.toFixed(2)}</span>
+                                            <Badge tone={invTone[i.status] ?? 'neutral'}>{invWords[i.status] ?? i.status}</Badge>
+                                            {i.failure && <span className="text-xs text-muted">{i.failure}</span>}
+                                            <a href={`/app/billing/${a.type}/invoices/${i.id}.pdf`} className="ml-auto text-primary">
+                                                PDF
+                                            </a>
+                                            {i.canPay && stripeKey && (
+                                                <Button size="sm" onClick={() => void payNow(a.type, i.id, stripeKey, setPayError)}>
+                                                    Pay now
+                                                </Button>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                                {payError && <p className="mt-2 text-sm text-danger">{payError}</p>}
+                            </div>
+                        )}
                     </Card>
                 ))}
             </div>

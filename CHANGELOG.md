@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 22a part 2 — Monthly invoices, charging, retries and reactivation
+- Monthly billing in arrears on the 1st: one invoice per payer (a company gets one for all its branches), one line per seat for the days it was billable: after its own free trial and while not inactive, prorated by day, at the founding or regular seat price. A month in which no referral was offered to a seat is free ("Free month: no referral was offered to this seat"), where the group's value guarantee is on. Safe to re-run: one invoice per payer per month.
+- The saved card is charged off-session through Stripe, with a per-attempt idempotency key so retries can never double-charge. If the bank asks the customer to confirm, they're told and "Pay now" opens Stripe's authentication.
+- Failed payments: the seats move into the agreed lifecycle (grace, inactive, released), payment is retried on days 3 and 5, and payers are told each time. No card at the end of a trial is treated the same way. After three failed invoices in 12 months, a new card is required before reactivation; saving a new card clears it.
+- Paying (a retry, "Pay now" or a Stripe webhook) reactivates seats instantly, and a seat whose trial has ended becomes a paid, active seat.
+- Branded PDF invoices with clear line items; the Billing page lists invoices with status, PDF and "Pay now".
+- Stripe webhooks now act on payment results for our invoices (signed, handled once).
+- 358 PHP tests in total (9 new), with Stripe's API faked.
+
 ### Sprint 22a part 1 — Billing accounts, saved cards and trial notices
 - Billing accounts per payer: the holding team, or its company for company-paid seats. Each has a Stripe customer, created on first use (idempotent).
 - Saved cards through Stripe's own secure form (Payment Element with a SetupIntent for off-session charges): card details never reach our servers; we keep Stripe's reference plus brand, last four digits and expiry. A card is saved only after checking it belongs to that account's Stripe customer.

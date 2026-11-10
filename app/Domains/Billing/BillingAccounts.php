@@ -79,7 +79,7 @@ final class BillingAccounts
         $this->stripe->api('POST', 'customers/'.$account->stripe_customer_id, ['invoice_settings[default_payment_method]' => $paymentMethodId]);
         DB::table('billing_customers')->where('id', $account->id)->update([
             'payment_method_id' => $paymentMethodId, 'card_brand' => data_get($pm, 'card.brand'), 'card_last4' => data_get($pm, 'card.last4'),
-            'card_exp_month' => data_get($pm, 'card.exp_month'), 'card_exp_year' => data_get($pm, 'card.exp_year'), 'updated_at' => now(),
+            'card_exp_month' => data_get($pm, 'card.exp_month'), 'card_exp_year' => data_get($pm, 'card.exp_year'), 'needs_new_card' => false, 'updated_at' => now(),
         ]);
     }
 
