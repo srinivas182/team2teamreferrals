@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 20b part 1 — Referral fees
+- Open (Tier A) networks only: the group owner sets the default referral fee, a percentage of the closing value (up to 90%) or a flat amount, plus the days to pay (default 10). The agreement states it in words ("25% of the closing value"). Restricted and directory industries can't have fees.
+- A different fee for one referral: either team proposes, the other accepts, before anyone signs; the unsigned agreement is regenerated to state the fee actually agreed. After a signature the fee is fixed.
+- When a Won close is confirmed, the fee is calculated and a PDF statement is issued to both teams (only they can download it). The receiving team pays the referring team directly and marks it paid (with an optional payment reference); the referring team confirms receipt. Team to Team never holds the money.
+- Reminders to the payer on the due date and a week after, once each.
+- Earnings page (Portal → Earnings): to pay, to receive, received this year, each fee with its statement and actions, and a monthly CSV export for the accountant.
+- 340 PHP tests in total (5 new).
+
 ### Sprint 20a — Closing confirmation, ratings and thank-you
 - A Won close (with its date and value) asks the sender to confirm it, or dispute it with a reason (the receiving team and group owners are told). Undisputed closes confirm themselves after 7 days. Moving the referral back to an open stage reopens it.
 - Once confirmed, the client is asked one optional question ("How was your experience?") through a private link: by email when we have it, by text only where client texting is approved and the client confirmed consent. One rating per client.

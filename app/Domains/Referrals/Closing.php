@@ -127,6 +127,7 @@ final class Closing
     {
         $ref->forceFill(['close_status' => $how, 'close_confirmed_at' => now(), 'close_dispute' => null])->save();
         $this->event($ref, 'close_'.$how, $ref->sender_team_id, $user);
+        app(Fees::class)->create($ref);
         $this->askClient($ref);
         ReferralChanged::dispatch($ref, 'closing');
     }

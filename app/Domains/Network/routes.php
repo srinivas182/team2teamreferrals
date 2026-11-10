@@ -239,3 +239,15 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/challenges/{id}/decide', [App\Domains\Referrals\Http\ChallengeController::class, 'decide'])->whereNumber('id')->name('challenges.decide');
     Route::post('app/challenges/{id}/cancel', [App\Domains\Referrals\Http\ChallengeController::class, 'cancel'])->whereNumber('id')->name('challenges.cancel');
 });
+
+// Referral fees (Tier A): earnings, statements, paid/received, export; per-referral proposals; the owner's default.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/earnings', [App\Domains\Referrals\Http\FeeController::class, 'index'])->name('earnings');
+    Route::get('app/earnings/export.csv', [App\Domains\Referrals\Http\FeeController::class, 'export'])->name('earnings.export');
+    Route::get('app/earnings/{fee}/statement.pdf', [App\Domains\Referrals\Http\FeeController::class, 'statement'])->whereNumber('fee')->name('earnings.statement');
+    Route::post('app/earnings/{fee}/paid', [App\Domains\Referrals\Http\FeeController::class, 'paid'])->whereNumber('fee')->name('earnings.paid');
+    Route::post('app/earnings/{fee}/received', [App\Domains\Referrals\Http\FeeController::class, 'received'])->whereNumber('fee')->name('earnings.received');
+    Route::post('app/referrals/{referral}/fee', [App\Domains\Referrals\Http\FeeController::class, 'propose'])->name('referrals.fee.propose');
+    Route::post('app/referrals/{referral}/fee/accept', [App\Domains\Referrals\Http\FeeController::class, 'accept'])->name('referrals.fee.accept');
+    Route::post('app/group/{group}/fee', [App\Domains\Referrals\Http\FeeController::class, 'groupDefault'])->name('group.fee');
+});

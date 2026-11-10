@@ -32,6 +32,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?\Illuminate\Support\Carbon $closed_at
  * @property ?\Illuminate\Support\Carbon $last_nudged_at
  * @property ?string $close_status
+ * @property ?string $fee_type
+ * @property ?int $fee_value
+ * @property ?array{type: string, value: int, by: int} $fee_proposal
  * @property ?\Illuminate\Support\Carbon $close_confirmed_at
  * @property ?string $close_dispute
  * @property ?string $thanks_note
@@ -66,7 +69,7 @@ final class Referral extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean', 'fee_proposal' => 'array'];
     }
 
     /** @return list<string> */

@@ -138,6 +138,12 @@ final class ReferralController
                     'canThank' => $mine === 'receiver' && $referral->close_status !== null && $referral->thanks_note === null,
                 ];
             })(),
+            'fee' => $referral->group->industry->tier === \App\Domains\Network\Industries\Tier::Open ? [
+                'terms' => \App\Domains\Referrals\Fees::describe(\App\Domains\Referrals\Fees::forReferral($referral)),
+                'custom' => $referral->fee_type !== null,
+                'proposal' => $referral->fee_proposal ? ['text' => \App\Domains\Referrals\Fees::describe(['type' => $referral->fee_proposal['type'], 'value' => (int) $referral->fee_proposal['value']]), 'mine' => (int) $referral->fee_proposal['by'] === $team?->id] : null,
+                'canChange' => in_array($team?->roleOf($user), ['leader', 'assistant'], true) && ! DB::table('referral_agreements')->where('referral_id', $referral->id)->where(fn ($q) => $q->whereNotNull('sender_signed_at')->orWhereNotNull('receiver_signed_at')->orWhere('status', 'signed'))->exists(),
+            ] : null,
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
             'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,

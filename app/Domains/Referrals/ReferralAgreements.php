@@ -54,6 +54,17 @@ final class ReferralAgreements
         }
     }
 
+    /** Re-create an agreement nobody has signed yet (e.g. after the two teams agree a different fee). */
+    public function regenerate(Referral $ref): void
+    {
+        $a = DB::table('referral_agreements')->where('referral_id', $ref->id)->first();
+        if ($a === null || $a->sender_signed_at !== null || $a->receiver_signed_at !== null || $a->status === 'signed') {
+            return;
+        }
+        DB::table('referral_agreements')->where('id', $a->id)->delete();
+        $this->start($ref);
+    }
+
     public function sign(Referral $ref, User $user, string $typedName, string $ip, string $device): void
     {
         $a = DB::table('referral_agreements')->where('referral_id', $ref->id)->first();
@@ -131,7 +142,7 @@ final class ReferralAgreements
             'receiver_team' => (string) $receiver?->name, 'receiver_name' => (string) $receiver?->leader->name, 'receiver_license' => $receiver ? ($lic($receiver) ?: 'on file') : '', 'receiver_state' => $stateName,
             'client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'date' => now()->toFormattedDateString(), 'governing_state' => $stateName,
             'protection_months' => (string) data_get($ref->group->rules, 'protection_months', 12),
-            'fee_terms' => (string) data_get($ref->group->rules, 'fee_terms', 'as agreed between the parties'), 'fee_due_days' => (string) data_get($ref->group->rules, 'fee_due_days', 10),
+            'fee_terms' => Fees::describe(Fees::forReferral($ref)), 'fee_due_days' => (string) data_get($ref->group->rules, 'fee_due_days', 10),
         ];
     }
 }

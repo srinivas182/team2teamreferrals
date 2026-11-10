@@ -8,7 +8,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/field';
+import { Input, Select } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
@@ -40,6 +40,7 @@ type Props = {
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
+    fee: { terms: string; custom: boolean; proposal: { text: string; mine: boolean } | null; canChange: boolean } | null;
     muted: boolean;
     quickReplies: string[];
     messages: {
@@ -94,6 +95,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    fee,
     muted,
     quickReplies,
     pipeline,
@@ -182,6 +184,7 @@ export default function ReferralShow({
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {closing && <ClosingPanel id={r.id} c={closing} />}
+                    {fee && <FeePanel id={r.id} fee={fee} />}
                     {ag && (
                         <Card className="space-y-3 p-6">
                             <div className="flex items-center gap-2">
@@ -449,5 +452,65 @@ export default function ReferralShow({
                 </div>
             </div>
         </PortalLayout>
+    );
+}
+
+function FeePanel({
+    id,
+    fee,
+}: {
+    id: string;
+    fee: { terms: string; custom: boolean; proposal: { text: string; mine: boolean } | null; canChange: boolean };
+}) {
+    const [type, setType] = useState('percent');
+    const [value, setValue] = useState('');
+    return (
+        <Card className="space-y-3 p-6">
+            <h2 className="font-semibold">Referral fee</h2>
+            <p className="text-sm">
+                {fee.terms}
+                {fee.custom ? ' (agreed for this referral)' : ' (the network’s default)'}. Paid directly between the teams after the close is
+                confirmed.
+            </p>
+            {fee.proposal &&
+                (fee.proposal.mine ? (
+                    <p className="text-sm text-muted">You proposed {fee.proposal.text}; waiting for the other team.</p>
+                ) : (
+                    <div className="flex items-center gap-2 text-sm">
+                        The other team proposed {fee.proposal.text}.
+                        {fee.canChange && (
+                            <Button size="sm" onClick={() => router.post(`/app/referrals/${id}/fee/accept`, {}, { preserveScroll: true })}>
+                                Accept
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            {fee.canChange && (
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                    Propose a different fee:
+                    <Select aria-label="Fee type" className="h-9 w-40" value={type} onChange={(e) => setType(e.target.value)}>
+                        <option value="percent">% of closing value</option>
+                        <option value="flat">Flat amount ($)</option>
+                    </Select>
+                    <Input
+                        aria-label="Fee value"
+                        type="number"
+                        min="0"
+                        className="h-9 w-28"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                    />
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={!value}
+                        onClick={() => router.post(`/app/referrals/${id}/fee`, { type, value }, { preserveScroll: true })}
+                    >
+                        Propose
+                    </Button>
+                </div>
+            )}
+            {!fee.canChange && <p className="text-xs text-muted">The agreement has been signed, so the fee is fixed.</p>}
+        </Card>
     );
 }
