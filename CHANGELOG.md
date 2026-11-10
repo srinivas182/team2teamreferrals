@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 19b — Seat challenges
+- Seats are earned: when a holder's service score stays below the group's threshold (default 70) for the challenge period (default 60 days), the top waitlisted team challenges for the seat. Checked daily.
+- Fairness guards: a holder's first 90 days are exempt; a score needs at least 5 referrals (otherwise nothing is tracked); approved time off pauses the clock; recovering above the threshold at any daily check resets it.
+- The holder gets 30 days with a clear target ("reach 70 by …") and the actions that would help most. Recovered: the challenge closes. Not recovered: the seat passes after a 7-day appeal period, and the former holder becomes backup (if the slot is free), joins the waitlist, or leaves, as they choose.
+- Appeals go to the group owner, who keeps the seat with the holder or moves it, with a note both teams see; the seat stays put until then. Admins can decide any challenge or cancel one (audited).
+- Group owners and admins (group page → Seat challenges): seats at risk with days below the threshold, open challenges, appeals and outcomes. Holders and challengers see their challenge on the Performance page. Every step is notified and recorded as seat events.
+- 330 PHP tests in total (4 new) covering the full lifecycle across 180+ simulated days.
+
 ### Sprint 19a — Service score, report cards, early warning and time off
 - Service score (Portal → Performance), out of 100 over a rolling 90 days, in four visible parts: answered in time, first contact on time, kept the sender updated, closed the loop. Each part shows the numbers behind it ("4 of 5") and the page says what would help most. No score until 5 referrals, so a quiet period never counts against anyone; a part with nothing to count is left out rather than given free marks.
 - Monthly report card on the 1st for every seat holder (received, accepted, won, sent, average time to accept, score, what to improve), by email and in the portal, kept for a year.

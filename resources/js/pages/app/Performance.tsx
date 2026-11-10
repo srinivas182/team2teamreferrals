@@ -1,11 +1,12 @@
 import { router, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { CalendarOff, Lightbulb, Trash2 } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, Select } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
@@ -18,7 +19,22 @@ type CardT = {
     score: number | null;
     data: { received: number; accepted: number; won: number; sent: number; avg_accept_minutes: number | null; tips: string[] };
 };
+type Ch = {
+    id: number;
+    status: string;
+    territory: string;
+    holder: string;
+    challenger: string;
+    isHolder: boolean;
+    threshold: number;
+    scoreAtOpen: number;
+    windowEnds: string;
+    appealUntil: string | null;
+    choice: string;
+};
 type Props = {
+    challenges: Ch[];
+    isLeader: boolean;
     score: Score;
     tips: string[];
     minReferrals: number;
@@ -31,7 +47,19 @@ type Props = {
 };
 
 /** The service score, fully explained: every part, the numbers behind it, and what would help most. */
-export default function Performance({ score, tips, minReferrals, windowDays, cards, timeOff, canEdit, status, seo }: Props) {
+export default function Performance({
+    challenges = [],
+    isLeader = false,
+    score,
+    tips,
+    minReferrals,
+    windowDays,
+    cards,
+    timeOff,
+    canEdit,
+    status,
+    seo,
+}: Props) {
     const { auth } = usePage<SharedProps>().props;
     const off = useForm({ from: '', to: '', reason: '' });
     const s = score.score;
@@ -43,6 +71,9 @@ export default function Performance({ score, tips, minReferrals, windowDays, car
                     {statusMessage(status)}
                 </Alert>
             )}
+            {challenges.map((c) => (
+                <ChallengeCard key={c.id} c={c} current={s} canAct={isLeader} />
+            ))}
             <div className="grid max-w-5xl gap-6 lg:grid-cols-[1.3fr_1fr]">
                 <Card className="p-6">
                     <div className="flex items-end gap-3">
@@ -169,5 +200,73 @@ export default function Performance({ score, tips, minReferrals, windowDays, car
                 </div>
             </div>
         </PortalLayout>
+    );
+}
+
+const CHOICES: Record<string, string> = {
+    backup: 'Become the backup (if the slot is free)',
+    waitlist: 'Join the waitlist',
+    leave: 'Leave this seat',
+};
+
+function ChallengeCard({ c, current, canAct }: { c: Ch; current: number | null; canAct: boolean }) {
+    const [reason, setReason] = useState('');
+    const until = new Date(c.windowEnds.replace(' ', 'T') + 'Z').toLocaleDateString();
+    return (
+        <Card className="mb-6 max-w-5xl space-y-3 border-warning p-6">
+            <h2 className="font-semibold">{c.isHolder ? `Your ${c.territory} seat is being challenged` : `You’re challenging for ${c.territory}`}</h2>
+            {c.status === 'open' && (
+                <p className="text-sm">
+                    {c.isHolder
+                        ? `Reach a service score of ${c.threshold} by ${until} to keep the seat. You’re at ${current ?? '—'} now.`
+                        : `${c.holder} has until ${until} to reach ${c.threshold}. If they don’t, the seat is offered to you.`}
+                </p>
+            )}
+            {c.status === 'pending' && (
+                <p className="text-sm">
+                    The score stayed below {c.threshold}. The seat passes to {c.isHolder ? c.challenger : 'you'} on{' '}
+                    {c.appealUntil ? new Date(c.appealUntil.replace(' ', 'T') + 'Z').toLocaleDateString() : ''}
+                    {c.isHolder ? ' unless you appeal to the group owner before then.' : ', unless the holder appeals.'}
+                </p>
+            )}
+            {c.status === 'appealed' && <p className="text-sm">An appeal is with the group owner. The seat stays where it is until they decide.</p>}
+            {c.isHolder && canAct && (
+                <div className="space-y-2">
+                    <label className="flex flex-wrap items-center gap-2 text-sm">
+                        If the seat passes on:
+                        <Select
+                            aria-label="If the seat passes on"
+                            className="h-9 w-72"
+                            value={c.choice}
+                            onChange={(e) => router.post(`/app/challenges/${c.id}/choice`, { choice: e.target.value }, { preserveScroll: true })}
+                        >
+                            {Object.entries(CHOICES).map(([k, v]) => (
+                                <option key={k} value={k}>
+                                    {v}
+                                </option>
+                            ))}
+                        </Select>
+                    </label>
+                    {c.status === 'pending' && (
+                        <div className="flex flex-wrap gap-2">
+                            <Input
+                                aria-label="Why should the seat stay with you?"
+                                placeholder="Why should the seat stay with you? (the group owner decides)"
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                className="min-w-72 flex-1"
+                            />
+                            <Button
+                                variant="secondary"
+                                disabled={reason.trim().length < 10}
+                                onClick={() => router.post(`/app/challenges/${c.id}/appeal`, { reason, choice: c.choice }, { preserveScroll: true })}
+                            >
+                                Appeal
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </Card>
     );
 }

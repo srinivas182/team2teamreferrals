@@ -186,6 +186,35 @@ final class Seats
 
     // ---- internals ----
 
+    /**
+     * After a seat challenge: the challenger becomes the holder; the former holder becomes backup (if they chose it
+     * and the slot is free), joins the waitlist, or leaves. Audited as seat events, and both teams are told.
+     */
+    public function transferAfterChallenge(Seat $seat, Team $challenger, string $holderChoice, ?User $actor): void
+    {
+        DB::transaction(function () use ($seat, $challenger, $holderChoice, $actor) {
+            $seat = Seat::query()->lockForUpdate()->with(['group', 'primary'])->findOrFail($seat->id);
+            $former = $seat->primary;
+            SeatWaitlist::query()->where(['seat_id' => $seat->id, 'team_id' => $challenger->id])->delete();
+            if ($seat->backup_team_id === $challenger->id) {
+                $seat->forceFill(['backup_team_id' => null])->save();
+            }
+            $this->makePrimary($seat, $challenger, $actor);
+            $seat->forceFill(['below_since' => null])->save();
+            $this->event($seat, $challenger, 'challenge_won', [], $actor);
+            if ($former !== null) {
+                $this->event($seat, $former, 'challenge_lost', ['choice' => $holderChoice], $actor);
+                match (true) {
+                    $holderChoice === 'backup' && $seat->backup_team_id === null => $this->makeBackup($seat, $former, $actor),
+                    $holderChoice !== 'leave' => $this->addToWaitlist($seat, $former, false),
+                    default => null,
+                };
+                $this->tellTeam($former, $seat, 'seat.decision', 'Seat passed on after the challenge', "{$challenger->name} now holds {$seat->territory_name}. ".($holderChoice === 'leave' ? 'Thank you for being part of the network.' : 'You can earn it back: keep your score up from your new place.'));
+            }
+            $this->tellTeam($challenger, $seat, 'seat.decision', 'You won the seat challenge', "You now hold the {$seat->territory_name} seat. Welcome!");
+        });
+    }
+
     private function makePrimary(Seat $seat, Team $team, ?User $actor): string
     {
         $months = (int) ($seat->group->pricing['trial_months'] ?? 3);
