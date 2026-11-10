@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $description
  * @property bool $license_required
  * @property bool $training_locked
+ * @property bool $client_texting_approved
  * @property string $status
  * @property ?\Illuminate\Support\Carbon $compliance_approved_at
  * @property ?int $compliance_approved_by
@@ -38,11 +39,11 @@ final class Industry extends Model
 
     protected $fillable = ['slug', 'name', 'family', 'tier', 'territory_unit', 'terminology', 'icon', 'description', 'license_required', 'training_locked'];
 
-    protected $attributes = ['status' => 'draft', 'icon' => 'Briefcase', 'license_required' => true, 'training_locked' => false, 'description' => null, 'compliance_approved_at' => null, 'compliance_approved_by' => null, 'compliance_note' => null, 'catalogue_snapshot' => null];
+    protected $attributes = ['status' => 'draft', 'icon' => 'Briefcase', 'license_required' => true, 'training_locked' => false, 'client_texting_approved' => false, 'description' => null, 'compliance_approved_at' => null, 'compliance_approved_by' => null, 'compliance_note' => null, 'catalogue_snapshot' => null];
 
     protected function casts(): array
     {
-        return ['tier' => Tier::class, 'terminology' => 'array', 'license_required' => 'boolean', 'training_locked' => 'boolean', 'compliance_approved_at' => 'datetime', 'catalogue_snapshot' => 'array'];
+        return ['tier' => Tier::class, 'terminology' => 'array', 'license_required' => 'boolean', 'training_locked' => 'boolean', 'client_texting_approved' => 'boolean', 'compliance_approved_at' => 'datetime', 'catalogue_snapshot' => 'array'];
     }
 
     public function getRouteKeyName(): string

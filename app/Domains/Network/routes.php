@@ -45,6 +45,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('{industry}/messages', [AdminIndustryMessagesController::class, 'save'])->name('messages.save');
         Route::post('{industry}/messages/reset', [AdminIndustryMessagesController::class, 'reset'])->name('messages.reset');
         Route::post('{industry}/messages/{template}/activate', [AdminIndustryMessagesController::class, 'activate'])->name('messages.activate');
+        Route::post('{industry}/client-texting', [App\Domains\Referrals\Http\GroupWordingController::class, 'texting'])->name('client-texting');
         Route::get('{industry}/training', [App\Domains\Network\Training\AdminTrainingController::class, 'show'])->name('training.show');
         Route::put('{industry}/training', [App\Domains\Network\Training\AdminTrainingController::class, 'save'])->name('training.save');
         Route::get('{industry}/agreement', [AdminAgreementController::class, 'show'])->name('agreement.show');
@@ -177,6 +178,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/ask-client', [App\Domains\Referrals\Http\ReferralController::class, 'askClient'])->middleware('throttle:10,60')->name('referrals.ask-client');
     Route::post('app/referrals/{referral}/messages', [App\Domains\Referrals\Http\ReferralController::class, 'message'])->middleware('throttle:60,60')->name('referrals.message');
     Route::post('app/referrals/{referral}/sign', [App\Domains\Referrals\Http\ReferralController::class, 'sign'])->middleware('throttle:20,60')->name('referrals.sign');
     Route::get('app/referrals/{referral}/agreement.pdf', [App\Domains\Referrals\Http\ReferralController::class, 'agreementPdf'])->name('referrals.agreement.pdf');
@@ -187,5 +189,14 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 Route::middleware(['web', 'noindex:always'])->group(function (): void {
     Route::get('q/{referral}/{team}', [App\Domains\Referrals\Http\ReferralController::class, 'quick'])->middleware('signed')->whereNumber('team')->name('referrals.quick');
     Route::post('q/{referral}/{team}', [App\Domains\Referrals\Http\ReferralController::class, 'quickAccept'])->middleware(['signed', 'throttle:20,1'])->whereNumber('team')->name('referrals.quick.accept');
+    Route::get('c/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientConsent'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client-consent');
+    Route::post('c/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientConsentConfirm'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:20,1')->name('referrals.client-consent.confirm');
     Route::get('r/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'client'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client');
+});
+
+// Group owners: their own wording for referral messages.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/group/{group}/messages', [App\Domains\Referrals\Http\GroupWordingController::class, 'show'])->name('group.wording');
+    Route::post('app/group/{group}/messages', [App\Domains\Referrals\Http\GroupWordingController::class, 'save'])->name('group.wording.save');
+    Route::delete('app/group/{group}/messages/{type}', [App\Domains\Referrals\Http\GroupWordingController::class, 'reset'])->name('group.wording.reset');
 });

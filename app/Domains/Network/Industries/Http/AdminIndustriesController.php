@@ -63,7 +63,7 @@ final class AdminIndustriesController
 
         return Inertia::render('admin/industries/Show', [
             'industry' => [
-                'slug' => $industry->slug, 'name' => $industry->name, 'family' => $industry->family, 'tier' => $industry->tier->value, 'territory' => $industry->territory_unit,
+                'slug' => $industry->slug, 'name' => $industry->name, 'clientTextingApproved' => $industry->client_texting_approved, 'family' => $industry->family, 'tier' => $industry->tier->value, 'territory' => $industry->territory_unit,
                 'terminology' => $industry->terms(), 'icon' => $industry->icon, 'description' => $industry->description, 'licenseRequired' => $industry->license_required,
                 'status' => $industry->status, 'approved' => $industry->isApproved(), 'approvedAt' => $industry->compliance_approved_at?->toDayDateTimeString(),
                 'approvedBy' => $industry->approver?->name, 'note' => $industry->compliance_note,

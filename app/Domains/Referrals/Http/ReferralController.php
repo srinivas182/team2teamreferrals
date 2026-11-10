@@ -34,6 +34,7 @@ final class ReferralController
                 'slug' => $g->slug, 'name' => $g->name, 'industry' => $g->industry->name, 'terms' => $g->industry->terms(),
                 'form' => $this->templates->resolve('form', $g->industry, $g->id)['body'], 'consent' => Referrals::consentText($g),
                 'blocked' => app(\App\Domains\Network\Training\Training::class)->blocks($user, $g), 'trainingUrl' => '/app/training/'.$g->industry->slug,
+                'canText' => $g->industry->client_texting_approved,
             ], $groups),
             'refresher' => $firstTime && $groups !== [] ? $groups[0]->industry->slug : null,
             'seo' => SeoData::private('Send a referral')->toArray(),
@@ -59,10 +60,10 @@ final class ReferralController
     {
         $d = $request->validate([
             'group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id'], 'answers' => ['required', 'array'],
-            'consent' => ['accepted'], 'notes' => ['nullable', 'string', 'max:2000'], 'confirm_duplicate' => ['boolean'],
+            'consent' => ['accepted'], 'notes' => ['nullable', 'string', 'max:2000'], 'confirm_duplicate' => ['boolean'], 'text_client' => ['boolean'],
         ], ['consent.accepted' => 'Your client must agree to be contacted before you send a referral.']);
         $user = $this->user($request);
-        $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false));
+        $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false), (bool) ($d['text_client'] ?? false));
         if ($r['duplicate']) {
             return back()->with('duplicate', true);
         }
@@ -98,6 +99,8 @@ final class ReferralController
                 'sender' => $referral->sender->name, 'receiver' => $referral->receiver?->name, 'routedTo' => $referral->routed_to,
                 'respondBy' => $referral->respond_by->toIso8601String(), 'client' => $hide ? $referral->shortClientName() : $referral->client_name, 'notes' => $referral->notes,
                 'consentText' => $referral->consent_text, 'consentAt' => $referral->consent_at->toIso8601String(), 'declineReason' => $referral->decline_reason,
+                'clientConfirmed' => $referral->client_confirmed_at?->toIso8601String(), 'consentRequested' => $referral->consent_requested_at !== null,
+                'canAskClient' => $team?->id === $referral->sender_team_id && Referrals::canTextClient($referral),
                 'answers' => collect($referral->answers)->map(fn ($v, $k) => ['label' => (string) ($form[$k]['label'] ?? $k), 'value' => $hide && ($form[$k]['sensitive'] ?? false) ? null : $v])->values(),
             ],
             'isReceiver' => $isReceiver,
@@ -114,6 +117,33 @@ final class ReferralController
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
         ]);
+    }
+
+    public function askClient(Request $request, Referral $referral): RedirectResponse
+    {
+        abort_unless(Team::of($this->user($request))?->id === $referral->sender_team_id, 403);
+        $this->referrals->requestClientConsent($referral) || abort(422, 'This client can’t be texted (not approved for this industry, no mobile, already asked, or opted out).');
+
+        return back()->with('status', 'client-asked');
+    }
+
+    /** The client's confirm screen from the text (a button, so link previews can't confirm on their behalf). */
+    public function clientConsent(string $token): Response
+    {
+        $r = Referral::query()->with(['sender', 'seat', 'group.industry'])->where('consent_token_hash', hash('sha256', $token))->first();
+
+        return Inertia::render('ClientConsent', [
+            'request' => $r ? ['sender' => $r->sender->name, 'territory' => $r->seat->territory_name, 'pro' => $r->group->industry->terms()['pro'], 'firstName' => strtok($r->client_name, ' ') ?: 'there', 'token' => $token] : null,
+            'seo' => (new SeoData(title: 'Confirm your introduction', description: 'Team to Team Referrals', index: false))->toArray(),
+        ]);
+    }
+
+    public function clientConsentConfirm(string $token): RedirectResponse
+    {
+        $r = Referral::query()->where('consent_token_hash', hash('sha256', $token))->firstOrFail();
+        $this->referrals->confirmClient($r, 'link');
+
+        return redirect()->to('/r/'.$r->client_token);
     }
 
     public function message(Request $request, Referral $referral): RedirectResponse

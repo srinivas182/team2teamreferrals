@@ -33,7 +33,7 @@ final class Notifier
     public const DEFAULT_TERMS = ['pro' => 'pro', 'pros' => 'pros', 'client_term' => 'client', 'clients_term' => 'clients', 'referral_term' => 'referral', 'fee_term' => 'referral fee'];
 
     /** @param array<string, scalar|null> $data */
-    public function send(User $user, string $type, array $data = [], ?string $url = null, ?Industry $industry = null): void
+    public function send(User $user, string $type, array $data = [], ?string $url = null, ?Industry $industry = null, ?int $groupId = null): void
     {
         $def = NotificationCatalogue::get($type);
         $data = [...self::DEFAULT_TERMS, ...($industry?->mergeTerms() ?? []), 'first_name' => $user->first_name, 'url' => $url, ...$data];
@@ -44,7 +44,7 @@ final class Notifier
             if (! $this->prefs->allows($user, $type, $channel)) {
                 continue;
             }
-            $w = $this->templates->wording($type, $channel, $industry?->id);
+            $w = $this->templates->wording($type, $channel, $industry?->id, $groupId);
             $title = NotificationCatalogue::render($w['subject'], $data);
             $body = NotificationCatalogue::render($w['body'], $data);
 

@@ -49,7 +49,7 @@ final class ReferralAgreements
         ]);
         foreach ([$ref->sender->leader, $ref->receiver?->leader] as $u) {
             if ($u !== null) {
-                $this->notifier->send($u, 'referral.agreement', ['headline' => "Agreement ready to sign: {$ref->client_name}", 'body' => 'Please review and sign the referral agreement. It takes a minute, and work can continue meanwhile.'], url('/app/referrals/'.$ref->ulid), $industry);
+                $this->notifier->send($u, 'referral.agreement', ['headline' => "Agreement ready to sign: {$ref->client_name}", 'body' => 'Please review and sign the referral agreement. It takes a minute, and work can continue meanwhile.'], url('/app/referrals/'.$ref->ulid), $industry, $ref->group_id);
             }
         }
     }
@@ -89,7 +89,7 @@ final class ReferralAgreements
             }
             foreach (['sender' => $ref->sender->leader, 'receiver' => $ref->receiver?->leader] as $side => $u) {
                 if ($u !== null && $a->{$side.'_signed_at'} === null) {
-                    $this->notifier->send($u, 'referral.agreement', ['headline' => "Reminder: sign the agreement for {$ref->client_name}", 'body' => 'The other side is waiting for your signature. It takes a minute.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+                    $this->notifier->send($u, 'referral.agreement', ['headline' => "Reminder: sign the agreement for {$ref->client_name}", 'body' => 'The other side is waiting for your signature. It takes a minute.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
                 }
             }
             DB::table('referral_agreements')->where('id', $a->id)->update(['reminded_at' => now()]);
@@ -106,7 +106,7 @@ final class ReferralAgreements
         DB::table('referral_agreements')->where('id', $a->id)->update(['status' => 'signed', 'pdf_path' => $path, 'updated_at' => now()]);
         foreach ([$ref->sender->leader, $ref->receiver?->leader] as $u) {
             if ($u !== null) {
-                $this->notifier->send($u, 'referral.agreement', ['headline' => "Agreement signed: {$ref->client_name}", 'body' => 'Both sides have signed. The signed PDF is on the referral.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+                $this->notifier->send($u, 'referral.agreement', ['headline' => "Agreement signed: {$ref->client_name}", 'body' => 'Both sides have signed. The signed PDF is on the referral.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
             }
         }
     }

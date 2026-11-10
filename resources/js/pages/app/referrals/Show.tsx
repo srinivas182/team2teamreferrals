@@ -28,6 +28,9 @@ type Props = {
         consentText: string;
         consentAt: string;
         declineReason: string | null;
+        clientConfirmed: string | null;
+        consentRequested: boolean;
+        canAskClient: boolean;
         answers: { label: string; value: unknown }[];
     };
     isReceiver: boolean;
@@ -108,7 +111,23 @@ export default function ReferralShow({ referral: r, isReceiver, agreement: ag, m
                             ))}
                         </dl>
                         {r.notes && <p className="mt-4 rounded-md bg-bg p-3 text-sm">{r.notes}</p>}
-                        <p className="mt-4 text-xs text-muted">
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                            {r.clientConfirmed ? (
+                                <Badge tone="success">Client confirmed</Badge>
+                            ) : r.consentRequested ? (
+                                <Badge tone="warning">Waiting for the client to confirm</Badge>
+                            ) : null}
+                            {r.canAskClient && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => router.post(`/app/referrals/${r.id}/ask-client`, {}, { preserveScroll: true })}
+                                >
+                                    Ask client to confirm by text
+                                </Button>
+                            )}
+                        </div>
+                        <p className="mt-2 text-xs text-muted">
                             Consent recorded {new Date(r.consentAt).toLocaleString()}: “{r.consentText}”
                         </p>
                     </Card>

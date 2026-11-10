@@ -79,6 +79,9 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                     </p>
                 </Card>
                 <Card className="p-6">
+                    <a href={`/app/group/${group.slug}/messages`} className="float-right text-sm font-medium text-primary">
+                        Message wording
+                    </a>
                     <h2 className="font-semibold">Network training</h2>
                     <p className="mt-1 text-sm text-muted">
                         {group.trainingRequired

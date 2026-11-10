@@ -22,6 +22,7 @@ type G = {
     consent: string;
     blocked: boolean;
     trainingUrl: string;
+    canText: boolean;
 };
 type Preview = { territory: string; team: string | null; role: string | null; backup: string | null; avgAcceptMinutes: number | null };
 
@@ -80,6 +81,7 @@ export default function Send({ groups, refresher, seo }: { groups: G[]; refreshe
         consent: false,
         notes: '',
         confirm_duplicate: false,
+        text_client: false,
     });
     const [preview, setPreview] = useState<Preview | null>(null);
     const g = groups.find((x) => x.slug === form.data.group);
@@ -176,6 +178,20 @@ export default function Send({ groups, refresher, seo }: { groups: G[]; refreshe
                         </span>
                     </label>
                     {e.consent && <p className="text-sm text-danger">{e.consent}</p>}
+                    {g?.canText && (
+                        <label className="flex items-start gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={form.data.text_client}
+                                onChange={(ev) => form.setData('text_client', ev.target.checked)}
+                            />
+                            <span>
+                                Also text my {g.terms.client} to confirm (recommended: stronger proof of consent, and they get a link to follow their
+                                introduction).
+                            </span>
+                        </label>
+                    )}
                     {flash.duplicate ? (
                         <Alert tone="info">
                             <AlertTriangle className="mr-1 inline size-4" aria-hidden /> This {g?.terms.client ?? 'client'} was referred in this
