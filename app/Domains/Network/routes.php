@@ -153,3 +153,12 @@ Route::middleware(['web', 'module:prelaunch'])->group(function (): void {
     Route::post('reserve/claim/{token}', [App\Domains\Network\Prelaunch\ReserveController::class, 'claim'])->middleware(['auth', 'verified'])->name('reserve.claim');
     Route::get('reserve/claim/{token}', fn (string $token) => redirect('/reserve/confirm/'.$token))->middleware(['auth']);
 });
+
+// Training: lessons and quiz for members; the group switch for owners.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/training', [App\Domains\Network\Training\TrainingController::class, 'index'])->name('training.index');
+    Route::get('app/training/{industry}', [App\Domains\Network\Training\TrainingController::class, 'show'])->name('training.show');
+    Route::post('app/training/{industry}/lessons/{index}', [App\Domains\Network\Training\TrainingController::class, 'lesson'])->whereNumber('index')->name('training.lesson');
+    Route::post('app/training/{industry}/quiz', [App\Domains\Network\Training\TrainingController::class, 'submit'])->middleware('throttle:20,60')->name('training.submit');
+    Route::post('app/group/{group}/training', [App\Domains\Network\Training\TrainingController::class, 'ownerSwitch'])->name('training.switch');
+});

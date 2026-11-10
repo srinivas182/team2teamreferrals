@@ -33,6 +33,7 @@ final class PortalHomeController
                 ['label' => 'Complete your team profile', 'done' => $strength['score'] >= 50, 'href' => '/app/team'],
                 ['label' => 'Add your license', 'done' => $licenses > 0, 'href' => '/app/profile'],
                 ['label' => 'Apply for your city', 'done' => $applied, 'href' => '/app/groups'],
+                ['label' => 'Complete your network training', 'done' => $applied && collect(app(\App\Domains\Network\Training\Training::class)->industriesFor($user))->every(fn ($i) => app(\App\Domains\Network\Training\Training::class)->passed($user, $i)), 'href' => '/app/training'],
                 ['label' => 'Hold your first seat', 'done' => $holds, 'href' => '/app/groups'],
             ],
             'strength' => $strength,

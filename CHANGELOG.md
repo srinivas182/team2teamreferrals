@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 15a — Network training and the training gate
+- Training per industry, written in its own words: five bite-size lessons (how the network works, consent, deadlines, agreements and money, keeping your seat) and a five-question quiz. Tier B lessons and questions cover the no-fee rule; video and transcript slots are ready.
+- Members (Portal → Training): progress saves per lesson; the quiz needs 80%; a wrong answer explains why; retakes ask only the missed questions. Answers never reach the browser.
+- The training gate: when a group requires training, members who haven't passed can't send or receive new referrals once the grace period (default 14 days) ends. Work in progress always continues, and new referrals go to the backup team meanwhile.
+- Group owners switch it on or off from their group overview; switching on starts a new grace period and tells every seat holder. The platform locks it on for Tier B industries (owners can't switch it off there).
+- Material changes: raising a training's minimum version asks members to re-train.
+- "Complete your network training" joins the onboarding checklist; Training added to the portal menu.
+- Fixed in review: on a fresh install, Tier B industries were created after the migration that locks their training, so they weren't locked; the catalogue now locks them on creation.
+- 261 PHP tests in total (6 new).
+
 ### Sprint 14c — Branded share images on the server
 - "We claimed Houston" cards are now rendered on the server with librsvg and the Inter brand font, in link-preview (1200×630), square and story sizes, from one design, so social previews, downloads and the share page always match. The headline auto-fits long place names.
 - Rendered once in the background when a reservation is confirmed and stored on the public disk (CDN-ready, cached for a year); rendered on demand if missing; the brand image is the fallback, so a shared link never looks broken.

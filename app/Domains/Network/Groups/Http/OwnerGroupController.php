@@ -24,7 +24,7 @@ final class OwnerGroupController
 
         return Inertia::render('app/group/Overview', [
             'group' => ['slug' => $group->slug, 'name' => $group->name, 'description' => $group->description, 'status' => $group->status, 'visibility' => $group->visibility,
-                'industry' => $group->industry->name, 'terms' => $group->industry->terms(), 'rules' => $group->rules, 'pricing' => $group->pricing],
+                'industry' => $group->industry->name, 'terms' => $group->industry->terms(), 'trainingRequired' => \App\Domains\Network\Training\Training::required($group), 'trainingLocked' => $group->industry->training_locked, 'trainingFrom' => \App\Domains\Network\Training\Training::enforcedFrom($group)->toDateString(), 'rules' => $group->rules, 'pricing' => $group->pricing],
             'health' => GroupSettings::health($group),
             'upcoming' => DB::table('group_scheduled_changes')->where('group_id', $group->id)->whereNull('applied_at')->whereNull('cancelled_at')->orderBy('effective_on')->get(['section', 'effective_on'])
                 ->map(fn ($c) => ['section' => (string) $c->section, 'effectiveOn' => (string) $c->effective_on]),

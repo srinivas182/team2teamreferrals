@@ -42,7 +42,8 @@ final class CatalogueSync
                 ];
                 $industry = Industry::query()->where('slug', $slug)->first();
                 if ($industry === null) {
-                    $industry = Industry::create(['slug' => $slug, ...$values, 'tier' => Tier::from($values['tier'])]);
+                    // Tier B (restricted) industries start with training locked on: its no-fee rules are a compliance matter.
+                    $industry = Industry::create(['slug' => $slug, ...$values, 'tier' => Tier::from($values['tier']), 'training_locked' => $values['tier'] === 'B']);
                     $industry->forceFill(['catalogue_snapshot' => $values])->save();
                     $this->templatesFor($industry, $entry);
                     $stats['created']++;

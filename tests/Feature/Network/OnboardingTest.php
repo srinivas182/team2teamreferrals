@@ -35,7 +35,7 @@ it('scores profile strength from what the team has filled in', function () {
 
 it('walks new members from sign-up to first seat on the portal home', function () {
     $u = User::factory()->create();
-    $this->actingAs($u)->get('/app')->assertOk()->assertInertia(fn ($p) => $p->component('app/Home')->has('checklist', 7)->where('checklist.5.label', 'Apply for your city')->where('checklist.5.href', '/app/groups')->where('strength.score', 0));
+    $this->actingAs($u)->get('/app')->assertOk()->assertInertia(fn ($p) => $p->component('app/Home')->has('checklist', 8)->where('checklist.5.label', 'Apply for your city')->where('checklist.5.href', '/app/groups')->where('strength.score', 0));
 });
 
 it('lists public networks to join and hides private ones', function () {
