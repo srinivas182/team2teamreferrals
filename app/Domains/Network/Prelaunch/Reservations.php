@@ -67,6 +67,9 @@ final class Reservations
         if ($r !== null && $r->status === 'pending') {
             DB::table('reservations')->where('id', $r->id)->update(['status' => 'confirmed', 'confirmed_at' => now(), 'updated_at' => now()]);
             $r->status = 'confirmed';
+            if ($r->share_id) {
+                GenerateShareImages::dispatch((string) $r->share_id);
+            }
         }
 
         return $r;

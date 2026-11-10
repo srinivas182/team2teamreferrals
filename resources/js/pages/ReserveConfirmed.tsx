@@ -27,6 +27,9 @@ export default function ReserveConfirmed({
     seo: Seo;
 }) {
     const [copied, setCopied] = useState(false);
+    const caption = share
+        ? `We’ve reserved ${share.territory} on Team to Team Referrals as a founding member of ${share.group}. Have a client moving here? We’re the verified pro to call.`
+        : '';
     // Server-side rendering has no window; the link fills in on the client.
     const link =
         share && typeof window !== 'undefined' ? `${window.location.origin}/reserve/c/${share.shareId}` : share ? `/reserve/c/${share.shareId}` : '';
@@ -94,14 +97,21 @@ export default function ReserveConfirmed({
                             </Button>
                         </div>
                         <div className="flex flex-wrap gap-2 text-sm">
-                            <a
+                            <button
                                 className="font-medium text-primary"
-                                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`}
-                                target="_blank"
-                                rel="noreferrer"
+                                onClick={() => {
+                                    // LinkedIn doesn't accept pre-filled text, so the caption is copied for pasting.
+                                    void navigator.clipboard.writeText(`${caption} ${link}`);
+                                    setCopied(true);
+                                    window.open(
+                                        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`,
+                                        '_blank',
+                                        'noopener',
+                                    );
+                                }}
                             >
-                                Share on LinkedIn
-                            </a>
+                                Post on LinkedIn (caption copied)
+                            </button>
                             <a
                                 className="font-medium text-primary"
                                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`}
@@ -119,7 +129,7 @@ export default function ReserveConfirmed({
                                 X
                             </a>
                         </div>
-                        <ShareCards business={share.business} territory={share.territory} group={share.group} />
+                        <ShareCards shareId={share.shareId} territory={share.territory} />
                     </Card>
                 )}
             </section>

@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
-import { shareSvg } from '@/components/prelaunch/ShareCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -15,7 +14,7 @@ export default function ReserveShare({ share, seo }: { share: Share; seo: Seo })
             <SeoHead seo={seo} />
             <section className="mx-auto max-w-3xl px-5 py-14 text-center">
                 <img
-                    src={'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(shareSvg('og', share.business, share.territory, share.group))}
+                    src={`/reserve/c/${share.shareId}/og.png`}
                     alt={`${share.business} reserved ${share.territory}`}
                     className="mx-auto w-full rounded-xl shadow-lg"
                 />

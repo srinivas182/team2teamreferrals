@@ -78,6 +78,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - name: Image rendering for share cards (librsvg, Inter font)
+        run: sudo apt-get update -q && sudo apt-get install -y -q librsvg2-bin fonts-inter
       - uses: shivammathur/setup-php@v2
         with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
       - uses: actions/cache@v6

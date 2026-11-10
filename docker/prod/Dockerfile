@@ -17,7 +17,9 @@ RUN npm run build
 
 # 3. Runtime.
 FROM dunglas/frankenphp:1-php8.4-bookworm AS app
-RUN install-php-extensions pdo_mysql redis intl zip bcmath pcntl opcache \
+# librsvg (rsvg-convert) + the Inter font render the "We claimed …" share cards on the server.
+RUN apt-get update && apt-get install -y --no-install-recommends librsvg2-bin fonts-inter && rm -rf /var/lib/apt/lists/* \
+    && install-php-extensions pdo_mysql redis intl zip bcmath pcntl opcache \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/prod/php.ini "$PHP_INI_DIR/conf.d/zz-t2t.ini"
 WORKDIR /app

@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 14c — Branded share images on the server
+- "We claimed Houston" cards are now rendered on the server with librsvg and the Inter brand font, in link-preview (1200×630), square and story sizes, from one design, so social previews, downloads and the share page always match. The headline auto-fits long place names.
+- Rendered once in the background when a reservation is confirmed and stored on the public disk (CDN-ready, cached for a year); rendered on demand if missing; the brand image is the fallback, so a shared link never looks broken.
+- Link previews on LinkedIn, Facebook, X, WhatsApp and iMessage show the member's own card (Open Graph image with dimensions, large Twitter card).
+- Thank-you email after confirming: the share link, a ready-to-post caption and the card attached for forwarding to clients.
+- "Post on LinkedIn" copies a pre-written caption (LinkedIn doesn't accept pre-filled text) and opens LinkedIn's share dialog.
+- Production image and CI include librsvg and the Inter font; CI renders real cards in the tests.
+- Found in review: ImageMagick's built-in SVG renderer dropped gradients, transparency and the arc, so rendering uses librsvg directly; the preview image URL was doubled (http://…http://…), which networks would have rejected.
+- 255 PHP tests in total (4 new).
+
 ### Sprint 14b — Live map, share cards and invite-to-move-up
 - Live reservations map on `/reserve` (switch by industry) and a state race leaderboard of the busiest states.
 - Share cards: "We claimed Houston" in link-preview (1200×630), square (1080×1080) and story (1080×1920) sizes, drawn in the browser and downloaded as PNG; LinkedIn, Facebook and X share links and a copyable link on the confirmation page. (Social networks don't accept SVG link previews, so shared links use a custom title and description with the brand image.)
