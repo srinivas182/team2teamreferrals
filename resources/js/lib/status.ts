@@ -110,6 +110,11 @@ const messages: Record<string, string> = {
     thanked: 'Thank-you sent.',
     'thanks-public': 'This thank-you now shows on your profile.',
     'thanks-private': 'This thank-you is now private.',
+    'fee-paid': 'Marked paid. The referring team has been asked to confirm.',
+    'fee-received': 'Confirmed received. Thank you!',
+    'fee-proposed': 'Fee proposed. The other team has been told.',
+    'fee-agreed': 'Fee agreed. The agreement has been updated to show it.',
+    'fee-default-saved': 'Default referral fee saved.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

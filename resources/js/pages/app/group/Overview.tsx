@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { CalendarClock } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -12,6 +13,9 @@ import type { Seo } from '@/types/seo';
 type Props = {
     group: {
         slug: string;
+        feeAllowed: boolean;
+        feeDefault: { type: string; value: number } | null;
+        feeDueDays: number;
         trainingRequired: boolean;
         trainingLocked: boolean;
         trainingFrom: string;
@@ -78,6 +82,7 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                         Pricing is set by Team to Team.
                     </p>
                 </Card>
+                {group.feeAllowed && <FeeDefault slug={group.slug} fee={group.feeDefault} dueDays={group.feeDueDays} />}
                 <Card className="p-6">
                     <a href={`/app/group/${group.slug}/messages`} className="float-right text-sm font-medium text-primary">
                         Message wording
@@ -129,5 +134,61 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                 </Card>
             </div>
         </PortalLayout>
+    );
+}
+
+function FeeDefault({ slug, fee, dueDays }: { slug: string; fee: { type: string; value: number } | null; dueDays: number }) {
+    const [type, setType] = useState(fee?.type ?? 'percent');
+    const [value, setValue] = useState(fee ? String(fee.value / 100) : '');
+    const [days, setDays] = useState(String(dueDays));
+    return (
+        <Card className="p-6">
+            <h2 className="font-semibold">Default referral fee</h2>
+            <p className="mt-1 text-sm text-muted">
+                Stated in every agreement in this network. Two teams can agree a different fee for one referral before signing.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <select
+                    aria-label="Fee type"
+                    className="h-9 rounded-md border border-line bg-surface px-2"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                >
+                    <option value="percent">% of closing value</option>
+                    <option value="flat">Flat amount ($)</option>
+                </select>
+                <input
+                    aria-label="Fee value"
+                    type="number"
+                    min="0"
+                    className="h-9 w-28 rounded-md border border-line bg-surface px-2"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                />
+                due within
+                <input
+                    aria-label="Days to pay"
+                    type="number"
+                    min="1"
+                    max="90"
+                    className="h-9 w-20 rounded-md border border-line bg-surface px-2"
+                    value={days}
+                    onChange={(e) => setDays(e.target.value)}
+                />
+                days
+                <button
+                    className="h-9 rounded-md bg-primary px-3 font-medium text-white"
+                    onClick={() =>
+                        router.post(
+                            `/app/group/${slug}/fee`,
+                            { type: value ? type : null, value: value || null, due_days: days },
+                            { preserveScroll: true },
+                        )
+                    }
+                >
+                    Save
+                </button>
+            </div>
+        </Card>
     );
 }
