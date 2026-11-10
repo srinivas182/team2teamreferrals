@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 16a — Sending and accepting referrals
+- Send a referral (Portal → Send referral): pick the network and the city where the client needs help; a routing preview shows who will receive it (holder or backup), their average time to accept, and the backup. The industry's (or group's) referral form is shown field by field; required answers are checked; the client's consent is recorded with its exact wording and time.
+- Only teams approved into the group can send, and the training gate applies to senders. Sending to your own territory is refused. A duplicate-client guard warns when the same client (phone or email) was referred in the network in the last 90 days.
+- Routing: the seat holder receives it, or the backup when the holder is inactive or hasn't finished required training.
+- Accept or decline within the group's deadline (24 hours by default), with a reason for declines. A decline or a missed deadline passes it to the backup automatically (checked every 15 minutes); if no backup is available, it closes and the sender is told why.
+- Privacy: until they accept, the receiver sees the client as "Tom B." (title, inbox, notifications) and contact details stay hidden; outsiders can't see a referral at all.
+- Inbox and Sent with live countdowns; referral detail with the answers, notes, consent record and an activity timeline (sent, declined, passed to the backup, accepted, deadline missed). Notifications use each industry's words.
+- First-time senders are offered the one-minute refresher.
+- Found in review: the routing preview used a SQLite-only date function that would have failed on MySQL in production; the client's full name showed in the receiver's title and inbox before acceptance.
+- 279 PHP tests in total (8 new).
+
 ### Sprint 15b part 2 — Answer-engine optimisation (AEO) pass
 - One source of truth for answers (`Aeo`): six key facts and seven questions (how it works, price, value guarantee, taken cities, referral fees by industry, verification, client privacy), used for visible FAQ sections, FAQPage structured data and llms.txt so they always agree.
 - llms.txt rewritten for the 46-industry platform (the old summary still described a broker-only product) with Key facts and Answers sections and only public URLs.

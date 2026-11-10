@@ -78,6 +78,9 @@ const messages: Record<string, string> = {
     'training-saved': 'Training saved as a new version.',
     'training-saved-retrain': 'Saved. Everyone will be asked to re-train on this version.',
     'training-reminded': 'Reminder sent.',
+    'referral-sent': 'Referral sent. The pro has been told and the clock is running.',
+    'referral-accepted': 'Accepted. The sender has been told; the client’s full details are now visible.',
+    'referral-declined': 'Declined. It has moved to the backup pro if there is one, and the sender has been told.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
