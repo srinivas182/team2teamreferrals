@@ -40,7 +40,10 @@ export default function TrainingShow({ industry, lessons, done, questions, retak
             <SeoHead seo={seo} />
             {passed && (
                 <Alert tone="success" className="mb-4 max-w-3xl">
-                    You’ve passed. You can send and receive referrals in {industry.name}.
+                    You’ve passed. You can send and receive referrals in {industry.name}.{' '}
+                    <a href={`/app/training/${industry.slug}/certificate.pdf`} className="font-medium underline">
+                        Download your certificate
+                    </a>
                 </Alert>
             )}
             <div className="max-w-3xl space-y-3">

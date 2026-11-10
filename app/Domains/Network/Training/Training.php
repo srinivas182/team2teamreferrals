@@ -119,6 +119,24 @@ final class Training
         return ['score' => $score, 'passed' => $passed, 'wrong' => $wrong];
     }
 
+    /** "Network trained": every member of the team has passed the training for every industry the team works in. */
+    public function teamTrained(Team $team): bool
+    {
+        $industries = $this->industriesFor($team->leader);
+        if ($industries === []) {
+            return false;
+        }
+        foreach ($team->members()->get() as $m) {
+            foreach ($industries as $i) {
+                if (! $this->passed($m, $i)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     /** Industries this person's team holds, backs up, waits for or applied to: the trainings that matter to them. */
     /** @return list<Industry> */
     public function industriesFor(User $user): array

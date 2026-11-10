@@ -100,6 +100,46 @@ final class TrainingController
         return back()->with('status', $on ? 'training-required' : 'training-optional');
     }
 
+    /** A completion certificate members can show their brokerage or carrier. */
+    public function certificate(Request $request, Industry $industry): \Illuminate\Http\Response
+    {
+        $user = $this->user($request);
+        abort_unless($this->training->passed($user, $industry), 404);
+        $p = $this->training->progress($user, $this->training->module($industry));
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.training-certificate', ['name' => $user->name, 'industry' => $industry->name, 'date' => \Carbon\Carbon::parse((string) $p?->passed_at)->toFormattedDateString(), 'score' => (int) ($p->best_score ?? 0), 'version' => (int) ($p->passed_version ?? 1)])
+            ->setPaper('letter', 'landscape')->download('network-training-'.$industry->slug.'.pdf');
+    }
+
+    /** The one-minute refresher shown before a member's first referral: deadlines, consent and the fee rule, in their words. */
+    public function refresher(Request $request, Industry $industry): Response
+    {
+        $t = $industry->terms();
+        DB::table('onboarding_nudges')->insertOrIgnore(['user_id' => $this->user($request)->id, 'kind' => 'refresher', 'sent_at' => now()]);
+
+        return Inertia::render('app/training/Refresher', [
+            'industry' => ['slug' => $industry->slug, 'name' => $industry->name],
+            'points' => [
+                "Only send a {$t['referral']} when your {$t['client']} has agreed to be contacted.",
+                'Accept or decline within the group’s deadline, usually 24 hours, and make first contact quickly.',
+                'Post an update at least every 7 days until it closes.',
+                $industry->tier->allowsMemberReferralFees() ? "Any {$t['fee']} follows the signed agreement and is paid business to business." : "No fee or payment may pass between members for an {$t['referral']}, in any form.",
+            ],
+            'seo' => SeoData::private('Before your first referral')->toArray(),
+        ]);
+    }
+
+    /** Team leaders nudge a member to finish their training. */
+    public function remind(Request $request, User $member, Notifier $notifier): RedirectResponse
+    {
+        $leader = $this->user($request);
+        $team = \App\Domains\Network\Seats\Models\Team::of($leader);
+        abort_unless($team && $team->roleOf($leader) === 'leader' && $team->roleOf($member) !== null, 403);
+        $notifier->send($member, 'training.reminder', ['headline' => "{$leader->first_name} asked you to finish your network training", 'body' => 'It takes about 15 minutes, and you can do it in short sittings on your phone.'], url('/app/training'));
+
+        return back()->with('status', 'training-reminded');
+    }
+
     private function user(Request $request): User
     {
         /** @var User $u */

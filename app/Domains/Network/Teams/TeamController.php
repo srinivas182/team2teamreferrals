@@ -34,7 +34,9 @@ final class TeamController
             'role' => $role,
             'canEdit' => in_array($role, ['leader', 'assistant'], true),
             'canManage' => $role === 'leader',
-            'members' => $team->members()->orderBy('first_name')->get()->map(fn (User $m) => ['id' => $m->ulid, 'name' => $m->name, 'email' => $m->email, 'role' => (string) $m->getRelationValue('pivot')->role]),
+            'members' => $team->members()->orderBy('first_name')->get()->map(fn (User $m) => ['id' => $m->ulid, 'name' => $m->name, 'email' => $m->email, 'role' => (string) $m->getRelationValue('pivot')->role,
+                'trained' => collect(app(\App\Domains\Network\Training\Training::class)->industriesFor($user))->every(fn ($i) => app(\App\Domains\Network\Training\Training::class)->passed($m, $i))]),
+            'teamTrained' => app(\App\Domains\Network\Training\Training::class)->teamTrained($team),
             'invites' => $role === 'leader' ? DB::table('team_invites')->where(['team_id' => $team->id, 'status' => 'pending'])->where('expires_at', '>', now())->get(['id', 'email', 'role', 'expires_at'])
                 ->map(fn ($i) => ['id' => (int) $i->id, 'email' => (string) $i->email, 'role' => (string) $i->role, 'expires' => (string) $i->expires_at]) : [],
             'roles' => Team::ROLES,

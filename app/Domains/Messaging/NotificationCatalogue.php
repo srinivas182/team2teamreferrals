@@ -43,6 +43,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'onboarding.nudge' => ['group' => 'Network', 'label' => 'Getting started reminders', 'description' => 'A nudge in your first week if you haven’t applied for a seat yet.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'training.reminder' => ['group' => 'Network', 'label' => 'Training reminders', 'description' => 'A nudge to finish the network training, from the platform or your team leader.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,
