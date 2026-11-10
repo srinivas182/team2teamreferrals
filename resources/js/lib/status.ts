@@ -115,6 +115,8 @@ const messages: Record<string, string> = {
     'fee-proposed': 'Fee proposed. The other team has been told.',
     'fee-agreed': 'Fee agreed. The agreement has been updated to show it.',
     'fee-default-saved': 'Default referral fee saved.',
+    'fee-disputed': 'Fee disputed. The group owner will decide; the referring team has been told.',
+    'dispute-decided': 'Decided. Both teams have been told.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

@@ -251,3 +251,11 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/fee/accept', [App\Domains\Referrals\Http\FeeController::class, 'accept'])->name('referrals.fee.accept');
     Route::post('app/group/{group}/fee', [App\Domains\Referrals\Http\FeeController::class, 'groupDefault'])->name('group.fee');
 });
+
+// Dispute centre (group owners and admins), and fee disputes by the paying team.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/group/{group}/disputes', [App\Domains\Referrals\Http\DisputeController::class, 'index'])->name('group.disputes');
+    Route::post('app/earnings/{fee}/dispute', [App\Domains\Referrals\Http\DisputeController::class, 'disputeFee'])->whereNumber('fee')->name('earnings.dispute');
+    Route::post('app/disputes/close/{referral}', [App\Domains\Referrals\Http\DisputeController::class, 'resolveClose'])->name('disputes.close');
+    Route::post('app/disputes/fee/{fee}', [App\Domains\Referrals\Http\DisputeController::class, 'resolveFee'])->whereNumber('fee')->name('disputes.fee');
+});

@@ -45,6 +45,12 @@ final class Closing
         $this->confirmed($ref, 'confirmed', $user);
     }
 
+    /** The group owner (or an admin) upholds a disputed close; the fee and the client's question follow. */
+    public function confirmAsOwner(Referral $ref, User $decider): void
+    {
+        $this->confirmed($ref, 'confirmed', $decider);
+    }
+
     public function dispute(Referral $ref, User $user, string $reason): void
     {
         $this->mustBeSender($ref, $user);

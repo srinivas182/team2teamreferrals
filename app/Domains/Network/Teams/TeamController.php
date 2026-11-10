@@ -41,6 +41,7 @@ final class TeamController
                 ->map(fn ($i) => ['id' => (int) $i->id, 'email' => (string) $i->email, 'role' => (string) $i->role, 'expires' => (string) $i->expires_at]) : [],
             'roles' => Team::ROLES,
             'quickReplies' => \App\Domains\Referrals\Conversations::quickReplies($team),
+            'showDealValue' => (bool) DB::table('teams')->where('id', $team->id)->value('show_deal_value'),
             'status' => session('status'),
             'seo' => SeoData::private('Team')->toArray(),
         ]);
@@ -59,7 +60,12 @@ final class TeamController
             'social' => ['nullable', 'array'],
             'social.*' => ['nullable', 'url', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'show_deal_value' => ['sometimes', 'boolean'],
         ]);
+        if (array_key_exists('show_deal_value', $data)) {
+            DB::table('teams')->where('id', $team->id)->update(['show_deal_value' => (bool) $data['show_deal_value']]);
+            unset($data['show_deal_value']);
+        }
         if ($request->hasFile('logo')) {
             $team->logo_path = $request->file('logo')?->store('teams', 'public') ?: $team->logo_path;
         }
