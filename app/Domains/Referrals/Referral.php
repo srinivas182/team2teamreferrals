@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $id
  * @property string $ulid
+ * @property ?string $client_token
  * @property int $group_id
  * @property int $seat_id
  * @property int $sender_team_id
@@ -42,9 +43,9 @@ final class Referral extends Model
 {
     use HasUlids;
 
-    protected $fillable = ['group_id', 'seat_id', 'sender_team_id', 'sender_user_id', 'receiver_team_id', 'routed_to', 'status', 'client_name', 'client_phone', 'client_email', 'answers', 'notes', 'consent_at', 'consent_method', 'consent_text', 'respond_by', 'accepted_at', 'decline_reason'];
+    protected $fillable = ['client_token', 'group_id', 'seat_id', 'sender_team_id', 'sender_user_id', 'receiver_team_id', 'routed_to', 'status', 'client_name', 'client_phone', 'client_email', 'answers', 'notes', 'consent_at', 'consent_method', 'consent_text', 'respond_by', 'accepted_at', 'decline_reason'];
 
-    protected $attributes = ['status' => 'sent', 'notes' => null, 'client_phone' => null, 'client_email' => null, 'accepted_at' => null, 'decline_reason' => null];
+    protected $attributes = ['client_token' => null, 'status' => 'sent', 'notes' => null, 'client_phone' => null, 'client_email' => null, 'accepted_at' => null, 'decline_reason' => null];
 
     protected function casts(): array
     {
@@ -60,6 +61,14 @@ final class Referral extends Model
     public function getRouteKeyName(): string
     {
         return 'ulid';
+    }
+
+    /** Mask phone numbers and emails, e.g. in messages the receiver reads before accepting. */
+    public static function maskContacts(string $text): string
+    {
+        $text = (string) preg_replace('/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/', '[email shown after accepting]', $text);
+
+        return (string) preg_replace('/(?:\+?\d[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/', '[phone shown after accepting]', $text);
     }
 
     /** "Tom B.": what the receiver sees until they accept (and in notifications), so contact details stay private. */

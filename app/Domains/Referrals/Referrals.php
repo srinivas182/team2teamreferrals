@@ -107,6 +107,7 @@ final class Referrals
         $receiver = $route['team'];
         $ref = DB::transaction(function () use ($group, $route, $receiver, $team, $sender, $clean, $phone, $email, $notes, $clientName) {
             $ref = Referral::create([
+                'client_token' => \Illuminate\Support\Str::random(40),
                 'group_id' => $group->id, 'seat_id' => $route['seat']->id, 'sender_team_id' => $team->id, 'sender_user_id' => $sender->id, 'receiver_team_id' => $receiver->id,
                 'routed_to' => $route['role'], 'client_name' => $clientName, 'client_phone' => $phone, 'client_email' => $email, 'answers' => $clean, 'notes' => $notes,
                 'consent_at' => now(), 'consent_method' => 'sender_attested', 'consent_text' => self::consentText($group),
@@ -158,6 +159,27 @@ final class Referrals
         return $team !== null && ($team->id === $ref->sender_team_id || $team->id === $ref->receiver_team_id);
     }
 
+    /** One-tap link for the current receiver: opens a confirm screen (never accepts on open, so email scanners can't). */
+    public static function quickLink(Referral $ref): string
+    {
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute('referrals.quick', $ref->respond_by, ['referral' => $ref->ulid, 'team' => (int) $ref->receiver_team_id]);
+    }
+
+    public function message(Referral $ref, User $user, string $body): void
+    {
+        $team = Team::of($user);
+        abort_unless($team !== null && in_array($team->id, [$ref->sender_team_id, $ref->receiver_team_id], true), 403);
+        DB::table('referral_messages')->insert(['referral_id' => $ref->id, 'team_id' => $team->id, 'user_id' => $user->id, 'body' => mb_substr(trim($body), 0, 4000), 'created_at' => now()]);
+        $ref->loadMissing(['sender.leader', 'receiver.leader', 'group.industry']);
+        $other = $team->id === $ref->sender_team_id ? $ref->receiver : $ref->sender;
+        if ($other !== null) {
+            $toReceiverEarly = $other->id === $ref->receiver_team_id && $ref->status !== 'accepted';
+            $excerpt = mb_strimwidth($toReceiverEarly ? Referral::maskContacts($body) : $body, 0, 160, '…');
+            $name = $toReceiverEarly ? $ref->shortClientName() : $ref->client_name;
+            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+        }
+    }
+
     public static function consentText(Group $group): string
     {
         $t = $group->industry->terms();
@@ -193,7 +215,7 @@ final class Referrals
         }
         $this->notifier->send($ref->receiver->leader, 'referral.waiting', [
             'client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours'),
-        ], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
+        ], self::quickLink($ref), $ref->group->industry);
     }
 
     private function mustReceive(Referral $ref, User $user): void

@@ -102,12 +102,67 @@ final class ReferralController
             ],
             'isReceiver' => $isReceiver,
             'agreement' => $this->agreementFor($referral, $user),
+            'messages' => DB::table('referral_messages')->join('users', 'users.id', '=', 'referral_messages.user_id')->join('teams', 'teams.id', '=', 'referral_messages.team_id')
+                ->where('referral_id', $referral->id)->orderBy('referral_messages.id')->get(['referral_messages.id', 'referral_messages.body', 'referral_messages.created_at', 'referral_messages.team_id', 'users.first_name', 'teams.name as team'])
+                ->map(fn ($m) => ['id' => (int) $m->id, 'mine' => (int) $m->team_id === $team?->id, 'who' => "{$m->first_name} · {$m->team}", 'when' => (string) $m->created_at,
+                    'body' => $hide ? Referral::maskContacts((string) $m->body) : (string) $m->body]),
+            'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
             'terms' => $referral->group->industry->terms(),
             'timeline' => DB::table('referral_events')->leftJoin('teams', 'teams.id', '=', 'referral_events.team_id')->where('referral_id', $referral->id)->orderBy('referral_events.id')
                 ->get(['referral_events.event', 'referral_events.created_at', 'referral_events.meta', 'teams.name as team'])
                 ->map(fn ($e) => ['event' => (string) $e->event, 'when' => (string) $e->created_at, 'team' => $e->team, 'meta' => $e->meta ? json_decode((string) $e->meta, true) : null]),
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
+        ]);
+    }
+
+    public function message(Request $request, Referral $referral): RedirectResponse
+    {
+        abort_unless($this->referrals->canView($referral, $this->user($request)), 404);
+        $body = (string) $request->validate(['body' => ['required', 'string', 'max:4000']])['body'];
+        $this->referrals->message($referral, $this->user($request), $body);
+
+        return back();
+    }
+
+    /** One-tap confirm screen from the email or text (the signature proves it's the receiver's link). */
+    public function quick(Request $request, Referral $referral, int $team): Response
+    {
+        $referral->load(['seat', 'sender', 'group']);
+        $valid = $referral->status === 'sent' && $referral->receiver_team_id === $team;
+
+        return Inertia::render('ReferralQuickAccept', [
+            'referral' => $valid ? ['client' => $referral->shortClientName(), 'territory' => $referral->seat->territory_name, 'sender' => $referral->sender->name, 'group' => $referral->group->name,
+                'respondBy' => $referral->respond_by->toIso8601String(), 'action' => $request->fullUrl(), 'view' => url('/app/referrals/'.$referral->ulid)] : null,
+            'seo' => (new SeoData(title: 'Accept referral', description: 'Team to Team Referrals', index: false))->toArray(),
+        ]);
+    }
+
+    public function quickAccept(Request $request, Referral $referral, int $team): RedirectResponse
+    {
+        abort_unless($referral->status === 'sent' && $referral->receiver_team_id === $team, 410, 'This referral is no longer waiting for you.');
+        $leader = Team::query()->findOrFail($team)->leader;
+        $this->referrals->accept($referral, $leader);
+
+        return redirect()->to('/app/referrals/'.$referral->ulid)->with('status', 'referral-accepted');
+    }
+
+    /** The client's private status page: who will contact them, their verified badges, and where things stand. */
+    public function client(string $token): Response
+    {
+        $r = Referral::query()->with(['seat', 'receiver', 'sender', 'group.industry'])->where('client_token', $token)->firstOrFail();
+        $t = $r->group->industry->terms();
+        $receiver = $r->receiver;
+
+        return Inertia::render('ClientStatus', [
+            'status' => $r->status, 'firstName' => strtok($r->client_name, ' ') ?: 'there', 'territory' => $r->seat->territory_name, 'sender' => $r->sender->name, 'pro' => $t['pro'],
+            'receiver' => $receiver && $r->status === 'accepted' ? [
+                'name' => $receiver->name,
+                'licenses' => DB::table('team_licenses')->join('states', 'states.id', '=', 'team_licenses.state_id')->where(['team_id' => $receiver->id, 'status' => 'verified'])->pluck('states.code')->unique()->values(),
+                'trained' => app(\App\Domains\Network\Training\Training::class)->teamTrained($receiver),
+            ] : null,
+            'contactHours' => (int) $r->group->rule('first_contact_hours'),
+            'seo' => (new SeoData(title: 'Your introduction', description: 'Team to Team Referrals', index: false))->toArray(),
         ]);
     }
 

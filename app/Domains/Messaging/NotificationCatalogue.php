@@ -31,6 +31,8 @@ final class NotificationCatalogue
             'title' => '{team} declined {client}', 'body' => '{team} declined the {referral_term}. It has moved to the backup {pro} in {city}.', 'sms' => ''],
         'referral.agreement' => ['group' => 'Referrals', 'label' => 'Referral agreements', 'description' => 'When an agreement is ready to sign and when both sides have signed.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'referral.message' => ['group' => 'Referrals', 'label' => 'Messages on a referral', 'description' => 'When the other team sends you a message about a referral.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'referral.update' => ['group' => 'Referrals', 'label' => 'Progress updates', 'description' => 'Stage changes and notes on referrals you sent.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'Update on {client}', 'body' => '{team} moved {client} forward. See the latest notes.', 'sms' => ''],
         'seat.offered' => ['group' => 'Network', 'label' => 'A seat opened for you', 'description' => 'A city you are waitlisted for became available.', 'channels' => ['mail', 'sms', 'database'], 'urgent' => true, 'locked' => false,
