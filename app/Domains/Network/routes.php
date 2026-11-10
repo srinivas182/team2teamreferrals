@@ -45,6 +45,8 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('{industry}/messages', [AdminIndustryMessagesController::class, 'save'])->name('messages.save');
         Route::post('{industry}/messages/reset', [AdminIndustryMessagesController::class, 'reset'])->name('messages.reset');
         Route::post('{industry}/messages/{template}/activate', [AdminIndustryMessagesController::class, 'activate'])->name('messages.activate');
+        Route::get('{industry}/training', [App\Domains\Network\Training\AdminTrainingController::class, 'show'])->name('training.show');
+        Route::put('{industry}/training', [App\Domains\Network\Training\AdminTrainingController::class, 'save'])->name('training.save');
         Route::get('{industry}/agreement', [AdminAgreementController::class, 'show'])->name('agreement.show');
         Route::put('{industry}/agreement', [AdminAgreementController::class, 'save'])->name('agreement.save');
         Route::delete('{industry}/agreement', [AdminAgreementController::class, 'reset'])->name('agreement.reset');
@@ -161,4 +163,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/training/{industry}/lessons/{index}', [App\Domains\Network\Training\TrainingController::class, 'lesson'])->whereNumber('index')->name('training.lesson');
     Route::post('app/training/{industry}/quiz', [App\Domains\Network\Training\TrainingController::class, 'submit'])->middleware('throttle:20,60')->name('training.submit');
     Route::post('app/group/{group}/training', [App\Domains\Network\Training\TrainingController::class, 'ownerSwitch'])->name('training.switch');
+    Route::get('app/training/{industry}/certificate.pdf', [App\Domains\Network\Training\TrainingController::class, 'certificate'])->name('training.certificate');
+    Route::get('app/training/{industry}/refresher', [App\Domains\Network\Training\TrainingController::class, 'refresher'])->name('training.refresher');
+    Route::post('app/team/members/{member}/remind-training', [App\Domains\Network\Training\TrainingController::class, 'remind'])->middleware('throttle:20,60')->name('training.remind');
 });

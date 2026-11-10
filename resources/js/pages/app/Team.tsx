@@ -26,7 +26,8 @@ type Props = {
     role: string;
     canEdit: boolean;
     canManage: boolean;
-    members: { id: string; name: string; email: string; role: string }[];
+    members: { id: string; name: string; email: string; role: string; trained: boolean }[];
+    teamTrained: boolean;
     invites: { id: number; email: string; role: string; expires: string }[];
     roles: Record<string, string>;
     status?: string;
@@ -35,7 +36,7 @@ type Props = {
 
 const socials = ['linkedin', 'facebook', 'instagram', 'youtube', 'x'] as const;
 
-export default function Team({ team, canEdit, canManage, members, invites, roles, status, seo }: Props) {
+export default function Team({ team, canEdit, canManage, members, teamTrained, invites, roles, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const form = useForm<{
         name: string;
@@ -135,7 +136,14 @@ export default function Team({ team, canEdit, canManage, members, invites, roles
                 </Card>
                 <div className="space-y-6">
                     <Card className="p-6">
-                        <h2 className="font-semibold">Members</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="font-semibold">Members</h2>
+                            {teamTrained && (
+                                <Badge tone="success" className="ml-auto">
+                                    Network trained
+                                </Badge>
+                            )}
+                        </div>
                         <ul className="mt-3 divide-y divide-line">
                             {members.map((m) => (
                                 <li key={m.id} className="flex items-center gap-3 py-3 text-sm">
@@ -144,6 +152,19 @@ export default function Team({ team, canEdit, canManage, members, invites, roles
                                         <div className="truncate text-muted">{m.email}</div>
                                     </div>
                                     <Badge tone={m.role === 'leader' ? 'sender' : 'neutral'}>{roles[m.role]}</Badge>
+                                    {m.trained ? (
+                                        <Badge tone="success">Trained</Badge>
+                                    ) : canManage ? (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => router.post(`/app/team/members/${m.id}/remind-training`, {}, { preserveScroll: true })}
+                                        >
+                                            Remind
+                                        </Button>
+                                    ) : (
+                                        <Badge tone="warning">Training to do</Badge>
+                                    )}
                                     {canManage && m.role !== 'leader' && (
                                         <Button
                                             variant="ghost"

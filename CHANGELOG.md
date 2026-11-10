@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 15b part 1 — Training editor, team view, badge, certificate, refresher and reminders
+- Admin → Industries → Training: edit lessons (text, minutes, video link, transcript) and quiz questions (options, right answer, explanation), pass mark, and "material change: ask everyone to re-train". Checks: every question needs an explanation, the right answer must be an option, and every video needs a transcript. Each save is a new version; completion per group (seat holders passed) shown on the same page.
+- Team page: each member's training status, a one-tap "Remind" for leaders, and a "Network trained" badge once everyone has passed. Profile strength gains "Everyone on the team passes the network training" (+10; logo and teammate rebalanced so the total stays 100).
+- Completion certificate (PDF, landscape) for members who passed, to show their brokerage or carrier.
+- One-minute refresher (the industry's consent, deadline, update and fee rules in its own words), recorded when seen; it opens before a member's first referral in Sprint 16.
+- Smart reminders 3 and 7 days after a member's first application if training is unfinished (once each, non-urgent so they respect quiet hours, stopped once passed).
+- 265 PHP tests in total (4 new).
+
 ### Sprint 15a — Network training and the training gate
 - Training per industry, written in its own words: five bite-size lessons (how the network works, consent, deadlines, agreements and money, keeping your seat) and a five-question quiz. Tier B lessons and questions cover the no-fee rule; video and transcript slots are ready.
 - Members (Portal → Training): progress saves per lesson; the quiz needs 80%; a wrong answer explains why; retakes ask only the missed questions. Answers never reach the browser.

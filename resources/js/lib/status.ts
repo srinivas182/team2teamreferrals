@@ -75,6 +75,9 @@ const messages: Record<string, string> = {
     'reservation-claimed': 'You’re a founding member. Add your license so we can verify it before launch.',
     'training-required': 'Training is now required. Members have been told and have a grace period to finish.',
     'training-optional': 'Training is now optional.',
+    'training-saved': 'Training saved as a new version.',
+    'training-saved-retrain': 'Saved. Everyone will be asked to re-train on this version.',
+    'training-reminded': 'Reminder sent.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

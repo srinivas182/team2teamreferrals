@@ -137,6 +137,9 @@ export default function IndustryShow({
                 <Link href={`/admin/industries/${i.slug}/agreement`} className="text-sm font-medium text-primary">
                     Agreement
                 </Link>
+                <Link href={`/admin/industries/${i.slug}/training`} className="text-sm font-medium text-primary">
+                    Training
+                </Link>
                 <Link href={`/admin/industries/${i.slug}/messages`} className="mr-2 text-sm font-medium text-primary">
                     Messages
                 </Link>
