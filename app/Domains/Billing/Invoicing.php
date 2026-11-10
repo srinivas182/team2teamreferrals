@@ -53,6 +53,18 @@ final class Invoicing
                     'description' => "{$seat->territory_name} · {$seat->group->name} · annual plan, ".$coming->format('M Y').' to '.$coming->addYear()->subDay()->format('M Y').($free > 0 ? " ({$free} months free)" : '')];
             }
         }
+        // Premium membership (per team) and private network plans (per owning company), prorated by day.
+        $days = fn ($since) => (int) max($start, CarbonImmutable::parse((string) $since)->startOfDay())->diffInDays($end->startOfDay()) + 1;
+        foreach (DB::table('teams')->whereNotNull('premium_since')->where('premium_since', '<=', $end)->get(['id', 'premium_since']) as $t) {
+            $d = $days($t->premium_since);
+            $byPayer['team:'.$t->id][] = ['days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('premium') * 100 * $d / $start->daysInMonth),
+                'description' => 'Premium membership · '.$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
+        }
+        foreach (DB::table('groups')->where('is_private', true)->whereNotNull('company_id')->where('created_at', '<=', $end)->get(['company_id', 'name', 'created_at']) as $g) {
+            $d = $days($g->created_at);
+            $byPayer['company:'.$g->company_id][] = ['days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('private_network') * 100 * $d / $start->daysInMonth),
+                'description' => "Private network: {$g->name} · ".$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
+        }
         // Platform fees owed on referral fees received (only while collection is switched on).
         if (PricingRules::platformFeeCollectionOn()) {
             foreach (DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->where('f.platform_fee_status', 'owed')->whereNull('f.platform_invoice_id')->get(['f.*', 'r.client_name']) as $f) {
@@ -67,7 +79,11 @@ final class Invoicing
                 continue;
             }
             $lines = PricingRules::apply($type, (int) $id, $lines);
-            $total = max(0, array_sum(array_column($lines, 'amount_cents')));
+            $total = (int) max(0, array_sum(array_column($lines, 'amount_cents')));
+            if ($total > 0 && PricingRules::stripeTaxOn() && ($tax = $this->salesTax($type, (int) $id, $total, $period)) > 0) {
+                $lines[] = ['days' => 0, 'free_reason' => null, 'amount_cents' => $tax, 'description' => 'Sales tax', 'tax' => true];
+                $total += $tax;
+            }
             $invoiceId = DB::table('invoices')->insertGetId([
                 'number' => 'T2T-'.str_replace('-', '', $period).'-'.str_pad((string) (DB::table('invoices')->count() + 1), 6, '0', STR_PAD_LEFT),
                 'owner_type' => $type, 'owner_id' => (int) $id, 'period' => $period, 'lines' => json_encode($lines), 'total_cents' => $total,
@@ -83,6 +99,44 @@ final class Invoicing
         }
 
         return $made;
+    }
+
+    /**
+     * Sales tax through Stripe Tax (uses the address on the payer's Stripe customer). If Stripe can't calculate it,
+     * the invoice goes out without tax and admins are alerted, rather than blocking the payer.
+     */
+    private function salesTax(string $type, int $id, int $amount, string $period): int
+    {
+        $account = BillingAccounts::account($type, $id);
+        if ($account->stripe_customer_id === null) {
+            return 0;
+        }
+        try {
+            $calc = $this->stripe->api('POST', 'tax/calculations', ['currency' => 'usd', 'customer' => $account->stripe_customer_id,
+                'line_items[0][amount]' => $amount, 'line_items[0][reference]' => "{$type}-{$id}-{$period}", 'line_items[0][tax_behavior]' => 'exclusive'], "tax-{$type}-{$id}-{$period}");
+
+            return (int) ($calc['tax_amount_exclusive'] ?? 0);
+        } catch (RuntimeException $e) {
+            report($e);
+
+            return 0;
+        }
+    }
+
+    /** Daily: warn payers 30 days before their saved card expires (once per card). */
+    public function cardExpiryWarnings(): void
+    {
+        $soon = now()->addDays(30);
+        foreach (DB::table('billing_customers')->whereNotNull('payment_method_id')->where('card_exp_year', $soon->year)->where('card_exp_month', $soon->month)->get() as $acc) {
+            $key = sprintf('%d-%02d', $acc->card_exp_year, $acc->card_exp_month);
+            if ($acc->card_warned_for === $key) {
+                continue;
+            }
+            DB::table('billing_customers')->where('id', $acc->id)->update(['card_warned_for' => $key]);
+            foreach (BillingAccounts::contacts((string) $acc->owner_type, (int) $acc->owner_id) as $u) {
+                $this->notifier->send($u, 'seat.payment', ['group' => 'Billing', 'headline' => "Your card ending {$acc->card_last4} expires soon", 'body' => 'Add a new card on the Billing page so your seats keep running without interruption.'], url('/app/billing'));
+            }
+        }
     }
 
     /** Charge an open or failed invoice now (the billing run, a scheduled retry, or "Pay now"). */
