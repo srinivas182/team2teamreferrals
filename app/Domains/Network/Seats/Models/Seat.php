@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $backup_team_id
  * @property bool $founding
  * @property string $payer
+ * @property string $billing_cycle
+ * @property ?\Illuminate\Support\Carbon $annual_paid_until
  * @property ?\Illuminate\Support\Carbon $below_since
  * @property ?\Illuminate\Support\Carbon $trial_ends_at
  * @property ?\Illuminate\Support\Carbon $grace_started_at
@@ -35,11 +37,11 @@ final class Seat extends Model
 
     protected $fillable = ['group_id', 'territory_type', 'territory_id', 'territory_name', 'state_code', 'status', 'primary_team_id', 'backup_team_id', 'founding', 'payer', 'below_since', 'trial_ends_at', 'grace_started_at', 'inactive_at'];
 
-    protected $attributes = ['status' => 'open', 'founding' => false, 'payer' => 'team', 'primary_team_id' => null, 'backup_team_id' => null, 'trial_ends_at' => null, 'grace_started_at' => null, 'inactive_at' => null, 'state_code' => null];
+    protected $attributes = ['status' => 'open', 'founding' => false, 'payer' => 'team', 'billing_cycle' => 'monthly', 'annual_paid_until' => null, 'primary_team_id' => null, 'backup_team_id' => null, 'trial_ends_at' => null, 'grace_started_at' => null, 'inactive_at' => null, 'state_code' => null];
 
     protected function casts(): array
     {
-        return ['founding' => 'boolean', 'trial_ends_at' => 'datetime', 'grace_started_at' => 'datetime', 'inactive_at' => 'datetime', 'below_since' => 'date'];
+        return ['founding' => 'boolean', 'trial_ends_at' => 'datetime', 'grace_started_at' => 'datetime', 'inactive_at' => 'datetime', 'below_since' => 'date', 'annual_paid_until' => 'date'];
     }
 
     /** @return BelongsTo<Group, $this> */

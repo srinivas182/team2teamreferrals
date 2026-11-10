@@ -36,9 +36,28 @@ final class Invoicing
         $byPayer = [];
         foreach (Seat::query()->with(['group.industry', 'primary'])->whereNotNull('primary_team_id')->get() as $seat) {
             $payer = BillingAccounts::payerFor($seat);
-            $line = $payer !== null ? $this->line($seat, $start, $end) : null;
+            if ($payer === null) {
+                continue;
+            }
+            $key = $payer['type'].':'.$payer['id'];
+            $line = $this->line($seat, $start, $end, $payer);
             if ($line !== null) {
-                $byPayer[$payer['type'].':'.$payer['id']][] = $line;
+                $byPayer[$key][] = $line;
+            }
+            // Annual prepay: billed on this run, covering the 12 months from the start of the coming month.
+            $coming = $end->addDay()->startOfDay();
+            if ($seat->billing_cycle === 'annual' && ($seat->annual_paid_until === null || $seat->annual_paid_until->lt($coming))
+                && ($seat->trial_ends_at === null || $seat->trial_ends_at->lte($coming->endOfMonth()))) {
+                $free = (int) data_get($seat->group->pricing, 'annual_months_free', 2);
+                $byPayer[$key][] = ['seat_id' => $seat->id, 'group_id' => $seat->group_id, 'annual' => true, 'days' => 0, 'free_reason' => null, 'amount_cents' => PricingRules::annualCents($seat),
+                    'description' => "{$seat->territory_name} · {$seat->group->name} · annual plan, ".$coming->format('M Y').' to '.$coming->addYear()->subDay()->format('M Y').($free > 0 ? " ({$free} months free)" : '')];
+            }
+        }
+        // Platform fees owed on referral fees received (only while collection is switched on).
+        if (PricingRules::platformFeeCollectionOn()) {
+            foreach (DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->where('f.platform_fee_status', 'owed')->whereNull('f.platform_invoice_id')->get(['f.*', 'r.client_name']) as $f) {
+                $byPayer['team:'.$f->payee_team_id][] = ['platform_fee_id' => (int) $f->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $f->platform_fee_cents,
+                    'description' => 'Platform fee on the $'.number_format($f->amount_cents / 100, 2)." referral fee for {$f->client_name}"];
             }
         }
         $made = 0;
@@ -47,12 +66,15 @@ final class Invoicing
             if (DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => (int) $id, 'period' => $period])->exists()) {
                 continue;
             }
-            $total = array_sum(array_column($lines, 'amount_cents'));
+            $lines = PricingRules::apply($type, (int) $id, $lines);
+            $total = max(0, array_sum(array_column($lines, 'amount_cents')));
             $invoiceId = DB::table('invoices')->insertGetId([
                 'number' => 'T2T-'.str_replace('-', '', $period).'-'.str_pad((string) (DB::table('invoices')->count() + 1), 6, '0', STR_PAD_LEFT),
                 'owner_type' => $type, 'owner_id' => (int) $id, 'period' => $period, 'lines' => json_encode($lines), 'total_cents' => $total,
                 'status' => $total === 0 ? 'zero' : 'open', 'created_at' => now(), 'updated_at' => now(),
             ]);
+            PricingRules::commit($type, (int) $id, $lines);
+            DB::table('referral_fees')->whereIn('id', array_filter(array_column($lines, 'platform_fee_id')))->update(['platform_invoice_id' => $invoiceId, 'platform_fee_status' => 'invoiced']);
             $this->pdf($invoiceId);
             if ($total > 0) {
                 $this->charge($invoiceId);
@@ -109,6 +131,13 @@ final class Invoicing
         }
         DB::table('invoices')->where('id', $invoiceId)->update(['status' => 'paid', 'paid_at' => now(), 'next_retry_at' => null, 'failure' => null, 'updated_at' => now()]);
         $this->pdf($invoiceId);
+        $lines = (array) json_decode((string) $inv->lines, true);
+        // Annual plans start once paid: 12 months from the start of the month after the billed one.
+        $coming = CarbonImmutable::parse($inv->period.'-01')->addMonth()->startOfMonth();
+        foreach (array_filter($lines, fn ($l) => ! empty($l['annual'])) as $l) {
+            DB::table('seats')->where('id', $l['seat_id'])->update(['annual_paid_until' => $coming->addYear()->subDay()->toDateString()]);
+        }
+        DB::table('referral_fees')->where('platform_invoice_id', $invoiceId)->update(['platform_fee_status' => 'paid']);
         foreach ($this->seatsOf($inv) as $seat) {
             // Paying reactivates instantly; a seat whose trial has ended becomes a paid, active seat.
             if (in_array($seat->status, ['grace', 'inactive'], true)) {
@@ -129,9 +158,23 @@ final class Invoicing
         }
     }
 
-    /** @return array<string, mixed>|null */
-    private function line(Seat $seat, CarbonImmutable $start, CarbonImmutable $end): ?array
+    /**
+     * @param  array{type: string, id: int}  $payer
+     * @return array<string, mixed>|null
+     */
+    private function line(Seat $seat, CarbonImmutable $start, CarbonImmutable $end, array $payer): ?array
     {
+        $offered = DB::table('referrals')->where('seat_id', $seat->id)->whereBetween('created_at', [$start, $end])->exists();
+        $guarantee = (bool) data_get($seat->group->pricing, 'value_guarantee', false);
+        // Covered by an annual plan: nothing to bill, and a month with no referral offered becomes an account credit.
+        if ($seat->annual_paid_until !== null && $seat->annual_paid_until->gte($end->startOfDay())) {
+            if (! $offered && $guarantee) {
+                PricingRules::addCredit($payer['type'], $payer['id'], (int) round(PricingRules::annualCents($seat) / 12),
+                    "Free month credit: no referral was offered to {$seat->territory_name} in ".$start->format('M Y'));
+            }
+
+            return null;
+        }
         $from = $seat->trial_ends_at !== null && $seat->trial_ends_at->gt($start) ? CarbonImmutable::parse($seat->trial_ends_at)->startOfDay() : $start;
         $to = $seat->inactive_at !== null && $seat->inactive_at->lt($end) ? CarbonImmutable::parse($seat->inactive_at)->subDay()->endOfDay() : $end;
         if ($from->gt($end) || $to->lt($from)) {
@@ -141,10 +184,9 @@ final class Invoicing
         $monthly = (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 10);
         $amount = (int) round($monthly * 100 * $days / $start->daysInMonth);
         $label = "{$seat->territory_name} · {$seat->group->name} · ".$start->format('M Y');
-        $line = ['seat_id' => $seat->id, 'description' => $label.($days < $start->daysInMonth ? " ({$days} days)" : ''), 'days' => $days, 'amount_cents' => $amount, 'free_reason' => null];
+        $line = ['seat_id' => $seat->id, 'group_id' => $seat->group_id, 'description' => $label.($days < $start->daysInMonth ? " ({$days} days)" : ''), 'days' => $days, 'amount_cents' => $amount, 'free_reason' => null];
         // The value guarantee: a month in which no referral was offered to the seat is free.
-        $offered = DB::table('referrals')->where('seat_id', $seat->id)->whereBetween('created_at', [$start, $end])->exists();
-        if (! $offered && (bool) data_get($seat->group->pricing, 'value_guarantee', false)) {
+        if (! $offered && $guarantee) {
             $line['amount_cents'] = 0;
             $line['free_reason'] = 'Free month: no referral was offered to this seat.';
         }
