@@ -48,7 +48,8 @@ final class Referrals
         }
         $ids = DB::table('seat_applications')->where(['team_id' => $team->id, 'status' => 'approved'])->pluck('group_id')->unique();
 
-        return array_values(Group::query()->with('industry')->whereIn('id', $ids)->orderBy('name')->get()->all());
+        // Directory (Tier C) networks never route clients between members: they're listings only.
+        return array_values(Group::query()->with('industry')->whereIn('id', $ids)->whereHas('industry', fn ($q) => $q->where('tier', '!=', \App\Domains\Network\Industries\Tier::Directory->value))->orderBy('name')->get()->all());
     }
 
     /**
@@ -58,6 +59,9 @@ final class Referrals
     public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false): array
     {
         $team = Team::of($sender) ?? Team::forLeader($sender);
+        if ($group->industry->tier === \App\Domains\Network\Industries\Tier::Directory) {
+            throw ValidationException::withMessages(['group' => 'This is a directory network: clients find pros in the public directory, and members don’t send referrals to each other here.']);
+        }
         if (! in_array($group->id, array_map(fn (Group $g) => $g->id, $this->groupsFor($sender)), true)) {
             throw ValidationException::withMessages(['group' => 'You can send referrals in groups you’ve been approved into.']);
         }
@@ -123,6 +127,7 @@ final class Referrals
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         $this->event($ref, 'accepted', $ref->receiver, $user);
+        app(ReferralAgreements::class)->start($ref);
         $this->notifier->send($ref->sender->leader, 'referral.accepted', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'team' => (string) $ref->receiver?->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry);
     }
 

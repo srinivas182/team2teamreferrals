@@ -101,6 +101,7 @@ final class ReferralController
                 'answers' => collect($referral->answers)->map(fn ($v, $k) => ['label' => (string) ($form[$k]['label'] ?? $k), 'value' => $hide && ($form[$k]['sensitive'] ?? false) ? null : $v])->values(),
             ],
             'isReceiver' => $isReceiver,
+            'agreement' => $this->agreementFor($referral, $user),
             'terms' => $referral->group->industry->terms(),
             'timeline' => DB::table('referral_events')->leftJoin('teams', 'teams.id', '=', 'referral_events.team_id')->where('referral_id', $referral->id)->orderBy('referral_events.id')
                 ->get(['referral_events.event', 'referral_events.created_at', 'referral_events.meta', 'teams.name as team'])
@@ -108,6 +109,41 @@ final class ReferralController
             'status' => session('status'),
             'seo' => SeoData::private('Referral')->toArray(),
         ]);
+    }
+
+    public function sign(Request $request, Referral $referral, \App\Domains\Referrals\ReferralAgreements $agreements): RedirectResponse
+    {
+        $d = $request->validate(['name' => ['required', 'string', 'max:160'], 'consent' => ['accepted']], ['consent.accepted' => 'Please agree to sign electronically.']);
+        $agreements->sign($referral, $this->user($request), (string) $d['name'], (string) $request->ip(), (string) $request->userAgent());
+
+        return back()->with('status', 'agreement-signed');
+    }
+
+    public function agreementPdf(Request $request, Referral $referral): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless($this->referrals->canView($referral, $this->user($request)), 404);
+        $path = DB::table('referral_agreements')->where(['referral_id' => $referral->id, 'status' => 'signed'])->value('pdf_path');
+        abort_if(! is_string($path), 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('private')->download($path, 'referral-agreement-'.$referral->ulid.'.pdf');
+    }
+
+    /** @return array<string, mixed>|null */
+    private function agreementFor(Referral $referral, User $user): ?array
+    {
+        $a = DB::table('referral_agreements')->where('referral_id', $referral->id)->first();
+        if ($a === null) {
+            return null;
+        }
+        $team = Team::of($user);
+        $side = $team?->id === $referral->sender_team_id ? 'sender' : ($team?->id === $referral->receiver_team_id ? 'receiver' : null);
+
+        return [
+            'status' => (string) $a->status, 'version' => $a->version, 'summary' => $a->summary ? json_decode((string) $a->summary, true) : [], 'sections' => $a->sections ? json_decode((string) $a->sections, true) : [],
+            'sender' => ['name' => $a->sender_signed_name, 'at' => $a->sender_signed_at], 'receiver' => ['name' => $a->receiver_signed_name, 'at' => $a->receiver_signed_at],
+            'canSign' => $a->status === 'pending' && $side !== null && $team?->leader_id === $user->id && $a->{$side.'_signed_at'} === null, 'signerName' => $user->name,
+            'pdf' => $a->status === 'signed' ? '/app/referrals/'.$referral->ulid.'/agreement.pdf' : null,
+        ];
     }
 
     public function accept(Request $request, Referral $referral): RedirectResponse
@@ -130,7 +166,9 @@ final class ReferralController
         $team = Team::of($this->user($request));
 
         return Inertia::render($page, [
-            'items' => $team === null ? [] : Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name'])->where($col, $team->id)->latest()->limit(200)->get()
+            // Waiting referrals first, soonest deadline on top, so nothing urgent is missed.
+            'items' => $team === null ? [] : Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name'])->where($col, $team->id)
+                ->orderByRaw("case when status = 'sent' then 0 else 1 end")->orderByRaw("case when status = 'sent' then respond_by end")->latest()->limit(200)->get()
                 ->map(fn (Referral $r) => ['id' => $r->ulid, 'status' => $r->status, 'client' => $col === 'receiver_team_id' && $r->status !== 'accepted' ? $r->shortClientName() : $r->client_name, 'territory' => $r->seat->territory_name, 'group' => $r->group->name,
                     'sender' => $r->sender->name, 'receiver' => $r->receiver?->name, 'respondBy' => $r->respond_by->toIso8601String(), 'when' => $r->created_at->toIso8601String()]),
             'status' => session('status'),

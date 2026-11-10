@@ -81,6 +81,7 @@ const messages: Record<string, string> = {
     'referral-sent': 'Referral sent. The pro has been told and the clock is running.',
     'referral-accepted': 'Accepted. The sender has been told; the client’s full details are now visible.',
     'referral-declined': 'Declined. It has moved to the backup pro if there is one, and the sender has been told.',
+    'agreement-signed': 'Signed. When both sides have signed, the signed PDF will be on the referral.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
