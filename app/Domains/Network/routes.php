@@ -167,3 +167,15 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/training/{industry}/refresher', [App\Domains\Network\Training\TrainingController::class, 'refresher'])->name('training.refresher');
     Route::post('app/team/members/{member}/remind-training', [App\Domains\Network\Training\TrainingController::class, 'remind'])->middleware('throttle:20,60')->name('training.remind');
 });
+
+// Referrals: send, inbox, sent, detail, accept and decline.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/send', [App\Domains\Referrals\Http\ReferralController::class, 'create'])->name('referrals.create');
+    Route::get('app/send/preview', [App\Domains\Referrals\Http\ReferralController::class, 'preview'])->middleware('throttle:60,1')->name('referrals.preview');
+    Route::post('app/send', [App\Domains\Referrals\Http\ReferralController::class, 'store'])->middleware('throttle:30,60')->name('referrals.store');
+    Route::get('app/inbox', [App\Domains\Referrals\Http\ReferralController::class, 'inbox'])->name('referrals.inbox');
+    Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
+    Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
+    Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/decline', [App\Domains\Referrals\Http\ReferralController::class, 'decline'])->name('referrals.decline');
+});
