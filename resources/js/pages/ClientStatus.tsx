@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { BadgeCheck, CheckCircle2, Circle, GraduationCap } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Badge } from '@/components/ui/badge';
@@ -11,14 +12,44 @@ type Props = {
     territory: string;
     sender: string;
     pro: string;
-    receiver: { name: string; licenses: string[]; trained: boolean } | null;
+    receiver: {
+        name: string;
+        leader: string;
+        bio: string | null;
+        serviceArea: string | null;
+        phone: string | null;
+        website: string | null;
+        logo: string | null;
+        licenses: string[];
+        trained: boolean;
+    } | null;
+    token: string;
+    consentAt: string | null;
+    temperature: string | null;
+    canCheckIn: boolean;
+    flash: string | null;
     contactHours: number;
     stage: { label: string; kind: string } | null;
     seo: Seo;
 };
 
 /** What the client sees: who will contact them, why they can trust them, and where things stand. */
-export default function ClientStatus({ status, firstName, territory, sender, pro, receiver, contactHours, stage, seo }: Props) {
+export default function ClientStatus({
+    status,
+    firstName,
+    territory,
+    sender,
+    pro,
+    receiver,
+    contactHours,
+    stage,
+    token,
+    consentAt,
+    temperature,
+    canCheckIn,
+    flash,
+    seo,
+}: Props) {
     const accepted = status === 'accepted';
     const steps: [string, boolean][] = [
         [`${sender} introduced you to a verified ${pro} in ${territory}`, true],
@@ -51,8 +82,20 @@ export default function ClientStatus({ status, firstName, territory, sender, pro
                 </Card>
                 {receiver && (
                     <Card className="mt-4 p-6">
-                        <h2 className="font-semibold">Who will contact you</h2>
-                        <p className="mt-1 text-lg font-semibold">{receiver.name}</p>
+                        <h2 className="font-semibold">Meet your {pro}</h2>
+                        <div className="mt-2 flex items-center gap-3">
+                            {receiver.logo && <img src={receiver.logo} alt="" className="size-12 rounded-lg object-cover" />}
+                            <div>
+                                <p className="text-lg font-semibold">{receiver.name}</p>
+                                {receiver.leader && (
+                                    <p className="text-sm text-muted">
+                                        Led by {receiver.leader}
+                                        {receiver.serviceArea ? ` · serving ${receiver.serviceArea}` : ''}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {receiver.bio && <p className="mt-3 text-sm">{receiver.bio}</p>}
                         <div className="mt-2 flex flex-wrap gap-2">
                             {receiver.licenses.map((l) => (
                                 <Badge key={l} tone="success">
@@ -65,7 +108,56 @@ export default function ClientStatus({ status, firstName, territory, sender, pro
                                 </Badge>
                             )}
                         </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {receiver.phone && (
+                                <a
+                                    href={`tel:${receiver.phone}`}
+                                    className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-white"
+                                >
+                                    Call {receiver.leader || receiver.name}
+                                </a>
+                            )}
+                            {receiver.website && (
+                                <a
+                                    href={receiver.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex h-10 items-center rounded-md border border-line px-4 text-sm font-semibold"
+                                >
+                                    Website
+                                </a>
+                            )}
+                        </div>
                     </Card>
+                )}
+                {canCheckIn && (
+                    <Card className="mt-4 p-6">
+                        {flash === 'client-checkin' ? (
+                            <p className="font-medium text-success">Thanks, we’ve let {receiver?.name ?? 'your ' + pro} know.</p>
+                        ) : (
+                            <>
+                                <h2 className="font-semibold">{temperature === 'future' ? 'How are your plans coming along?' : 'Quick check-in'}</h2>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {[
+                                        ['ready', 'I’m ready now'],
+                                        ['later', 'Still planning'],
+                                        ['not_needed', 'I no longer need help'],
+                                    ].map(([a, l]) => (
+                                        <button
+                                            key={a}
+                                            className="h-10 rounded-md border border-line px-4 text-sm font-medium hover:bg-bg"
+                                            onClick={() => router.post(`/r/${token}/checkin`, { answer: a }, { preserveScroll: true })}
+                                        >
+                                            {l}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </Card>
+                )}
+                {consentAt && (
+                    <p className="mt-4 text-xs text-muted">You agreed to this introduction on {consentAt}. Reply STOP to any text to opt out.</p>
                 )}
                 {(status === 'declined' || status === 'expired') && (
                     <p className="mt-4 text-sm text-muted">{sender} will be in touch about next steps.</p>

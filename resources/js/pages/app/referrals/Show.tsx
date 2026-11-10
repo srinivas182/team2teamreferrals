@@ -40,6 +40,13 @@ type Props = {
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
+    nurture: {
+        temperature: string | null;
+        nextAt: string | null;
+        protectedUntil: string | null;
+        canCheckIn: boolean;
+        touchpoints: { kind: string; source: string; note: string | null; at: string }[];
+    };
     fee: { terms: string; custom: boolean; proposal: { text: string; mine: boolean } | null; canChange: boolean } | null;
     muted: boolean;
     quickReplies: string[];
@@ -95,6 +102,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    nurture,
     fee,
     muted,
     quickReplies,
@@ -183,6 +191,7 @@ export default function ReferralShow({
                         </p>
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
+                    {nurture.temperature === 'future' || nurture.touchpoints.length > 0 ? <NurturePanel id={r.id} n={nurture} /> : null}
                     {closing && <ClosingPanel id={r.id} c={closing} />}
                     {fee && <FeePanel id={r.id} fee={fee} />}
                     {ag && (
@@ -511,6 +520,86 @@ function FeePanel({
                 </div>
             )}
             {!fee.canChange && <p className="text-xs text-muted">The agreement has been signed, so the fee is fixed.</p>}
+        </Card>
+    );
+}
+
+function NurturePanel({
+    id,
+    n,
+}: {
+    id: string;
+    n: {
+        temperature: string | null;
+        nextAt: string | null;
+        protectedUntil: string | null;
+        canCheckIn: boolean;
+        touchpoints: { kind: string; source: string; note: string | null; at: string }[];
+    };
+}) {
+    const [note, setNote] = useState('');
+    const [next, setNext] = useState('');
+    const go = (outcome: string) =>
+        router.post(
+            `/app/referrals/${id}/nurture`,
+            { outcome, note: note || null, next_on: next || null },
+            { preserveScroll: true, onSuccess: () => setNote('') },
+        );
+    const words: Record<string, string> = {
+        still: 'Still nurturing',
+        ready: 'Marked ready',
+        lost: 'Marked lost',
+        client_ready: 'Client said they’re ready',
+        client_later: 'Client still planning',
+        client_not_needed: 'Client no longer needs help',
+    };
+    return (
+        <Card className="space-y-3 p-6">
+            <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-semibold">Nurture</h2>
+                <Badge tone={n.temperature === 'future' ? 'info' : 'danger'}>{n.temperature}</Badge>
+                {n.nextAt && <span className="text-sm text-muted">Next check-in {n.nextAt}</span>}
+                {n.protectedUntil && <span className="text-sm text-muted">· protected until {n.protectedUntil}</span>}
+            </div>
+            {n.canCheckIn && n.temperature === 'future' && (
+                <div className="space-y-2">
+                    <Input
+                        aria-label="Check-in note"
+                        placeholder="A quick note for the referring team (optional)"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => go('still')}>
+                            Still nurturing
+                        </Button>
+                        <Input
+                            aria-label="Next check-in date"
+                            type="date"
+                            className="h-9 w-44"
+                            value={next}
+                            onChange={(e) => setNext(e.target.value)}
+                        />
+                        <Button size="sm" onClick={() => go('ready')}>
+                            Ready now
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => go('lost')}>
+                            Lost
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted">Each check-in keeps the referring team informed and extends your protection period.</p>
+                </div>
+            )}
+            {n.touchpoints.length > 0 && (
+                <ul className="space-y-1 text-sm">
+                    {n.touchpoints.map((t, i) => (
+                        <li key={i}>
+                            <span className="text-muted tabular">{t.at}</span> · {words[t.kind] ?? t.kind}
+                            {t.note ? `: ${t.note}` : ''}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </Card>
     );
 }

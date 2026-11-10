@@ -33,6 +33,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'referral.message' => ['group' => 'Referrals', 'label' => 'Messages on a referral', 'description' => 'When the other team sends you a message about a referral.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'referral.nurture' => ['group' => 'Referrals', 'label' => 'Future lead check-ins', 'description' => 'A monthly prompt for each long-term lead you’re nurturing.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'referral.update' => ['group' => 'Referrals', 'label' => 'Progress updates', 'description' => 'Stage changes and notes on referrals you sent.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'Update on {client}', 'body' => '{team}: {client} is now at “{stage}”. {note}', 'sms' => ''],
         'seat.offered' => ['group' => 'Network', 'label' => 'A seat opened for you', 'description' => 'A city you are waitlisted for became available.', 'channels' => ['mail', 'sms', 'database'], 'urgent' => true, 'locked' => false,

@@ -129,6 +129,9 @@ const messages: Record<string, string> = {
     'coupon-created': 'Coupon created.',
     'coupon-updated': 'Coupon updated.',
     refunded: 'Refund issued. The payer has been told.',
+    'nurture-still': 'Check-in saved. Your protection period has been extended.',
+    'nurture-ready': 'Marked ready. The referring team has been told.',
+    'nurture-lost': 'Marked lost.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

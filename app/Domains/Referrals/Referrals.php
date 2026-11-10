@@ -114,6 +114,7 @@ final class Referrals
                 'respond_by' => now()->addHours((int) $group->rule('accept_hours')),
             ]);
             $this->event($ref, 'sent', $team, $sender, ['to' => $receiver->name, 'role' => $route['role']]);
+            $ref->forceFill(['temperature' => Nurture::classify($ref)])->save();
 
             return $ref;
         });
@@ -131,6 +132,7 @@ final class Referrals
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         app(Pipeline::class)->start($ref);
+        app(Nurture::class)->onAccepted($ref);
         Events\ReferralChanged::dispatch($ref, 'status');
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);

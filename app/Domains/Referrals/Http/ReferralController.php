@@ -145,6 +145,12 @@ final class ReferralController
                 'proposal' => $referral->fee_proposal ? ['text' => \App\Domains\Referrals\Fees::describe(['type' => $referral->fee_proposal['type'], 'value' => (int) $referral->fee_proposal['value']]), 'mine' => (int) $referral->fee_proposal['by'] === $team?->id] : null,
                 'canChange' => in_array($team?->roleOf($user), ['leader', 'assistant'], true) && ! DB::table('referral_agreements')->where('referral_id', $referral->id)->where(fn ($q) => $q->whereNotNull('sender_signed_at')->orWhereNotNull('receiver_signed_at')->orWhere('status', 'signed'))->exists(),
             ] : null,
+            'nurture' => [
+                'temperature' => $referral->temperature, 'nextAt' => $referral->nurture_next_at, 'protectedUntil' => $referral->protection_until,
+                'canCheckIn' => $team?->id === $referral->receiver_team_id && $referral->status === 'accepted' && $referral->closed_at === null,
+                'touchpoints' => DB::table('nurture_touchpoints')->where('referral_id', $referral->id)->where('kind', '!=', 'prompt')->orderByDesc('id')->limit(12)->get(['kind', 'source', 'note', 'created_at'])
+                    ->map(fn ($t) => ['kind' => (string) $t->kind, 'source' => (string) $t->source, 'note' => $t->note, 'at' => substr((string) $t->created_at, 0, 10)]),
+            ],
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
             'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
@@ -222,6 +228,40 @@ final class ReferralController
         $closing->rateAsClient($token, (int) $d['stars'], $d['comment'] ?? null);
 
         return back()->with('status', 'client-rated');
+    }
+
+    public function nurtureCheckIn(Request $request, Referral $referral, \App\Domains\Referrals\Nurture $nurture): RedirectResponse
+    {
+        $d = $request->validate(['outcome' => ['required', 'in:still,ready,lost'], 'note' => ['nullable', 'string', 'max:1000'], 'next_on' => ['nullable', 'date', 'after:today', 'before:+13 months']]);
+        $nurture->checkIn($referral, $this->user($request), (string) $d['outcome'], $d['note'] ?? null, $d['next_on'] ?? null);
+
+        return back()->with('status', 'nurture-'.$d['outcome']);
+    }
+
+    /** Portal → Nurture: Future leads received (with check-ins) and sent (progress only, no client contact details). */
+    public function nurtureList(Request $request): Response
+    {
+        $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
+        $row = fn (Referral $r) => ['id' => $r->ulid, 'client' => $r->shortClientName(), 'territory' => $r->seat->territory_name, 'temperature' => $r->temperature,
+            'nextAt' => $r->nurture_next_at, 'protectedUntil' => $r->protection_until, 'other' => $r->receiver_team_id === $team->id ? $r->sender->name : (string) $r->receiver?->name,
+            'last' => DB::table('nurture_touchpoints')->where('referral_id', $r->id)->where('kind', '!=', 'prompt')->orderByDesc('id')->value('kind')];
+        $base = fn () => Referral::query()->with(['seat', 'sender', 'receiver'])->where('status', 'accepted')->whereNull('closed_at')
+            ->where(fn ($q) => $q->where('temperature', 'future')->orWhereIn('id', DB::table('nurture_touchpoints')->select('referral_id')));
+
+        return Inertia::render('app/Nurture', [
+            'received' => $base()->where('receiver_team_id', $team->id)->orderBy('nurture_next_at')->get()->map($row)->values(),
+            'sent' => $base()->where('sender_team_id', $team->id)->orderBy('nurture_next_at')->get()->map($row)->values(),
+            'seo' => SeoData::private('Nurture')->toArray(),
+        ]);
+    }
+
+    /** The client's check-in from their portal: ready now, still planning, or no longer needed. */
+    public function clientCheckIn(Request $request, string $token, \App\Domains\Referrals\Nurture $nurture): RedirectResponse
+    {
+        $r = Referral::query()->with(['group.industry', 'receiver.leader', 'sender.leader'])->where('client_token', $token)->firstOrFail();
+        $nurture->clientCheckIn($r, (string) $request->validate(['answer' => ['required', 'in:ready,later,not_needed']])['answer']);
+
+        return back()->with('status', 'client-checkin');
     }
 
     public function mute(Request $request, Referral $referral): RedirectResponse
@@ -347,18 +387,21 @@ final class ReferralController
     /** The client's private status page: who will contact them, their verified badges, and where things stand. */
     public function client(string $token): Response
     {
-        $r = Referral::query()->with(['seat', 'receiver', 'sender', 'group.industry'])->where('client_token', $token)->firstOrFail();
+        $r = Referral::query()->with(['seat', 'receiver.leader', 'sender', 'group.industry'])->where('client_token', $token)->firstOrFail();
         $t = $r->group->industry->terms();
         $receiver = $r->receiver;
 
         return Inertia::render('ClientStatus', [
             'status' => $r->status, 'firstName' => strtok($r->client_name, ' ') ?: 'there', 'territory' => $r->seat->territory_name, 'sender' => $r->sender->name, 'pro' => $t['pro'],
             'receiver' => $receiver && $r->status === 'accepted' ? [
-                'name' => $receiver->name,
+                'name' => $receiver->name, 'leader' => (string) strtok((string) $receiver->leader->first_name, ' '), 'bio' => $receiver->bio, 'serviceArea' => $receiver->service_area,
+                'phone' => $receiver->phone, 'website' => $receiver->website, 'logo' => $receiver->logo_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($receiver->logo_path) : null,
                 'licenses' => DB::table('team_licenses')->join('states', 'states.id', '=', 'team_licenses.state_id')->where(['team_id' => $receiver->id, 'status' => 'verified'])->pluck('states.code')->unique()->values(),
                 'trained' => app(\App\Domains\Network\Training\Training::class)->teamTrained($receiver),
             ] : null,
             'contactHours' => (int) $r->group->rule('first_contact_hours'),
+            'token' => $token, 'consentAt' => $r->client_confirmed_at?->toFormattedDateString(), 'temperature' => $r->temperature,
+            'canCheckIn' => $r->status === 'accepted' && $r->closed_at === null, 'flash' => session('status'),
             'stage' => $r->status === 'accepted' && $r->stage !== null ? (function () use ($r) {
                 $st = app(\App\Domains\Referrals\Pipeline::class)->stage($r);
 
