@@ -223,3 +223,12 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/performance/time-off', [App\Domains\Referrals\Http\PerformanceController::class, 'addTimeOff'])->name('performance.time-off');
     Route::delete('app/performance/time-off/{id}', [App\Domains\Referrals\Http\PerformanceController::class, 'removeTimeOff'])->whereNumber('id')->name('performance.time-off.remove');
 });
+
+// Seat challenges: holders appeal and choose; group owners and admins decide; admins can cancel.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::post('app/challenges/{id}/appeal', [App\Domains\Referrals\Http\ChallengeController::class, 'appeal'])->whereNumber('id')->name('challenges.appeal');
+    Route::post('app/challenges/{id}/choice', [App\Domains\Referrals\Http\ChallengeController::class, 'choose'])->whereNumber('id')->name('challenges.choice');
+    Route::get('app/group/{group}/challenges', [App\Domains\Referrals\Http\ChallengeController::class, 'index'])->name('group.challenges');
+    Route::post('app/challenges/{id}/decide', [App\Domains\Referrals\Http\ChallengeController::class, 'decide'])->whereNumber('id')->name('challenges.decide');
+    Route::post('app/challenges/{id}/cancel', [App\Domains\Referrals\Http\ChallengeController::class, 'cancel'])->whereNumber('id')->name('challenges.cancel');
+});

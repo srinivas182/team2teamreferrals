@@ -99,6 +99,11 @@ const messages: Record<string, string> = {
     'quick-replies-saved': 'Quick replies saved.',
     'time-off-added': 'Time off added. New referrals will go to your backup, and your score is paused.',
     'time-off-removed': 'Time off removed.',
+    'challenge-appealed': 'Appeal sent. The seat stays with you until the group owner decides.',
+    'challenge-choice': 'Saved.',
+    'challenge-upheld': 'Decided: the seat moves to the challenger. Both teams have been told.',
+    'challenge-overturned': 'Decided: the seat stays with the holder. Both teams have been told.',
+    'challenge-cancelled': 'Challenge cancelled. Both teams have been told.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

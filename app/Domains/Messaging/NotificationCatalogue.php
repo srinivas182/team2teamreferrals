@@ -53,6 +53,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.score' => ['group' => 'Network', 'label' => 'Service score alerts', 'description' => 'A heads-up when your service score dips, with what would help most.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'seat.challenge' => ['group' => 'Seats', 'label' => 'Seat challenges', 'description' => 'When your seat is challenged, its progress and outcome, and appeals.', 'channels' => ['mail', 'database', 'push'], 'urgent' => true, 'locked' => true,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

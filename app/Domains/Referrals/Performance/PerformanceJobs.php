@@ -21,7 +21,7 @@ final class PerformanceJobs extends Command
 
     protected $signature = 't2t:performance {--cards : Send last month\'s report cards now}';
 
-    protected $description = 'Early score warnings (daily) and monthly report cards (on the 1st)';
+    protected $description = 'Early score warnings and seat challenges (daily), and monthly report cards (on the 1st)';
 
     public function handle(Notifier $notifier): int
     {
@@ -34,6 +34,7 @@ final class PerformanceJobs extends Command
                 DB::table('teams')->where('id', $team->id)->update(['score_warned_at' => now()]);
             }
         }
+        app(SeatChallenges::class)->daily();
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             foreach ($holders as $team) {

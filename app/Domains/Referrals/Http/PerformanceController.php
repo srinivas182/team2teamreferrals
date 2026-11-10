@@ -31,6 +31,8 @@ final class PerformanceController
             'timeOff' => DB::table('team_time_off')->where('team_id', $team->id)->where('ends_on', '>=', now()->toDateString())->orderBy('starts_on')->get(['id', 'starts_on', 'ends_on', 'reason'])
                 ->map(fn ($t) => ['id' => (int) $t->id, 'from' => (string) $t->starts_on, 'to' => (string) $t->ends_on, 'reason' => $t->reason]),
             'canEdit' => in_array($team->roleOf($user), ['leader', 'assistant'], true),
+            'isLeader' => $team->roleOf($user) === 'leader',
+            'challenges' => ChallengeController::forTeam($team),
             'status' => session('status'),
             'seo' => SeoData::private('Performance')->toArray(),
         ]);
