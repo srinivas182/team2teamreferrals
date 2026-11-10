@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 15b part 2 — Answer-engine optimisation (AEO) pass
+- One source of truth for answers (`Aeo`): six key facts and seven questions (how it works, price, value guarantee, taken cities, referral fees by industry, verification, client privacy), used for visible FAQ sections, FAQPage structured data and llms.txt so they always agree.
+- llms.txt rewritten for the 46-industry platform (the old summary still described a broker-only product) with Key facts and Answers sections and only public URLs.
+- Home and reserve pages show the FAQ and carry FAQPage, Organization, WebSite and BreadcrumbList structured data; share pages get breadcrumbs, canonical URLs and the personal card image.
+- Sitemap: the reserve page and founding members' share pages, only for members who agreed to be shown.
+- Automated AEO check in the test suite: every public page needs a real description, a canonical URL and structured data; the visible FAQ must match the FAQ structured data; llms.txt must list only public pages; private pages must be noindex.
+- Found in review: breadcrumbs were passed in the wrong shape (they would have produced broken structured data), and the llms.txt summary showed a stray backslash before "$10".
+- 271 PHP tests in total (6 new).
+
 ### Sprint 15b part 1 — Training editor, team view, badge, certificate, refresher and reminders
 - Admin → Industries → Training: edit lessons (text, minutes, video link, transcript) and quiz questions (options, right answer, explanation), pass mark, and "material change: ask everyone to re-train". Checks: every question needs an explanation, the right answer must be an option, and every video needs a transcript. Each save is a new version; completion per group (seat holders passed) shown on the same page.
 - Team page: each member's training status, a one-tap "Remind" for leaders, and a "Network trained" badge once everyone has passed. Profile strength gains "Everyone on the team passes the network training" (+10; logo and teammate rebalanced so the total stays 100).

@@ -2,6 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { ArrowRight, Check, Gift, Lock, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CityPicker, type CityOption } from '@/components/CityPicker';
+import { Faq } from '@/components/seo/Faq';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,6 +17,7 @@ type Props = {
     points: { lat: number; lon: number; industry: string }[];
     race: { state: string; name: string; count: number }[];
     industries: { slug: string; name: string; territory: string }[];
+    faq?: { q: string; a: string }[];
     status?: string;
     seo: Seo;
 };
@@ -47,7 +49,7 @@ function Countdown({ to }: { to: string }) {
 
 const inFrame = (p: { lat: number; lon: number }) => p.lon > -125 && p.lon < -66 && p.lat > 24 && p.lat < 50;
 
-export default function Reserve({ launchAt, counters, wall, points, race, industries, status, seo }: Props) {
+export default function Reserve({ launchAt, counters, wall, points, race, industries, faq = [], status, seo }: Props) {
     const [mapIndustry, setMapIndustry] = useState('all');
     const ref = typeof window === 'undefined' ? '' : (new URLSearchParams(window.location.search).get('ref') ?? '');
     const [city, setCity] = useState<CityOption | null>(null);
@@ -295,6 +297,7 @@ export default function Reserve({ launchAt, counters, wall, points, race, indust
                     </ul>
                 </section>
             )}
+            {faq.length > 0 && <Faq items={faq} />}
         </PublicLayout>
     );
 }

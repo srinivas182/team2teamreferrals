@@ -28,7 +28,13 @@ final class ReserveController
             'race' => $this->reservations->race(),
             'industries' => Industry::query()->orderBy('name')->get(['slug', 'name', 'territory_unit'])->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name, 'territory' => $i->territory_unit]),
             'status' => session('status'),
-            'seo' => (new SeoData(title: 'Reserve your city before launch', description: 'One verified pro per city, per industry. Founding members keep their price for as long as they hold the seat.'))->toArray(),
+            'faq' => \App\Domains\Seo\Aeo::faq(),
+            'seo' => (new SeoData(
+                title: 'Reserve your city before launch',
+                description: 'Reserve your city on Team to Team Referrals: one verified pro per city, per industry, across 46 industries. No card needed; founding members keep their price for as long as they hold the seat.',
+                path: '/reserve',
+                schema: [\App\Domains\Seo\Schema::organization(), \App\Domains\Seo\Schema::breadcrumbs([['Home', '/'], ['Reserve your city', '/reserve']]), \App\Domains\Seo\Schema::faq(array_map(fn ($x) => [$x['q'], $x['a']], \App\Domains\Seo\Aeo::faq()))],
+            ))->toArray(),
         ]);
     }
 
@@ -78,7 +84,8 @@ final class ReserveController
         return Inertia::render('ReserveShare', [
             'share' => $s,
             'seo' => (new SeoData(title: "{$s['business']} reserved {$s['territory']}", description: "Founding member of {$s['group']} on Team to Team Referrals. Reserve your city before launch: one verified pro per city, per industry.",
-                path: "/reserve/c/{$shareId}", image: "/reserve/c/{$shareId}/og.png"))->toArray(),
+                path: "/reserve/c/{$shareId}", image: "/reserve/c/{$shareId}/og.png",
+                schema: [\App\Domains\Seo\Schema::breadcrumbs([['Home', '/'], ['Reserve your city', '/reserve'], ["{$s['business']}, {$s['territory']}", "/reserve/c/{$shareId}"]])]))->toArray(),
             'caption' => "We’ve reserved {$s['territory']} on Team to Team Referrals as a founding member of {$s['group']}. Have a client moving here? We’re the verified pro to call.",
         ]);
     }

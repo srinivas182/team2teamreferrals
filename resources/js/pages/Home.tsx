@@ -1,3 +1,4 @@
+import { Faq } from '@/components/seo/Faq';
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -9,7 +10,7 @@ import type { Seo } from '@/types/seo';
  * Home page shell on the real design system. The full approved home page from the
  * prototype (relay hero, accountability, network stats…) is built in Sprint 36.
  */
-export default function Home({ seo }: { seo: Seo }) {
+export default function Home({ seo, faq = [] }: { seo: Seo; faq?: { q: string; a: string }[] }) {
     return (
         <PublicLayout current="/">
             <SeoHead seo={seo} />
@@ -37,6 +38,7 @@ export default function Home({ seo }: { seo: Seo }) {
                     </p>
                 </div>
             </section>
+            {faq.length > 0 && <Faq items={faq} />}
         </PublicLayout>
     );
 }

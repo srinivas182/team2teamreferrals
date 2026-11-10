@@ -84,7 +84,19 @@ final class SeoController
     public function llms(): Response
     {
         $base = rtrim((string) config('seo.canonical_url'), '/');
-        $lines = ['# '.config('seo.site_name'), '', '> '.config('seo.llms.summary'), ''];
+        $lines = ['# '.config('seo.site_name'), '', '> '.config('seo.llms.summary'), '', '## Key facts', ''];
+        foreach (\App\Domains\Seo\Aeo::facts() as $fact) {
+            $lines[] = '- '.$fact;
+        }
+        $lines[] = '';
+        $lines[] = '## Answers';
+        $lines[] = '';
+        foreach (\App\Domains\Seo\Aeo::faq() as $qa) {
+            $lines[] = '### '.$qa['q'];
+            $lines[] = '';
+            $lines[] = $qa['a'];
+            $lines[] = '';
+        }
         foreach ($this->sitemaps->all() as $key => $provider) {
             $lines[] = '## '.ucfirst($key);
             $lines[] = '';
