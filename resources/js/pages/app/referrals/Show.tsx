@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { router, usePage, usePoll } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -31,6 +31,8 @@ type Props = {
         answers: { label: string; value: unknown }[];
     };
     isReceiver: boolean;
+    messages: { id: number; mine: boolean; who: string; when: string; body: string }[];
+    clientLink: string | null;
     agreement: {
         status: string;
         version: number | null;
@@ -57,7 +59,11 @@ const words: Record<string, string> = {
 };
 const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v));
 
-export default function ReferralShow({ referral: r, isReceiver, agreement: ag, terms, timeline, status, seo }: Props) {
+export default function ReferralShow({ referral: r, isReceiver, agreement: ag, messages, clientLink, terms, timeline, status, seo }: Props) {
+    // New messages appear without reloading while the referral is open.
+    usePoll(10000, { only: ['messages', 'timeline', 'referral'] });
+    const [msg, setMsg] = useState('');
+    const [copied, setCopied] = useState(false);
     const [signName, setSignName] = useState('');
     const [signConsent, setSignConsent] = useState(false);
     const { auth } = usePage<SharedProps>().props;
@@ -218,21 +224,70 @@ export default function ReferralShow({ referral: r, isReceiver, agreement: ag, t
                         </Card>
                     )}
                 </div>
-                <Card className="h-fit p-6">
-                    <h2 className="font-semibold">Timeline</h2>
-                    <ol className="mt-3 space-y-3 border-l border-line pl-4 text-sm">
-                        {timeline.map((t, i) => (
-                            <li key={i}>
-                                <div className="font-medium">
-                                    {words[t.event] ?? t.event}
-                                    {t.team ? ` · ${t.team}` : ''}
-                                </div>
-                                <div className="text-xs text-muted">{new Date(t.when.replace(' ', 'T') + 'Z').toLocaleString()}</div>
-                                {t.meta && typeof t.meta.reason === 'string' && <div className="text-xs text-muted">“{t.meta.reason}”</div>}
-                            </li>
-                        ))}
-                    </ol>
-                </Card>
+                <div className="space-y-6">
+                    <Card className="p-6">
+                        <h2 className="font-semibold">Messages</h2>
+                        <ol className="mt-3 max-h-80 space-y-2 overflow-y-auto text-sm" aria-live="polite">
+                            {messages.length === 0 && (
+                                <li className="text-muted">Questions about this {terms.client}? Ask here; the other team is notified.</li>
+                            )}
+                            {messages.map((m) => (
+                                <li key={m.id} className={m.mine ? 'ml-6 rounded-md bg-primary/10 p-2' : 'mr-6 rounded-md bg-bg p-2'}>
+                                    <div className="text-xs text-muted">{m.who}</div>
+                                    <p className="whitespace-pre-wrap">{m.body}</p>
+                                </li>
+                            ))}
+                        </ol>
+                        <div className="mt-3 flex gap-2">
+                            <Input aria-label="Message" placeholder="Write a message" value={msg} onChange={(e) => setMsg(e.target.value)} />
+                            <Button
+                                disabled={!msg.trim()}
+                                onClick={() =>
+                                    router.post(
+                                        `/app/referrals/${r.id}/messages`,
+                                        { body: msg },
+                                        { preserveScroll: true, onSuccess: () => setMsg('') },
+                                    )
+                                }
+                            >
+                                Send
+                            </Button>
+                        </div>
+                    </Card>
+                    {clientLink && (
+                        <Card className="space-y-2 p-6">
+                            <h2 className="font-semibold">Your {terms.client}’s status page</h2>
+                            <p className="text-sm text-muted">
+                                A private link showing who will contact them, their verified badges and where things stand.
+                            </p>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                    void navigator.clipboard.writeText(clientLink);
+                                    setCopied(true);
+                                }}
+                            >
+                                {copied ? 'Link copied' : 'Copy link to send'}
+                            </Button>
+                        </Card>
+                    )}
+                    <Card className="h-fit p-6">
+                        <h2 className="font-semibold">Timeline</h2>
+                        <ol className="mt-3 space-y-3 border-l border-line pl-4 text-sm">
+                            {timeline.map((t, i) => (
+                                <li key={i}>
+                                    <div className="font-medium">
+                                        {words[t.event] ?? t.event}
+                                        {t.team ? ` · ${t.team}` : ''}
+                                    </div>
+                                    <div className="text-xs text-muted">{new Date(t.when.replace(' ', 'T') + 'Z').toLocaleString()}</div>
+                                    {t.meta && typeof t.meta.reason === 'string' && <div className="text-xs text-muted">“{t.meta.reason}”</div>}
+                                </li>
+                            ))}
+                        </ol>
+                    </Card>
+                </div>
             </div>
         </PortalLayout>
     );

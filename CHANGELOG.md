@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 16b part 2a — Messages, one-tap accept and the client status page
+- Messages on every referral, built into the platform (no third-party chat): only the two teams can read or post; new messages appear every 10 seconds while the referral is open; the other team is notified by email, push and in-app with an excerpt, respecting their preferences and quiet hours. Messages are part of the referral's record.
+- Privacy: phone numbers and emails in messages are masked for the receiver until they accept ("[phone shown after accepting]"); notifications carry the masked excerpt and the client's short name. Dates, budgets, reference numbers and ZIP codes are left alone.
+- One-tap accept: the "new referral" email or text links to a signed confirm screen (valid until the deadline, only for the current receiver). It never accepts on open, so email link scanners can't accept by accident; it can't be used twice, and an old link stops working once the referral moves to the backup.
+- Client status page: a private link (random token, never indexed) the sender can copy and send, showing who introduced the client, who will contact them with their verified-license and "Network trained" badges, and the expected first-contact time. Sent automatically once the client confirms consent by text (part 2b).
+- 290 PHP tests in total (4 new).
+
 ### Sprint 16b part 1 — Agreements signed in the app
 - When a referral is accepted (Tier A and B), the counsel-approved agreement for the group or industry is generated with both teams, their leaders, verified license numbers, the client, the city and the receiver's state addendum. Its text is fingerprinted (SHA-256) so any later change is refused at completion.
 - Built-in e-signature: each team's leader reviews a plain-English summary and the full text, agrees to sign electronically and types their full name; time, IP address and device are recorded. When both have signed, a PDF with a signature certificate is stored privately and both sides are told; only the two teams can download it.
