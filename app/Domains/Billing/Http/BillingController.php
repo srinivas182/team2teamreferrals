@@ -68,7 +68,10 @@ final class BillingController
                 ->map(fn ($i) => ['id' => (int) $i->id, 'number' => (string) $i->number, 'period' => (string) $i->period, 'total' => $i->total_cents / 100, 'status' => (string) $i->status, 'failure' => $i->failure,
                     'canPay' => in_array($i->status, ['failed', 'action_required', 'open'], true), 'clientSecret' => null]),
             'card' => $acc && $acc->payment_method_id ? ['brand' => $acc->card_brand, 'last4' => $acc->card_last4, 'exp' => sprintf('%02d/%d', $acc->card_exp_month, $acc->card_exp_year)] : null,
-            'seats' => $seats->map(fn (Seat $s) => ['territory' => $s->territory_name, 'group' => $s->group->name, 'team' => (string) $s->primary?->name, 'status' => $s->status, 'founding' => $s->founding,
+            'credit' => (int) DB::table('billing_credits')->where(['owner_type' => $type, 'owner_id' => $id])->selectRaw('coalesce(sum(amount_cents - used_cents), 0) as c')->value('c') / 100,
+            'coupon' => DB::table('coupon_redemptions')->join('coupons', 'coupons.id', '=', 'coupon_redemptions.coupon_id')->where(['owner_type' => $type, 'owner_id' => $id])->where('months_left', '>', 0)->value('coupons.code'),
+            'seats' => $seats->map(fn (Seat $s) => ['id' => $s->id, 'cycle' => $s->billing_cycle, 'paidUntil' => $s->annual_paid_until?->toDateString(), 'annual' => \App\Domains\Billing\PricingRules::annualCents($s) / 100,
+                'monthsFree' => (int) data_get($s->group->pricing, 'annual_months_free', 2), 'territory' => $s->territory_name, 'group' => $s->group->name, 'team' => (string) $s->primary?->name, 'status' => $s->status, 'founding' => $s->founding,
                 'price' => (float) data_get($s->group->pricing, 'seat_price', 10), 'trialEnds' => $s->trial_ends_at?->toDateString()])->values(),
         ];
     }
@@ -88,6 +91,42 @@ final class BillingController
         }
 
         return back()->with('status', $result === 'paid' ? 'invoice-paid' : 'invoice-failed');
+    }
+
+    /** Choose monthly or annual billing for one seat (annual is billed on the next monthly invoice). */
+    public function cycle(Request $request, string $type, int $seat): RedirectResponse
+    {
+        $id = $this->payerId($request, $type, needsStripe: false);
+        $s = Seat::query()->with('primary')->findOrFail($seat);
+        abort_unless(BillingAccounts::payerFor($s) === ['type' => $type, 'id' => $id], 403);
+        $cycle = (string) $request->validate(['cycle' => ['required', 'in:monthly,annual']])['cycle'];
+        $s->forceFill(['billing_cycle' => $cycle])->save();
+
+        return back()->with('status', $cycle === 'annual' ? 'cycle-annual' : 'cycle-monthly');
+    }
+
+    public function redeem(Request $request, string $type): RedirectResponse
+    {
+        $id = $this->payerId($request, $type, needsStripe: false);
+        $code = strtoupper(trim((string) $request->validate(['code' => ['required', 'string', 'max:40']])['code']));
+        $c = DB::table('coupons')->where('code', $code)->where('active', true)->first();
+        $fail = fn (string $m) => throw \Illuminate\Validation\ValidationException::withMessages(['code' => $m]);
+        if ($c === null) {
+            $fail('That code isn’t valid.');
+        }
+        if ($c->expires_on !== null && now()->toDateString() > $c->expires_on) {
+            $fail('That code has expired.');
+        }
+        if ($c->max_redemptions !== null && $c->redeemed >= $c->max_redemptions) {
+            $fail('That code has been fully used.');
+        }
+        if (DB::table('coupon_redemptions')->where(['owner_type' => $type, 'owner_id' => $id])->where('months_left', '>', 0)->exists()) {
+            $fail('A coupon is already active on this account.');
+        }
+        DB::table('coupon_redemptions')->insertOrIgnore(['coupon_id' => $c->id, 'owner_type' => $type, 'owner_id' => $id, 'months_left' => $c->months, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('coupons')->where('id', $c->id)->increment('redeemed');
+
+        return back()->with('status', 'coupon-applied');
     }
 
     public function invoicePdf(Request $request, string $type, int $invoice): \Symfony\Component\HttpFoundation\StreamedResponse

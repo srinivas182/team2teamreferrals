@@ -120,6 +120,9 @@ const messages: Record<string, string> = {
     'card-saved': 'Card saved. Thank you!',
     'invoice-paid': 'Paid. Thank you! Your seats are active.',
     'invoice-failed': 'The payment didn’t go through. Please check your card, or add a new one.',
+    'cycle-annual': 'Annual billing chosen: it starts on your next invoice.',
+    'cycle-monthly': 'Monthly billing chosen.',
+    'coupon-applied': 'Coupon applied to your next invoices.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

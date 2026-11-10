@@ -11,10 +11,25 @@ import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type SeatRow = { territory: string; group: string; team: string; status: string; founding: boolean; price: number; trialEnds: string | null };
+type SeatRow = {
+    id: number;
+    cycle: string;
+    paidUntil: string | null;
+    annual: number;
+    monthsFree: number;
+    territory: string;
+    group: string;
+    team: string;
+    status: string;
+    founding: boolean;
+    price: number;
+    trialEnds: string | null;
+};
 type Inv = { id: number; number: string; period: string; total: number; status: string; failure: string | null; canPay: boolean };
 type Account = {
     type: 'team' | 'company';
+    credit: number;
+    coupon: string | null;
     name: string;
     needsNewCard: boolean;
     invoices: Inv[];
@@ -217,7 +232,13 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                                 </tbody>
                             </table>
                         </div>
-                        <p className="text-xs text-muted">Any month in which no referral is offered to a seat is free.</p>
+                        <p className="text-xs text-muted">
+                            Any month in which no referral is offered to a seat is free (on annual plans, it’s credited to your account).
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                            {a.credit > 0 && <span>Account credit: ${a.credit.toFixed(2)}</span>}
+                            {a.coupon ? <Badge tone="success">Coupon {a.coupon} applied</Badge> : <CouponForm type={a.type} />}
+                        </div>
                         {a.needsNewCard && (
                             <Alert tone="danger">
                                 Payments failed three times this year, so a new card is needed before seats can be reactivated.
@@ -253,5 +274,30 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                 ))}
             </div>
         </PortalLayout>
+    );
+}
+
+function CouponForm({ type }: { type: string }) {
+    const [code, setCode] = useState('');
+    const { errors } = usePage<{ errors: Record<string, string> }>().props;
+    return (
+        <span className="flex items-center gap-2">
+            <input
+                aria-label="Coupon code"
+                placeholder="Coupon code"
+                className="h-9 w-36 rounded-md border border-line bg-surface px-2"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+            />
+            <Button
+                size="sm"
+                variant="ghost"
+                disabled={!code.trim()}
+                onClick={() => router.post(`/app/billing/${type}/coupon`, { code }, { preserveScroll: true })}
+            >
+                Apply
+            </Button>
+            {errors.code && <span className="text-xs text-danger">{errors.code}</span>}
+        </span>
     );
 }

@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 22b part 1 — Annual prepay, discounts, coupons, credits and platform fee collection
+- Annual prepay per seat (Billing page → "Switch to annual"): billed on the next monthly invoice at 12 months less the group's free months (default 2), covering the 12 months from the start of the coming month once paid; monthly lines stop while covered. A covered month with no referral offered becomes an account credit, so annual payers keep the value guarantee.
+- Multi-city discounts per network, by how many of its seats the payer holds (highest tier reached; off by default).
+- Coupons (percentage or amount off, number of months, usage limit, expiry): redeemed on the Billing page, one active per account, with clear messages for invalid, expired or used-up codes.
+- Account credits, used last and never taking an invoice below zero; credits from re-running a month are never added twice.
+- Platform fee collection: platform fees owed on referral fees the team has received are added to its next monthly invoice as their own lines, only while a super admin has collection switched on (`billing.platform_fee_collection`), and marked paid when the invoice is paid.
+- Order on every invoice: seat lines, multi-city discounts, coupon, account credit.
+- 363 PHP tests in total (5 new).
+
 ### Sprint 22a part 2 — Monthly invoices, charging, retries and reactivation
 - Monthly billing in arrears on the 1st: one invoice per payer (a company gets one for all its branches), one line per seat for the days it was billable: after its own free trial and while not inactive, prorated by day, at the founding or regular seat price. A month in which no referral was offered to a seat is free ("Free month: no referral was offered to this seat"), where the group's value guarantee is on. Safe to re-run: one invoice per payer per month.
 - The saved card is charged off-session through Stripe, with a per-attempt idempotency key so retries can never double-charge. If the bank asks the customer to confirm, they're told and "Pay now" opens Stripe's authentication.
