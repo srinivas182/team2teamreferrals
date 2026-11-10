@@ -23,10 +23,11 @@ final class NetworkServiceProvider extends ServiceProvider
             $s->command('t2t:training:reminders')->dailyAt('15:30')->onOneServer();
             // Every 15 minutes, so a missed 24-hour deadline moves the client to the backup promptly.
             $s->command('t2t:referrals:expire')->everyFifteenMinutes()->onOneServer();
+            $s->command('t2t:performance')->dailyAt('08:00')->onOneServer();
         });
         $this->loadRoutesFrom(__DIR__.'/routes.php');
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class, Licenses\SendLicenseReminders::class, Onboarding\SendOnboardingNudges::class, Training\SendTrainingReminders::class, \App\Domains\Referrals\ExpireReferrals::class]);
+            $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class, Licenses\SendLicenseReminders::class, Onboarding\SendOnboardingNudges::class, Training\SendTrainingReminders::class, \App\Domains\Referrals\ExpireReferrals::class, \App\Domains\Referrals\Performance\PerformanceJobs::class]);
         }
     }
 }

@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 19a — Service score, report cards, early warning and time off
+- Service score (Portal → Performance), out of 100 over a rolling 90 days, in four visible parts: answered in time, first contact on time, kept the sender updated, closed the loop. Each part shows the numbers behind it ("4 of 5") and the page says what would help most. No score until 5 referrals, so a quiet period never counts against anyone; a part with nothing to count is left out rather than given free marks.
+- Monthly report card on the 1st for every seat holder (received, accepted, won, sent, average time to accept, score, what to improve), by email and in the portal, kept for a year.
+- Early warning: a friendly note when a seat holder's score drops below 75 (at most monthly), with the one or two actions that would help most.
+- Approved time off (up to 31 days at a time): new referrals go to the backup, and referrals during those days don't count towards the score.
+- Fixed in review: the score counted a team's sent referrals as received; a team that never accepted scored 75 (parts with nothing to count defaulted to full marks); the daily job loaded team leaders one by one.
+- 326 PHP tests in total (4 new).
+
 ### Sprint 18b — Attachments and reply by email
 - Attachments on referral messages: up to 3 files (photos, PDF, Word, Excel, CSV, text; 10 MB each) in private storage. Each file is virus-scanned in the background by ClamAV (streamed over its network protocol) and can only be opened once scanned clean; infected files are moved to quarantine and never served. The receiver sees file names only until they accept. Downloads use short-lived signed links, are always downloads (never rendered in the browser) and are refused to anyone outside the two teams.
 - Production runs a ClamAV container; if no scanner is reachable, files wait (ATTACHMENTS_REQUIRE_SCAN=true by default).

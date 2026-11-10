@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?array<string, string> $social
  * @property ?string $service_area
  * @property ?int $founded_year
+ * @property ?string $score_warned_at
  * @property-read User $leader
  */
 final class Team extends Model

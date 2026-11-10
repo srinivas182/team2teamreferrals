@@ -216,3 +216,10 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::put('app/group/{group}/pipeline', [App\Domains\Referrals\Http\PipelineController::class, 'save'])->name('group.pipeline.save');
     Route::post('app/group/{group}/pipeline/lock', [App\Domains\Referrals\Http\PipelineController::class, 'lock'])->name('group.pipeline.lock');
 });
+
+// Performance: service score, report cards, approved time off.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/performance', [App\Domains\Referrals\Http\PerformanceController::class, 'show'])->name('performance');
+    Route::post('app/performance/time-off', [App\Domains\Referrals\Http\PerformanceController::class, 'addTimeOff'])->name('performance.time-off');
+    Route::delete('app/performance/time-off/{id}', [App\Domains\Referrals\Http\PerformanceController::class, 'removeTimeOff'])->whereNumber('id')->name('performance.time-off.remove');
+});

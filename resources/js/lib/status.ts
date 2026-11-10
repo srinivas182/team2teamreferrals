@@ -97,6 +97,8 @@ const messages: Record<string, string> = {
     'thread-muted': 'Muted. Deadline reminders will still come through.',
     'thread-unmuted': 'Unmuted.',
     'quick-replies-saved': 'Quick replies saved.',
+    'time-off-added': 'Time off added. New referrals will go to your backup, and your score is paused.',
+    'time-off-removed': 'Time off removed.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
