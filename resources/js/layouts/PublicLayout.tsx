@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -47,6 +47,8 @@ const footer = [
 ] as const;
 
 export function PublicLayout({ children, current }: { children: ReactNode; current?: string }) {
+    // While pre-launch is on, "Claim your city" goes to the reservation page; afterwards, to sign-up.
+    const claimHref = usePage<{ modules?: Record<string, boolean> }>().props.modules?.prelaunch ? '/reserve' : '/register';
     const [open, setOpen] = useState(false);
     return (
         <TooltipProvider>
@@ -84,7 +86,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                                 <Link href="/login">Log in</Link>
                             </Button>
                             <Button size="sm" asChild>
-                                <Link href="/register">Claim your city</Link>
+                                <Link href={claimHref}>Claim your city</Link>
                             </Button>
                         </div>
                         <button
@@ -109,7 +111,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                                         <Link href="/login">Log in</Link>
                                     </Button>
                                     <Button asChild>
-                                        <Link href="/register">Claim your city</Link>
+                                        <Link href={claimHref}>Claim your city</Link>
                                     </Button>
                                 </div>
                             </nav>

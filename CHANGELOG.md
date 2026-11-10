@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 14a — Reserve your city
+- Public "Reserve your city" page (`/reserve`): launch countdown (Settings `prelaunch.launch_at`), live counters (reservations, cities, states), founding member wall, and a two-minute reservation with no card: industry, city (with instant availability), name, business and email. A honeypot stops bots.
+- Double opt-in: the reservation counts once the email link is clicked; then the pro creates an account or signs in (brought straight back) and claims it, which files a founding application in the industry's launch group and renames their team to the business name. The license is collected and verified before launch.
+- A confirmed reservation holds its territory; "Reserve anyway" lets later pros back it up or join the waitlist. The wall shows business names or first names only, and only for people who agreed.
+- Everything sits behind the pre-launch module switch; while it's on, "Claim your city" in the site header goes to the reservation page.
+- Also: a test for refusing seat offers that would take a company over its cap (owed from Sprint 13); visual check of the reserve page and company dashboard.
+- Fixed in review: a confirmed reservation didn't make the city show as taken (the seat only exists once claimed).
+- 246 PHP tests in total (5 new).
+
 ### Sprint 13 — Companies
 - Companies (Portal → Company): create one, and your team becomes its first branch. The company admin sees every branch and city leader, every seat (group, branch, trial end, status), branches waiting for seats, and the company's private network.
 - Who pays: per seat, the company centrally or the city team, switchable by the company admin only (billing uses it in Sprint 22). Payment problems on company-paid seats also notify the company admin.

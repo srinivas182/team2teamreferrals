@@ -72,6 +72,7 @@ const messages: Record<string, string> = {
     'company-invites-sent': 'Invitations sent.',
     'company-joined': 'You’re now a branch of the company.',
     'payer-changed': 'Who pays for this seat has been updated.',
+    'reservation-claimed': 'You’re a founding member. Add your license so we can verify it before launch.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
