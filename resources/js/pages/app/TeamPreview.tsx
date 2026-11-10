@@ -24,11 +24,12 @@ type Props = {
     seats: { group: string; territory: string; founding: boolean }[];
     strength: { score: number };
     company: { name: string; cities: number } | null;
+    record: { closed: number; value: number | null; rating: number | null; ratings: number; thanks: { from: string; note: string }[] };
     seo: Seo;
 };
 
 /** How the team will look to other pros and clients. Publishing arrives with public profiles (Sprint 26). */
-export default function TeamPreview({ team, licenses, seats, strength, company, seo }: Props) {
+export default function TeamPreview({ team, licenses, seats, strength, company, record, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     return (
         <PortalLayout title="Profile preview" user={{ name: auth.user?.name ?? '', team: team.name }}>
@@ -85,6 +86,31 @@ export default function TeamPreview({ team, licenses, seats, strength, company, 
                             {team.foundedYear ? ` · since ${team.foundedYear}` : ''}
                         </li>
                     </ul>
+                    <div className="mt-5 grid grid-cols-3 gap-3 border-t border-line pt-4 text-center">
+                        <div>
+                            <div className="font-display text-2xl font-bold tabular">{record.closed}</div>
+                            <div className="text-xs text-muted">referrals closed</div>
+                        </div>
+                        <div>
+                            <div className="font-display text-2xl font-bold tabular">{record.rating !== null ? `${record.rating}★` : '—'}</div>
+                            <div className="text-xs text-muted">
+                                {record.ratings} rating{record.ratings === 1 ? '' : 's'}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="font-display text-2xl font-bold tabular">
+                                {record.value !== null
+                                    ? record.value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+                                    : '—'}
+                            </div>
+                            <div className="text-xs text-muted">{record.value !== null ? 'closed value' : 'value not shown'}</div>
+                        </div>
+                    </div>
+                    {record.thanks.map((t) => (
+                        <blockquote key={t.note} className="mt-3 rounded-md bg-bg p-3 text-sm">
+                            “{t.note}” <span className="text-muted">· {t.from}</span>
+                        </blockquote>
+                    ))}
                     {seats.length > 0 && (
                         <div className="mt-5 border-t border-line pt-4">
                             <h2 className="text-sm font-semibold">Seats</h2>

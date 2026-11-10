@@ -12,6 +12,7 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Props = {
+    showDealValue?: boolean;
     quickReplies?: string[];
     team: {
         id: string;
@@ -37,7 +38,19 @@ type Props = {
 
 const socials = ['linkedin', 'facebook', 'instagram', 'youtube', 'x'] as const;
 
-export default function Team({ quickReplies = [], team, canEdit, canManage, members, teamTrained, invites, roles, status, seo }: Props) {
+export default function Team({
+    showDealValue = false,
+    quickReplies = [],
+    team,
+    canEdit,
+    canManage,
+    members,
+    teamTrained,
+    invites,
+    roles,
+    status,
+    seo,
+}: Props) {
     const { auth } = usePage<SharedProps>().props;
     const form = useForm<{
         name: string;
@@ -219,6 +232,20 @@ export default function Team({ quickReplies = [], team, canEdit, canManage, memb
                         </Card>
                     )}
                 </div>
+                {canEdit && (
+                    <Card className="mt-6 max-w-5xl p-6">
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={showDealValue}
+                                onChange={(e) =>
+                                    router.post('/app/team', { name: team.name, show_deal_value: e.target.checked }, { preserveScroll: true })
+                                }
+                            />{' '}
+                            Show the total value of our closed referrals on our profile
+                        </label>
+                    </Card>
+                )}
                 {canEdit && (
                     <Card id="quick-replies" className="mt-6 max-w-5xl space-y-3 p-6">
                         <h2 className="font-semibold">Quick replies</h2>

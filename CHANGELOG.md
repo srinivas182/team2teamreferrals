@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 20b part 2 — Dispute centre and team track record
+- Dispute centre (group page → Disputes; admins for every network): disputed closes and fees in one place, with both sides' reasons, the earnings and value, and links to the timeline, messages and signed agreement.
+- Disputed close: the owner confirms it (the fee and the client's question follow) or reopens the referral at the stage it was in before Won.
+- Fee disputes: the paying team can dispute a fee that's still due. The owner confirms it as due, adjusts it (never above the original; the platform fee is recalculated from the new amount) or waives it (no platform fee). Every decision needs a note both teams see, and is audited.
+- Track record on the team profile (preview now, public profiles in Sprint 26): referrals closed, average rating once there are at least 3 ratings (with the count), total closed value only if the team chooses to show it (Team page), and thank-you notes the referring team made public.
+- 343 PHP tests in total (3 new).
+
 ### Sprint 20b fix — Fees are based on the receiving team's earnings; platform fee from the referring team's fee
 - Corrected (reported by the product owner): a percentage referral fee is a share of the receiving team's earnings from the referral (in real estate, their commission), never of the sale or job price. Example: B earns a $5,000 commission on a $100,000 sale; at 30%, A earns $1,500 (not $30,000).
 - At Won, the receiving team enters the sale or job value (for the record) and their earnings from the referral; earnings are required whenever a percentage fee applies.

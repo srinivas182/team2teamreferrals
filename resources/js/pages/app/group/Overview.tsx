@@ -87,6 +87,9 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                     <a href={`/app/group/${group.slug}/messages`} className="float-right text-sm font-medium text-primary">
                         Message wording
                     </a>
+                    <a href={`/app/group/${group.slug}/disputes`} className="float-right mr-4 text-sm font-medium text-primary">
+                        Disputes
+                    </a>
                     <a href={`/app/group/${group.slug}/challenges`} className="float-right mr-4 text-sm font-medium text-primary">
                         Seat challenges
                     </a>
