@@ -31,6 +31,17 @@ type Props = {
         answers: { label: string; value: unknown }[];
     };
     isReceiver: boolean;
+    agreement: {
+        status: string;
+        version: number | null;
+        summary: string[];
+        sections: { title: string; text: string }[];
+        sender: { name: string | null; at: string | null };
+        receiver: { name: string | null; at: string | null };
+        canSign: boolean;
+        signerName: string;
+        pdf: string | null;
+    } | null;
     terms: Record<string, string>;
     timeline: { event: string; when: string; team: string | null; meta: Record<string, unknown> | null }[];
     status?: string;
@@ -46,7 +57,9 @@ const words: Record<string, string> = {
 };
 const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v));
 
-export default function ReferralShow({ referral: r, isReceiver, terms, timeline, status, seo }: Props) {
+export default function ReferralShow({ referral: r, isReceiver, agreement: ag, terms, timeline, status, seo }: Props) {
+    const [signName, setSignName] = useState('');
+    const [signConsent, setSignConsent] = useState(false);
     const { auth } = usePage<SharedProps>().props;
     const now = useNow();
     const [declining, setDeclining] = useState(false);
@@ -93,6 +106,87 @@ export default function ReferralShow({ referral: r, isReceiver, terms, timeline,
                             Consent recorded {new Date(r.consentAt).toLocaleString()}: “{r.consentText}”
                         </p>
                     </Card>
+                    {ag && (
+                        <Card className="space-y-3 p-6">
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-semibold">Referral agreement</h2>
+                                <Badge tone={ag.status === 'signed' ? 'success' : 'warning'}>
+                                    {ag.status === 'signed'
+                                        ? 'Signed by both'
+                                        : ag.status === 'pending'
+                                          ? 'Waiting for signatures'
+                                          : 'Waiting for approval'}
+                                </Badge>
+                            </div>
+                            {ag.status === 'awaiting_approval' ? (
+                                <p className="text-sm text-muted">
+                                    The agreement for this network is being approved by counsel. You’ll both be asked to sign as soon as it’s ready;
+                                    the referral can go ahead meanwhile.
+                                </p>
+                            ) : (
+                                <>
+                                    <ul className="list-disc space-y-1 pl-5 text-sm">
+                                        {ag.summary.map((x) => (
+                                            <li key={x}>{x}</li>
+                                        ))}
+                                    </ul>
+                                    <details className="text-sm">
+                                        <summary className="cursor-pointer font-medium text-primary">
+                                            Read the full agreement (version {ag.version})
+                                        </summary>
+                                        <div className="mt-3 max-h-80 space-y-3 overflow-y-auto rounded-md bg-bg p-4">
+                                            {ag.sections.map((x) => (
+                                                <div key={x.title}>
+                                                    <h3 className="font-semibold">{x.title}</h3>
+                                                    <p>{x.text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </details>
+                                    <ul className="text-sm">
+                                        <li>Referring team: {ag.sender.at ? `signed by ${ag.sender.name}` : 'not signed yet'}</li>
+                                        <li>Receiving team: {ag.receiver.at ? `signed by ${ag.receiver.name}` : 'not signed yet'}</li>
+                                    </ul>
+                                    {ag.canSign && (
+                                        <div className="space-y-2 rounded-md border border-line p-4">
+                                            <Input
+                                                aria-label="Type your full name"
+                                                placeholder={`Type your full name: ${ag.signerName}`}
+                                                value={signName}
+                                                onChange={(e) => setSignName(e.target.value)}
+                                            />
+                                            <label className="flex items-start gap-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    className="mt-1"
+                                                    checked={signConsent}
+                                                    onChange={(e) => setSignConsent(e.target.checked)}
+                                                />{' '}
+                                                I agree to sign this agreement electronically, and my typed name is my signature.
+                                            </label>
+                                            <Button
+                                                disabled={!signName.trim() || !signConsent}
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/app/referrals/${r.id}/sign`,
+                                                        { name: signName, consent: signConsent },
+                                                        { preserveScroll: true },
+                                                    )
+                                                }
+                                            >
+                                                Sign as {ag.signerName}
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {ag.pdf && (
+                                        <a href={ag.pdf} className="text-sm font-medium text-primary">
+                                            Download the signed agreement (PDF)
+                                        </a>
+                                    )}
+                                </>
+                            )}
+                        </Card>
+                    )}
                     {isReceiver && waiting && (
                         <Card className="space-y-3 p-6">
                             <h2 className="font-semibold">Can you help this {terms.client}?</h2>

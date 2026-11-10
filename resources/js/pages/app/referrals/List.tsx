@@ -69,7 +69,10 @@ export function ReferralList({
                 <ul className="divide-y divide-line">
                     {items.map((r) => (
                         <li key={r.id}>
-                            <Link href={`/app/referrals/${r.id}`} className="flex flex-wrap items-center gap-3 p-4 hover:bg-bg">
+                            <Link
+                                href={`/app/referrals/${r.id}`}
+                                className={`flex flex-wrap items-center gap-3 p-4 hover:bg-bg ${mode === 'in' && r.status === 'sent' && new Date(r.respondBy).getTime() - now < 7.2e6 ? 'border-l-4 border-warning' : ''}`}
+                            >
                                 <div className="min-w-0 flex-1">
                                     <div className="font-medium">
                                         {r.client} · {r.territory}

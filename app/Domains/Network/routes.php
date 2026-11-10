@@ -177,5 +177,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/sign', [App\Domains\Referrals\Http\ReferralController::class, 'sign'])->middleware('throttle:20,60')->name('referrals.sign');
+    Route::get('app/referrals/{referral}/agreement.pdf', [App\Domains\Referrals\Http\ReferralController::class, 'agreementPdf'])->name('referrals.agreement.pdf');
     Route::post('app/referrals/{referral}/decline', [App\Domains\Referrals\Http\ReferralController::class, 'decline'])->name('referrals.decline');
 });

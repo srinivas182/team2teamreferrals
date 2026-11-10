@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 16b part 1 — Agreements signed in the app
+- When a referral is accepted (Tier A and B), the counsel-approved agreement for the group or industry is generated with both teams, their leaders, verified license numbers, the client, the city and the receiver's state addendum. Its text is fingerprinted (SHA-256) so any later change is refused at completion.
+- Built-in e-signature: each team's leader reviews a plain-English summary and the full text, agrees to sign electronically and types their full name; time, IP address and device are recorded. When both have signed, a PDF with a signature certificate is stored privately and both sides are told; only the two teams can download it.
+- If no agreement version has been approved by counsel yet, the referral goes ahead and the agreement waits, with a clear note on the referral.
+- A reminder to the side that hasn't signed after 24 hours (once). New notification type "Referral agreements".
+- Inbox lists waiting referrals first, soonest deadline on top, with under-2-hours highlighted.
+- Fixed in review: directory (Tier C) networks could route referrals between members (they now never do, and don't appear on Send); two notifications would have shown unfilled placeholders such as "{team}" (now covered by a test over the whole referral flow); license text was joined with SQL "||", which means OR on MySQL.
+- 286 PHP tests in total (7 new).
+
 ### Sprint 16a — Sending and accepting referrals
 - Send a referral (Portal → Send referral): pick the network and the city where the client needs help; a routing preview shows who will receive it (holder or backup), their average time to accept, and the backup. The industry's (or group's) referral form is shown field by field; required answers are checked; the client's consent is recorded with its exact wording and time.
 - Only teams approved into the group can send, and the training gate applies to senders. Sending to your own territory is refused. A duplicate-client guard warns when the same client (phone or email) was referred in the network in the last 90 days.
