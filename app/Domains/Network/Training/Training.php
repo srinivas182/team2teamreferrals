@@ -72,10 +72,11 @@ final class Training
     public function receiver(Seat $seat): ?Team
     {
         $team = $seat->receiver();
-        if ($team !== null && $team->id === $seat->primary_team_id && $this->blocks($team->leader, $seat->group)) {
+        // The holder is away (approved time off) or hasn't finished required training: the backup receives instead.
+        if ($team !== null && $team->id === $seat->primary_team_id && ($this->blocks($team->leader, $seat->group) || \App\Domains\Referrals\Performance\ServiceScore::onTimeOff($team))) {
             $backup = $seat->backup;
 
-            return $backup !== null && ! $this->blocks($backup->leader, $seat->group) ? $backup : null;
+            return $backup !== null && ! $this->blocks($backup->leader, $seat->group) && ! \App\Domains\Referrals\Performance\ServiceScore::onTimeOff($backup) ? $backup : null;
         }
 
         return $team;
