@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 22a part 1 — Billing accounts, saved cards and trial notices
+- Billing accounts per payer: the holding team, or its company for company-paid seats. Each has a Stripe customer, created on first use (idempotent).
+- Saved cards through Stripe's own secure form (Payment Element with a SetupIntent for off-session charges): card details never reach our servers; we keep Stripe's reference plus brand, last four digits and expiry. A card is saved only after checking it belongs to that account's Stripe customer.
+- Billing page (Portal → Billing): each account the person pays for (their team; their company if they run one), its card, and every seat it pays for with price, founding badge, free-trial end and status. Leaders and assistants manage team billing; the company admin manages company billing.
+- Trial notices 14, 7 and 1 days before each seat's free trial ends (once each), saying whether a card is on file; company-paid seats tell the company admin and the city leader.
+- Stripe keys come from Admin → Settings (publishable key, secret key, webhook secret). Stripe's script, frames and API are allowed by the security policy on billing pages only.
+- Billing design: our own monthly billing on top of Stripe cards and charges (each seat has its own trial date; a month with no referral offered is free; companies get one invoice). Monthly invoicing, charging, retries and reactivation come in part 2.
+- 349 PHP tests in total (6 new).
+
 ### Sprint 20b part 2 — Dispute centre and team track record
 - Dispute centre (group page → Disputes; admins for every network): disputed closes and fees in one place, with both sides' reasons, the earnings and value, and links to the timeline, messages and signed agreement.
 - Disputed close: the owner confirms it (the fee and the client's question follow) or reopens the referral at the stage it was in before Won.
