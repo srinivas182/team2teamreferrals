@@ -140,6 +140,15 @@ const messages: Record<string, string> = {
     moderated: 'Done.',
     'win-posted': 'Your win is posted in the network feed. Congratulations!',
     'win-waiting': 'Thanks! It will be posted once the other team agrees.',
+    'event-created': 'Event created and posted to the feed.',
+    'event-updated': 'Event updated. Everyone going has the new time in their calendar.',
+    'event-cancelled': 'Event cancelled. Everyone going has been told.',
+    'event-notes': 'Notes saved.',
+    'rsvp-going': 'You’re going! Check your email for the calendar invite.',
+    'rsvp-waitlist': 'The event is full: you’re on the waitlist and we’ll tell you if a place opens up.',
+    'rsvp-maybe': 'Saved as maybe.',
+    'rsvp-no': 'Saved.',
+    'checked-in': 'You’re checked in. Enjoy the event!',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

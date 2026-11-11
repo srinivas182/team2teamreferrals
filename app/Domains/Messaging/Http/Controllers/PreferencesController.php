@@ -48,6 +48,7 @@ final class PreferencesController
             'matrix' => ['array'],
             'matrix.*' => ['array'],
             'matrix.*.*' => ['boolean'],
+            'timezone' => ['sometimes', 'timezone:all'],
             'quiet_start' => ['nullable', 'date_format:H:i', 'required_with:quiet_end'],
             'quiet_end' => ['nullable', 'date_format:H:i', 'required_with:quiet_start', 'different:quiet_start'],
             'digest' => ['boolean'],
@@ -59,6 +60,8 @@ final class PreferencesController
             }
         }
         $user->forceFill([
+            // Choosing a time zone here means it's never replaced by the team-city default.
+            ...(isset($data['timezone']) ? ['timezone' => $data['timezone'], 'timezone_chosen' => true] : []),
             'quiet_hours_start' => $data['quiet_start'] ?? null,
             'quiet_hours_end' => $data['quiet_end'] ?? null,
             'email_digest' => (bool) ($data['digest'] ?? false),

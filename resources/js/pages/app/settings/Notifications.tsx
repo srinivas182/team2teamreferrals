@@ -40,7 +40,7 @@ export default function NotificationSettings({
     seo,
 }: Props) {
     const { auth } = usePage<SharedProps>().props;
-    const form = useForm({ matrix, quiet_start: quiet.start ?? '', quiet_end: quiet.end ?? '', digest });
+    const form = useForm({ matrix, quiet_start: quiet.start ?? '', quiet_end: quiet.end ?? '', digest, timezone: quiet.timezone });
     const [push, setPush] = useState<string | null>(null);
     const groups = Array.from(new Set(types.map((t) => t.group)));
     const cols = Object.keys(channels);
@@ -135,9 +135,29 @@ export default function NotificationSettings({
                         <h2 className="mt-3 font-semibold">Quiet hours</h2>
                         <p className="mt-1 text-sm text-muted">
                             Non-urgent texts, emails and pushes wait until quiet hours end. Urgent items, like a referral waiting for you, still come
-                            through. Times are in {quiet.timezone.replace('_', ' ')}.
+                            through. Times are in your time zone, below.
                         </p>
                         <div className="mt-4 grid grid-cols-2 gap-3">
+                            <Field
+                                label="Your time zone"
+                                hint="Used for quiet hours, reminders and event times. It starts from your team’s city."
+                                error={form.errors.timezone}
+                            >
+                                <select
+                                    className="h-10 w-full rounded-md border border-line bg-surface px-2"
+                                    value={form.data.timezone}
+                                    onChange={(e) => form.setData('timezone', e.target.value)}
+                                >
+                                    {US_ZONES.map(([z, l]) => (
+                                        <option key={z} value={z}>
+                                            {l}
+                                        </option>
+                                    ))}
+                                    {!US_ZONES.some(([z]) => z === form.data.timezone) && (
+                                        <option value={form.data.timezone}>{form.data.timezone}</option>
+                                    )}
+                                </select>
+                            </Field>
                             <Field label="From" error={form.errors.quiet_start}>
                                 <Input type="time" value={form.data.quiet_start} onChange={(e) => form.setData('quiet_start', e.target.value)} />
                             </Field>
@@ -218,3 +238,18 @@ export default function NotificationSettings({
         </PortalLayout>
     );
 }
+
+const US_ZONES: [string, string][] = [
+    ['America/New_York', 'Eastern'],
+    ['America/Chicago', 'Central'],
+    ['America/Denver', 'Mountain'],
+    ['America/Phoenix', 'Arizona (no daylight saving)'],
+    ['America/Los_Angeles', 'Pacific'],
+    ['America/Anchorage', 'Alaska'],
+    ['Pacific/Honolulu', 'Hawaii'],
+    ['America/Puerto_Rico', 'Puerto Rico'],
+    ['America/Boise', 'Mountain (Idaho)'],
+    ['America/Detroit', 'Eastern (Michigan)'],
+    ['America/Indiana/Indianapolis', 'Eastern (Indiana)'],
+    ['America/Menominee', 'Central (Michigan Upper Peninsula)'],
+];

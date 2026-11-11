@@ -24,6 +24,7 @@ import {
     BookUser,
     Trophy,
     Award,
+    CalendarDays,
 } from 'lucide-react';
 
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number };
@@ -43,6 +44,7 @@ export const portalNav: NavItem[] = [
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
     { label: 'Feed', href: '/app/feed', icon: MessagesSquare },
+    { label: 'Events', href: '/app/events', icon: CalendarDays },
     { label: 'Directory', href: '/app/directory', icon: BookUser },
     { label: 'Leaderboards', href: '/app/leaderboards', icon: Trophy },
     { label: 'Badges', href: '/app/badges', icon: Award },

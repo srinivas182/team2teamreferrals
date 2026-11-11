@@ -4,6 +4,26 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 27 — Events and meetups
+Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/EventsTest.php:
+1. Events (owners): title, date and time in a chosen time zone, online with a video link or in person with a location, length, description.
+2. RSVP: going, maybe, can't go.
+3. Reminders a day and an hour before (once each), in each member's own time zone.
+4. Calendar invites (.ics) emailed on "going", written in UTC so every calendar shows its owner's local time; "Add to calendar" download too.
+5. Attendee list, marking who came.
+6. Post-event notes (client contact details masked).
+7. Changes send a revised invite (same event, higher revision) and cancellations remove it from calendars; members are told.
+8. The video link is shown only to people going, from 15 minutes before the start until the end.
+9. Capacity for in-person events, with a waitlist; a freed place goes to the next person, who gets the invite.
+10. Recurring events, weekly or monthly on the same weekday ("first Tuesday" stays a first Tuesday; a 5th becomes the last), each date with its own RSVPs.
+11. Each new event is posted to the network feed with one-tap "I'm going".
+12. QR check-in at in-person events (opens an hour before); the owner shows the code at the door.
+13. "Who you met" after the event: each attendee sees the other attendees' teams to follow up.
+14. Times shown in each viewer's own zone, with the event's zone alongside.
+- Time zones: members can now choose their time zone (notification settings); until they do, it follows their team's city (state plus the split-state rules: El Paso, the Florida panhandle, East/West Tennessee and Kentucky, and others; Arizona has no daylight saving). A member's own choice is never overwritten. Existing members are back-filled from their team's city. Quiet hours now use the right zone too (everyone had been on the America/Denver default).
+- Fixed before release: the time zone lookup used a non-existent column name, which would have crashed the production migration's back-fill; it was found by running the migration against a database with real seats.
+- 425 PHP tests in total (11 new).
+
 ### Badges awarded daily
 - New badges are awarded in the daily run, so recognition follows the achievement; badges are removed only at the monthly re-check on the 1st (earned, not permanent). Badge rules and the Badges page say so. 414 PHP tests (1 new).
 

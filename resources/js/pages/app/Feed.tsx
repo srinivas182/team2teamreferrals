@@ -17,7 +17,8 @@ import type { Seo } from '@/types/seo';
 type Comment = { id: number; team: string; body: string; at: string; offer: boolean; sendUrl: string | null };
 type Post = {
     id: number;
-    kind: 'post' | 'ask' | 'announcement' | 'win';
+    kind: 'post' | 'ask' | 'announcement' | 'win' | 'event';
+    eventId?: number | null;
     body: string;
     team: string;
     teamSlug: string | null;
@@ -50,10 +51,21 @@ function PostCard({ p, isOwner }: { p: Post; isOwner: boolean }) {
                 {p.kind === 'ask' && <Badge tone="info">Asking for a pro{p.city ? ` in ${p.city}` : ''}</Badge>}
                 {p.kind === 'announcement' && <Badge tone="sender">Announcement</Badge>}
                 {p.kind === 'win' && <Badge tone="success">Win</Badge>}
+                {p.kind === 'event' && <Badge tone="sender">Event</Badge>}
                 {p.pinned && <Pin className="size-3.5 text-muted" aria-label="Pinned" />}
                 <span className="ml-auto text-xs text-muted">{p.at}</span>
             </div>
             <p className="whitespace-pre-wrap">{p.body}</p>
+            {p.kind === 'event' && p.eventId && (
+                <div className="flex gap-2">
+                    <Button size="sm" onClick={() => router.post(`/app/events/${p.eventId}/rsvp`, { status: 'going' }, opts)}>
+                        I’m going
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => router.visit(`/app/events/${p.eventId}`)}>
+                        Details
+                    </Button>
+                </div>
+            )}
             <div className="flex flex-wrap items-center gap-1 text-sm">
                 {(
                     [
