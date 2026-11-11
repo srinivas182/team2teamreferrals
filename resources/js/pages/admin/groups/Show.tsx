@@ -33,6 +33,11 @@ type Rules = {
     release_days: number;
     offer_hours: number;
     auto_approve: boolean;
+    credit_sent: number;
+    credit_closed: number;
+    credit_received: number;
+    min_balance_enabled: boolean;
+    min_balance: number;
 };
 type SeatRow = {
     id: number;
@@ -336,17 +341,29 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
                                 ['first_contact_hours', 'First contact within (hours)'],
                                 ['update_days', 'Status update every (days)'],
                                 ['challenge_days', 'Seat challenge after (days below threshold)'],
-                                ['challenge_threshold', 'Challenge threshold (trust score)'],
+                                ['challenge_threshold', 'Challenge threshold (service score)'],
                                 ['company_cap_pct', 'Company cap (% of a state’s seats)'],
                                 ['grace_days', 'Grace after a failed payment (days)'],
                                 ['release_days', 'Release an unpaid seat after (days)'],
                                 ['offer_hours', 'Time to claim an offered seat (hours)'],
+                                ['credit_sent', 'Credits for a referral sent and accepted'],
+                                ['credit_closed', 'Bonus credits when it closes as Won'],
+                                ['credit_received', 'Credits for each referral accepted (0 or less)'],
+                                ['min_balance', 'Flag teams below this balance'],
                             ] as [keyof Rules, string][]
                         ).map(([k, l]) => (
                             <Field key={k} label={l} error={errs(rules, k)}>
                                 <Input type="number" value={rules.data.values[k] as number} onChange={(e) => setR(k, +e.target.value)} />
                             </Field>
                         ))}
+                        <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={rules.data.values.min_balance_enabled}
+                                onChange={(e) => setR('min_balance_enabled', e.target.checked)}
+                            />{' '}
+                            Flag teams that take much more than they give
+                        </label>
                         <Field label="Waitlist ranking">
                             <Select value={rules.data.values.waitlist} onChange={(e) => setR('waitlist', e.target.value)}>
                                 <option value="trust">Trust score and profile strength</option>

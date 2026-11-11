@@ -80,7 +80,8 @@ final class Group extends Model
     /** @return array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string, grace_days: int, release_days: int, offer_hours: int, auto_approve: bool, training_required: bool, training_grace_days: int, training_since: ?string} */
     public static function defaultRules(): array
     {
-        return ['accept_hours' => 24, 'first_contact_hours' => 24, 'update_days' => 7, 'challenge_days' => 60, 'challenge_threshold' => 70, 'company_cap_pct' => 25, 'waitlist' => 'trust', 'grace_days' => 7, 'release_days' => 30, 'offer_hours' => 72, 'auto_approve' => false, 'training_required' => true, 'training_grace_days' => 14, 'training_since' => null];
+        return ['accept_hours' => 24, 'first_contact_hours' => 24, 'update_days' => 7, 'challenge_days' => 60, 'challenge_threshold' => 70, 'company_cap_pct' => 25, 'waitlist' => 'trust', 'grace_days' => 7, 'release_days' => 30, 'offer_hours' => 72, 'auto_approve' => false, 'training_required' => true, 'training_grace_days' => 14, 'training_since' => null,
+            'credit_sent' => 1, 'credit_closed' => 2, 'credit_received' => -1, 'min_balance_enabled' => false, 'min_balance' => -5];
     }
 
     /** @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} */

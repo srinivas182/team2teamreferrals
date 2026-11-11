@@ -62,13 +62,17 @@ final class GroupSettings
             'offer_hours' => ['sometimes', 'integer', 'min:24', 'max:168'],
             'auto_approve' => ['sometimes', 'boolean'],
             'training_required' => ['sometimes', 'boolean'],
+            'credit_sent' => ['sometimes', 'integer', 'between:0,10'], 'credit_closed' => ['sometimes', 'integer', 'between:0,20'], 'credit_received' => ['sometimes', 'integer', 'between:-10,0'],
+            'min_balance_enabled' => ['sometimes', 'boolean'], 'min_balance' => ['sometimes', 'integer', 'between:-100,0'],
             'training_grace_days' => ['sometimes', 'integer', 'min:0', 'max:60'],
         ], ['release_days.gt' => 'A seat must be released after the grace period ends.'])->validate();
 
         return ['accept_hours' => (int) $v['accept_hours'], 'first_contact_hours' => (int) $v['first_contact_hours'], 'update_days' => (int) $v['update_days'],
             'challenge_days' => (int) $v['challenge_days'], 'challenge_threshold' => (int) $v['challenge_threshold'], 'company_cap_pct' => (int) $v['company_cap_pct'], 'waitlist' => (string) $v['waitlist'],
             'grace_days' => (int) ($v['grace_days'] ?? 7), 'release_days' => (int) ($v['release_days'] ?? 30), 'offer_hours' => (int) ($v['offer_hours'] ?? 72), 'auto_approve' => (bool) ($v['auto_approve'] ?? false),
-            'training_required' => (bool) ($v['training_required'] ?? true), 'training_grace_days' => (int) ($v['training_grace_days'] ?? 14), 'training_since' => isset($input['training_since']) && is_string($input['training_since']) ? $input['training_since'] : null];
+            'training_required' => (bool) ($v['training_required'] ?? true), 'training_grace_days' => (int) ($v['training_grace_days'] ?? 14), 'training_since' => isset($input['training_since']) && is_string($input['training_since']) ? $input['training_since'] : null,
+            'credit_sent' => (int) ($v['credit_sent'] ?? 1), 'credit_closed' => (int) ($v['credit_closed'] ?? 2), 'credit_received' => (int) ($v['credit_received'] ?? -1),
+            'min_balance_enabled' => (bool) ($v['min_balance_enabled'] ?? false), 'min_balance' => (int) ($v['min_balance'] ?? -5)];
     }
 
     /**
