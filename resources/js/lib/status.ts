@@ -132,6 +132,8 @@ const messages: Record<string, string> = {
     'nurture-still': 'Check-in saved. Your protection period has been extended.',
     'nurture-ready': 'Marked ready. The referring team has been told.',
     'nurture-lost': 'Marked lost.',
+    'profile-shown': 'Your profile is public.',
+    'profile-hidden': 'Your profile is hidden.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

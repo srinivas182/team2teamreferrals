@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 25a — "Refer to me" public profiles
+- Public team profile at /t/{team} for teams holding a seat: logo, networks and cities, verified licences, service score (5+ referrals), ratings (3+), referrals closed, public thank-you notes and the Top giver badge; call and website buttons. Search-ready (LocalBusiness structured data, canonical address, sitemap) and checked against the same answer-engine rules as other public pages. Teams can hide their profile.
+- Web address per team, created before the first save; it follows renames until the profile has been visited or shared, then never changes, so links and printed QR cards keep working.
+- QR code (SVG, via bacon/bacon-qr-code), share link, copy-ready email signature with a "Refer a client to us" button, and a printable QR card (PDF): Portal → Share profile.
+- Profile analytics: visits (once per visitor per day), QR scans, link clicks and referrals, last 30 days.
+- "Refer a client to us": members go to the network send form already set to the team's network and city (so agreements, fees and credits apply); non-members' referrals pass spam checks (hidden honeypot, timing check, 5 per hour per address, duplicate check over 30 days) and are only passed on after they confirm by email. The team is notified ("Leads from your profile") and manages them on Portal → Profile leads.
+- Fixed in review: the address would have been frozen to the person's name used at sign-up; generating it saved the team twice (6 extra queries per sign-up); a formatter change had silently undone an edit (caught by tests).
+- Query budget for the portal home on a first visit is 23 (was 22): the one new query checks a new team's web address isn't taken, once per team.
+- 389 PHP tests in total (6 new).
+
 ### Sprint 24b — What credits are for, plus nurture additions
 - Credits earn standing, never money (in Tier B industries anything of value for referrals is prohibited by RESPA; redeeming credits stays off and could be enabled only for Tier A after counsel sign-off).
 - Waitlist ranking: reciprocity adds up to +15 for giving (3 per credit) or takes up to −10 for only taking (still 0–100); rankings refresh whenever credits change.

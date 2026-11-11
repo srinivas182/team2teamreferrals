@@ -35,7 +35,8 @@ jobs:
           echo "$files"
           code=false; docker=false; web=false
           if echo "$files" | grep -qvE '^(docs/|brand/|design/|prototype/|tools/brand/|.*\.md$)'; then code=true; fi
-          if echo "$files" | grep -qE '^(docker/|compose\.yaml$|compose\.prod\.yaml$)'; then docker=true; fi
+          # New PHP or JavaScript dependencies change what goes into the image, so they rebuild it too.
+          if echo "$files" | grep -qE '^(docker/|compose\.yaml$|compose\.prod\.yaml$|composer\.(json|lock)$|package(-lock)?\.json$)'; then docker=true; fi
           # Lighthouse only when public-facing code changes (saves Actions minutes on back-end work).
           if echo "$files" | grep -qE '^(resources/|public/|routes/web\.php|app/Domains/Seo/|vite\.config|package(-lock)?\.json|lighthouserc\.json)'; then web=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"

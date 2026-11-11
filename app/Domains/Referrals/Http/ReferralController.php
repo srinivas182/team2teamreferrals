@@ -37,6 +37,9 @@ final class ReferralController
                 'canText' => $g->industry->client_texting_approved,
             ], $groups),
             'refresher' => $firstTime && $groups !== [] ? $groups[0]->industry->slug : null,
+            // From a team's public profile: their network and city chosen already.
+            'prefill' => ($city = City::query()->with('state')->find((int) $request->query('city'))) && collect($groups)->contains('slug', (string) $request->query('group'))
+                ? ['group' => (string) $request->query('group'), 'cityId' => $city->id, 'cityName' => $city->name.', '.$city->state->code] : null,
             'seo' => SeoData::private('Send a referral')->toArray(),
         ]);
     }

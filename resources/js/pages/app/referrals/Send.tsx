@@ -72,11 +72,21 @@ function Input2({ f, value, onChange }: { f: FormField; value: Answer | undefine
     );
 }
 
-export default function Send({ groups, refresher, seo }: { groups: G[]; refresher: string | null; seo: Seo }) {
+export default function Send({
+    groups,
+    refresher,
+    prefill = null,
+    seo,
+}: {
+    groups: G[];
+    refresher: string | null;
+    prefill?: { group: string; cityId: number; cityName: string } | null;
+    seo: Seo;
+}) {
     const { auth, flash } = usePage<SharedProps & { flash: { duplicate?: boolean } }>().props;
     const form = useForm({
-        group: groups[0]?.slug ?? '',
-        city_id: 0,
+        group: prefill?.group ?? groups[0]?.slug ?? '',
+        city_id: prefill?.cityId ?? 0,
         answers: {} as Record<string, Answer>,
         consent: false,
         notes: '',
@@ -148,6 +158,7 @@ export default function Send({ groups, refresher, seo }: { groups: G[]; refreshe
                     )}
                     <Field label={`Where does your ${g?.terms.client ?? 'client'} need help?`} error={e.city_id}>
                         <CityPicker
+                            initial={prefill?.cityName ?? ''}
                             onPick={(c: CityOption) => {
                                 setPreview(null);
                                 form.setData('city_id', c.id);

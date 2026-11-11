@@ -22,11 +22,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?array<string, string> $social
  * @property ?string $service_area
  * @property ?int $founded_year
+ * @property ?string $slug
+ * @property bool $profile_public
  * @property ?string $score_warned_at
  * @property-read User $leader
  */
 final class Team extends Model
 {
+    protected static function booted(): void
+    {
+        // Every team gets a web address for its public profile, set before the first save (no second write).
+        self::creating(function (Team $t) {
+            $t->slug ??= \App\Domains\Network\Profiles\PublicProfiles::uniqueSlug((string) $t->name, null);
+        });
+        // The address follows renames (a new team starts with the person's name) until the profile has been visited
+        // or shared; from then on it never changes, so links and printed QR cards keep working.
+        self::updated(function (Team $t) {
+            if ($t->wasChanged('name') && ! \Illuminate\Support\Facades\DB::table('profile_stats')->where('team_id', $t->id)->exists()) {
+                $t->forceFill(['slug' => null])->saveQuietly();
+                \App\Domains\Network\Profiles\PublicProfiles::ensureSlug($t);
+            }
+        });
+    }
+
     use HasUlids;
 
     public const ROLES = ['leader' => 'Leader', 'member' => 'Member', 'assistant' => 'Assistant'];
@@ -37,7 +55,7 @@ final class Team extends Model
 
     protected function casts(): array
     {
-        return ['social' => 'array'];
+        return ['social' => 'array', 'profile_public' => 'boolean', 'show_deal_value' => 'boolean'];
     }
 
     /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<User, $this> */
