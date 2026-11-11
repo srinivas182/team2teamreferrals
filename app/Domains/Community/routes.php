@@ -8,6 +8,16 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/directory', [App\Domains\Community\Http\RecognitionController::class, 'directory'])->name('directory');
     Route::get('app/badges', [App\Domains\Community\Http\RecognitionController::class, 'badges'])->name('badges');
     Route::get('app/leaderboards', [App\Domains\Community\Http\RecognitionController::class, 'leaderboards'])->name('leaderboards');
+    Route::get('app/events', [App\Domains\Community\Http\EventController::class, 'index'])->name('events');
+    Route::post('app/events/{group}', [App\Domains\Community\Http\EventController::class, 'store'])->name('events.store');
+    Route::get('app/events/{event}', [App\Domains\Community\Http\EventController::class, 'show'])->whereNumber('event')->name('events.show');
+    Route::get('app/events/{event}.ics', [App\Domains\Community\Http\EventController::class, 'ics'])->whereNumber('event')->name('events.ics');
+    Route::get('app/events/{event}/qr.svg', [App\Domains\Community\Http\EventController::class, 'qr'])->whereNumber('event')->name('events.qr');
+    Route::post('app/events/{event}/rsvp', [App\Domains\Community\Http\EventController::class, 'rsvp'])->whereNumber('event')->middleware('throttle:30,10')->name('events.rsvp');
+    Route::post('app/events/{event}/update', [App\Domains\Community\Http\EventController::class, 'update'])->whereNumber('event')->name('events.update');
+    Route::post('app/events/{event}/cancel', [App\Domains\Community\Http\EventController::class, 'cancel'])->whereNumber('event')->name('events.cancel');
+    Route::post('app/events/{event}/notes', [App\Domains\Community\Http\EventController::class, 'notes'])->whereNumber('event')->name('events.notes');
+    Route::get('app/events/{event}/check-in/{code}', [App\Domains\Community\Http\EventController::class, 'checkIn'])->whereNumber('event')->where('code', '[a-z0-9]{12}')->name('events.check-in');
     Route::get('app/feed', [FeedController::class, 'index'])->name('feed');
     Route::get('app/feed/{group}', [FeedController::class, 'index'])->name('feed.group');
     Route::get('app/feed/{group}/more', [FeedController::class, 'more'])->name('feed.more');

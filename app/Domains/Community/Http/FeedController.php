@@ -145,7 +145,7 @@ final class FeedController
             $mine = (int) $p->user_id === $user->id;
 
             return [
-                'id' => (int) $p->id, 'kind' => (string) $p->kind, 'body' => (string) $p->body, 'team' => (string) ($p->team ?? 'Network owner'), 'teamSlug' => $p->team_slug,
+                'id' => (int) $p->id, 'kind' => (string) $p->kind, 'eventId' => $p->event_id !== null ? (int) $p->event_id : null, 'body' => (string) $p->body, 'team' => (string) ($p->team ?? 'Network owner'), 'teamSlug' => $p->team_slug,
                 'at' => substr((string) $p->created_at, 0, 16), 'pinned' => $p->pinned_at !== null, 'mine' => $mine, 'city' => $p->city ? $p->city.', '.$p->state : null,
                 'reactions' => ['like' => $r->where('kind', 'like')->count(), 'celebrate' => $r->where('kind', 'celebrate')->count(), 'thanks' => $r->where('kind', 'thanks')->count()],
                 'myReaction' => $r->firstWhere('user_id', $user->id)?->kind,

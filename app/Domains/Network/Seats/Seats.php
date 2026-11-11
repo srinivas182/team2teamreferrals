@@ -217,6 +217,8 @@ final class Seats
 
     private function makePrimary(Seat $seat, Team $team, ?User $actor): string
     {
+        // The team's time zone defaults to this city (members who chose their own keep it).
+        \App\Support\TimeZones::applyCityDefault(DB::table('team_members')->where('team_id', $team->id)->pluck('user_id')->all() ?: [$team->leader_id], (int) $seat->territory_id);
         $months = (int) ($seat->group->pricing['trial_months'] ?? 3);
         $seat->forceFill(['primary_team_id' => $team->id, 'status' => $months > 0 ? 'trial' : 'active', 'trial_ends_at' => now()->addMonths($months),
             'founding' => $seat->group->status !== 'live', 'grace_started_at' => null, 'inactive_at' => null])->save();

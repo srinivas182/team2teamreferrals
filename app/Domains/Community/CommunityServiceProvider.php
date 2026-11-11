@@ -15,6 +15,9 @@ final class CommunityServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([SendFeedDigests::class]);
         }
-        $this->callAfterResolving(Schedule::class, fn (Schedule $s) => $s->command('t2t:feed:digest')->dailyAt('07:30')->onOneServer());
+        $this->callAfterResolving(Schedule::class, function (Schedule $s): void {
+            $s->command('t2t:feed:digest')->dailyAt('07:30')->onOneServer();
+            $s->call(fn () => app(Events\Events::class)->reminders())->name('event-reminders')->everyFifteenMinutes()->onOneServer();
+        });
     }
 }
