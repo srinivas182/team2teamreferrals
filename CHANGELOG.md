@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 24b — What credits are for, plus nurture additions
+- Credits earn standing, never money (in Tier B industries anything of value for referrals is prohibited by RESPA; redeeming credits stays off and could be enabled only for Tier A after counsel sign-off).
+- Waitlist ranking: reciprocity adds up to +15 for giving (3 per credit) or takes up to −10 for only taking (still 0–100); rankings refresh whenever credits change.
+- Challenge fairness: a holder with a balance of +5 or more in that network gets 10 extra days before a seat challenge can start (the service score itself is unchanged).
+- Top giver badge on profiles: the top 10% of each network by balance (at least one, once three or more teams have given), as of the start of the month so it refreshes monthly.
+- Monthly report card: referrals given and received, balance, and rank in the network.
+- Credits page (Portal → Credits): every entry with the referral that earned it and a running balance.
+- Client check-in emails for Future leads every 60 days ("Still planning?"), only with an email address and confirmed consent, with a one-click signed "stop these emails" link honoured permanently; stops when the lead upgrades or closes.
+- Monday digest for referring teams summarising their Future referrals (no client contact details).
+- The trust score (Sprint 34) will include reciprocity as a factor.
+- 383 PHP tests in total (6 new).
+
 ### Sprint 24 — Reciprocity credits and earnings
 - Credit ledger: +1 for each referral a team sends that is accepted, +2 bonus when it closes as Won (confirmed), −1 for each referral a team accepts. Rates are group rules (admin group editor; shown on the owner's overview). Each entry belongs to one referral and is recorded once, so balances always match the referral records (verified by recomputing from the referrals in tests).
 - Give/get on profiles: referrals given (accepted) and received, and the credit balance.

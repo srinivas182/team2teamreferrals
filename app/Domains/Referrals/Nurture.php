@@ -62,6 +62,53 @@ final class Nurture
         }
     }
 
+    public const CLIENT_TOUCH_DAYS = 60;
+
+    /**
+     * Daily: a gentle email to clients planning ahead, every 60 days, while the lead is Future and still open.
+     * Only with an email address and confirmed consent; never after they stop these emails.
+     */
+    public function clientTouchpoints(): void
+    {
+        $refs = Referral::query()->with('receiver')->where(['temperature' => 'future', 'status' => 'accepted'])->whereNull('closed_at')
+            ->whereNotNull('client_email')->whereNotNull('client_confirmed_at')->whereNull('client_emails_stopped_at')->get();
+        foreach ($refs as $ref) {
+            $last = DB::table('nurture_touchpoints')->where(['referral_id' => $ref->id, 'kind' => 'client_touch'])->max('created_at') ?? $ref->accepted_at;
+            if ($last === null || now()->parse((string) $last)->gt(now()->subDays(self::CLIENT_TOUCH_DAYS))) {
+                continue;
+            }
+            $this->touch($ref, 'client_touch', 'system');
+            \Illuminate\Support\Facades\Notification::route('mail', $ref->client_email)->notify(new ClientNurtureEmail(
+                (string) (strtok($ref->client_name, ' ') ?: 'there'), (string) $ref->receiver?->name, url('/r/'.$ref->client_token),
+                \Illuminate\Support\Facades\URL::signedRoute('referrals.client.stop-emails', ['token' => $ref->client_token])));
+        }
+    }
+
+    /** Weekly (Mondays): referring teams get a short summary of their Future referrals (no client contact details). */
+    public function senderDigest(): void
+    {
+        $byTeam = Referral::query()->with(['sender.leader', 'receiver'])->where(['temperature' => 'future', 'status' => 'accepted'])->whereNull('closed_at')->get()->groupBy('sender_team_id');
+        foreach ($byTeam as $refs) {
+            $leader = $refs->first()?->sender->leader;
+            if ($leader === null) {
+                continue;
+            }
+            $lines = $refs->take(10)->map(function (Referral $r) {
+                $last = DB::table('nurture_touchpoints')->where('referral_id', $r->id)->whereNotIn('kind', ['prompt', 'client_touch'])->orderByDesc('id')->value('kind');
+
+                return $r->shortClientName().' with '.$r->receiver?->name.': '.match ($last) {
+                    'still' => 'still nurturing', 'client_later' => 'client still planning', 'client_not_needed' => 'client may not go ahead', default => 'waiting for the first check-in',
+                };
+            })->implode('; ');
+            $this->notifier->send($leader, 'referral.nurture', ['headline' => 'Your Future referrals this week ('.$refs->count().')', 'body' => $lines.'.'], url('/app/nurture'));
+        }
+    }
+
+    public function stopClientEmails(Referral $ref): void
+    {
+        $ref->forceFill(['client_emails_stopped_at' => $ref->client_emails_stopped_at ?? now()])->save();
+    }
+
     /** The receiver's check-in: still nurturing (optionally choosing the next date), ready now, or lost. */
     public function checkIn(Referral $ref, User $user, string $outcome, ?string $note, ?string $nextOn): void
     {

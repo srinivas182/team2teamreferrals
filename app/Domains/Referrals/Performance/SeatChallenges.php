@@ -122,7 +122,8 @@ final class SeatChallenges
         }
         $heldSince = DB::table('seat_events')->where(['seat_id' => $seat->id, 'team_id' => $holder->id])->where('event', 'claimed')->min('created_at');
         $exempt = $heldSince !== null && CarbonImmutable::parse((string) $heldSince)->gt(now()->subDays(self::EXEMPT_DAYS));
-        $due = $seat->below_since->copy()->addDays((int) $seat->group->rule('challenge_days'))->lte(now());
+        // A holder with a strong giving record gets extra days before a challenge can start.
+        $due = $seat->below_since->copy()->addDays((int) $seat->group->rule('challenge_days') + \App\Domains\Referrals\Credits::challengeGraceDays($holder, $seat->group_id))->lte(now());
         $open = DB::table('seat_challenges')->where('seat_id', $seat->id)->whereIn('status', ['open', 'pending', 'appealed'])->exists();
         if ($exempt || ! $due || $open) {
             return;

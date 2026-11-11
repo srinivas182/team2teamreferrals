@@ -264,6 +264,31 @@ final class ReferralController
         return back()->with('status', 'client-checkin');
     }
 
+    /** One-click stop for the client's check-in emails (signed link from the email). */
+    public function stopClientEmails(string $token, \App\Domains\Referrals\Nurture $nurture): RedirectResponse
+    {
+        $nurture->stopClientEmails(Referral::query()->where('client_token', $token)->firstOrFail());
+
+        return redirect('/r/'.$token)->with('status', 'client-emails-stopped');
+    }
+
+    /** Portal → Credits: every credit entry and the referral that earned it. */
+    public function credits(Request $request): Response
+    {
+        $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
+        $rows = DB::table('credit_ledger as l')->join('referrals as r', 'r.id', '=', 'l.referral_id')->join('groups as g', 'g.id', '=', 'l.group_id')
+            ->where('l.team_id', $team->id)->orderBy('l.id')->get(['l.kind', 'l.credits', 'l.created_at', 'r.ulid', 'r.client_name', 'g.name as group']);
+        $running = 0;
+        $entries = $rows->map(function ($e) use (&$running) {
+            $running += (int) $e->credits;
+
+            return ['kind' => (string) $e->kind, 'credits' => (int) $e->credits, 'balance' => $running, 'at' => substr((string) $e->created_at, 0, 10),
+                'referral' => (string) $e->ulid, 'client' => Referral::shorten((string) $e->client_name), 'group' => (string) $e->group];
+        })->reverse()->values();
+
+        return Inertia::render('app/Credits', ['entries' => $entries, 'giveGet' => \App\Domains\Referrals\Credits::giveGet($team), 'seo' => SeoData::private('Credits')->toArray()]);
+    }
+
     public function mute(Request $request, Referral $referral): RedirectResponse
     {
         abort_unless($this->referrals->canView($referral, $this->user($request)), 404);
@@ -402,6 +427,7 @@ final class ReferralController
             'contactHours' => (int) $r->group->rule('first_contact_hours'),
             'token' => $token, 'consentAt' => $r->client_confirmed_at?->toFormattedDateString(), 'temperature' => $r->temperature,
             'canCheckIn' => $r->status === 'accepted' && $r->closed_at === null, 'flash' => session('status'),
+            'emailsStopped' => $r->client_emails_stopped_at !== null,
             'stage' => $r->status === 'accepted' && $r->stage !== null ? (function () use ($r) {
                 $st = app(\App\Domains\Referrals\Pipeline::class)->stage($r);
 

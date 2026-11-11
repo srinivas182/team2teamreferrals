@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?\Illuminate\Support\Carbon $last_nudged_at
  * @property ?string $close_status
  * @property ?string $temperature
+ * @property ?\Illuminate\Support\Carbon $client_emails_stopped_at
  * @property ?string $nurture_next_at
  * @property ?string $protection_until
  * @property ?string $fee_type
@@ -73,7 +74,7 @@ final class Referral extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean', 'fee_proposal' => 'array'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean', 'fee_proposal' => 'array', 'client_emails_stopped_at' => 'datetime'];
     }
 
     /** @return list<string> */
@@ -98,7 +99,13 @@ final class Referral extends Model
     /** "Tom B.": what the receiver sees until they accept (and in notifications), so contact details stay private. */
     public function shortClientName(): string
     {
-        $parts = preg_split('/\s+/', trim($this->client_name)) ?: [];
+        return self::shorten($this->client_name);
+    }
+
+    /** "Tom Brennan" → "Tom B.": how a client is named wherever full details aren't needed. */
+    public static function shorten(string $name): string
+    {
+        $parts = preg_split('/\s+/', trim($name)) ?: [];
         $first = (string) ($parts[0] ?? 'Client');
 
         return count($parts) > 1 ? $first.' '.mb_substr((string) end($parts), 0, 1).'.' : $first;
