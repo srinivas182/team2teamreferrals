@@ -42,6 +42,11 @@ final class TeamController
             'roles' => Team::ROLES,
             'quickReplies' => \App\Domains\Referrals\Conversations::quickReplies($team),
             'showDealValue' => (bool) DB::table('teams')->where('id', $team->id)->value('show_deal_value'),
+            'specialties' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('specialties'), true) ?: [],
+            'languages' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('languages'), true) ?: [],
+            // The specialty choices come from the industry families of the networks this team is in.
+            'specialtyOptions' => \App\Domains\Community\Directory\Specialties::forTeam($team->id),
+            'languageOptions' => \App\Domains\Community\Directory\Specialties::LANGUAGES,
             'status' => session('status'),
             'seo' => SeoData::private('Team')->toArray(),
         ]);
@@ -61,7 +66,15 @@ final class TeamController
             'social.*' => ['nullable', 'url', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'show_deal_value' => ['sometimes', 'boolean'],
+            'specialties' => ['sometimes', 'array', 'max:12'], 'specialties.*' => ['string', 'max:40'],
+            'languages' => ['sometimes', 'array', 'max:12'], 'languages.*' => ['string', Rule::in(\App\Domains\Community\Directory\Specialties::LANGUAGES)],
         ]);
+        foreach (['specialties', 'languages'] as $k) {
+            if (array_key_exists($k, $data)) {
+                DB::table('teams')->where('id', $team->id)->update([$k => json_encode(array_values(array_unique((array) $data[$k])))]);
+                unset($data[$k]);
+            }
+        }
         if (array_key_exists('show_deal_value', $data)) {
             DB::table('teams')->where('id', $team->id)->update(['show_deal_value' => (bool) $data['show_deal_value']]);
             unset($data['show_deal_value']);

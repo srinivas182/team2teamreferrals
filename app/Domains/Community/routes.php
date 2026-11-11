@@ -5,6 +5,9 @@ use App\Domains\Identity\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/directory', [App\Domains\Community\Http\RecognitionController::class, 'directory'])->name('directory');
+    Route::get('app/badges', [App\Domains\Community\Http\RecognitionController::class, 'badges'])->name('badges');
+    Route::get('app/leaderboards', [App\Domains\Community\Http\RecognitionController::class, 'leaderboards'])->name('leaderboards');
     Route::get('app/feed', [FeedController::class, 'index'])->name('feed');
     Route::get('app/feed/{group}', [FeedController::class, 'index'])->name('feed.group');
     Route::get('app/feed/{group}/more', [FeedController::class, 'more'])->name('feed.more');

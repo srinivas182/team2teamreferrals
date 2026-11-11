@@ -49,6 +49,10 @@ final class PerformanceJobs extends Command
         }
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
+            // The 1st: re-check every badge, freeze last month's leaderboards, then send each network's recap.
+            \App\Domains\Community\Badges\Badges::recheck();
+            \App\Domains\Community\Badges\Leaderboards::snapshot($period);
+            app(\App\Domains\Community\Badges\MonthlyRecap::class)->send($period);
             foreach ($holders as $team) {
                 $this->card($team, $period, $notifier);
             }

@@ -90,6 +90,7 @@ it('gives Tier B inviters the badge, never a free month', function () {
     foreach ([2, 3] as $city) {
         ($this->invitee)($lender, $mortgage, $city);
     }
+    App\Domains\Community\Badges\Badges::recheck(); // badges are awarded at the monthly re-check
     expect(App\Domains\Referrals\ProfileStats::for($lender)['builder'])->toBeTrue();
 });
 
