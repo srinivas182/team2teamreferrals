@@ -26,6 +26,7 @@ final class AiAdminController
      * @var array<string, array<string, string>>
      */
     public const SAMPLES = [
+        'follow_up_draft' => ['facts' => "From: Sunrise Solar (the team that received the referral)\nTo: Peak Realty\nIndustry: Solar installers · City: Houston, TX\nStage: quoted\nTiming: hot\nWhat needs doing: Update Peak Realty", 'tone' => 'friendly', 'fee_rule' => 'Don’t mention fees unless asked.'],
         'lead_summary' => ['referral' => "Industry: Solar installers\nCity: Houston, TX\nClient: Sam P.\nTiming: hot\nRoof type: Asphalt shingle\nAverage monthly bill: 240\nSender’s notes: Wants quotes before the summer; interested in a battery.", 'fee_rule' => 'You may mention the agreed referral fee only if it appears in the data.'],
     ];
 

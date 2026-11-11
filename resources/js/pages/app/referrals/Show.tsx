@@ -41,6 +41,7 @@ type Props = {
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
     aiSummary?: { summary: string; usageId: number | null } | null;
+    assist?: Assist;
     introduction?: { from: string; explanation: string } | null;
     nurture: {
         temperature: string | null;
@@ -104,6 +105,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    assist,
     aiSummary,
     introduction = null,
     nurture,
@@ -196,6 +198,7 @@ export default function ReferralShow({
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {nurture.temperature === 'future' || nurture.touchpoints.length > 0 ? <NurturePanel id={r.id} n={nurture} /> : null}
+                    {assist && <AssistCard id={r.id} a={assist} onUse={(t) => setMsg(t)} />}
                     <Deferred data="aiSummary" fallback={<Card className="p-4 text-sm text-muted">Preparing an AI summary…</Card>}>
                         <AiSummaryCard s={aiSummary ?? null} />
                     </Deferred>
@@ -644,6 +647,150 @@ function AiSummaryCard({ s }: { s: { summary: string; usageId: number | null } |
                     <button className="rounded px-2 py-1 hover:bg-bg" onClick={() => rate(-1)} aria-label="Not helpful">
                         👎
                     </button>
+                </div>
+            )}
+        </Card>
+    );
+}
+
+type Assist = {
+    actions: { key: string; title: string; body: string; action: string; label: string }[];
+    score: { score: number; reasons: { text: string; effect: number }[] } | null;
+    canDraftClient: boolean;
+    tones: string[];
+    reasons: string[];
+    draft: { text: string; usageId: number; to: string } | null;
+};
+
+const REASON_LABELS: Record<string, string> = {
+    not_relevant: 'Not relevant',
+    already_done: 'Already done',
+    wrong_timing: 'Wrong timing',
+    other: 'Other',
+};
+
+/** Next steps: the explainable score, suggested actions (open, dismiss, snooze) and AI drafts the member edits and sends. */
+function AssistCard({ id, a, onUse }: { id: string; a: Assist; onUse: (text: string) => void }) {
+    const [tone, setTone] = useState(a.tones[0] ?? 'friendly');
+    const [dismissing, setDismissing] = useState<string | null>(null);
+    const act = (key: string, action: string, extra: Record<string, string> = {}) =>
+        router.post(`/app/referrals/${id}/assist/${key}/${action}`, extra, { preserveScroll: true });
+    if (!a.score && a.actions.length === 0 && !a.draft && !a.canDraftClient && a.tones.length === 0) return null;
+    return (
+        <Card className="space-y-3 p-4 text-sm">
+            <p className="text-xs font-semibold tracking-wide text-primary uppercase">Next steps</p>
+            {a.score && (
+                <div>
+                    <p className="font-semibold">Close likelihood: {a.score.score}%</p>
+                    <ul className="mt-1 space-y-0.5 text-xs text-muted">
+                        {a.score.reasons.map((r) => (
+                            <li key={r.text}>
+                                {r.effect > 0 ? '▲ ' : r.effect < 0 ? '▼ ' : '• '}
+                                {r.text}
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="mt-1 text-xs text-subtle">Only your team sees this. It’s a guide from platform history, not a judgement.</p>
+                </div>
+            )}
+            {a.actions.map((x) => (
+                <div key={x.key} className="rounded-md border border-line p-3">
+                    <p className="font-medium">{x.title}</p>
+                    <p className="text-muted">{x.body}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                act(x.key, 'use');
+                                window.location.hash = x.action.split('#')[1] ?? '';
+                            }}
+                        >
+                            {x.label}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => act(x.key, 'snooze')}>
+                            Remind me tomorrow
+                        </Button>
+                        {dismissing === x.key ? (
+                            <select
+                                aria-label="Why dismiss?"
+                                className="h-8 rounded-md border border-line bg-surface px-2 text-xs"
+                                defaultValue=""
+                                onChange={(e) => act(x.key, 'dismiss', { reason: e.target.value })}
+                            >
+                                <option value="" disabled>
+                                    Why?
+                                </option>
+                                {a.reasons.map((r) => (
+                                    <option key={r} value={r}>
+                                        {REASON_LABELS[r] ?? r}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <Button size="sm" variant="ghost" onClick={() => setDismissing(x.key)}>
+                                Dismiss
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                <span className="text-xs text-muted">AI draft (1 credit):</span>
+                <select
+                    aria-label="Tone"
+                    className="h-8 rounded-md border border-line bg-surface px-2 text-xs"
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                >
+                    {a.tones.map((t) => (
+                        <option key={t} value={t}>
+                            {t}
+                        </option>
+                    ))}
+                </select>
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'partner', tone }, { preserveScroll: true })}
+                >
+                    Draft an update to the other team
+                </Button>
+                {a.canDraftClient && (
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'client', tone }, { preserveScroll: true })}
+                    >
+                        Draft a message to the client
+                    </Button>
+                )}
+            </div>
+            {a.draft && (
+                <div className="space-y-2 rounded-md bg-bg p-3">
+                    <p className="text-xs text-muted">Draft · check it and edit before sending. Nothing is sent automatically.</p>
+                    <p className="whitespace-pre-wrap">{a.draft.text}</p>
+                    {a.draft.to === 'partner' ? (
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                onUse(a.draft?.text ?? '');
+                                act('draft', 'use', { kind: 'draft' });
+                                window.location.hash = 'messages';
+                            }}
+                        >
+                            Put in the message box
+                        </Button>
+                    ) : (
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                void navigator.clipboard?.writeText(a.draft?.text ?? '');
+                                act('draft_client', 'use', { kind: 'draft' });
+                            }}
+                        >
+                            Copy for the client
+                        </Button>
+                    )}
                 </div>
             )}
         </Card>

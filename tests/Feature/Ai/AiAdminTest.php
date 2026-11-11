@@ -40,7 +40,7 @@ it('[2] saves edits as new versions, goes live only when activated, and rolls ba
     ($this->run)();
     expect($this->sent[1]['messages'][0]['content'])->toContain('VERSION-TWO');
     $this->post('/admin/ai/prompts/lead_summary/1/activate'); // roll back
-    expect(Prompts::active('lead_summary')['version'])->toBe(1)->and(DB::table('ai_prompts')->where('active', true)->count())->toBe(1);
+    expect(Prompts::active('lead_summary')['version'])->toBe(1)->and(DB::table('ai_prompts')->where(['key' => 'lead_summary', 'active' => true])->count())->toBe(1);
 });
 
 it('[2] refuses edits that drop the data placeholders or the data-not-instructions rule', function () {

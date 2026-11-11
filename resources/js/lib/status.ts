@@ -157,6 +157,10 @@ const messages: Record<string, string> = {
     'ai-prompt-saved': 'New prompt version saved.',
     'ai-prompt-live': 'That version is now live.',
     'ai-credits-saved': 'Credit defaults saved.',
+    'suggestion-use': 'Done.',
+    'suggestion-dismiss': 'Dismissed. Thanks: this helps improve suggestions.',
+    'suggestion-snooze': 'We’ll remind you tomorrow.',
+    'draft-unavailable': 'A draft isn’t available right now (AI is off, out of credits or busy). You can write the message yourself.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

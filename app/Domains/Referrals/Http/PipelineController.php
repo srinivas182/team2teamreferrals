@@ -40,8 +40,11 @@ final class PipelineController
                     $last !== null && $r->closed_at === null && $last->copy()->addDays($updateDays - 1)->isPast() ? 'Update due' : null,
                     ($stage['limit_days'] ?? null) && $r->closed_at === null && $r->stage_changed_at?->copy()->addDays((int) $stage['limit_days'])->isPast() ? 'Over time in stage' : null,
                 ]));
+                $team = Team::of($this->user($request));
+                $next = $team !== null ? (\App\Domains\Referrals\Assist\NextActions::for($r, $team)[0] ?? null) : null;
                 $cards[] = ['id' => $r->ulid, 'stage' => $r->stage, 'client' => $r->client_name, 'territory' => $r->seat->territory_name, 'sender' => $r->sender->name,
-                    'days' => (int) ($r->stage_changed_at?->diffInDays(now()) ?? 0), 'flags' => $flags];
+                    'days' => (int) ($r->stage_changed_at?->diffInDays(now()) ?? 0), 'flags' => $flags,
+                    'score' => \App\Domains\Referrals\Assist\CloseLikelihood::for($r)['score'] ?? null, 'next' => $next !== null ? ['key' => $next['key'], 'title' => $next['title']] : null];
             }
         }
 
