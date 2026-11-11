@@ -4,6 +4,33 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 29a — AI foundation (core) and lead summaries
+Checklist items delivered here (2 and 5 follow in 29b), each proven by a test in tests/Feature/Ai/AiFoundationTest.php:
+1. Provider interface with Anthropic (Claude) and OpenAI; a fallback provider (Admin → Settings → AI) is used automatically when the main one fails or reaches its monthly cap; system prompts supported.
+3. AI credit wallet per team: metering, credit packs (500 for $10, 2,000 for $30) usable at once and charged on the next invoice.
+4. Free monthly allowance: 100 credits per seat, 300 with premium; unused free credits expire at month end, bought credits never do.
+6. Data isolation: only the requesting team's referral in the prompt; providers' APIs don't train on the data; usage metered against that team.
+7. Lead summary for the receiving team (only), loaded after the page.
+8. Masking enforced on the output, not only instructions: no client full name, phone or email before acceptance.
+9. Client name and contacts removed before anything is sent to the provider.
+10. Prompt-injection safeguards: member text is passed inside a data block the model is told not to obey; outputs checked.
+11. Never blocks work: when AI is off, out of credit, capped or failing, the referral page shows its usual details.
+12. Caching: one summary per referral, reused until its details change.
+13. Spend protection: per-provider monthly caps plus a per-team daily cap (200 credits).
+14. Labelled "AI summary · check the details", with helpful / not helpful feedback.
+15. Tier-aware: Tier B summaries never mention fees (instruction plus output filter).
+
+### Reachability fixes found by a new audit
+A new guard test (tests/Feature/Platform/RoutesReachableTest.php) fails when any member or admin route has no page or server-built link. It found features whose server side worked and was tested, but which members could not reach:
+- Billing: the "Switch to annual / monthly" control per seat (Sprint 22b-1) and the premium membership switch (Sprint 22b-2) were missing from the page.
+- Events: owners had no edit form (Sprint 27; revised calendar invites now reachable).
+- Referral page: link to download the signed agreement PDF (Sprint 16b-1).
+- Earnings: the payer's "Dispute" button for a fee still due (Sprint 20b-2).
+- 442 PHP tests in total (9 new).
+
+### CI: pinned runners
+- GitHub's ubuntu-latest moved to Ubuntu 26, where the share-card image packages failed to install (tests never ran). All CI jobs are now pinned to ubuntu-24.04, so runner upgrades are deliberate and tested. The package step was in fact hanging on the runner's Azure mirror: each attempt is now time-limited, falls back to the official Ubuntu archive, retries and skips extras; the test job's limit is 15 minutes. Because both mirrors were unreachable, the step is now non-blocking: the rendering test skips itself without the tool, and the run shows a "Share-card rendering not tested" warning so the gap is visible.
+
 ### Sprint 28 — Cross-industry introductions
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Referrals/IntroductionsTest.php:
 1. Introduce a client to the seat holder of another industry in the same city, from a referral (client details carried over where the team may see them) or directly. Only from a network the member belongs to and is trained in.

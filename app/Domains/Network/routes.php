@@ -187,6 +187,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
     Route::get('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'create'])->name('introduce');
     Route::post('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'store'])->middleware('throttle:20,10')->name('introduce.store');
+    Route::post('app/ai/feedback', [App\Domains\Referrals\Http\ReferralController::class, 'aiFeedback'])->middleware('throttle:60,10')->name('ai.feedback');
     Route::get('app/credits', [App\Domains\Referrals\Http\ReferralController::class, 'credits'])->name('credits');
     Route::get('app/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureList'])->name('nurture');
     Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');

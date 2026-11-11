@@ -46,6 +46,7 @@ type Props = {
     storage: Channel;
     cdn: Channel;
     ai: Channel & { spent: number };
+    aiFallback: Channel;
     modules: { key: string; label: string; affects: string; enabled: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
     maintenance: boolean;
@@ -224,6 +225,7 @@ export default function SystemSettings({
     storage,
     cdn,
     ai,
+    aiFallback,
     modules,
     overview,
     maintenance,
@@ -481,6 +483,18 @@ export default function SystemSettings({
                         </Card>
                     }
                 />
+            )}
+            {tab === 'ai' && (
+                <div className="mt-6">
+                    <ProviderTab
+                        title="Fallback AI provider"
+                        intro="Used automatically when the main provider fails or reaches its monthly cap, so AI features keep working."
+                        channel={aiFallback}
+                        url="/admin/system/ai_fallback"
+                        provider="ai"
+                        checks={checks}
+                    />
+                </div>
             )}
 
             {tab === 'modules' && (

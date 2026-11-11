@@ -152,6 +152,8 @@ const messages: Record<string, string> = {
     'introduction-sent': 'Introduction sent. Track it with your other referrals.',
     'introductions-sent': 'Introductions sent. Each one is tracked with your other referrals.',
     'pairing-saved': 'Pairing rule saved.',
+    'ai-feedback': 'Thanks for the feedback.',
+    'ai-credits-bought': 'AI credits added. They’ll appear on your next invoice.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

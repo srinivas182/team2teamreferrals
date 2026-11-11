@@ -20,7 +20,7 @@ env:
 jobs:
   changes:
     name: Detect changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     outputs:
       code: ${{ steps.diff.outputs.code }}
@@ -47,7 +47,7 @@ jobs:
     name: Quick checks (style, static analysis, types)
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
@@ -75,12 +75,32 @@ jobs:
     name: Tests and build
     needs: [changes, quick]
     if: needs.changes.outputs.code == 'true' && github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: Image rendering for share cards (librsvg, Inter font)
-        run: sudo apt-get update -q && sudo apt-get install -y -q librsvg2-bin fonts-inter
+        # Each attempt is time-limited so a hanging mirror fails fast; if the runner's Azure mirror fails, fall back to the
+        # official Ubuntu archive. A package-mirror outage must not block every pull request: the step is non-blocking,
+        # the rendering test skips itself without the tool, and a warning below makes the gap visible on the run.
+        id: rsvg
+        continue-on-error: true
+        timeout-minutes: 7
+        run: |
+          for mirror in "" "http://archive.ubuntu.com/ubuntu"; do
+            if [ -n "$mirror" ]; then
+              echo "Azure mirror failed; switching to $mirror"
+              sudo sed -i "s#http://azure.archive.ubuntu.com/ubuntu#$mirror#g" /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+            fi
+            if timeout 150 sudo apt-get -o Acquire::Retries=3 update -q \
+              && timeout 150 sudo apt-get -o Acquire::Retries=3 install -y -q --no-install-recommends librsvg2-bin fonts-inter; then
+              exit 0
+            fi
+          done
+          exit 1
+      - name: Warn when share-card rendering can't be tested
+        if: steps.rsvg.outcome != 'success'
+        run: echo "::warning title=Share-card rendering not tested::The Ubuntu package mirror was unavailable, so rsvg-convert isn't installed and the rendering test is skipped on this run. The Docker image build still renders with it."
       - uses: shivammathur/setup-php@v2
         with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
       - uses: actions/cache@v6
@@ -102,7 +122,7 @@ jobs:
     name: Docker image builds
     needs: changes
     if: needs.changes.outputs.docker == 'true' && github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -117,7 +137,7 @@ jobs:
     name: Performance budgets (Lighthouse)
     needs: changes
     if: needs.changes.outputs.web == 'true' && github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7

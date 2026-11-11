@@ -13,6 +13,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/billing/{type}/invoices/{invoice}/pay', [BillingController::class, 'payNow'])->whereIn('type', ['team', 'company'])->whereNumber('invoice')->middleware('throttle:10,10')->name('billing.pay');
     Route::get('app/billing/{type}/invoices/{invoice}.pdf', [BillingController::class, 'invoicePdf'])->whereIn('type', ['team', 'company'])->whereNumber('invoice')->name('billing.invoice.pdf');
     Route::post('app/billing/{type}/seats/{seat}/cycle', [BillingController::class, 'cycle'])->whereIn('type', ['team', 'company'])->whereNumber('seat')->name('billing.cycle');
+    Route::post('app/billing/team/ai-credits', [BillingController::class, 'buyAiCredits'])->middleware('throttle:10,10')->name('billing.ai-credits');
     Route::post('app/billing/team/premium', [BillingController::class, 'premium'])->name('billing.premium');
     Route::post('app/billing/{type}/coupon', [BillingController::class, 'redeem'])->whereIn('type', ['team', 'company'])->middleware('throttle:10,10')->name('billing.coupon');
 });

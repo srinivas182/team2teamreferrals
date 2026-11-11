@@ -63,6 +63,14 @@ final class BillingController
             ->filter(fn (Seat $s) => BillingAccounts::payerFor($s) === ['type' => $type, 'id' => $id]);
 
         return [
+            'ai' => $type === 'team' ? (function () use ($id) {
+                $team = Team::query()->findOrFail($id);
+                \App\Domains\Platform\Ai\AiCredits::grantMonthly($team);
+
+                return ['balance' => \App\Domains\Platform\Ai\AiCredits::balance($team), 'usedToday' => \App\Domains\Platform\Ai\AiCredits::usedToday($team), 'dailyCap' => \App\Domains\Platform\Ai\AiCredits::setting('daily_cap'),
+                    'allowance' => (int) DB::table('ai_credit_ledger')->where(['team_id' => $id, 'kind' => 'allowance', 'period' => now()->format('Y-m')])->value('credits'),
+                    'packs' => collect(\App\Domains\Platform\Ai\AiCredits::PACKS)->map(fn ($cents, $credits) => ['credits' => $credits, 'price' => $cents / 100])->values()];
+            })() : null,
             'premium' => $type === 'team' ? ['on' => DB::table('teams')->where('id', $id)->whereNotNull('premium_since')->exists(), 'price' => \App\Domains\Billing\PricingRules::price('premium')] : null,
             'type' => $type, 'name' => $name, 'needsNewCard' => (bool) ($acc->needs_new_card ?? false),
             'invoices' => DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id])->orderByDesc('period')->limit(24)->get()
@@ -116,6 +124,15 @@ final class BillingController
             : DB::table('teams')->where('id', $id)->update(['premium_since' => null]);
 
         return back()->with('status', $on ? 'premium-on' : 'premium-off');
+    }
+
+    /** Buy an AI credit pack: available straight away, charged on the team's next invoice. */
+    public function buyAiCredits(Request $request): RedirectResponse
+    {
+        $id = $this->payerId($request, 'team', needsStripe: false);
+        \App\Domains\Platform\Ai\AiCredits::purchase(Team::query()->findOrFail($id), (int) $request->validate(['credits' => ['required', 'in:'.implode(',', array_keys(\App\Domains\Platform\Ai\AiCredits::PACKS))]])['credits']);
+
+        return back()->with('status', 'ai-credits-bought');
     }
 
     public function redeem(Request $request, string $type): RedirectResponse

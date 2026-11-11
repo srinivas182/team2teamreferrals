@@ -168,6 +168,19 @@ export default function Earnings({ dashboard: d, giveGet, fees, totals, canAct, 
                                                 >
                                                     Mark paid
                                                 </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        const reason = window.prompt(
+                                                            'Why do you dispute this fee? The network owner will review it.',
+                                                        );
+                                                        if (reason && reason.trim().length >= 5)
+                                                            router.post(`/app/earnings/${f.id}/dispute`, { reason }, { preserveScroll: true });
+                                                    }}
+                                                >
+                                                    Dispute
+                                                </Button>
                                             </>
                                         )}
                                         {canAct && f.incoming && f.status !== 'received' && (

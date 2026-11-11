@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage, Deferred } from '@inertiajs/react';
 import { BellOff, Paperclip, Search } from 'lucide-react';
 import { useReferralLive } from '@/lib/realtime';
 import { Lock } from 'lucide-react';
@@ -40,6 +40,7 @@ type Props = {
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
+    aiSummary?: { summary: string; usageId: number | null } | null;
     introduction?: { from: string; explanation: string } | null;
     nurture: {
         temperature: string | null;
@@ -103,6 +104,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    aiSummary,
     introduction = null,
     nurture,
     fee,
@@ -194,6 +196,9 @@ export default function ReferralShow({
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {nurture.temperature === 'future' || nurture.touchpoints.length > 0 ? <NurturePanel id={r.id} n={nurture} /> : null}
+                    <Deferred data="aiSummary" fallback={<Card className="p-4 text-sm text-muted">Preparing an AI summary…</Card>}>
+                        <AiSummaryCard s={aiSummary ?? null} />
+                    </Deferred>
                     {introduction && (
                         <Card className="p-4 text-sm">
                             <strong>Cross-industry introduction</strong> from the {introduction.from}. {introduction.explanation}
@@ -245,6 +250,14 @@ export default function ReferralShow({
                                         <li>Referring team: {ag.sender.at ? `signed by ${ag.sender.name}` : 'not signed yet'}</li>
                                         <li>Receiving team: {ag.receiver.at ? `signed by ${ag.receiver.name}` : 'not signed yet'}</li>
                                     </ul>
+                                    {ag.status === 'signed' && (
+                                        <a
+                                            href={`/app/referrals/${r.id}/agreement.pdf`}
+                                            className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                                        >
+                                            Download the signed agreement (PDF)
+                                        </a>
+                                    )}
                                     {ag.canSign && (
                                         <div className="space-y-2 rounded-md border border-line p-4">
                                             <Input
@@ -609,6 +622,29 @@ function NurturePanel({
                         </li>
                     ))}
                 </ul>
+            )}
+        </Card>
+    );
+}
+
+/** The receiver's AI summary, clearly labelled, with helpful / not helpful feedback. Hidden when AI is unavailable. */
+function AiSummaryCard({ s }: { s: { summary: string; usageId: number | null } | null }) {
+    if (!s) return null;
+    const rate = (rating: number) => s.usageId && router.post('/app/ai/feedback', { usage_id: s.usageId, rating }, { preserveScroll: true });
+    return (
+        <Card className="space-y-2 border-primary/30 p-4 text-sm">
+            <p className="text-xs font-semibold tracking-wide text-primary uppercase">AI summary · check the details below</p>
+            <p>{s.summary}</p>
+            {s.usageId && (
+                <div className="flex items-center gap-2 text-xs text-muted">
+                    Helpful?
+                    <button className="rounded px-2 py-1 hover:bg-bg" onClick={() => rate(1)} aria-label="Helpful">
+                        👍
+                    </button>
+                    <button className="rounded px-2 py-1 hover:bg-bg" onClick={() => rate(-1)} aria-label="Not helpful">
+                        👎
+                    </button>
+                </div>
             )}
         </Card>
     );

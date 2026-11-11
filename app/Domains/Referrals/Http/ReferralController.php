@@ -160,6 +160,8 @@ final class ReferralController
                 'touchpoints' => DB::table('nurture_touchpoints')->where('referral_id', $referral->id)->where('kind', '!=', 'prompt')->orderByDesc('id')->limit(12)->get(['kind', 'source', 'note', 'created_at'])
                     ->map(fn ($t) => ['kind' => (string) $t->kind, 'source' => (string) $t->source, 'note' => $t->note, 'at' => substr((string) $t->created_at, 0, 10)]),
             ],
+            // The receiver's AI summary: loaded after the page so it never slows it down (null when AI is unavailable).
+            'aiSummary' => Inertia::defer(fn () => app(\App\Domains\Referrals\LeadSummary::class)->for($referral, $user)),
             'introduction' => $referral->introduced_from_group_id !== null ? ['from' => (string) DB::table('groups')->where('id', $referral->introduced_from_group_id)->value('name'),
                 'explanation' => \App\Domains\Referrals\Introductions::feeExplanation(\App\Domains\Referrals\Introductions::fromIndustry($referral), $referral->group->industry)] : null,
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
@@ -298,6 +300,17 @@ final class ReferralController
         })->reverse()->values();
 
         return Inertia::render('app/Credits', ['entries' => $entries, 'giveGet' => \App\Domains\Referrals\Credits::giveGet($team), 'seo' => SeoData::private('Credits')->toArray()]);
+    }
+
+    /** Helpful or not: feedback on one AI output, from the team it was made for. */
+    public function aiFeedback(Request $request): RedirectResponse
+    {
+        $d = $request->validate(['usage_id' => ['required', 'integer'], 'rating' => ['required', 'in:1,-1']]);
+        $usage = DB::table('ai_usage_logs')->where('id', $d['usage_id'])->first();
+        abort_unless($usage !== null && (int) $usage->team_id === Team::of($this->user($request))?->id, 403);
+        DB::table('ai_feedback')->updateOrInsert(['usage_id' => $usage->id, 'user_id' => $this->user($request)->id], ['rating' => (int) $d['rating'], 'created_at' => now()]);
+
+        return back()->with('status', 'ai-feedback');
     }
 
     public function mute(Request $request, Referral $referral): RedirectResponse
