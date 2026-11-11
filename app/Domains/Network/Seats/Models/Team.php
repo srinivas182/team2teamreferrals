@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $service_area
  * @property ?int $founded_year
  * @property ?string $slug
+ * @property ?string $invite_code
  * @property bool $profile_public
  * @property ?string $score_warned_at
  * @property-read User $leader
@@ -34,6 +35,7 @@ final class Team extends Model
         // Every team gets a web address for its public profile, set before the first save (no second write).
         self::creating(function (Team $t) {
             $t->slug ??= \App\Domains\Network\Profiles\PublicProfiles::uniqueSlug((string) $t->name, null);
+            $t->invite_code ??= strtolower(\Illuminate\Support\Str::random(8));
         });
         // The address follows renames (a new team starts with the person's name) until the profile has been visited
         // or shared; from then on it never changes, so links and printed QR cards keep working.

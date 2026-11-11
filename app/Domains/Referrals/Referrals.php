@@ -134,6 +134,9 @@ final class Referrals
         app(Pipeline::class)->start($ref);
         app(Nurture::class)->onAccepted($ref);
         Credits::onAccepted($ref);
+        if ($ref->receiver !== null) {
+            app(\App\Domains\Network\Invites\InviteRewards::class)->check($ref->receiver);
+        }
         Events\ReferralChanged::dispatch($ref, 'status');
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);

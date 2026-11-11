@@ -24,7 +24,14 @@ type Props = {
     groups: string[];
     licenses: string[];
     serviceScore: number | null;
-    record: { closed: number; rating: number | null; ratings: number; thanks: { from: string; note: string }[]; topGiverIn: string[] };
+    record: {
+        closed: number;
+        rating: number | null;
+        ratings: number;
+        thanks: { from: string; note: string }[];
+        topGiverIn: string[];
+        builder: boolean;
+    };
     viewer: 'guest' | 'member' | 'self';
     sendUrl: string | null;
     started: string;
@@ -72,6 +79,7 @@ export default function TeamPublic({ team, cities, groups, licenses, serviceScor
                         </Badge>
                     ))}
                     {record.topGiverIn.length > 0 && <Badge tone="sender">Top giver</Badge>}
+                    {record.builder && <Badge tone="info">Network builder</Badge>}
                     {serviceScore !== null && <Badge tone="info">Service score {serviceScore}</Badge>}
                     {record.rating !== null && (
                         <Badge tone="neutral">

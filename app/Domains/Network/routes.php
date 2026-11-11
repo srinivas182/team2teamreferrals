@@ -269,6 +269,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 // Public "refer to me" profiles.
 Route::middleware(['web'])->group(function (): void {
     Route::get('t/{slug}', [App\Domains\Network\Profiles\ProfileController::class, 'show'])->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('profile.public');
+    Route::get('join/{code}', [App\Domains\Network\Invites\InviteController::class, 'join'])->where('code', '[a-zA-Z0-9]{8}')->middleware('throttle:60,1')->name('invite.join');
     Route::get('t/{slug}/qr.svg', [App\Domains\Network\Profiles\ProfileController::class, 'qr'])->where('slug', '[a-z0-9-]+')->name('profile.qr');
     Route::post('t/{slug}/refer', [App\Domains\Network\Profiles\ProfileController::class, 'refer'])->where('slug', '[a-z0-9-]+')->middleware('throttle:5,60')->name('profile.refer');
     Route::get('t/{slug}/confirm/{token}', [App\Domains\Network\Profiles\ProfileController::class, 'confirm'])->where(['slug' => '[a-z0-9-]+', 'token' => '[A-Za-z0-9]{40}'])->middleware('throttle:20,1')->name('profile.confirm');
@@ -277,6 +278,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/share', [App\Domains\Network\Profiles\ShareController::class, 'show'])->name('share');
     Route::post('app/share/public', [App\Domains\Network\Profiles\ShareController::class, 'toggle'])->name('share.public');
     Route::get('app/share/card.pdf', [App\Domains\Network\Profiles\ShareController::class, 'card'])->name('share.card');
+    Route::get('app/invites', [App\Domains\Network\Invites\InviteController::class, 'show'])->name('invites');
     Route::get('app/profile-leads', [App\Domains\Network\Profiles\ShareController::class, 'leads'])->name('profile-leads');
     Route::post('app/profile-leads/{lead}', [App\Domains\Network\Profiles\ShareController::class, 'leadStatus'])->whereNumber('lead')->name('profile-leads.status');
 });

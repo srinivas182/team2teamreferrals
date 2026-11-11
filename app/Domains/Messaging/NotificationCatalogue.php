@@ -59,6 +59,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'profile.lead' => ['group' => 'Referrals', 'label' => 'Leads from your profile', 'description' => 'When someone outside the network refers a client from your public profile.', 'channels' => ['mail', 'database', 'push'], 'urgent' => true, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'network.invite' => ['group' => 'Network', 'label' => 'Invite rewards', 'description' => 'When someone you invited is up and running, and what you earned.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

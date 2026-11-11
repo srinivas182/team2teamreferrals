@@ -110,6 +110,8 @@ final class ProfileController
         abort_if($lead === null, 404);
         DB::table('profile_leads')->where('id', $lead->id)->update(['status' => 'new', 'verified_at' => now(), 'verify_token_hash' => null, 'updated_at' => now()]);
         PublicProfiles::count($team, 'referral');
+        // Invite the referrer through this team's link (the team earns the invite reward if they join and qualify).
+        Notification::route('mail', (string) $lead->referrer_email)->notify(new ProfileLeadInvite($team->name, url('/join/'.$team->invite_code)));
         $notifier->send($team->leader, 'profile.lead', ['headline' => "New lead from your profile: {$lead->client_name}", 'body' => "{$lead->referrer_name} sent it through your public profile. Contact them soon."], url('/app/profile-leads'));
 
         return redirect('/t/'.$team->slug)->with('status', 'profile-lead-confirmed');

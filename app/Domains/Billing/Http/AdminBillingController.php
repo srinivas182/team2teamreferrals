@@ -43,7 +43,8 @@ final class AdminBillingController
                     'refunded' => (int) DB::table('refunds')->where('invoice_id', $i->id)->sum('amount_cents') / 100]),
             'coupons' => DB::table('coupons')->orderByDesc('id')->get(['id', 'code', 'percent_off', 'amount_off_cents', 'months', 'max_redemptions', 'redeemed', 'expires_on', 'active']),
             'settings' => ['platformFeeCollection' => PricingRules::platformFeeCollectionOn(), 'stripeTax' => PricingRules::stripeTaxOn(),
-                'premiumPrice' => PricingRules::price('premium'), 'privateNetworkPrice' => PricingRules::price('private_network'), 'stripeTaxSetting' => $s->get('billing.stripe_tax', '0')],
+                'premiumPrice' => PricingRules::price('premium'), 'inviteRewardMonths' => \App\Domains\Network\Invites\InviteRewards::setting('reward_months'),
+                'inviteCap' => \App\Domains\Network\Invites\InviteRewards::setting('cap'), 'ownerPerSeats' => \App\Domains\Network\Invites\InviteRewards::setting('owner_per_seats'), 'privateNetworkPrice' => PricingRules::price('private_network'), 'stripeTaxSetting' => $s->get('billing.stripe_tax', '0')],
             'isSuperAdmin' => $this->user($request)->hasRole('super_admin'),
             'status' => session('status'),
             'seo' => SeoData::private('Billing')->toArray(),
@@ -53,7 +54,8 @@ final class AdminBillingController
     public function settings(Request $request): RedirectResponse
     {
         $d = $request->validate(['platform_fee_collection' => ['sometimes', 'boolean'], 'stripe_tax' => ['sometimes', 'boolean'],
-            'premium_price' => ['sometimes', 'numeric', 'min:0', 'max:10000'], 'private_network_price' => ['sometimes', 'numeric', 'min:0', 'max:100000']]);
+            'premium_price' => ['sometimes', 'numeric', 'min:0', 'max:10000'], 'private_network_price' => ['sometimes', 'numeric', 'min:0', 'max:100000'],
+            'invite_reward_months' => ['sometimes', 'integer', 'between:0,12'], 'invite_cap' => ['sometimes', 'integer', 'between:0,60'], 'owner_per_seats' => ['sometimes', 'integer', 'between:1,100']]);
         // Collecting platform fees is locked until a super admin switches it on (after legal sign-off).
         if (array_key_exists('platform_fee_collection', $d) && ! $this->user($request)->hasRole('super_admin')) {
             abort(403, 'Only a super admin can switch platform fee collection.');
@@ -67,6 +69,11 @@ final class AdminBillingController
         foreach (['premium_price', 'private_network_price'] as $k) {
             if (array_key_exists($k, $d)) {
                 $s->set("billing.{$k}", (string) $d[$k]);
+            }
+        }
+        foreach (['invite_reward_months' => 'invites.reward_months', 'invite_cap' => 'invites.cap', 'owner_per_seats' => 'invites.owner_per_seats'] as $k => $key) {
+            if (array_key_exists($k, $d)) {
+                $s->set($key, (string) $d[$k]);
             }
         }
         activity('admin')->causedBy($request->user())->event('billing-settings')->withProperties($d)->log('Changed billing settings');

@@ -198,6 +198,8 @@ final class Invoicing
                 $this->seats->paymentSucceeded($seat);
             } elseif ($seat->status === 'trial' && $seat->trial_ends_at?->isPast()) {
                 $seat->forceFill(['status' => 'active'])->save();
+                // A newly paid seat (counts towards the group owner's rewards).
+                DB::table('seat_events')->insert(['seat_id' => $seat->id, 'team_id' => $seat->primary_team_id, 'event' => 'activated', 'meta' => null, 'actor_id' => null, 'created_at' => now()]);
             }
         }
 

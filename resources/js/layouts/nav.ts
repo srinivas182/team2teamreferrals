@@ -42,6 +42,7 @@ export const portalNav: NavItem[] = [
     { label: 'Nurture', href: '/app/nurture', icon: Sprout },
     { label: 'Credits', href: '/app/credits', icon: HandHeart },
     { label: 'Share profile', href: '/app/share', icon: QrCode },
+    { label: 'Invites', href: '/app/invites', icon: UserPlus },
     { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap },
