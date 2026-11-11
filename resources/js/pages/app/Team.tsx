@@ -12,6 +12,10 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Props = {
+    specialties?: string[];
+    languages?: string[];
+    specialtyOptions?: string[];
+    languageOptions?: string[];
     showDealValue?: boolean;
     quickReplies?: string[];
     team: {
@@ -39,6 +43,10 @@ type Props = {
 const socials = ['linkedin', 'facebook', 'instagram', 'youtube', 'x'] as const;
 
 export default function Team({
+    specialties = [],
+    languages = [],
+    specialtyOptions = [],
+    languageOptions = [],
     showDealValue = false,
     quickReplies = [],
     team,
@@ -232,6 +240,37 @@ export default function Team({
                         </Card>
                     )}
                 </div>
+                {canEdit && (
+                    <Card className="mt-6 max-w-5xl space-y-3 p-6">
+                        <h2 className="font-semibold">Specialties and languages</h2>
+                        <p className="text-sm text-muted">Shown on your profile and in the member directory.</p>
+                        {(
+                            [
+                                ['specialties', specialtyOptions, specialties],
+                                ['languages', languageOptions, languages],
+                            ] as [string, string[], string[]][]
+                        ).map(([key, opts, chosen]) => (
+                            <div key={key} className="flex flex-wrap gap-1.5" role="group" aria-label={key}>
+                                {opts.map((o) => (
+                                    <button
+                                        key={o}
+                                        aria-pressed={chosen.includes(o)}
+                                        className={`h-8 rounded-full border px-3 text-xs ${chosen.includes(o) ? 'border-primary bg-primary/10 text-primary' : 'border-line'}`}
+                                        onClick={() =>
+                                            router.post(
+                                                '/app/team',
+                                                { name: team.name, [key]: chosen.includes(o) ? chosen.filter((c) => c !== o) : [...chosen, o] },
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                    >
+                                        {o}
+                                    </button>
+                                ))}
+                            </div>
+                        ))}
+                    </Card>
+                )}
                 {canEdit && (
                     <Card className="mt-6 max-w-5xl p-6">
                         <label className="flex items-center gap-2 text-sm">

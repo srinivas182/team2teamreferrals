@@ -69,6 +69,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'feed.moderation' => ['group' => 'Community', 'label' => 'Moderation', 'description' => 'For network owners: items hidden after reports.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'network.recap' => ['group' => 'Network', 'label' => 'Monthly recap', 'description' => 'Your network’s month on the 1st: activity, the leaderboard and your badges.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

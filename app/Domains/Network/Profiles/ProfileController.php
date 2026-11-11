@@ -49,7 +49,7 @@ final class ProfileController
 
         return Inertia::render('TeamPublic', [
             'team' => ['name' => $team->name, 'slug' => $team->slug, 'bio' => $team->bio, 'website' => $team->website, 'phone' => $team->phone, 'serviceArea' => $team->service_area,
-                'foundedYear' => $team->founded_year, 'logo' => $team->logo_path ? Storage::disk('public')->url($team->logo_path) : null],
+                'foundedYear' => $team->founded_year, 'specialties' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('specialties'), true) ?: [], 'languages' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('languages'), true) ?: [], 'logo' => $team->logo_path ? Storage::disk('public')->url($team->logo_path) : null],
             'cities' => $cities, 'groups' => $groups,
             'licenses' => DB::table('team_licenses')->join('states', 'states.id', '=', 'team_licenses.state_id')->where(['team_id' => $team->id, 'status' => 'verified'])->pluck('states.code')->unique()->values(),
             'serviceScore' => $score, 'record' => $record,

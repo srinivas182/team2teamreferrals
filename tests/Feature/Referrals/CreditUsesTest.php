@@ -90,6 +90,7 @@ it('awards Top giver monthly once enough teams give, and shows rank on the repor
     expect(Credits::topGivers($this->g))->toBe([]); // this month's entries count from next month
     $this->travel(1)->months();
     expect(Credits::topGivers($this->g))->toBe([$this->a->id]);
+    App\Domains\Community\Badges\Badges::recheck(); // badges are awarded at the monthly re-check
     $this->actingAs($this->a->leader)->get('/app/team/preview')->assertInertia(fn ($p) => $p->where('record.topGiverIn.0', 'Solar Installers Network'));
     Artisan::call('t2t:performance', ['--cards' => true]);
     $card = json_decode((string) DB::table('report_cards')->where('team_id', $this->a->id)->value('data'), true);

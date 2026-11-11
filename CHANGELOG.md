@@ -4,6 +4,19 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 26b — Directory, badges, leaderboards and monthly recap
+Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/RecognitionTest.php:
+1. Member directory (Portal → Directory): teams in your networks, searchable by city, network, specialty, language and badge. Teams set specialties (from their industry families' lists, plus "Other") and languages (standard list, validated) on the Team page; both show on public profiles.
+2. Badge engine awarding from the last 90 days of activity: Fast Responder (typical response under 2 hours over 5+ referrals), Top Closer (3+ confirmed wins and a 40%+ win rate), Top Referrer (top 10% of the network by referrals sent and accepted), Perfect Updates (5+ accepted referrals, no missed update).
+3. Top giver (per network) and Network builder now run through the same engine; profiles show all badges from it.
+4. Badges page (Portal → Badges): exactly how each badge is earned and how it is kept.
+5. Re-checked on the 1st of each month: badges no longer earned are removed (history kept).
+6. Leaderboards (Portal → Leaderboards): last month, frozen on the 1st, and all-time, per network.
+7. Tier-aware: restricted (Tier B) networks rank service quality only (service score, typical response time, updates on time), never referral counts.
+8. Monthly recap on the 1st for every member of each network: the month's activity (service-only wording in Tier B), the top of the board, and badges gained or to win back. New notification type "Monthly recap".
+- New guard test: no migration puts a column note after a foreign key (a MySQL-only failure that slipped in twice).
+- 413 PHP tests in total (8 new; 2 updated for engine-awarded badges).
+
 ### Sprint 26a — Community feed
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/FeedTest.php:
 1. Group feed with posts, comments and reactions (like, celebrate, thanks; tap again to undo); members only.
