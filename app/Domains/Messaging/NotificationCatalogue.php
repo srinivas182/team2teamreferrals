@@ -77,6 +77,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.insights' => ['group' => 'Network', 'label' => 'Weekly insights', 'description' => 'For network owners: cities to strengthen, teams to check in with, rising members.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'referral.draft_ready' => ['group' => 'Referrals', 'label' => 'Draft ready', 'description' => 'When a forwarded email, voice note or photo has been turned into a draft referral.', 'channels' => ['mail', 'database', 'push'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,

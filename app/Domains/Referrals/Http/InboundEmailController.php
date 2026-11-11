@@ -26,6 +26,13 @@ final class InboundEmailController
         $text = (string) ($request->input('StrippedTextReply') ?: $request->input('TextBody') ?: $request->input('text', ''));
         $id = (string) ($request->input('MessageID') ?: $request->input('message_id') ?: hash('sha256', $to.$from.$text));
 
+        // Forwarded leads go to intake, with the full body: the forwarded part is the lead.
+        if (\App\Domains\Referrals\Intake\IntakeAddress::isIntake($to)) {
+            $full = (string) ($request->input('TextBody') ?: $request->input('text', ''));
+
+            return response()->json(['status' => app(\App\Domains\Referrals\Intake\IntakeEmails::class)->handle($to, $from, (string) ($request->input('Subject') ?: $request->input('subject', '')), $full, $id)]);
+        }
+
         return response()->json(['status' => $replies->handle($to, $from, $text, $id)]);
     }
 }

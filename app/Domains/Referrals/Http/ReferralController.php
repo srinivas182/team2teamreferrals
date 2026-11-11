@@ -38,10 +38,50 @@ final class ReferralController
             ], $groups),
             'refresher' => $firstTime && $groups !== [] ? $groups[0]->industry->slug : null,
             // From a team's public profile: their network and city chosen already.
-            'prefill' => ($city = City::query()->with('state')->find((int) $request->query('city'))) && collect($groups)->contains('slug', (string) $request->query('group'))
-                ? ['group' => (string) $request->query('group'), 'cityId' => $city->id, 'cityName' => $city->name.', '.$city->state->code, 'fromProfile' => $request->query('from') ? (string) $request->query('from') : null] : null,
+            'prefill' => ($draft = $this->draftFor($request)) !== null ? $draft : (($city = City::query()->with('state')->find((int) $request->query('city'))) && collect($groups)->contains('slug', (string) $request->query('group'))
+                ? ['group' => (string) $request->query('group'), 'cityId' => $city->id, 'cityName' => $city->name.', '.$city->state->code, 'fromProfile' => $request->query('from') ? (string) $request->query('from') : null] : null),
             'seo' => SeoData::private('Send a referral')->toArray(),
         ]);
+    }
+
+    /** @return array<string, mixed>|null a pending draft of this member's, as send-form values */
+    private function draftFor(Request $request): ?array
+    {
+        $dr = $request->query('draft') ? DB::table('referral_drafts')->where(['ulid' => (string) $request->query('draft'), 'user_id' => $this->user($request)->id, 'status' => 'pending'])->first() : null;
+        if ($dr === null) {
+            return null;
+        }
+        $city = $dr->city_id ? City::query()->with('state')->find((int) $dr->city_id) : null;
+
+        return ['group' => (string) (DB::table('groups')->where('id', $dr->group_id)->value('slug') ?? ''), 'cityId' => $city !== null ? $city->id : 0, 'cityName' => $city ? $city->name.', '.$city->state->code : '',
+            'draft' => (string) $dr->ulid, 'notes' => (string) ($dr->notes ?? ''), 'review' => json_decode((string) $dr->review, true) ?: [], 'aiUsed' => (bool) $dr->ai_used,
+            'answers' => array_filter(['client_name' => $dr->client_name, 'client_phone' => $dr->client_phone, 'client_email' => $dr->client_email])];
+    }
+
+    /** Portal → Drafts: the member's intake address, and drafts waiting to be checked and sent. */
+    public function drafts(Request $request): Response
+    {
+        $user = $this->user($request);
+
+        return Inertia::render('app/Drafts', [
+            'address' => \App\Domains\Referrals\Intake\IntakeAddress::for($user),
+            'drafts' => DB::table('referral_drafts as d')->leftJoin('intake_messages as m', 'm.id', '=', 'd.intake_id')->where(['d.user_id' => $user->id, 'd.status' => 'pending'])->orderByDesc('d.id')
+                ->get(['d.ulid', 'd.client_name', 'd.created_at', 'd.expires_at', 'd.review', 'm.channel', 'm.subject'])
+                ->map(fn ($x) => ['id' => (string) $x->ulid, 'client' => $x->client_name, 'channel' => (string) ($x->channel ?? 'email'), 'subject' => $x->subject, 'at' => substr((string) $x->created_at, 0, 16),
+                    'expires' => substr((string) $x->expires_at, 0, 10), 'toCheck' => count((array) json_decode((string) $x->review, true))])->values(),
+            'status' => session('status'),
+            'seo' => SeoData::private('Drafts')->toArray(),
+        ]);
+    }
+
+    public function discardDraft(Request $request, string $draft): RedirectResponse
+    {
+        $dr = DB::table('referral_drafts')->where(['ulid' => $draft, 'user_id' => $this->user($request)->id, 'status' => 'pending'])->first();
+        abort_if($dr === null, 404);
+        DB::table('referral_drafts')->where('id', $dr->id)->update(['status' => 'discarded', 'updated_at' => now()]);
+        DB::table('intake_messages')->where('id', $dr->intake_id)->update(['body' => null, 'subject' => null, 'media_path' => null, 'purged_at' => now()]);
+
+        return back()->with('status', 'draft-discarded');
     }
 
     /** Smart routing preview: who will receive it, before sending. */
@@ -69,6 +109,7 @@ final class ReferralController
             'group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id'], 'answers' => ['required', 'array'],
             'consent' => ['accepted'], 'notes' => ['nullable', 'string', 'max:2000'], 'confirm_duplicate' => ['boolean'], 'text_client' => ['boolean'],
             'from_profile' => ['nullable', 'string', 'max:80'],
+            'draft' => ['nullable', 'string', 'size:26'],
         ], ['consent.accepted' => 'Your client must agree to be contacted before you send a referral.']);
         $user = $this->user($request);
         $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false), (bool) ($d['text_client'] ?? false));
@@ -76,6 +117,14 @@ final class ReferralController
             return back()->with('duplicate', true);
         }
         DB::table('onboarding_nudges')->insertOrIgnore(['user_id' => $user->id, 'kind' => 'refresher', 'sent_at' => now()]);
+        // Sent from a draft: mark it sent, and delete the original email, audio or photo now rather than in 14 days.
+        if (! empty($d['draft']) && ($dr = DB::table('referral_drafts')->where(['ulid' => (string) $d['draft'], 'user_id' => $user->id, 'status' => 'pending'])->first()) !== null) {
+            DB::table('referral_drafts')->where('id', $dr->id)->update(['status' => 'sent', 'referral_id' => $r['referral']->id, 'updated_at' => now()]);
+            if ($dr->intake_id && ($media = DB::table('intake_messages')->where('id', $dr->intake_id)->value('media_path'))) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete((string) $media);
+            }
+            DB::table('intake_messages')->where('id', $dr->intake_id)->update(['body' => null, 'subject' => null, 'media_path' => null, 'purged_at' => now()]);
+        }
         // Sent from a team's public profile: it counts for that team's profile analytics, if it reached them.
         if (! empty($d['from_profile']) && ($profileTeam = Team::query()->where('slug', (string) $d['from_profile'])->first()) !== null
             && $r['referral']->receiver_team_id === $profileTeam->id) {

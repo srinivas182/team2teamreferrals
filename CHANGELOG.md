@@ -4,6 +4,22 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 31a — Email-forward intake and draft referrals
+Checklist items delivered here (2 and 3, voice notes and photos, follow in 31b), each proven by a test in tests/Feature/Referrals/IntakeEmailTest.php:
+1. Each member has a private, signed intake address (Portal → Drafts); a forwarded lead email becomes a draft referral. The full body is read (the forwarded part is the lead), not the stripped reply.
+4. Confirmation: the send screen in draft mode, pre-filled, with fields to check highlighted; nothing is sent until the member confirms and the client's consent is given.
+5. Contact details are found by code in the source and never sent to the AI; a name is used only if the source contains it; missing, uncertain or multiple values are marked for review.
+6. Network and city suggested (only the member's own networks; city matched to the location list).
+7. Only from the member's registered email, to a valid signed address, each email once (reuses Sprint 18b's webhook and secret).
+8. Forwarded text is passed to the AI as data in a fixed-format request (versioned prompt intake_extract); malformed answers are ignored.
+9. Unconfirmed drafts expire after 14 days and the original email is deleted; sending or discarding a draft deletes it at once.
+10. "Draft ready" notification (new type) with a link to check and send.
+11. The existing duplicate check runs when a draft is sent.
+12. Processing time is recorded per intake message.
+- Done when: a forwarded lead email becomes a correct draft within 30 seconds (tested).
+- Credits: 1 per forwarded email. Without AI, the draft keeps the original text in the notes, with contacts filled in.
+- 465 PHP tests in total (6 new).
+
 ### Sprint 30b — Best matches, owner insights, and learning whether suggestions help
 Completes Sprint 30 (items 3, 5, 11 and 12), each proven by a test in tests/Feature/Ai/MatchesInsightsTest.php:
 3. Best matches (no credits): when a city has no one to receive a referral, the send screen suggests seat holders in the same network within 60 miles, ranked by service score then distance, with one tap to use that city (nothing typed is lost). A referral declined or expired with no backup shows the same matches to the sender, who can send a copy on with one tap after confirming the client agrees to that business.
