@@ -42,6 +42,7 @@ type Props = {
     closing: ClosingInfo | null;
     aiSummary?: { summary: string; usageId: number | null } | null;
     assist?: Assist;
+    matches?: { team: string; teamSlug: string; cityId: number; city: string; miles: number; score: number | null }[];
     introduction?: { from: string; explanation: string } | null;
     nurture: {
         temperature: string | null;
@@ -105,6 +106,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    matches = [],
     assist,
     aiSummary,
     introduction = null,
@@ -198,6 +200,7 @@ export default function ReferralShow({
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {nurture.temperature === 'future' || nurture.touchpoints.length > 0 ? <NurturePanel id={r.id} n={nurture} /> : null}
+                    {matches.length > 0 && <MatchesCard id={r.id} client={r.client} matches={matches} />}
                     {assist && <AssistCard id={r.id} a={assist} onUse={(t) => setMsg(t)} />}
                     <Deferred data="aiSummary" fallback={<Card className="p-4 text-sm text-muted">Preparing an AI summary…</Card>}>
                         <AiSummaryCard s={aiSummary ?? null} />
@@ -793,6 +796,35 @@ function AssistCard({ id, a, onUse }: { id: string; a: Assist; onUse: (text: str
                     )}
                 </div>
             )}
+        </Card>
+    );
+}
+
+/** An unplaced referral: send it on to a nearby pro, with the client's agreement to that business. */
+function MatchesCard({ id, client, matches }: { id: string; client: string; matches: NonNullable<Props['matches']> }) {
+    const [agreed, setAgreed] = useState<number | null>(null);
+    return (
+        <Card className="space-y-2 p-4 text-sm">
+            <p className="font-semibold">Send it to a nearby pro</p>
+            <p className="text-muted">No one in this city could take it. These pros in the same network are close by.</p>
+            {matches.map((m) => (
+                <div key={m.cityId} className="space-y-2 rounded-md border border-line p-3">
+                    <p>
+                        <strong>{m.team}</strong> · {m.city} · {m.miles} miles{m.score !== null ? ` · service ${m.score}` : ''}
+                    </p>
+                    <label className="flex items-start gap-2 text-xs">
+                        <input type="checkbox" checked={agreed === m.cityId} onChange={(e) => setAgreed(e.target.checked ? m.cityId : null)} />
+                        {client} agreed to be referred to {m.team}.
+                    </label>
+                    <Button
+                        size="sm"
+                        disabled={agreed !== m.cityId}
+                        onClick={() => router.post(`/app/referrals/${id}/resend`, { city_id: m.cityId, consent: true })}
+                    >
+                        Send to {m.team}
+                    </Button>
+                </div>
+            ))}
         </Card>
     );
 }

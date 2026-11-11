@@ -27,6 +27,7 @@ final class AiAdminController
      */
     public const SAMPLES = [
         'follow_up_draft' => ['facts' => "From: Sunrise Solar (the team that received the referral)\nTo: Peak Realty\nIndustry: Solar installers · City: Houston, TX\nStage: quoted\nTiming: hot\nWhat needs doing: Update Peak Realty", 'tone' => 'friendly', 'fee_rule' => 'Don’t mention fees unless asked.'],
+        'owner_insights' => ['network' => 'Solar Installers Network', 'figures' => 'Cities to strengthen: Houston, TX (3 unplaced). Teams to check in with: Sunrise Solar (typically accepts in 20 hours). Rising: Peak Power (1 → 5 referrals).'],
         'lead_summary' => ['referral' => "Industry: Solar installers\nCity: Houston, TX\nClient: Sam P.\nTiming: hot\nRoof type: Asphalt shingle\nAverage monthly bill: 240\nSender’s notes: Wants quotes before the summer; interested in a battery.", 'fee_rule' => 'You may mention the agreed referral fee only if it appears in the data.'],
     ];
 
@@ -64,6 +65,13 @@ final class AiAdminController
                         'note' => $v->note, 'at' => substr((string) $v->created_at, 0, 16), 'up' => $fb !== null ? (int) $fb->up : 0, 'down' => $fb !== null ? (int) $fb->down : 0];
                 })->values(),
                 'placeholders' => self::required($key)])->values(),
+            // What members do with suggestions, and why they dismiss them.
+            'suggestions' => DB::table('ai_suggestions')->where('created_at', 'like', $month.'%')->groupBy('kind', 'key')
+                ->selectRaw("kind, key, sum(case when status = 'used' then 1 else 0 end) as used, sum(case when status = 'dismissed' then 1 else 0 end) as dismissed, sum(case when status = 'snoozed' then 1 else 0 end) as snoozed")
+                ->orderByDesc('used')->get()->map(fn ($r) => ['kind' => (string) $r->kind, 'key' => (string) $r->key, 'used' => (int) $r->used, 'dismissed' => (int) $r->dismissed, 'snoozed' => (int) $r->snoozed,
+                    'reasons' => DB::table('ai_suggestions')->where(['kind' => $r->kind, 'key' => $r->key, 'status' => 'dismissed'])->where('created_at', 'like', $month.'%')->whereNotNull('reason')
+                        ->groupBy('reason')->selectRaw('reason, count(*) as n')->pluck('n', 'reason')]),
+            'impact' => self::impact(),
             'credits' => ['per_seat' => AiCredits::setting('per_seat'), 'per_seat_premium' => AiCredits::setting('per_seat_premium'), 'daily_cap' => AiCredits::setting('daily_cap')],
             'testResult' => session('ai_test'),
             'status' => session('status'),
@@ -141,6 +149,29 @@ final class AiAdminController
         activity('admin')->causedBy($request->user())->event('ai-credits')->withProperties($d)->log('AI credit settings changed');
 
         return back()->with('status', 'ai-credits-saved');
+    }
+
+    /**
+     * Do suggestions help? Accepted referrals in the last 90 days, with a suggestion used versus none: typical hours to
+     * first contact, updates on time and close rate. A comparison, not proof of cause.
+     *
+     * @return array<string, array{referrals: int, contactHours: ?float, updatesOnTime: ?int, closeRate: ?int}>
+     */
+    public static function impact(): array
+    {
+        $refs = DB::table('referrals')->whereNotNull('accepted_at')->where('accepted_at', '>=', now()->subDays(90))->get(['id', 'accepted_at', 'first_contact_at', 'close_status', 'stage', 'receiver_team_id']);
+        $helped = DB::table('ai_suggestions')->where('status', 'used')->whereNotNull('referral_id')->distinct()->pluck('referral_id')->flip();
+        $missed = DB::table('referral_events')->where('event', 'missed_update')->distinct()->pluck('referral_id')->flip();
+        $measure = function ($set) use ($missed) {
+            $hours = $set->filter(fn ($r) => $r->first_contact_at !== null)->map(fn ($r) => \Carbon\CarbonImmutable::parse((string) $r->accepted_at)->diffInMinutes(\Carbon\CarbonImmutable::parse((string) $r->first_contact_at)) / 60)->sort()->values();
+            $closed = $set->filter(fn ($r) => in_array($r->close_status, ['confirmed', 'auto_confirmed'], true) || $r->stage === 'lost');
+
+            return ['referrals' => $set->count(), 'contactHours' => $hours->isEmpty() ? null : round((float) $hours[intdiv($hours->count(), 2)], 1),
+                'updatesOnTime' => $set->isEmpty() ? null : (int) round(100 * $set->reject(fn ($r) => isset($missed[$r->id]))->count() / $set->count()),
+                'closeRate' => $closed->isEmpty() ? null : (int) round(100 * $closed->filter(fn ($r) => in_array($r->close_status, ['confirmed', 'auto_confirmed'], true))->count() / $closed->count())];
+        };
+
+        return ['withSuggestions' => $measure($refs->filter(fn ($r) => isset($helped[$r->id]))->values()), 'without' => $measure($refs->reject(fn ($r) => isset($helped[$r->id]))->values())];
     }
 
     /** @return list<string> placeholders a prompt must keep */

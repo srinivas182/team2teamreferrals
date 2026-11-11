@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 30b — Best matches, owner insights, and learning whether suggestions help
+Completes Sprint 30 (items 3, 5, 11 and 12), each proven by a test in tests/Feature/Ai/MatchesInsightsTest.php:
+3. Best matches (no credits): when a city has no one to receive a referral, the send screen suggests seat holders in the same network within 60 miles, ranked by service score then distance, with one tap to use that city (nothing typed is lost). A referral declined or expired with no backup shows the same matches to the sender, who can send a copy on with one tap after confirming the client agrees to that business.
+5. Weekly insights for network owners (Mondays, free): cities to strengthen (unplaced referrals, teams waiting for a seat), teams to check in with (slow to accept, missed updates) and rising members, with an AI-written summary from a versioned prompt on the platform's account, or plain wording from the same figures when AI is off. Sent to owners and shown on the network overview.
+11. Admin → AI shows what members do with each kind of suggestion (used, dismissed, snoozed) and why they dismiss them.
+12. Impact over the last 90 days: accepted referrals with a suggestion used versus without (typical hours to first contact, updates on time, close rate), labelled as a comparison, not proof of cause.
+- New notification type "Weekly insights" (owners).
+- 459 PHP tests in total (5 new).
+
 ### Sprint 30a — AI assist in the referral CRM
 Checklist items delivered here (3, 5, 11 and 12 follow in 30b), each proven by a test in tests/Feature/Ai/AiAssistTest.php:
 1. Suggested next actions from the referral's deadlines (answer, first contact, update, stalled), most urgent first; plain rules, no credits.

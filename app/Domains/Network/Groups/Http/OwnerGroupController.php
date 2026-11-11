@@ -26,6 +26,9 @@ final class OwnerGroupController
             'group' => ['slug' => $group->slug, 'name' => $group->name, 'description' => $group->description, 'status' => $group->status, 'visibility' => $group->visibility,
                 'industry' => $group->industry->name, 'terms' => $group->industry->terms(), 'flaggedTeams' => \App\Domains\Referrals\Credits::flagged($group), 'feeAllowed' => $group->industry->tier === \App\Domains\Network\Industries\Tier::Open, 'feeDefault' => \App\Domains\Referrals\Fees::groupDefault($group), 'feeDueDays' => (int) data_get($group->rules, 'fee_due_days', 10), 'trainingRequired' => \App\Domains\Network\Training\Training::required($group), 'trainingLocked' => $group->industry->training_locked, 'trainingFrom' => \App\Domains\Network\Training\Training::enforcedFrom($group)->toDateString(), 'rules' => $group->rules, 'pricing' => $group->pricing],
             'health' => GroupSettings::health($group),
+            // The latest weekly insights (owners): figures plus a short summary.
+            'insights' => ($i = DB::table('group_insights')->where('group_id', $group->id)->orderByDesc('week')->first()) !== null
+                ? ['week' => (string) $i->week, 'summary' => (string) $i->summary, 'aiWritten' => (bool) $i->ai_written, 'data' => json_decode((string) $i->data, true)] : null,
             'upcoming' => DB::table('group_scheduled_changes')->where('group_id', $group->id)->whereNull('applied_at')->whereNull('cancelled_at')->orderBy('effective_on')->get(['section', 'effective_on'])
                 ->map(fn ($c) => ['section' => (string) $c->section, 'effectiveOn' => (string) $c->effective_on]),
             'seo' => SeoData::private($group->name)->toArray(),
