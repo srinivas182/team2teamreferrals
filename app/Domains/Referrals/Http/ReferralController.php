@@ -162,6 +162,16 @@ final class ReferralController
             ],
             // The receiver's AI summary: loaded after the page so it never slows it down (null when AI is unavailable).
             'aiSummary' => Inertia::defer(fn () => app(\App\Domains\Referrals\LeadSummary::class)->for($referral, $user)),
+            // Suggestions: next actions and the close-likelihood score are for the receiving team only; drafts for both.
+            'assist' => (function () use ($referral, $user) {
+                $team = Team::of($user);
+                $receiving = $team !== null && $team->id === $referral->receiver_team_id;
+
+                return ['actions' => $team !== null ? \App\Domains\Referrals\Assist\NextActions::for($referral, $team) : [],
+                    'score' => $receiving ? \App\Domains\Referrals\Assist\CloseLikelihood::for($referral) : null,
+                    'canDraftClient' => $receiving && $referral->status === 'accepted', 'tones' => \App\Domains\Referrals\Assist\Drafts::TONES,
+                    'reasons' => AssistController::DISMISS_REASONS, 'draft' => session('draft')];
+            })(),
             'introduction' => $referral->introduced_from_group_id !== null ? ['from' => (string) DB::table('groups')->where('id', $referral->introduced_from_group_id)->value('name'),
                 'explanation' => \App\Domains\Referrals\Introductions::feeExplanation(\App\Domains\Referrals\Introductions::fromIndustry($referral), $referral->group->industry)] : null,
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),

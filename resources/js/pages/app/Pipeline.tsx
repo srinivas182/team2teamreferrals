@@ -14,7 +14,17 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Stage = { key: string; label: string; kind: 'open' | 'won' | 'lost' };
-type CardT = { id: string; stage: string; client: string; territory: string; sender: string; days: number; flags: string[] };
+type CardT = {
+    id: string;
+    stage: string;
+    client: string;
+    territory: string;
+    sender: string;
+    days: number;
+    flags: string[];
+    score?: number | null;
+    next?: { key: string; title: string } | null;
+};
 type Props = {
     askEarnings?: boolean;
     groups: { slug: string; name: string }[];
@@ -121,6 +131,8 @@ export default function Pipeline({ askEarnings = false, groups, group, stages, c
                                                 <div className="text-xs text-muted">
                                                     {c.territory} · from {c.sender} · {c.days}d in stage
                                                 </div>
+                                                {c.next && <p className="text-xs font-medium text-primary">Next: {c.next.title}</p>}
+                                                {c.score != null && <p className="text-xs text-muted">Close likelihood {c.score}%</p>}
                                                 {c.flags.map((f) => (
                                                     <div key={f} className="mt-1 flex items-center gap-1 text-xs text-warning">
                                                         <AlertTriangle className="size-3" aria-hidden /> {f}
