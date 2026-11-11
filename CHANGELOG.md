@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 25c — Completing two Sprint 25 recommendations
+- Profile analytics now count members' referrals too: "Send a referral" on a profile tags the send form, and the referral counts in that team's profile analytics only if it actually reached them (non-member leads were already counted).
+- Invite leaderboards are now one per network, each showing invitees who joined and those up and running (verified with a first referral accepted) this year, instead of one combined list of fully qualified invites only.
+- 397 PHP tests in total (1 new, 2 extended).
+
 ### Sprint 25b — Invites and rewards
 - Invite link per team (/join/{code}): remembered through sign-up ("{team} invited you" on the sign-up page); self-invites are ignored.
 - Inviter reward: one free month (account credit at the inviter's seat price, to whoever pays for that seat) once the invitee's licence is verified and they've accepted their first referral, so fake sign-ups earn nothing. Checked when a licence is verified and when a referral is accepted, plus a daily safety sweep; paid exactly once. Capped at 12 a year per team.

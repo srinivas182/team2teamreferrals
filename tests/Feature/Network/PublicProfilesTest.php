@@ -70,8 +70,22 @@ it('counts a visit once per visitor per day, and QR scans separately, with a val
 it('sends members to the network form, already set to this team’s network and city', function () {
     $member = Team::forLeader(User::factory()->create());
     app(Seats::class)->approve(app(Seats::class)->apply($this->g, $member, $this->cities[0], 'L', null), null);
-    $this->actingAs($member->leader)->get($this->url)->assertInertia(fn ($p) => $p->where('viewer', 'member')->where('sendUrl', '/app/send?group=solar-installers-network&city='.$this->cities[1]->id));
-    $this->get('/app/send?group=solar-installers-network&city='.$this->cities[1]->id)->assertInertia(fn ($p) => $p->where('prefill.cityId', $this->cities[1]->id)->where('prefill.group', 'solar-installers-network'));
+    $this->actingAs($member->leader)->get($this->url)->assertInertia(fn ($p) => $p->where('viewer', 'member')->where('sendUrl', '/app/send?group=solar-installers-network&city='.$this->cities[1]->id.'&from=hurricane-sun'));
+    $this->get('/app/send?group=solar-installers-network&city='.$this->cities[1]->id.'&from=hurricane-sun')->assertInertia(fn ($p) => $p->where('prefill.cityId', $this->cities[1]->id)
+        ->where('prefill.group', 'solar-installers-network')->where('prefill.fromProfile', 'hurricane-sun'));
+
+    // A member's referral sent from the profile counts in that team's profile analytics, only if it reached them.
+    $ans = [];
+    foreach (app(App\Domains\Network\Industries\Templates\IndustryTemplates::class)->resolve('form', $this->g->industry, $this->g->id)['body'] as $f) {
+        $ans[$f['key']] = match ($f['type']) {
+            'choice' => $f['options'][0], 'multi_choice' => [$f['options'][0]], 'boolean' => true, 'number' => '5', 'date' => now()->addMonth()->toDateString(), default => 'Text'
+        };
+    }
+    $send = fn (int $city, string $phone) => $this->post('/app/send', ['group' => 'solar-installers-network', 'city_id' => $this->cities[$city]->id, 'answers' => [...$ans, 'client_name' => 'Tom Brennan', 'client_phone' => $phone],
+        'consent' => true, 'confirm_duplicate' => true, 'from_profile' => 'hurricane-sun']);
+    $send(1, '+14355550101')->assertRedirect();
+    $send(0, '+14355550102'); // went elsewhere: not counted for Hurricane Sun
+    expect((int) DB::table('profile_stats')->where(['team_id' => $this->team->id, 'kind' => 'referral'])->sum('count'))->toBe(1);
 });
 
 it('takes non-member referrals only after spam checks and email confirmation', function () {

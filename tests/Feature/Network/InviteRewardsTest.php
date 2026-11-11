@@ -122,10 +122,20 @@ it('gives group owners a free month for every 5 new paid seats, once each', func
     expect($ownerCredits())->toBe(1000);
 });
 
+it('keeps one leaderboard per network, counting joined and up-and-running separately', function () {
+    $mortgage = Group::where('slug', 'mortgage-lenders-circle')->firstOrFail();
+    $this->seats->approve($this->seats->apply($mortgage, $this->inviter, $this->cities[2], 'L', null), null);
+    ($this->invitee)($this->inviter, $this->g, 1);
+    ($this->invitee)($this->inviter, $this->g, 3, verify: false, accept: false); // joined, not running yet
+    $this->actingAs($this->inviter->leader)->get('/app/invites')->assertInertia(fn ($p) => $p->has('boards', 2)
+        ->where('boards.1.network', 'Solar Installers Network')->where('boards.1.rows.0.joined', 2)->where('boards.1.rows.0.running', 1));
+});
+
 it('shows invites and the leaderboard, invites confirmed profile referrers, and lets admins change the rules', function () {
     ($this->invitee)($this->inviter, $this->g, 1);
     $this->actingAs($this->inviter->leader)->get('/app/invites')->assertInertia(fn ($p) => $p->component('app/Invites')->where('link', url('/join/'.$this->inviter->invite_code))
-        ->where('signups.0.status', 'rewarded')->where('leaderboard.0.team', 'Red Rock Solar')->where('leaderboard.0.me', true));
+        ->where('signups.0.status', 'rewarded')->where('boards.0.network', 'Solar Installers Network')->where('boards.0.rows.0.team', 'Red Rock Solar')
+        ->where('boards.0.rows.0.joined', 1)->where('boards.0.rows.0.running', 1)->where('boards.0.rows.0.me', true));
 
     auth()->logout();
     $slug = $this->inviter->fresh()->slug;

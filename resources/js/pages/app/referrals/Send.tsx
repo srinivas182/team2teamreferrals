@@ -80,13 +80,14 @@ export default function Send({
 }: {
     groups: G[];
     refresher: string | null;
-    prefill?: { group: string; cityId: number; cityName: string } | null;
+    prefill?: { group: string; cityId: number; cityName: string; fromProfile?: string | null } | null;
     seo: Seo;
 }) {
     const { auth, flash } = usePage<SharedProps & { flash: { duplicate?: boolean } }>().props;
     const form = useForm({
         group: prefill?.group ?? groups[0]?.slug ?? '',
         city_id: prefill?.cityId ?? 0,
+        from_profile: prefill?.fromProfile ?? null,
         answers: {} as Record<string, Answer>,
         consent: false,
         notes: '',

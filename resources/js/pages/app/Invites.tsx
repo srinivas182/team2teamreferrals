@@ -12,7 +12,7 @@ import type { Seo } from '@/types/seo';
 type Props = {
     link: string;
     signups: { name: string; status: string; reward: number; joined: string }[];
-    leaderboard: { team: string; invites: number; me: boolean }[];
+    boards: { network: string; rows: { team: string; joined: number; running: number; me: boolean }[] }[];
     rules: { months: number; cap: number };
     seo: Seo;
 };
@@ -25,7 +25,7 @@ const statusWords: Record<string, [string, 'neutral' | 'success' | 'info']> = {
 };
 
 /** Portal → Invites: your invite link, who joined through it, and the network leaderboard. */
-export default function Invites({ link, signups, leaderboard, rules, seo }: Props) {
+export default function Invites({ link, signups, boards, rules, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [copied, setCopied] = useState(false);
     return (
@@ -69,22 +69,30 @@ export default function Invites({ link, signups, leaderboard, rules, seo }: Prop
                         </ul>
                     </Card>
                 </div>
-                <Card className="p-6">
-                    <h2 className="mb-2 flex items-center gap-2 font-semibold">
-                        <Trophy className="size-5 text-orange-500" aria-hidden /> Network builders this year
-                    </h2>
-                    {leaderboard.length === 0 && <p className="text-sm text-muted">Be the first on the board.</p>}
-                    <ol className="space-y-1.5 text-sm">
-                        {leaderboard.map((l, i) => (
-                            <li key={l.team} className={`flex justify-between ${l.me ? 'font-semibold text-primary' : ''}`}>
-                                <span>
-                                    {i + 1}. {l.team}
-                                </span>
-                                <span className="tabular">{l.invites}</span>
-                            </li>
-                        ))}
-                    </ol>
-                </Card>
+                <div className="space-y-4">
+                    {boards.length === 0 && <Card className="p-6 text-sm text-muted">Hold a seat to see your network’s leaderboard.</Card>}
+                    {boards.map((b) => (
+                        <Card key={b.network} className="p-6">
+                            <h2 className="mb-1 flex items-center gap-2 font-semibold">
+                                <Trophy className="size-5 text-orange-500" aria-hidden /> Network builders · {b.network}
+                            </h2>
+                            <p className="mb-2 text-xs text-muted">This year: joined, and up and running</p>
+                            {b.rows.length === 0 && <p className="text-sm text-muted">Be the first on the board.</p>}
+                            <ol className="space-y-1.5 text-sm">
+                                {b.rows.map((l, i) => (
+                                    <li key={l.team} className={`flex justify-between gap-2 ${l.me ? 'font-semibold text-primary' : ''}`}>
+                                        <span>
+                                            {i + 1}. {l.team}
+                                        </span>
+                                        <span className="text-muted tabular">
+                                            {l.joined} joined · {l.running} running
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </Card>
+                    ))}
+                </div>
             </div>
         </PortalLayout>
     );

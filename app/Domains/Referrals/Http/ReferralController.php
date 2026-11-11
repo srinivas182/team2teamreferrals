@@ -39,7 +39,7 @@ final class ReferralController
             'refresher' => $firstTime && $groups !== [] ? $groups[0]->industry->slug : null,
             // From a team's public profile: their network and city chosen already.
             'prefill' => ($city = City::query()->with('state')->find((int) $request->query('city'))) && collect($groups)->contains('slug', (string) $request->query('group'))
-                ? ['group' => (string) $request->query('group'), 'cityId' => $city->id, 'cityName' => $city->name.', '.$city->state->code] : null,
+                ? ['group' => (string) $request->query('group'), 'cityId' => $city->id, 'cityName' => $city->name.', '.$city->state->code, 'fromProfile' => $request->query('from') ? (string) $request->query('from') : null] : null,
             'seo' => SeoData::private('Send a referral')->toArray(),
         ]);
     }
@@ -64,6 +64,7 @@ final class ReferralController
         $d = $request->validate([
             'group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id'], 'answers' => ['required', 'array'],
             'consent' => ['accepted'], 'notes' => ['nullable', 'string', 'max:2000'], 'confirm_duplicate' => ['boolean'], 'text_client' => ['boolean'],
+            'from_profile' => ['nullable', 'string', 'max:80'],
         ], ['consent.accepted' => 'Your client must agree to be contacted before you send a referral.']);
         $user = $this->user($request);
         $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false), (bool) ($d['text_client'] ?? false));
@@ -71,6 +72,11 @@ final class ReferralController
             return back()->with('duplicate', true);
         }
         DB::table('onboarding_nudges')->insertOrIgnore(['user_id' => $user->id, 'kind' => 'refresher', 'sent_at' => now()]);
+        // Sent from a team's public profile: it counts for that team's profile analytics, if it reached them.
+        if (! empty($d['from_profile']) && ($profileTeam = Team::query()->where('slug', (string) $d['from_profile'])->first()) !== null
+            && $r['referral']->receiver_team_id === $profileTeam->id) {
+            \App\Domains\Network\Profiles\PublicProfiles::count($profileTeam, 'referral');
+        }
 
         return redirect()->to('/app/referrals/'.$r['referral']->ulid)->with('status', 'referral-sent');
     }
