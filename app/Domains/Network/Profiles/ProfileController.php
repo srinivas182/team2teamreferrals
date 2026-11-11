@@ -54,7 +54,7 @@ final class ProfileController
             'licenses' => DB::table('team_licenses')->join('states', 'states.id', '=', 'team_licenses.state_id')->where(['team_id' => $team->id, 'status' => 'verified'])->pluck('states.code')->unique()->values(),
             'serviceScore' => $score, 'record' => $record,
             'viewer' => $viewerTeam !== null ? ($viewerTeam->id === $team->id ? 'self' : 'member') : 'guest',
-            'sendUrl' => $seats->isNotEmpty() ? '/app/send?group='.$seats->first()->group->slug.'&city='.$seats->first()->territory_id : null,
+            'sendUrl' => $seats->isNotEmpty() ? '/app/send?group='.$seats->first()->group->slug.'&city='.$seats->first()->territory_id.'&from='.$team->slug : null,
             'started' => encrypt(now()->timestamp),
             'status' => session('status'),
             'seo' => (new SeoData(title: "{$team->name} · ".$groups->first().' in '.$cities->first(), description: $desc, path: $path,
