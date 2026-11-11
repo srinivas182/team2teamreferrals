@@ -28,6 +28,9 @@ A new guard test (tests/Feature/Platform/RoutesReachableTest.php) fails when any
 - Earnings: the payer's "Dispute" button for a fee still due (Sprint 20b-2).
 - 442 PHP tests in total (9 new).
 
+### CI: pinned runners
+- GitHub's ubuntu-latest moved to Ubuntu 26, where the share-card image packages failed to install (tests never ran). All CI jobs are now pinned to ubuntu-24.04, so runner upgrades are deliberate and tested; package downloads retry and skip extras.
+
 ### Sprint 28 — Cross-industry introductions
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Referrals/IntroductionsTest.php:
 1. Introduce a client to the seat holder of another industry in the same city, from a referral (client details carried over where the team may see them) or directly. Only from a network the member belongs to and is trained in.
