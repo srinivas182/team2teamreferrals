@@ -20,6 +20,7 @@ import {
     Wallet,
     Sprout,
     HandHeart,
+    QrCode,
 } from 'lucide-react';
 
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number };
@@ -40,6 +41,8 @@ export const portalNav: NavItem[] = [
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
     { label: 'Nurture', href: '/app/nurture', icon: Sprout },
     { label: 'Credits', href: '/app/credits', icon: HandHeart },
+    { label: 'Share profile', href: '/app/share', icon: QrCode },
+    { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },

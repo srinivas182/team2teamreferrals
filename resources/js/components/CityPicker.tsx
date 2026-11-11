@@ -11,13 +11,15 @@ export function CityPicker({
     state,
     placeholder = 'Start typing a city…',
     id,
+    initial = '',
 }: {
+    initial?: string;
     onPick: (c: CityOption) => void;
     state?: string;
     placeholder?: string;
     id?: string;
 }) {
-    const [q, setQ] = useState('');
+    const [q, setQ] = useState(initial);
     const [options, setOptions] = useState<CityOption[]>([]);
     const [active, setActive] = useState(0);
     const listId = useId();

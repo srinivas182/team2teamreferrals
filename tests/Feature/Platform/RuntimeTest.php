@@ -60,7 +60,8 @@ it('keeps key pages within their query budgets', function (string $url, int $bud
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual($budget);
 })->with([
     'home' => ['/', 6, null],
-    'portal home' => ['/app', 22, null],
+    // 23: a first visit creates the team, which checks its public web address isn't already taken (once per team).
+    'portal home' => ['/app', 23, null],
     'admin staff' => ['/admin/staff', 30, 'super_admin'],
     'admin audit' => ['/admin/audit', 30, 'super_admin'],
 ]);
