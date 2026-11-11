@@ -35,6 +35,11 @@ final class PerformanceJobs extends Command
             }
         }
         app(SeatChallenges::class)->daily();
+        app(\App\Domains\Network\Invites\InviteRewards::class)->ownerRewards();
+        // Safety sweep: anyone who qualified without a hook firing.
+        foreach (Team::query()->whereIn('leader_id', DB::table('invite_signups')->where('status', 'joined')->select('user_id'))->get() as $t) {
+            app(\App\Domains\Network\Invites\InviteRewards::class)->check($t);
+        }
         app(\App\Domains\Referrals\Closing::class)->autoConfirm();
         app(\App\Domains\Referrals\Fees::class)->remind();
         app(\App\Domains\Referrals\Nurture::class)->prompts();

@@ -25,7 +25,15 @@ type Props = {
         expires_on: string | null;
         active: boolean;
     }[];
-    settings: { platformFeeCollection: boolean; stripeTax: boolean; premiumPrice: number; privateNetworkPrice: number };
+    settings: {
+        platformFeeCollection: boolean;
+        stripeTax: boolean;
+        premiumPrice: number;
+        privateNetworkPrice: number;
+        inviteRewardMonths: number;
+        inviteCap: number;
+        ownerPerSeats: number;
+    };
     isSuperAdmin: boolean;
     status?: string;
     seo: Seo;
@@ -71,7 +79,13 @@ function Refund({ inv }: { inv: Props['invoices'][number] }) {
 
 /** Admin → Billing. */
 export default function AdminBilling({ stats, failed, invoices, coupons, settings, isSuperAdmin, status, seo }: Props) {
-    const prices = useForm({ premium_price: String(settings.premiumPrice), private_network_price: String(settings.privateNetworkPrice) });
+    const prices = useForm({
+        premium_price: String(settings.premiumPrice),
+        private_network_price: String(settings.privateNetworkPrice),
+        invite_reward_months: String(settings.inviteRewardMonths),
+        invite_cap: String(settings.inviteCap),
+        owner_per_seats: String(settings.ownerPerSeats),
+    });
     const coupon = useForm({ code: '', percent_off: '', amount_off: '', months: '1', max_redemptions: '', expires_on: '' });
     return (
         <AdminLayout title="Billing">
@@ -136,8 +150,38 @@ export default function AdminBilling({ stats, failed, invoices, coupons, setting
                             />
                         </Field>
                     </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        <Field label="Invite reward (free months)">
+                            <Input
+                                type="number"
+                                min="0"
+                                value={prices.data.invite_reward_months}
+                                onChange={(e) => prices.setData('invite_reward_months', e.target.value)}
+                            />
+                        </Field>
+                        <Field label="Yearly cap per team">
+                            <Input
+                                type="number"
+                                min="0"
+                                value={prices.data.invite_cap}
+                                onChange={(e) => prices.setData('invite_cap', e.target.value)}
+                            />
+                        </Field>
+                        <Field label="Owner: 1 month per N paid seats">
+                            <Input
+                                type="number"
+                                min="1"
+                                value={prices.data.owner_per_seats}
+                                onChange={(e) => prices.setData('owner_per_seats', e.target.value)}
+                            />
+                        </Field>
+                    </div>
+                    <p className="text-xs text-muted">
+                        Invite rewards are paid once the invitee’s licence is verified and they accept a first referral. Teams in restricted (Tier B)
+                        industries get the Network builder badge instead.
+                    </p>
                     <Button size="sm" variant="secondary" onClick={() => prices.post('/admin/billing/settings', { preserveScroll: true })}>
-                        Save prices
+                        Save prices and rewards
                     </Button>
                 </Card>
                 <Card className="space-y-3 p-6">

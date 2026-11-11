@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 25b — Invites and rewards
+- Invite link per team (/join/{code}): remembered through sign-up ("{team} invited you" on the sign-up page); self-invites are ignored.
+- Inviter reward: one free month (account credit at the inviter's seat price, to whoever pays for that seat) once the invitee's licence is verified and they've accepted their first referral, so fake sign-ups earn nothing. Checked when a licence is verified and when a referral is accepted, plus a daily safety sweep; paid exactly once. Capped at 12 a year per team.
+- Tier-aware: an inviter holding a seat in a restricted (Tier B) industry never receives anything of value; invites count towards the "Network builder" badge (3+ invitees up and running), shown on profiles.
+- Group owners earn one free month for every 5 new paid seats in their network (each seat counted once, when it first becomes paid).
+- Admins change the reward months, the yearly cap and the owner's seats-per-reward in Admin → Billing.
+- Invites page (Portal → Invites): the link, everyone who joined through it with their status and reward, and the network's "Network builders this year" leaderboard.
+- Non-members who refer a client from a profile are thanked and invited to join through that team's link (so the team earns the invite reward).
+- New notification type "Invite rewards". Fixed in review: invite notices used the owner-announcement template ("News from your network"), hiding the message. A new guard test checks every notification sent with a headline uses a template that shows it.
+- 396 PHP tests in total (7 new).
+
 ### Sprint 25a — "Refer to me" public profiles
 - Public team profile at /t/{team} for teams holding a seat: logo, networks and cities, verified licences, service score (5+ referrals), ratings (3+), referrals closed, public thank-you notes and the Top giver badge; call and website buttons. Search-ready (LocalBusiness structured data, canonical address, sitemap) and checked against the same answer-engine rules as other public pages. Teams can hide their profile.
 - Web address per team, created before the first save; it follows renames until the profile has been visited or shared, then never changes, so links and printed QR cards keep working.

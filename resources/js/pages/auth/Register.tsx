@@ -6,7 +6,7 @@ import { Field, Input } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
-export default function Register({ seo }: { seo: Seo }) {
+export default function Register({ seo, invitedBy = null }: { seo: Seo; invitedBy?: string | null }) {
     const form = useForm({ first_name: '', last_name: '', email: '', phone: '', password: '', password_confirmation: '', terms: false });
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -18,7 +18,11 @@ export default function Register({ seo }: { seo: Seo }) {
     return (
         <AuthLayout
             title="Claim your city"
-            subtitle="Free during the pilot. Takes about five minutes."
+            subtitle={
+                invitedBy
+                    ? `${invitedBy} invited you. Free during the pilot; takes about five minutes.`
+                    : 'Free during the pilot. Takes about five minutes.'
+            }
             footer={
                 <>
                     Already a member?{' '}

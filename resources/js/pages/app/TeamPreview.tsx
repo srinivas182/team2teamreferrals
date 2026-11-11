@@ -32,6 +32,7 @@ type Props = {
         thanks: { from: string; note: string }[];
         giveGet: { given: number; received: number; balance: number };
         topGiverIn: string[];
+        builder: boolean;
     };
     seo: Seo;
 };
@@ -120,6 +121,11 @@ export default function TeamPreview({ team, licenses, seats, strength, company, 
                     {record.topGiverIn.length > 0 && (
                         <p className="mt-2 text-center">
                             <Badge tone="sender">Top giver · {record.topGiverIn.join(', ')}</Badge>
+                        </p>
+                    )}
+                    {record.builder && (
+                        <p className="mt-2 text-center">
+                            <Badge tone="info">Network builder</Badge>
                         </p>
                     )}
                     {record.thanks.map((t) => (

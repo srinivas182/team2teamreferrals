@@ -43,6 +43,9 @@ final class Licenses
             throw ValidationException::withMessages(['note' => 'Tell the team why, so they can fix it.']);
         }
         DB::table('team_licenses')->where('id', $id)->update(['status' => $verify ? 'verified' : 'rejected', 'reviewer_id' => $reviewer->id, 'reviewed_at' => now(), 'review_note' => $note, 'updated_at' => now()]);
+        if ($verify && ($t = Team::query()->find((int) DB::table('team_licenses')->where('id', $id)->value('team_id'))) !== null) {
+            app(\App\Domains\Network\Invites\InviteRewards::class)->check($t);
+        }
         $team = Team::query()->findOrFail((int) $lic->team_id);
         $state = (string) DB::table('states')->where('id', $lic->state_id)->value('code');
         $this->notifier->send($team->leader, 'license.update', [

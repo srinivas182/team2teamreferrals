@@ -49,6 +49,7 @@ final class IdentityServiceProvider extends ServiceProvider
         $page = fn (string $component, string $title, array $props = []) => fn (Request $request) => Inertia::render($component, [
             ...$props,
             'status' => session('status'),
+            'invitedBy' => session('invited_by'),
             'seo' => SeoData::private($title)->toArray(),
         ]);
         Fortify::loginView($page('auth/Login', 'Log in'));
@@ -131,6 +132,8 @@ final class IdentityServiceProvider extends ServiceProvider
             if ($event->user instanceof User) {
                 $event->user->assignRole(Permissions::MEMBER);
                 app(Phone\PhoneVerifier::class)->send($event->user);
+                // Joined through a team's invite link: remember the inviter for the reward.
+                \App\Domains\Network\Invites\InviteRewards::attach($event->user, session('invite_code'));
             }
         });
     }
