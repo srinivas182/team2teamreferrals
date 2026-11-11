@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { router, usePage, useForm } from '@inertiajs/react';
 import { CalendarPlus, CheckCircle2, MapPin, Video } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -6,7 +6,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/field';
+import { Field, Input } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
@@ -168,6 +168,7 @@ export default function Event({ event: e, mine, checkedIn, attendees, going, met
                                 Save notes
                             </Button>
                         </div>
+                        {!e.cancelled && !e.ended && <EditEvent e={e} />}
                         {!e.cancelled && !e.ended && (
                             <Button
                                 size="sm"
@@ -184,5 +185,63 @@ export default function Event({ event: e, mine, checkedIn, attendees, going, met
                 )}
             </div>
         </PortalLayout>
+    );
+}
+
+/** Owner edit: everyone going or maybe gets the revised calendar invite. */
+function EditEvent({ e }: { e: Props['event'] }) {
+    const [open, setOpen] = useState(false);
+    const f = useForm({ title: e.title, description: e.description ?? '', starts_at: '', minutes: '', location: e.location ?? '', video_url: '' });
+    if (!open)
+        return (
+            <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
+                Edit event
+            </Button>
+        );
+    return (
+        <div className="space-y-2 rounded-md border border-line p-3">
+            <Field label="Title" error={f.errors.title}>
+                <Input value={f.data.title} onChange={(ev) => f.setData('title', ev.target.value)} />
+            </Field>
+            <Field label="Description">
+                <Input value={f.data.description} onChange={(ev) => f.setData('description', ev.target.value)} />
+            </Field>
+            <Field label="New start (leave empty to keep)" hint="In the event’s time zone." error={f.errors.starts_at}>
+                <Input type="datetime-local" value={f.data.starts_at} onChange={(ev) => f.setData('starts_at', ev.target.value)} />
+            </Field>
+            <Field label="New length in minutes (optional)">
+                <Input type="number" min="15" value={f.data.minutes} onChange={(ev) => f.setData('minutes', ev.target.value)} />
+            </Field>
+            {e.kind === 'in_person' ? (
+                <Field label="Location">
+                    <Input value={f.data.location} onChange={(ev) => f.setData('location', ev.target.value)} />
+                </Field>
+            ) : (
+                <Field label="New video link (optional)" error={f.errors.video_url}>
+                    <Input value={f.data.video_url} onChange={(ev) => f.setData('video_url', ev.target.value)} placeholder="https://" />
+                </Field>
+            )}
+            <div className="flex gap-2">
+                <Button
+                    size="sm"
+                    loading={f.processing}
+                    onClick={() => {
+                        f.transform((d) => ({
+                            ...d,
+                            starts_at: d.starts_at || null,
+                            minutes: d.minutes || null,
+                            location: d.location || null,
+                            video_url: d.video_url || null,
+                        }));
+                        f.post(`/app/events/${e.id}/update`, { preserveScroll: true, onSuccess: () => setOpen(false) });
+                    }}
+                >
+                    Save and update calendars
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+                    Close
+                </Button>
+            </div>
+        </div>
     );
 }

@@ -28,6 +28,7 @@ type SeatRow = {
 type Inv = { id: number; number: string; period: string; total: number; status: string; failure: string | null; canPay: boolean };
 type Account = {
     type: 'team' | 'company';
+    ai: { balance: number; usedToday: number; dailyCap: number; allowance: number; packs: { credits: number; price: number }[] } | null;
     premium: { on: boolean; price: number } | null;
     credit: number;
     coupon: string | null;
@@ -221,7 +222,22 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                                             </td>
                                             <td className="py-2.5 pr-4 text-muted">{s.group}</td>
                                             <td className="py-2.5 pr-4">{a.type === 'company' ? s.team : ''}</td>
-                                            <td className="py-2.5 pr-4 tabular">${s.price.toFixed(2)}/mo</td>
+                                            <td className="py-2.5 pr-4 tabular">
+                                                {s.cycle === 'annual' ? `$${s.annual.toFixed(2)}/yr` : `$${s.price.toFixed(2)}/mo`}
+                                                {s.paidUntil && <div className="text-xs text-muted">paid until {s.paidUntil}</div>}
+                                                <button
+                                                    className="block text-xs font-medium text-primary"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/app/billing/${a.type}/seats/${s.id}/cycle`,
+                                                            { cycle: s.cycle === 'annual' ? 'monthly' : 'annual' },
+                                                            { preserveScroll: true },
+                                                        )
+                                                    }
+                                                >
+                                                    {s.cycle === 'annual' ? 'Switch to monthly' : `Switch to annual (${s.monthsFree} months free)`}
+                                                </button>
+                                            </td>
                                             <td className="py-2.5 pr-4 tabular">{s.trialEnds ?? '—'}</td>
                                             <td className="py-2.5">
                                                 <Badge tone={s.status === 'grace' ? 'warning' : s.status === 'inactive' ? 'danger' : 'success'}>
@@ -236,6 +252,40 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                         <p className="text-xs text-muted">
                             Any month in which no referral is offered to a seat is free (on annual plans, it’s credited to your account).
                         </p>
+                        {a.premium && (
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={a.premium.on}
+                                    onChange={(e) => router.post('/app/billing/team/premium', { on: e.target.checked }, { preserveScroll: true })}
+                                />{' '}
+                                Premium membership (${a.premium.price.toFixed(2)}/month, billed from the day it starts)
+                            </label>
+                        )}
+                        {a.ai && (
+                            <div className="rounded-md bg-bg p-3 text-sm">
+                                <p className="font-medium">AI credits: {a.ai.balance}</p>
+                                <p className="text-xs text-muted">
+                                    {a.ai.allowance} free this month (unused free credits expire at month end; bought credits don’t) ·{' '}
+                                    {a.ai.usedToday} of {a.ai.dailyCap} used today
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {a.ai.packs.map((p) => (
+                                        <Button
+                                            key={p.credits}
+                                            size="sm"
+                                            variant="secondary"
+                                            onClick={() =>
+                                                window.confirm(`Buy ${p.credits} AI credits for $${p.price}? It’s added to your next invoice.`) &&
+                                                router.post('/app/billing/team/ai-credits', { credits: p.credits }, { preserveScroll: true })
+                                            }
+                                        >
+                                            {p.credits.toLocaleString()} credits · ${p.price}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex flex-wrap items-center gap-3 text-sm">
                             {a.credit > 0 && <span>Account credit: ${a.credit.toFixed(2)}</span>}
                             {a.coupon ? <Badge tone="success">Coupon {a.coupon} applied</Badge> : <CouponForm type={a.type} />}

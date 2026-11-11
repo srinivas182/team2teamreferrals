@@ -65,6 +65,10 @@ final class Invoicing
             $byPayer['company:'.$g->company_id][] = ['days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('private_network') * 100 * $d / $start->daysInMonth),
                 'description' => "Private network: {$g->name} · ".$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
         }
+        // AI credit packs bought since the last invoice (already usable; charged here).
+        foreach (DB::table('ai_credit_ledger')->where('kind', 'purchase')->whereNull('invoice_id')->where('created_at', '<=', $end->addDay()->endOfDay())->get() as $p) {
+            $byPayer['team:'.$p->team_id][] = ['ai_purchase_id' => (int) $p->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $p->price_cents, 'description' => 'AI credits: '.number_format((int) $p->credits).' credits'];
+        }
         // Platform fees owed on referral fees received (only while collection is switched on).
         if (PricingRules::platformFeeCollectionOn()) {
             foreach (DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->where('f.platform_fee_status', 'owed')->whereNull('f.platform_invoice_id')->get(['f.*', 'r.client_name']) as $f) {
@@ -90,6 +94,7 @@ final class Invoicing
                 'status' => $total === 0 ? 'zero' : 'open', 'created_at' => now(), 'updated_at' => now(),
             ]);
             PricingRules::commit($type, (int) $id, $lines);
+            DB::table('ai_credit_ledger')->whereIn('id', array_filter(array_column($lines, 'ai_purchase_id')))->update(['invoice_id' => $invoiceId]);
             DB::table('referral_fees')->whereIn('id', array_filter(array_column($lines, 'platform_fee_id')))->update(['platform_invoice_id' => $invoiceId, 'platform_fee_status' => 'invoiced']);
             $this->pdf($invoiceId);
             if ($total > 0) {

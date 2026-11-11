@@ -78,6 +78,31 @@ final class ProviderCatalogue
                 'output_price' => ['label' => 'Output price (USD per million tokens)', 'required' => true],
                 'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'AI features pause for the month when reached'],
             ]],
+            'openai' => ['label' => 'OpenAI', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true],
+                'model' => ['label' => 'Model', 'required' => true, 'hint' => 'A fast, low-cost model for summaries and drafts'],
+                'input_price' => ['label' => 'Input price (USD per million tokens)', 'required' => true, 'hint' => 'From your OpenAI pricing page; used for the spend cap'],
+                'output_price' => ['label' => 'Output price (USD per million tokens)', 'required' => true],
+                'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'This provider pauses for the month when reached'],
+            ]],
+        ],
+        // Used automatically when the main AI provider fails or reaches its spend cap.
+        'ai_fallback' => [
+            'none' => ['label' => 'No fallback', 'fields' => []],
+            'openai' => ['label' => 'OpenAI', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true],
+                'model' => ['label' => 'Model', 'required' => true, 'hint' => 'A fast, low-cost model for summaries and drafts'],
+                'input_price' => ['label' => 'Input price (USD per million tokens)', 'required' => true, 'hint' => 'From your OpenAI pricing page; used for the spend cap'],
+                'output_price' => ['label' => 'Output price (USD per million tokens)', 'required' => true],
+                'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'This provider pauses for the month when reached'],
+            ]],
+            'anthropic' => ['label' => 'Anthropic (Claude)', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true],
+                'model' => ['label' => 'Model', 'required' => true, 'hint' => 'e.g. claude-haiku-5-5 for fast, low-cost tasks'],
+                'input_price' => ['label' => 'Input price (USD per million tokens)', 'required' => true, 'hint' => 'From your Anthropic pricing page; used for the spend cap'],
+                'output_price' => ['label' => 'Output price (USD per million tokens)', 'required' => true],
+                'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'AI features pause for the month when reached'],
+            ]],
         ],
     ];
 
