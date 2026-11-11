@@ -76,14 +76,25 @@ jobs:
     needs: [changes, quick]
     if: needs.changes.outputs.code == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: Image rendering for share cards (librsvg, Inter font)
-        # Retries and no extras, so a slow package mirror doesn't fail the job.
+        # Each attempt is time-limited so a hanging mirror fails fast; if the runner's Azure mirror fails, fall back to the
+        # official Ubuntu archive. Retries and no extras throughout.
+        timeout-minutes: 7
         run: |
-          sudo apt-get -o Acquire::Retries=3 update -q
-          sudo apt-get -o Acquire::Retries=3 install -y -q --no-install-recommends librsvg2-bin fonts-inter
+          for mirror in "" "http://archive.ubuntu.com/ubuntu"; do
+            if [ -n "$mirror" ]; then
+              echo "Azure mirror failed; switching to $mirror"
+              sudo sed -i "s#http://azure.archive.ubuntu.com/ubuntu#$mirror#g" /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+            fi
+            if timeout 150 sudo apt-get -o Acquire::Retries=3 update -q \
+              && timeout 150 sudo apt-get -o Acquire::Retries=3 install -y -q --no-install-recommends librsvg2-bin fonts-inter; then
+              exit 0
+            fi
+          done
+          exit 1
       - uses: shivammathur/setup-php@v2
         with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
       - uses: actions/cache@v6
