@@ -4,6 +4,21 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 26a — Community feed
+Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/FeedTest.php:
+1. Group feed with posts, comments and reactions (like, celebrate, thanks; tap again to undo); members only.
+2. Pinning by network owners; pinned posts lead the feed.
+3. Owner announcements: owners only, pinned, and the one kind of post every member is notified about at once.
+4. Report a post or comment (one report per person); hidden automatically at 3 reports; owner moderation queue with reasons; restore (clears reports) or remove; audited.
+5. Word filter (admin-editable list); blocked words are starred out.
+6. Client phone numbers and emails masked automatically in posts and comments (same masking as referral messages).
+7. "Ask the network": a post for a city; replies from the team holding that city's seat are marked "Covers this city", the asker is told, and only the asker gets a one-tap "Send the referral" that opens the send form pre-filled (counted for that team's profile analytics).
+8. Win announcements from a confirmed Won referral, posted only when both teams agree, with fixed wording and no client details.
+9. Digest instead of noise: daily or weekly (each member's choice; weekly on Mondays; default weekly; off available), sent only when there's something new. Mentions (@team-name) and replies notify instantly; plain posts don't ping anyone.
+10. Mobile-first feed with endless scroll (20 at a time) and real-time "new posts" over Mercure (private channel per network for seat holders, owners and staff; 30-second check when real-time is off).
+- Fixed in review: a column comment placed after a foreign key would have failed on MySQL (all migrations checked); new users now default to the weekly digest on the model itself.
+- 405 PHP tests in total (8 new).
+
 ### Sprint 25c — Completing two Sprint 25 recommendations
 - Profile analytics now count members' referrals too: "Send a referral" on a profile tags the send form, and the referral counts in that team's profile analytics only if it actually reached them (non-member leads were already counted).
 - Invite leaderboards are now one per network, each showing invitees who joined and those up and running (verified with a first referral accepted) this year, instead of one combined list of fully qualified invites only.

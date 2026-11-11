@@ -133,6 +133,14 @@ export function ClosingPanel({ id, c }: { id: string; c: ClosingInfo }) {
                     </Button>
                 </div>
             )}
+            {(c.status === 'confirmed' || c.status === 'auto_confirmed') && c.mySide && (
+                <div className="border-t border-line pt-4">
+                    <Button size="sm" variant="secondary" onClick={() => router.post(`/app/referrals/${id}/share-win`, {}, { preserveScroll: true })}>
+                        Share this win in the network
+                    </Button>
+                    <p className="mt-1 text-xs text-muted">Posted only when both teams agree. No client details are shared.</p>
+                </div>
+            )}
             {c.thanks && (
                 <div className="rounded-md bg-bg p-3 text-sm">
                     <p>“{c.thanks.note}”</p>

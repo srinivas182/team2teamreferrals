@@ -63,3 +63,20 @@ export function useTeamLive() {
         return () => e.leave(`teams.${team}`);
     }, [realtime?.team]);
 }
+
+/**
+ * A network's feed: when someone posts or comments, show "new posts" without reloading what the reader is looking at.
+ * Falls back to a 30-second check when real-time is off.
+ */
+export function useGroupLive(group: string | null, onChange: () => void) {
+    useEffect(() => {
+        if (!group) return;
+        const e = connection();
+        if (e) {
+            e.private(`groups.${group}`).listen('.feed.changed', onChange);
+            return () => e.leave(`groups.${group}`);
+        }
+        const t = window.setInterval(onChange, 30000);
+        return () => window.clearInterval(t);
+    }, [group, onChange]);
+}

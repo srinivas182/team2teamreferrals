@@ -21,6 +21,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
+ * @property string $feed_digest
+ * @property ?\Illuminate\Support\Carbon $feed_digest_at
  * @property int $id
  * @property string $ulid
  * @property string $first_name
@@ -45,7 +47,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     use HasFactory, HasRoles, HasUlids, LogsActivity, Notifiable, PasskeyAuthenticatable, Searchable, SoftDeletes, TwoFactorAuthenticatable;
 
     /** Mirrors the column defaults so new, unsaved-then-saved users behave the same as loaded ones. */
-    protected $attributes = [
+    protected $attributes = ['feed_digest' => 'weekly',
         'is_active' => true,
         'timezone' => 'America/Denver',
         'two_factor_secret' => null,
@@ -78,7 +80,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
     protected function casts(): array
     {
-        return [
+        return ['feed_digest_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',

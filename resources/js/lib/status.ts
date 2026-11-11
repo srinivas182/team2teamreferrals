@@ -134,6 +134,12 @@ const messages: Record<string, string> = {
     'nurture-lost': 'Marked lost.',
     'profile-shown': 'Your profile is public.',
     'profile-hidden': 'Your profile is hidden.',
+    posted: 'Posted.',
+    reported: 'Thanks. The network owner will take a look.',
+    'digest-saved': 'Digest preference saved.',
+    moderated: 'Done.',
+    'win-posted': 'Your win is posted in the network feed. Congratulations!',
+    'win-waiting': 'Thanks! It will be posted once the other team agrees.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
