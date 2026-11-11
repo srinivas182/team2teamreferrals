@@ -19,6 +19,7 @@ type Props = {
     channels: Record<string, string>;
     matrix: Record<string, Record<string, boolean>>;
     quiet: { start: string | null; end: string | null; timezone: string };
+    chat?: { channel: string; phoneVerified: boolean };
     digest: boolean;
     pushEnabled: boolean;
     pushDevices: number;
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export default function NotificationSettings({
+    chat,
     types,
     channels,
     matrix,
@@ -40,7 +42,14 @@ export default function NotificationSettings({
     seo,
 }: Props) {
     const { auth } = usePage<SharedProps>().props;
-    const form = useForm({ matrix, quiet_start: quiet.start ?? '', quiet_end: quiet.end ?? '', digest, timezone: quiet.timezone });
+    const form = useForm({
+        matrix,
+        quiet_start: quiet.start ?? '',
+        quiet_end: quiet.end ?? '',
+        digest,
+        timezone: quiet.timezone,
+        chat_channel: chat?.channel ?? 'none',
+    });
     const [push, setPush] = useState<string | null>(null);
     const groups = Array.from(new Set(types.map((t) => t.group)));
     const cols = Object.keys(channels);
@@ -138,6 +147,25 @@ export default function NotificationSettings({
                             through. Times are in your time zone, below.
                         </p>
                         <div className="mt-4 grid grid-cols-2 gap-3">
+                            <Field
+                                label="Referral status updates by chat"
+                                hint={
+                                    chat?.phoneVerified
+                                        ? 'When a referral you sent is accepted or declined. Short names only, never contact details.'
+                                        : 'Verify your phone number in your account settings to turn this on.'
+                                }
+                            >
+                                <select
+                                    className="h-10 w-full rounded-md border border-line bg-surface px-2"
+                                    disabled={!chat?.phoneVerified}
+                                    value={form.data.chat_channel}
+                                    onChange={(e) => form.setData('chat_channel', e.target.value)}
+                                >
+                                    <option value="none">Off</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="sms">Text message</option>
+                                </select>
+                            </Field>
                             <Field
                                 label="Your time zone"
                                 hint="Used for quiet hours, reminders and event times. It starts from your team’s city."

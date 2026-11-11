@@ -47,6 +47,7 @@ type Props = {
     cdn: Channel;
     ai: Channel & { spent: number };
     aiFallback: Channel;
+    messagingSpent: number;
     modules: { key: string; label: string; affects: string; enabled: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
     maintenance: boolean;
@@ -226,6 +227,7 @@ export default function SystemSettings({
     cdn,
     ai,
     aiFallback,
+    messagingSpent,
     modules,
     overview,
     maintenance,
@@ -358,6 +360,15 @@ export default function SystemSettings({
                         </Card>
                     </div>
                 </div>
+            )}
+            {tab === 'sms' && (
+                <Card className="mt-6 p-5">
+                    <h3 className="font-semibold">Chat messaging this month</h3>
+                    <p className="mt-2 font-display text-2xl font-bold tabular">${messagingSpent.toFixed(2)}</p>
+                    <p className="text-sm text-muted">
+                        Status replies and WhatsApp messages. Status replies pause when the monthly cap above is reached.
+                    </p>
+                </Card>
             )}
             {tab === 'overview' && (
                 <div className="max-w-5xl space-y-6">

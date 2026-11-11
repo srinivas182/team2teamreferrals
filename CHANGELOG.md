@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 32b — Chat status replies, WhatsApp voice and photos, channel choice and cost cap
+Completes Sprint 32, each proven by a test in tests/Feature/Referrals/ChatStatusTest.php:
+5. Status replies when a referral the member sent is accepted or declined ("Your referral for Maria L. in Hurricane, UT was accepted by Hurricane Sun"), by WhatsApp or SMS.
+9. Short client names only, never contact details.
+10. WhatsApp's 24-hour rule: free text within 24 hours of the member's last message; outside it, the Meta-approved template set in Admin → Settings → SMS (Content SID, variables client, city, team); skipped and logged when none is set.
+12. Members choose WhatsApp, text message or off (Notification settings), only with a verified phone; off by default.
+11. Monthly messaging cap (Admin → Settings → SMS, with spend this month): status replies pause when it's reached; opt-outs are honoured; every attempt is logged with its outcome.
+3. WhatsApp voice notes and card photos: media is fetched only from Twilio's own links (with Twilio's credentials, size-limited), read through the same service as the Drafts page (transcription, or scan, metadata removal and reading), and the conversation carries on; voice notes are echoed back ("I heard: …").
+- Voice and photo reading moved into one shared service used by the Drafts page and WhatsApp (the Sprint 31b tests still pass unchanged).
+- New WhatsApp sender (Twilio; development writes to the log instead of sending).
+- 479 PHP tests in total (5 new).
+
 ### Sprint 32a — WhatsApp and SMS referral bot
 Checklist items delivered here (5, 9's status-reply part, 10, 12, the WhatsApp voice/photo path and the cost cap follow in 32b), each proven by a test in tests/Feature/Referrals/ChatBotTest.php:
 1. One Twilio number for WhatsApp and SMS (WhatsApp messages arrive as "whatsapp:+1…" on the same webhook, signature-checked).

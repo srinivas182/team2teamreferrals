@@ -58,6 +58,7 @@ final class SystemSettingsController
             'cdn' => $channel('cdn'),
             'ai' => [...$channel('ai'), 'spent' => app(AiProvider::class)->spentThisMonth()],
             'aiFallback' => $channel('ai_fallback'),
+            'messagingSpent' => \App\Domains\Referrals\Bot\ChatStatus::spentThisMonth(),
             'modules' => collect(Modules::ALL)->map(fn ($m, $k) => ['key' => $k, 'label' => $m['label'], 'affects' => $m['affects'], 'enabled' => app(Modules::class)->enabled($k)])->values(),
             'overview' => collect(ProviderChecks::PROVIDERS)->map(fn ($label, $k) => ['key' => $k, 'label' => $label, 'driver' => $s->get($k.'.driver'), 'last' => app(ProviderChecks::class)->last()[$k] ?? null, 'health' => in_array($k, ['mail', 'sms'], true) ? ProviderHealth::for($k) : null])->values(),
             'maintenance' => $s->get('platform.maintenance') === '1',

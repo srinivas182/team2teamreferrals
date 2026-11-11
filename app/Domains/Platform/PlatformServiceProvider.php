@@ -41,6 +41,14 @@ final class PlatformServiceProvider extends ServiceProvider
 
             return new RecordingSmsSender(new LogSmsSender, 'log');
         });
+        $this->app->bind(\App\Support\Sms\WhatsAppSender::class, function ($app): \App\Support\Sms\WhatsAppSender {
+            $s = $app->make(Settings::class);
+            if ($s->get('sms.driver') === 'twilio' && $s->has('sms.twilio.sid') && $s->has('sms.twilio.token') && $s->has('sms.twilio.whatsapp_from')) {
+                return new \App\Support\Sms\TwilioWhatsAppSender((string) $s->get('sms.twilio.sid'), (string) $s->get('sms.twilio.token'), (string) $s->get('sms.twilio.whatsapp_from'));
+            }
+
+            return new \App\Support\Sms\LogWhatsAppSender;
+        });
     }
 
     public function boot(): void

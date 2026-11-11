@@ -10,6 +10,7 @@ use App\Domains\Platform\Deliveries\SmsOptOut;
 use App\Domains\Platform\Settings\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use RuntimeException;
 
 /** Delivery receipts from Twilio, verified with Twilio's request signature. */
 final class TwilioWebhookController
@@ -51,7 +52,19 @@ final class TwilioWebhookController
         // A verified member's phone talks to the referral bot (opt-out and help keywords still come first).
         $member = $isKeyword ? null : \App\Domains\Identity\Models\User::query()->where('phone', $from)->whereNotNull('phone_verified_at')->first();
         if ($member !== null) {
-            $reply = app(\App\Domains\Referrals\Bot\Bot::class)->handle($member, $channel, $from, (string) $request->input('Body'));
+            $text = (string) $request->input('Body');
+            $echo = '';
+            // A voice note or a card photo on WhatsApp: read it into text first (2 credits), then the bot carries on.
+            if ($channel === 'whatsapp' && (int) $request->input('NumMedia', 0) > 0) {
+                $text = $this->readMedia($member, (string) $request->input('MediaUrl0'), (string) $request->input('MediaContentType0'), $settings, $echo);
+                if ($text === null) {
+                    $xml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>'.htmlspecialchars($echo, ENT_XML1).'</Message></Response>';
+
+                    return response($xml, 200, ['Content-Type' => 'text/xml']);
+                }
+            }
+            $reply = app(\App\Domains\Referrals\Bot\Bot::class)->handle($member, $channel, $from, $text);
+            $reply = $echo !== '' ? $echo."\n\n".$reply : $reply;
             $xml = '<?xml version="1.0" encoding="UTF-8"?><Response>'.($reply !== '' ? '<Message>'.htmlspecialchars($reply, ENT_XML1).'</Message>' : '').'</Response>';
 
             return response($xml, 200, ['Content-Type' => 'text/xml']);
@@ -74,6 +87,35 @@ final class TwilioWebhookController
     }
 
     /** https://www.twilio.com/docs/usage/security — HMAC-SHA1 of the URL plus sorted POST params. */
+    /** Download WhatsApp media from Twilio (with Twilio's credentials) and read it; $echo carries what to tell the member. */
+    private function readMedia(\App\Domains\Identity\Models\User $member, string $url, string $type, Settings $settings, string &$echo): ?string
+    {
+        $echo = '';
+        $media = app(\App\Domains\Referrals\Intake\IntakeMedia::class);
+        try {
+            $team = \App\Domains\Referrals\Intake\IntakeMedia::creditsFor($member, 2);
+            abort_unless(str_starts_with($url, 'https://api.twilio.com/'), 422); // only Twilio's own media links
+            $res = \Illuminate\Support\Facades\Http::withBasicAuth((string) $settings->get('sms.twilio.sid'), (string) $settings->get('sms.twilio.token'))->timeout(20)->get($url);
+            if ($res->failed() || strlen($res->body()) > 8 * 1024 * 1024) {
+                throw new RuntimeException('That file couldn’t be downloaded. Please try again, or type the details.');
+            }
+            if (str_starts_with($type, 'audio/')) {
+                $text = $media->transcribe($team, $member, $res->body(), 'voice-note.'.(explode('/', $type)[1] ?? 'ogg'));
+                $echo = 'I heard: “'.mb_strimwidth($text, 0, 300, '…').'”';
+
+                return $text;
+            }
+            if (str_starts_with($type, 'image/')) {
+                return $media->readPhoto($team, $member, $res->body());
+            }
+            throw new RuntimeException('Send text, a voice note or a photo of a card.');
+        } catch (RuntimeException $e) {
+            $echo = $e->getMessage();
+
+            return null;
+        }
+    }
+
     public static function validSignature(Request $request, string $token): bool
     {
         $params = $request->post();
