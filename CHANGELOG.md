@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 31b — Voice-note and card-scan intake
+Completes Sprint 31 (items 2 and 3), each proven by a test in tests/Feature/Referrals/IntakeMediaTest.php:
+2. Voice notes (Portal → Drafts): record up to 2 minutes in the browser; transcribed by OpenAI (Anthropic's API doesn't transcribe audio); the transcript is shown for the member to correct, and the corrected text is what becomes the draft. The audio is never stored.
+3. Card and note photos: identified by the file's own bytes (JPEG, PNG, WebP), virus-scanned (refused if infected, or if no scanner is reachable while scanning is required), stripped of location and other metadata without re-encoding, then read verbatim by the AI (versioned prompt intake_photo_read) and passed through the same draft pipeline, so contacts come from the card's text. The photo is never stored.
+- Both use the draft confirmation screen from 31a; 2 credits each (reading, then extracting), checked before anything is read; plain messages when OpenAI isn't set up, credits run out, or a photo can't be read.
+- New: lossless metadata removal for JPEG, PNG and WebP (no image library needed in production); AI requests can include an image (Claude and OpenAI); OpenAI speech-to-text.
+- 470 PHP tests in total (5 new).
+
 ### Sprint 31a — Email-forward intake and draft referrals
 Checklist items delivered here (2 and 3, voice notes and photos, follow in 31b), each proven by a test in tests/Feature/Referrals/IntakeEmailTest.php:
 1. Each member has a private, signed intake address (Portal → Drafts); a forwarded lead email becomes a draft referral. The full body is read (the forwarded part is the lead), not the stripped reply.

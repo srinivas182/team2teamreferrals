@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { Inbox, Mail } from 'lucide-react';
+import { Camera, Inbox, Mail, Mic } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
@@ -14,8 +14,20 @@ import type { Seo } from '@/types/seo';
 type Draft = { id: string; client: string | null; channel: string; subject: string | null; at: string; expires: string; toCheck: number };
 
 /** Portal → Drafts: forward a lead to your private address and it becomes a draft to check and send. */
-export default function Drafts({ address, drafts, status, seo }: { address: string | null; drafts: Draft[]; status?: string; seo: Seo }) {
-    const { auth } = usePage<SharedProps>().props;
+export default function Drafts({
+    address,
+    drafts,
+    transcript = null,
+    status,
+    seo,
+}: {
+    address: string | null;
+    drafts: Draft[];
+    transcript?: { id: number; text: string } | null;
+    status?: string;
+    seo: Seo;
+}) {
+    const { auth, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     const [copied, setCopied] = useState(false);
     return (
         <PortalLayout title="Drafts" user={{ name: auth.user?.name ?? '', team: '' }}>
@@ -51,6 +63,33 @@ export default function Drafts({ address, drafts, status, seo }: { address: stri
                         <p className="text-sm text-muted">Email forwarding isn’t switched on yet.</p>
                     )}
                 </Card>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <VoiceNote />
+                    <Card className="space-y-2 p-5">
+                        <h2 className="flex items-center gap-2 font-semibold">
+                            <Camera className="size-5 text-primary" aria-hidden /> Scan a card or note
+                        </h2>
+                        <p className="text-sm text-muted">
+                            Photograph a business card or a handwritten note. Location data is removed and the photo is deleted once it’s read. 2 AI
+                            credits.
+                        </p>
+                        <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-primary px-3 text-sm font-semibold text-white">
+                            Take or choose a photo
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                capture="environment"
+                                className="sr-only"
+                                onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) router.post('/app/intake/photo', { photo: f }, { forceFormData: true });
+                                }}
+                            />
+                        </label>
+                    </Card>
+                </div>
+                {(errors.audio || errors.photo || errors.credits) && <Alert tone="danger">{errors.audio ?? errors.photo ?? errors.credits}</Alert>}
+                {transcript && <Transcript t={transcript} />}
                 {drafts.length === 0 && (
                     <Card className="flex items-center gap-3 p-6 text-muted">
                         <Inbox className="size-5" aria-hidden /> No drafts waiting.
@@ -82,5 +121,75 @@ export default function Drafts({ address, drafts, status, seo }: { address: stri
                 ))}
             </div>
         </PortalLayout>
+    );
+}
+
+/** Record up to two minutes in the browser; the recording is transcribed, then deleted. */
+function VoiceNote() {
+    const [rec, setRec] = useState<MediaRecorder | null>(null);
+    const [secs, setSecs] = useState(0);
+    const start = async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const r = new MediaRecorder(stream);
+        const parts: Blob[] = [];
+        r.ondataavailable = (e) => parts.push(e.data);
+        r.onstop = () => {
+            stream.getTracks().forEach((t) => t.stop());
+            const blob = new Blob(parts, { type: r.mimeType || 'audio/webm' });
+            router.post('/app/intake/voice', { audio: new File([blob], 'voice-note.webm', { type: blob.type }) }, { forceFormData: true });
+        };
+        r.start();
+        setRec(r);
+        setSecs(0);
+        const started = Date.now();
+        const t = window.setInterval(() => {
+            const s = Math.floor((Date.now() - started) / 1000);
+            setSecs(s);
+            if (s >= 120 || r.state !== 'recording') {
+                window.clearInterval(t);
+                if (r.state === 'recording') r.stop();
+                setRec(null);
+            }
+        }, 500);
+    };
+    return (
+        <Card className="space-y-2 p-5">
+            <h2 className="flex items-center gap-2 font-semibold">
+                <Mic className="size-5 text-primary" aria-hidden /> Record a voice note
+            </h2>
+            <p className="text-sm text-muted">
+                Say who the client is, what they need, where and when. Up to 2 minutes; you’ll check the text before the draft is made. 2 AI credits.
+            </p>
+            {rec ? (
+                <Button size="sm" onClick={() => rec.stop()}>
+                    Stop ({secs}s)
+                </Button>
+            ) : (
+                <Button size="sm" onClick={() => void start()}>
+                    Start recording
+                </Button>
+            )}
+        </Card>
+    );
+}
+
+/** The transcript, editable before the draft is made. */
+function Transcript({ t }: { t: { id: number; text: string } }) {
+    const [text, setText] = useState(t.text);
+    return (
+        <Card className="space-y-2 p-5">
+            <h2 className="font-semibold">Check your voice note</h2>
+            <p className="text-sm text-muted">Fix anything misheard, especially names and numbers, then make the draft.</p>
+            <textarea
+                aria-label="Transcript"
+                rows={5}
+                className="w-full rounded-md border border-line bg-surface p-3"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+            />
+            <Button size="sm" disabled={text.trim().length < 5} onClick={() => router.post(`/app/intake/${t.id}/draft`, { text })}>
+                Make a draft
+            </Button>
+        </Card>
     );
 }
