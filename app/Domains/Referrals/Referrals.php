@@ -56,16 +56,21 @@ final class Referrals
      * @param  array<string, mixed>  $answers
      * @return array{referral: Referral, duplicate: false}|array{referral: null, duplicate: true}
      */
-    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false, bool $textClient = false): array
+    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false, bool $textClient = false, ?Group $from = null): array
     {
         $team = Team::of($sender) ?? Team::forLeader($sender);
         if ($group->industry->tier === \App\Domains\Network\Industries\Tier::Directory) {
             throw ValidationException::withMessages(['group' => 'This is a directory network: clients find pros in the public directory, and members don’t send referrals to each other here.']);
         }
-        if (! in_array($group->id, array_map(fn (Group $g) => $g->id, $this->groupsFor($sender)), true)) {
+        // A cross-industry introduction is sent from the member's own network into another industry's network.
+        $home = $from ?? $group;
+        if (! in_array($home->id, array_map(fn (Group $g) => $g->id, $this->groupsFor($sender)), true)) {
             throw ValidationException::withMessages(['group' => 'You can send referrals in groups you’ve been approved into.']);
         }
-        if ($this->training->blocks($sender, $group)) {
+        if ($from !== null && ! Introductions::allowed($from->industry, $group->industry)) {
+            throw ValidationException::withMessages(['group' => 'Introductions between these industries aren’t available.']);
+        }
+        if ($this->training->blocks($sender, $home)) {
             throw ValidationException::withMessages(['group' => 'Finish your network training to start sending referrals in this group.']);
         }
         if (! $consent) {
@@ -105,10 +110,10 @@ final class Referrals
         }
 
         $receiver = $route['team'];
-        $ref = DB::transaction(function () use ($group, $route, $receiver, $team, $sender, $clean, $phone, $email, $notes, $clientName) {
+        $ref = DB::transaction(function () use ($group, $route, $receiver, $team, $sender, $clean, $phone, $email, $notes, $clientName, $from) {
             $ref = Referral::create([
                 'client_token' => \Illuminate\Support\Str::random(40),
-                'group_id' => $group->id, 'seat_id' => $route['seat']->id, 'sender_team_id' => $team->id, 'sender_user_id' => $sender->id, 'receiver_team_id' => $receiver->id,
+                'group_id' => $group->id, 'introduced_from_group_id' => $from?->id, 'seat_id' => $route['seat']->id, 'sender_team_id' => $team->id, 'sender_user_id' => $sender->id, 'receiver_team_id' => $receiver->id,
                 'routed_to' => $route['role'], 'client_name' => $clientName, 'client_phone' => $phone, 'client_email' => $email, 'answers' => $clean, 'notes' => $notes,
                 'consent_at' => now(), 'consent_method' => 'sender_attested', 'consent_text' => self::consentText($group),
                 'respond_by' => now()->addHours((int) $group->rule('accept_hours')),

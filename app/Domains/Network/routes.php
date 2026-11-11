@@ -185,6 +185,8 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
     Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
     Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
+    Route::get('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'create'])->name('introduce');
+    Route::post('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'store'])->middleware('throttle:20,10')->name('introduce.store');
     Route::get('app/credits', [App\Domains\Referrals\Http\ReferralController::class, 'credits'])->name('credits');
     Route::get('app/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureList'])->name('nurture');
     Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');
@@ -281,4 +283,9 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/invites', [App\Domains\Network\Invites\InviteController::class, 'show'])->name('invites');
     Route::get('app/profile-leads', [App\Domains\Network\Profiles\ShareController::class, 'leads'])->name('profile-leads');
     Route::post('app/profile-leads/{lead}', [App\Domains\Network\Profiles\ShareController::class, 'leadStatus'])->whereNumber('lead')->name('profile-leads.status');
+});
+
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:industries.manage'])->group(function (): void {
+    Route::get('admin/pairings', [App\Domains\Referrals\Http\IntroductionController::class, 'pairings'])->name('admin.pairings');
+    Route::post('admin/pairings', [App\Domains\Referrals\Http\IntroductionController::class, 'savePairing'])->name('admin.pairings.save');
 });

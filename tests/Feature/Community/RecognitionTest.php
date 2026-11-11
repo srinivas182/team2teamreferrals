@@ -95,7 +95,7 @@ it('[3][4] runs Top giver and Network builder through the same engine, each with
     $this->travel(1)->months();
     Badges::recheck();
     expect(collect(Badges::of($this->a))->firstWhere('key', 'top_giver'))->toBe(['key' => 'top_giver', 'name' => 'Top giver', 'group' => 'Solar Installers Network']);
-    $this->actingAs($this->a->leader)->get('/app/badges')->assertInertia(fn ($p) => $p->component('app/Badges')->has('badges', 6)
+    $this->actingAs($this->a->leader)->get('/app/badges')->assertInertia(fn ($p) => $p->component('app/Badges')->has('badges', count(Badges::ALL))
         ->where('badges.0.how', fn ($h) => str_contains((string) $h, '2 hours'))->where('badges.0.keep', fn ($k) => str_contains((string) $k, '1st of each month'))->where('mine.0.key', 'top_giver'));
     foreach (Badges::ALL as $b) {
         expect($b['how'])->not->toBeEmpty()->and($b['keep'])->not->toBeEmpty();

@@ -4,6 +4,22 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 28 — Cross-industry introductions
+Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Referrals/IntroductionsTest.php:
+1. Introduce a client to the seat holder of another industry in the same city, from a referral (client details carried over where the team may see them) or directly. Only from a network the member belongs to and is trained in.
+2. Consent and tracking reuse the referral flow: routing, acceptance, deadlines, pipeline, messages, closing and the service score.
+3. A fee applies only when both industries allow fees (RESPA prohibits referral fees between settlement-service providers in either direction); otherwise it is a credited introduction. The agreement matches: credited introductions drop the fee clause and say no money changes hands.
+4. Done when: an introduction into a restricted industry can't carry a fee (none calculated, none can be proposed) but does award credits.
+5. "Often needed together" suggestions for the client's city, with who holds each seat.
+6. Introduce one client to several industries at once, with consent naming each business; each introduction is tracked separately.
+7. Plain explanation of whether a fee can apply for each pairing, in the form and on the referral.
+8. Connector badge: 3+ accepted cross-industry introductions in 90 days, with its rules on the Badges page.
+9. Admin → Introductions: allow or block specific industry pairs, each with a required counsel note (audited); blocked pairs are neither suggested nor sendable.
+10. Cross-industry credits count in the overall balance (waitlist ranking) and are labelled in the Credits history.
+- Stricter than the PRD (agreed): fees need both industries to allow them, not only the receiving one. For counsel review.
+- Fixed in review: the "introduced from" network wasn't passed into the save, so every introduction would have lost its fee rule; a test could have passed on an empty agreement and now checks real text.
+- 433 PHP tests in total (8 new).
+
 ### Sprint 27 — Events and meetups
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/EventsTest.php:
 1. Events (owners): title, date and time in a chosen time zone, online with a video link or in person with a location, length, description.
