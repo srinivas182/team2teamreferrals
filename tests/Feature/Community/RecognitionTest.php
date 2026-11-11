@@ -102,6 +102,22 @@ it('[3][4] runs Top giver and Network builder through the same engine, each with
     }
 });
 
+it('[5b] awards new badges the same day, and removes them only at the monthly re-check', function () {
+    foreach (range(1, 5) as $i) {
+        ($this->refer)($this->a, $this->b, 1);
+    }
+    $this->travelTo(now()->startOfMonth()->addDays(9)->setTime(8, 0)); // a mid-month daily run
+    Artisan::call('t2t:performance');
+    expect(collect(Badges::of($this->b))->pluck('key'))->toContain('perfect_updates');
+    $this->travel(95)->days(); // no longer earned...
+    $this->travelTo(now()->startOfMonth()->addDays(9)->setTime(8, 0));
+    Artisan::call('t2t:performance');
+    expect(collect(Badges::of($this->b))->pluck('key'))->toContain('perfect_updates'); // ...but kept until the 1st
+    $this->travelTo(now()->addMonthNoOverflow()->startOfMonth()->setTime(8, 0));
+    Artisan::call('t2t:performance');
+    expect(Badges::of($this->b))->toBe([]);
+});
+
 it('[5] re-checks badges monthly: removed when no longer earned, with history kept', function () {
     foreach (range(1, 5) as $i) {
         ($this->refer)($this->a, $this->b, 1);

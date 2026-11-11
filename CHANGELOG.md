@@ -4,6 +4,9 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Badges awarded daily
+- New badges are awarded in the daily run, so recognition follows the achievement; badges are removed only at the monthly re-check on the 1st (earned, not permanent). Badge rules and the Badges page say so. 414 PHP tests (1 new).
+
 ### Sprint 26b — Directory, badges, leaderboards and monthly recap
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Community/RecognitionTest.php:
 1. Member directory (Portal → Directory): teams in your networks, searchable by city, network, specialty, language and badge. Teams set specialties (from their industry families' lists, plus "Other") and languages (standard list, validated) on the Team page; both show on public profiles.

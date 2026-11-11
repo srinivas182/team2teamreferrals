@@ -19,7 +19,7 @@ final class Badges
     public const WINDOW_DAYS = 90;
 
     public const ALL = [
-        'fast_responder' => ['name' => 'Fast Responder', 'how' => 'Accept or decline new referrals in under 2 hours on average (the middle value), across at least 5 referrals in the last 90 days.', 'keep' => 'Keep your typical response time under 2 hours. Checked on the 1st of each month.'],
+        'fast_responder' => ['name' => 'Fast Responder', 'how' => 'Accept or decline new referrals in under 2 hours on average (the middle value), across at least 5 referrals in the last 90 days.', 'keep' => 'Keep your typical response time under 2 hours. Awarded as soon as you earn it; checked again on the 1st of each month.'],
         'top_closer' => ['name' => 'Top Closer', 'how' => 'Close at least 3 referrals as Won (confirmed by the sender) in the last 90 days, and win at least 40% of the referrals you accepted.', 'keep' => 'Keep closing: 3 confirmed wins and a 40% win rate over the last 90 days. Checked monthly.'],
         'top_referrer' => ['name' => 'Top Referrer', 'how' => 'Be in the top 10% of your network by referrals sent and accepted in the last 90 days (once at least 3 teams have sent referrals).', 'keep' => 'Keep sending referrals your network accepts. Checked monthly.'],
         'perfect_updates' => ['name' => 'Perfect Updates', 'how' => 'Accept at least 5 referrals in the last 90 days and never miss an update deadline on them.', 'keep' => 'Update the referring team before every deadline. One missed update removes it at the next monthly check.'],
@@ -27,8 +27,11 @@ final class Badges
         'network_builder' => ['name' => 'Network builder', 'how' => 'Invite 3 or more pros who get their licence verified and accept a first referral.', 'keep' => 'Kept while those invitees remain members. Checked monthly.'],
     ];
 
-    /** The monthly re-check: award what's earned, remove what isn't (kept as history). */
-    public static function recheck(?CarbonImmutable $asOf = null): void
+    /**
+     * Award what's earned (run daily, so recognition follows the achievement); with $revoke (the 1st of each month)
+     * also remove what's no longer earned, kept as history. Earned, not permanent.
+     */
+    public static function recheck(?CarbonImmutable $asOf = null, bool $revoke = true): void
     {
         $now = $asOf ?? CarbonImmutable::now();
         $since = $now->subDays(self::WINDOW_DAYS);
@@ -73,6 +76,9 @@ final class Badges
                 [$tid, $badge, $gid] = explode('|', $key);
                 DB::table('member_badges')->insert(['team_id' => (int) $tid, 'badge' => $badge, 'group_id' => $gid !== '' ? (int) $gid : null, 'awarded_at' => $now]);
             }
+        }
+        if (! $revoke) {
+            return;
         }
         $keep = array_flip(array_unique($earned));
         foreach ($held as $key => $id) {
