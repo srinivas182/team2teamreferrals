@@ -65,6 +65,9 @@ final class ReferralController
 
         return Inertia::render('app/Drafts', [
             'address' => \App\Domains\Referrals\Intake\IntakeAddress::for($user),
+            // A voice note just transcribed: shown for the member to check and edit before the draft is made.
+            'transcript' => ($t = DB::table('intake_messages')->where(['id' => (int) $request->query('transcript'), 'user_id' => $user->id, 'channel' => 'voice', 'status' => 'received'])->first()) !== null
+                ? ['id' => (int) $t->id, 'text' => (string) $t->body] : null,
             'drafts' => DB::table('referral_drafts as d')->leftJoin('intake_messages as m', 'm.id', '=', 'd.intake_id')->where(['d.user_id' => $user->id, 'd.status' => 'pending'])->orderByDesc('d.id')
                 ->get(['d.ulid', 'd.client_name', 'd.created_at', 'd.expires_at', 'd.review', 'm.channel', 'm.subject'])
                 ->map(fn ($x) => ['id' => (string) $x->ulid, 'client' => $x->client_name, 'channel' => (string) ($x->channel ?? 'email'), 'subject' => $x->subject, 'at' => substr((string) $x->created_at, 0, 16),

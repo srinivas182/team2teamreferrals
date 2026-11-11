@@ -20,9 +20,10 @@ final class AiGateway
 
     /**
      * @param  array<string, string>  $vars
+     * @param  array{data: string, mime: string}|null  $image
      * @return array{text: string, usage_id: int}|null
      */
-    public function run(Team $team, ?User $user, string $feature, string $promptKey, array $vars, int $credits = 1, int $maxTokens = 300): ?array
+    public function run(Team $team, ?User $user, string $feature, string $promptKey, array $vars, int $credits = 1, int $maxTokens = 300, ?array $image = null): ?array
     {
         $log = fn (string $status, ?string $reason = null, array $extra = []) => DB::table('ai_usage_logs')->insertGetId([
             'team_id' => $team->id, 'user_id' => $user?->id, 'feature' => $feature, 'prompt_key' => $promptKey, 'status' => $status, 'reason' => $reason, 'created_at' => now(), ...$extra]);
@@ -44,7 +45,7 @@ final class AiGateway
         }
         $p = Prompts::active($promptKey);
         try {
-            $r = $this->provider->complete(Prompts::fill($p['template'], $vars), $feature, $maxTokens, Prompts::fill($p['system'], $vars));
+            $r = $this->provider->complete(Prompts::fill($p['template'], $vars), $feature, $maxTokens, Prompts::fill($p['system'], $vars), $image);
         } catch (Throwable $e) {
             report($e);
             $log('failed', mb_substr($e->getMessage(), 0, 120), ['prompt_version' => $p['version']]);
