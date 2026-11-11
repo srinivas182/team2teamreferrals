@@ -59,6 +59,10 @@ final class Notifier
                 default => null,
             };
         }
+        // Status replies by WhatsApp or SMS, for members who chose them (Portal → Settings → Notifications).
+        if (isset(\App\Domains\Referrals\Bot\ChatStatus::TYPES[$type]) && $quietUntil === null) {
+            $this->safely(fn () => app(\App\Domains\Referrals\Bot\ChatStatus::class)->send($user, $type, $data));
+        }
     }
 
     private function mail(User $user, string $type, string $title, string $body, ?string $url, bool $urgent, ?CarbonImmutable $quietUntil, CarbonImmutable $now, ?string $replyTo = null): void

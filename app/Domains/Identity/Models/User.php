@@ -21,6 +21,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
+ * @property string $chat_channel
  * @property string $feed_digest
  * @property ?\Illuminate\Support\Carbon $feed_digest_at
  * @property int $id
@@ -47,7 +48,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     use HasFactory, HasRoles, HasUlids, LogsActivity, Notifiable, PasskeyAuthenticatable, Searchable, SoftDeletes, TwoFactorAuthenticatable;
 
     /** Mirrors the column defaults so new, unsaved-then-saved users behave the same as loaded ones. */
-    protected $attributes = ['feed_digest' => 'weekly',
+    protected $attributes = ['chat_channel' => 'none', 'feed_digest' => 'weekly',
         'is_active' => true,
         'timezone' => 'America/Denver',
         'two_factor_secret' => null,

@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace App\Domains\Referrals\Http;
 
 use App\Domains\Identity\Models\User;
-use App\Domains\Network\Seats\Models\Team;
-use App\Domains\Platform\Ai\AiCredits;
-use App\Domains\Platform\Ai\AiGateway;
-use App\Domains\Platform\Ai\AiProvider;
 use App\Domains\Referrals\Intake\Extractor;
-use App\Support\ImageMetadata;
-use App\Support\Scanning\VirusScanner;
+use App\Domains\Referrals\Intake\IntakeMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Throwable;
+use RuntimeException;
 
 /**
  * Voice notes and card photos into draft referrals (2 credits each: reading, then extracting). Neither the audio nor
@@ -26,23 +20,22 @@ use Throwable;
  */
 final class IntakeMediaController
 {
-    public function voice(Request $request, AiProvider $ai): RedirectResponse
+    public function voice(Request $request, IntakeMedia $media): RedirectResponse
     {
         $user = $this->user($request);
         $request->validate(['audio' => ['required', 'file', 'max:5120', 'mimetypes:audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav,audio/x-wav,video/webm']]);
-        $team = $this->creditsFor($user, 2);
         $file = $request->file('audio');
         abort_if(! $file instanceof \Illuminate\Http\UploadedFile, 422);
         try {
-            $text = $ai->transcribe((string) $file->get(), 'voice-note.'.($file->guessExtension() ?: 'webm'), 'intake_transcribe');
-        } catch (Throwable $e) {
-            throw ValidationException::withMessages(['audio' => 'The voice note couldn’t be transcribed right now: '.$e->getMessage()]);
+            $team = IntakeMedia::creditsFor($user, 2);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['credits' => $e->getMessage()]);
         }
-        if ($text === '') {
-            throw ValidationException::withMessages(['audio' => 'No speech was found in the recording. Try again closer to the microphone.']);
+        try {
+            $text = $media->transcribe($team, $user, (string) $file->get(), 'voice-note.'.($file->guessExtension() ?: 'webm'));
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['audio' => $e->getMessage()]);
         }
-        $usage = DB::table('ai_usage_logs')->insertGetId(['team_id' => $team->id, 'user_id' => $user->id, 'feature' => 'intake_transcribe', 'provider' => 'openai', 'credits' => 1, 'status' => 'ok', 'created_at' => now()]);
-        AiCredits::charge($team, 1, $usage);
         $id = DB::table('intake_messages')->insertGetId(['user_id' => $user->id, 'team_id' => $team->id, 'channel' => 'voice', 'body' => mb_substr($text, 0, 8000), 'status' => 'received', 'created_at' => now(), 'updated_at' => now()]);
 
         return redirect('/app/drafts?transcript='.$id)->with('status', 'voice-transcribed');
@@ -63,52 +56,32 @@ final class IntakeMediaController
         return redirect('/app/send?draft='.$ulid);
     }
 
-    public function photo(Request $request, AiGateway $gateway, Extractor $extractor, VirusScanner $scanner): RedirectResponse
+    public function photo(Request $request, IntakeMedia $media, Extractor $extractor): RedirectResponse
     {
         $user = $this->user($request);
         $request->validate(['photo' => ['required', 'file', 'max:8192']]);
         $file = $request->file('photo');
         abort_if(! $file instanceof \Illuminate\Http\UploadedFile, 422);
         $bytes = (string) $file->get();
-        $mime = ImageMetadata::type($bytes); // the file's own bytes, not its name
-        if ($mime === null) {
+        if (\App\Support\ImageMetadata::type($bytes) === null) {
             throw ValidationException::withMessages(['photo' => 'Use a JPEG, PNG or WebP photo.']);
         }
-        $team = $this->creditsFor($user, 2);
-        $started = hrtime(true);
-        $path = 'intake/'.bin2hex(random_bytes(16));
-        Storage::disk('local')->put($path, $bytes);
         try {
-            $verdict = $scanner->scan(Storage::disk('local')->path($path));
-            if ($verdict === 'infected' || ($verdict !== 'clean' && (bool) config('attachments.require_scan'))) {
-                throw ValidationException::withMessages(['photo' => $verdict === 'infected' ? 'This file was flagged by the virus scan.' : 'Photos can’t be checked right now. Please try again shortly.']);
-            }
-            $clean = ImageMetadata::strip($bytes);
-        } finally {
-            Storage::disk('local')->delete($path); // not kept
+            $team = IntakeMedia::creditsFor($user, 2);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['credits' => $e->getMessage()]);
         }
-        $id = DB::table('intake_messages')->insertGetId(['user_id' => $user->id, 'team_id' => $team->id, 'channel' => 'photo', 'status' => 'received', 'created_at' => now(), 'updated_at' => now()]);
-        $read = $gateway->run($team, $user, 'intake_photo_read', 'intake_photo_read', [], 1, 600, ['data' => base64_encode($clean), 'mime' => $mime]);
-        if ($read === null || trim($read['text']) === '') {
-            throw ValidationException::withMessages(['photo' => 'The photo couldn’t be read right now. You can type the details instead.']);
+        $started = hrtime(true);
+        try {
+            $text = $media->readPhoto($team, $user, $bytes);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['photo' => $e->getMessage()]);
         }
-        DB::table('intake_messages')->where('id', $id)->update(['body' => $read['text']]);
-        $ulid = $extractor->draft($user, $id, $read['text'], 1);
+        $id = DB::table('intake_messages')->insertGetId(['user_id' => $user->id, 'team_id' => $team->id, 'channel' => 'photo', 'body' => $text, 'status' => 'received', 'created_at' => now(), 'updated_at' => now()]);
+        $ulid = $extractor->draft($user, $id, $text, 1);
         DB::table('intake_messages')->where('id', $id)->update(['status' => 'drafted', 'processing_ms' => (int) ((hrtime(true) - $started) / 1_000_000), 'updated_at' => now()]);
 
         return redirect('/app/send?draft='.$ulid);
-    }
-
-    /** Both steps cost a credit each: check there are enough before reading anything. */
-    private function creditsFor(User $user, int $needed): Team
-    {
-        $team = Team::of($user) ?? Team::forLeader($user);
-        AiCredits::grantMonthly($team);
-        if (AiCredits::balance($team) < $needed || AiCredits::usedToday($team) + $needed > AiCredits::setting('daily_cap')) {
-            throw ValidationException::withMessages(['credits' => 'Not enough AI credits for this (it uses '.$needed.'). You can buy more on the Billing page.']);
-        }
-
-        return $team;
     }
 
     private function user(Request $request): User

@@ -32,6 +32,7 @@ final class PreferencesController
             'channels' => NotificationCatalogue::CHANNELS,
             'matrix' => $this->prefs->matrix($user),
             'quiet' => ['start' => $user->quiet_hours_start ? substr($user->quiet_hours_start, 0, 5) : null, 'end' => $user->quiet_hours_end ? substr($user->quiet_hours_end, 0, 5) : null, 'timezone' => $user->timezone],
+            'chat' => ['channel' => $user->chat_channel, 'phoneVerified' => $user->phone_verified_at !== null],
             'digest' => $user->email_digest,
             'pushEnabled' => app(\App\Domains\Platform\Modules\Modules::class)->enabled('push'),
             'pushDevices' => PushSubscription::query()->where('user_id', $user->id)->count(),
@@ -49,6 +50,7 @@ final class PreferencesController
             'matrix.*' => ['array'],
             'matrix.*.*' => ['boolean'],
             'timezone' => ['sometimes', 'timezone:all'],
+            'chat_channel' => ['sometimes', 'in:whatsapp,sms,none'],
             'quiet_start' => ['nullable', 'date_format:H:i', 'required_with:quiet_end'],
             'quiet_end' => ['nullable', 'date_format:H:i', 'required_with:quiet_start', 'different:quiet_start'],
             'digest' => ['boolean'],
@@ -62,6 +64,8 @@ final class PreferencesController
         $user->forceFill([
             // Choosing a time zone here means it's never replaced by the team-city default.
             ...(isset($data['timezone']) ? ['timezone' => $data['timezone'], 'timezone_chosen' => true] : []),
+            // Status updates by WhatsApp or SMS need a verified phone.
+            ...(isset($data['chat_channel']) ? ['chat_channel' => $user->phone_verified_at !== null ? $data['chat_channel'] : 'none'] : []),
             'quiet_hours_start' => $data['quiet_start'] ?? null,
             'quiet_hours_end' => $data['quiet_end'] ?? null,
             'email_digest' => (bool) ($data['digest'] ?? false),

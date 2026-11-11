@@ -42,6 +42,11 @@ final class ProviderCatalogue
                 'sid' => ['label' => 'Account SID', 'required' => true],
                 'token' => ['label' => 'Auth token', 'secret' => true, 'required' => true],
                 'from' => ['label' => 'From number or Messaging Service SID', 'required' => true, 'hint' => '+1… number, or MG… for a Messaging Service (recommended for A2P 10DLC)'],
+                'whatsapp_from' => ['label' => 'WhatsApp number (optional)', 'hint' => '+1… number enabled for WhatsApp Business after Meta verification'],
+                'template_accepted' => ['label' => 'WhatsApp template: referral accepted (optional)', 'hint' => 'Content SID (HX…) of the Meta-approved template; variables 1 client, 2 city, 3 team'],
+                'template_declined' => ['label' => 'WhatsApp template: referral declined (optional)', 'hint' => 'Content SID (HX…) of the Meta-approved template; variables 1 client, 2 city, 3 team'],
+                'cost_per_message' => ['label' => 'Average cost per message (USD, optional)', 'hint' => 'Used to measure spend against the cap; defaults to 0.01'],
+                'monthly_cap' => ['label' => 'Monthly messaging cap (USD, optional)', 'hint' => 'Status replies pause for the month when reached; 0 means no cap'],
             ]],
         ],
         'payments' => [
