@@ -184,6 +184,8 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/rate', [App\Domains\Referrals\Http\ReferralController::class, 'rate'])->name('referrals.rate');
     Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
     Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
+    Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
+    Route::get('app/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureList'])->name('nurture');
     Route::post('app/referrals/{referral}/mute', [App\Domains\Referrals\Http\ReferralController::class, 'mute'])->name('referrals.mute');
     Route::post('app/team/quick-replies', [App\Domains\Referrals\Http\ReferralController::class, 'quickReplies'])->name('team.quick-replies');
     Route::get('app/messages/search', [App\Domains\Referrals\Http\ReferralController::class, 'search'])->middleware('throttle:60,1')->name('messages.search');
@@ -206,6 +208,7 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
     Route::post('c/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientConsentConfirm'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:20,1')->name('referrals.client-consent.confirm');
     Route::get('rate/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientRate'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client-rate');
     Route::post('rate/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'clientRateStore'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('referrals.client-rate.store');
+    Route::post('r/{token}/checkin', [App\Domains\Referrals\Http\ReferralController::class, 'clientCheckIn'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('referrals.client.checkin');
     Route::get('r/{token}', [App\Domains\Referrals\Http\ReferralController::class, 'client'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('referrals.client');
 });
 

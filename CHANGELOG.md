@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 23 — Long-term nurture referrals and client portal
+- Lead temperature from the form's timeline answer: hot (within 30 days), warm (1–3 months), future (later, or just exploring).
+- Future leads are never lost: once accepted, the receiving team gets a monthly check-in prompt ("Future lead check-ins", its own notification type) until the lead is upgraded, closed or lost. One tap: still nurturing (optionally choosing the next check-in date), ready now, or lost (closes it with the reason).
+- Protection period (from the group's rules, default 12 months) starts on acceptance and is extended by every "still nurturing" check-in; never shortened.
+- Automatic temperature upgrade: Future becomes Hot when the receiver marks it ready or the client says so from their page; the monthly prompts stop and both teams are told.
+- Client portal (the client's private page, linked from the consent confirmation): "Meet your pro" with logo, team name, leader's first name, bio, service area, verified licences and training badge, Call and Website buttons; the current next step; when they consented; and a check-in: ready now, still planning, or no longer need help (the pro decides what happens next).
+- Nurture page (Portal → Nurture): long-term leads received (next check-in, last update, protected until) and referred (progress only; no client contact details for the referring team). A Nurture panel on each referral shows temperature, dates, check-in buttons and history.
+- Data: nurture fields on referrals (temperature, next check-in, protected until) plus nurture_touchpoints; the portal reuses the client's existing private link (same outcome as the PRD's three tables, less to keep in sync).
+- Fixed in review: nurture notices used the "Progress updates" wording template, so they would have read "Update on {client}".
+- 373 PHP tests in total (5 new).
+
 ### Sprint 22b part 2 — Plans, Stripe Tax, card-expiry warnings and admin billing
 - Premium membership (per team; switched on the Billing page) and private network plans (per owning company) at default prices ($19 and $49 a month), prorated by day from their start, editable in Admin → Billing.
 - Stripe Tax switch (off until launch): when on, sales tax is calculated by Stripe for each invoice and shown as its own line. If Stripe can't calculate it, the invoice still goes out without tax and the error is reported, rather than blocking the payer.

@@ -33,6 +33,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?\Illuminate\Support\Carbon $closed_at
  * @property ?\Illuminate\Support\Carbon $last_nudged_at
  * @property ?string $close_status
+ * @property ?string $temperature
+ * @property ?string $nurture_next_at
+ * @property ?string $protection_until
  * @property ?string $fee_type
  * @property ?int $fee_value
  * @property ?array{type: string, value: int, by: int} $fee_proposal

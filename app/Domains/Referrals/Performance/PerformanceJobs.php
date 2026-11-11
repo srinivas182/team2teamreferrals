@@ -37,6 +37,7 @@ final class PerformanceJobs extends Command
         app(SeatChallenges::class)->daily();
         app(\App\Domains\Referrals\Closing::class)->autoConfirm();
         app(\App\Domains\Referrals\Fees::class)->remind();
+        app(\App\Domains\Referrals\Nurture::class)->prompts();
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             foreach ($holders as $team) {
