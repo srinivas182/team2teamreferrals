@@ -48,6 +48,7 @@ export const portalNav: NavItem[] = [
     { label: 'Directory', href: '/app/directory', icon: BookUser },
     { label: 'Leaderboards', href: '/app/leaderboards', icon: Trophy },
     { label: 'Badges', href: '/app/badges', icon: Award },
+    { label: 'Drafts', href: '/app/drafts', icon: Inbox },
     { label: 'Nurture', href: '/app/nurture', icon: Sprout },
     { label: 'Credits', href: '/app/credits', icon: HandHeart },
     { label: 'Share profile', href: '/app/share', icon: QrCode },

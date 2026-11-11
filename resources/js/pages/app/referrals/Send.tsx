@@ -88,7 +88,17 @@ export default function Send({
 }: {
     groups: G[];
     refresher: string | null;
-    prefill?: { group: string; cityId: number; cityName: string; fromProfile?: string | null } | null;
+    prefill?: {
+        group: string;
+        cityId: number;
+        cityName: string;
+        fromProfile?: string | null;
+        draft?: string;
+        notes?: string;
+        review?: Record<string, string>;
+        aiUsed?: boolean;
+        answers?: Record<string, string>;
+    } | null;
     seo: Seo;
 }) {
     const { auth, flash } = usePage<SharedProps & { flash: { duplicate?: boolean } }>().props;
@@ -96,12 +106,18 @@ export default function Send({
         group: prefill?.group ?? groups[0]?.slug ?? '',
         city_id: prefill?.cityId ?? 0,
         from_profile: prefill?.fromProfile ?? null,
-        answers: {} as Record<string, Answer>,
+        answers: (prefill?.answers ?? {}) as Record<string, Answer>,
         consent: false,
-        notes: '',
+        notes: prefill?.notes ?? '',
+        draft: prefill?.draft ?? null,
         confirm_duplicate: false,
         text_client: false,
     });
+    // Fields a draft couldn't fill with confidence.
+    const check = (key: string): string | undefined => {
+        const why = prefill?.review?.[key];
+        return why === 'missing' ? 'Check: not found in the draft' : why === 'several' ? 'Check: several found; the first is filled in' : undefined;
+    };
     const [preview, setPreview] = useState<Preview | null>(null);
     // The picker's label, so choosing a nearby match updates it without losing anything typed.
     const [cityLabel, setCityLabel] = useState(prefill?.cityName ?? '');
@@ -142,9 +158,16 @@ export default function Send({
                     on consent, deadlines and fees.
                 </Alert>
             )}
+            {prefill?.draft && (
+                <Alert tone="info" className="mb-4 max-w-5xl">
+                    Draft from your{' '}
+                    {prefill.aiUsed ? 'forwarded message, read by AI' : 'forwarded message (AI was unavailable: the original text is in the notes)'}.
+                    Check the highlighted fields, then confirm consent and send. Nothing is sent until you do.
+                </Alert>
+            )}
             <div className="grid max-w-5xl gap-6 lg:grid-cols-[1.4fr_1fr]">
                 <Card className="space-y-4 p-6">
-                    <Field label="Network" error={e.group}>
+                    <Field label="Network" error={e.group} hint={check('group')}>
                         <Select
                             value={form.data.group}
                             onChange={(ev) => {
@@ -167,7 +190,7 @@ export default function Send({
                             </Link>
                         </Alert>
                     )}
-                    <Field label={`Where does your ${g?.terms.client ?? 'client'} need help?`} error={e.city_id}>
+                    <Field label={`Where does your ${g?.terms.client ?? 'client'} need help?`} error={e.city_id} hint={check('city')}>
                         <CityPicker
                             key={cityLabel}
                             initial={cityLabel}
@@ -178,7 +201,7 @@ export default function Send({
                         />
                     </Field>
                     {g?.form.map((f) => (
-                        <Field key={f.key} label={`${f.label}${f.required ? '' : ' (optional)'}`} error={e[`answers.${f.key}`]}>
+                        <Field key={f.key} label={`${f.label}${f.required ? '' : ' (optional)'}`} error={e[`answers.${f.key}`]} hint={check(f.key)}>
                             <Input2
                                 f={f}
                                 value={form.data.answers[f.key]}
