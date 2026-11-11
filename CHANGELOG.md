@@ -29,7 +29,7 @@ A new guard test (tests/Feature/Platform/RoutesReachableTest.php) fails when any
 - 442 PHP tests in total (9 new).
 
 ### CI: pinned runners
-- GitHub's ubuntu-latest moved to Ubuntu 26, where the share-card image packages failed to install (tests never ran). All CI jobs are now pinned to ubuntu-24.04, so runner upgrades are deliberate and tested. The package step was in fact hanging on the runner's Azure mirror: each attempt is now time-limited, falls back to the official Ubuntu archive, retries and skips extras; the test job's limit is 15 minutes.
+- GitHub's ubuntu-latest moved to Ubuntu 26, where the share-card image packages failed to install (tests never ran). All CI jobs are now pinned to ubuntu-24.04, so runner upgrades are deliberate and tested. The package step was in fact hanging on the runner's Azure mirror: each attempt is now time-limited, falls back to the official Ubuntu archive, retries and skips extras; the test job's limit is 15 minutes. Because both mirrors were unreachable, the step is now non-blocking: the rendering test skips itself without the tool, and the run shows a "Share-card rendering not tested" warning so the gap is visible.
 
 ### Sprint 28 — Cross-industry introductions
 Checklist (PRD scope and agreed additions), each proven by a test in tests/Feature/Referrals/IntroductionsTest.php:
