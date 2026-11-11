@@ -47,6 +47,10 @@ final class PerformanceJobs extends Command
         if (now()->isMonday()) {
             app(\App\Domains\Referrals\Nurture::class)->senderDigest();
         }
+        // New badges every day; removals only at the monthly re-check below.
+        if (! ($this->option('cards') || now()->day === 1)) {
+            \App\Domains\Community\Badges\Badges::recheck(revoke: false);
+        }
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             // The 1st: re-check every badge, freeze last month's leaderboards, then send each network's recap.

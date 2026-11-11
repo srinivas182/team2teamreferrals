@@ -22,7 +22,8 @@ export default function Badges({ badges, mine, windowDays, seo }: Props) {
         <PortalLayout title="Badges" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
             <p className="mb-4 max-w-3xl text-sm text-muted">
-                Badges are earned from the last {windowDays} days of activity and re-checked on the 1st of each month, so they show what you do now.
+                Badges are earned from the last {windowDays} days of activity. New badges appear the day you earn them; on the 1st of each month every
+                badge is checked again, so they show what you do now.
             </p>
             <div className="grid max-w-4xl gap-3 sm:grid-cols-2">
                 {badges.map((b) => (
