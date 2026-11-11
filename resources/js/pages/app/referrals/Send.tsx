@@ -24,7 +24,15 @@ type G = {
     trainingUrl: string;
     canText: boolean;
 };
-type Preview = { territory: string; team: string | null; role: string | null; backup: string | null; avgAcceptMinutes: number | null };
+type Match = { team: string; teamSlug: string; cityId: number; city: string; miles: number; score: number | null };
+type Preview = {
+    territory: string;
+    team: string | null;
+    role: string | null;
+    backup: string | null;
+    avgAcceptMinutes: number | null;
+    matches?: Match[];
+};
 
 function Input2({ f, value, onChange }: { f: FormField; value: Answer | undefined; onChange: (v: Answer) => void }) {
     if (f.type === 'textarea') return <Textarea rows={3} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />;
@@ -95,6 +103,8 @@ export default function Send({
         text_client: false,
     });
     const [preview, setPreview] = useState<Preview | null>(null);
+    // The picker's label, so choosing a nearby match updates it without losing anything typed.
+    const [cityLabel, setCityLabel] = useState(prefill?.cityName ?? '');
     const g = groups.find((x) => x.slug === form.data.group);
     const e = form.errors as Record<string, string>;
     useEffect(() => {
@@ -159,7 +169,8 @@ export default function Send({
                     )}
                     <Field label={`Where does your ${g?.terms.client ?? 'client'} need help?`} error={e.city_id}>
                         <CityPicker
-                            initial={prefill?.cityName ?? ''}
+                            key={cityLabel}
+                            initial={cityLabel}
                             onPick={(c: CityOption) => {
                                 setPreview(null);
                                 form.setData('city_id', c.id);
@@ -247,7 +258,34 @@ export default function Send({
                             </p>
                         </>
                     ) : (
-                        <p className="text-sm text-muted">No verified pro can take referrals in {preview.territory} yet.</p>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted">No verified pro can take referrals in {preview.territory} yet.</p>
+                            {(preview.matches ?? []).length > 0 && (
+                                <>
+                                    <p className="text-sm font-medium">Nearby pros in this network</p>
+                                    {(preview.matches ?? []).map((m) => (
+                                        <div key={m.cityId} className="flex flex-wrap items-center gap-2 rounded-md border border-line p-2 text-sm">
+                                            <span className="flex-1">
+                                                <strong>{m.team}</strong> · {m.city} · {m.miles} miles
+                                                {m.score !== null ? ` · service ${m.score}` : ''}
+                                            </span>
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => {
+                                                    setPreview(null);
+                                                    setCityLabel(m.city);
+                                                    form.setData('city_id', m.cityId);
+                                                }}
+                                            >
+                                                Use {m.city.split(',')[0]}
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <p className="text-xs text-muted">Check your client is happy to work with a pro from a nearby city.</p>
+                                </>
+                            )}
+                        </div>
                     )}
                 </Card>
             </div>

@@ -30,12 +30,22 @@ type Props = {
         pricing: Record<string, unknown>;
     };
     health: { owners: number; seats: number; referralsThisMonth: number | null; avgAcceptMinutes: number | null; quietSeats: number | null };
+    insights?: {
+        week: string;
+        summary: string;
+        aiWritten: boolean;
+        data: {
+            weakCities: { city: string; unplaced: number; waiting: number }[];
+            slowTeams: { team: string; reason: string }[];
+            rising: { team: string; now: number; before: number }[];
+        };
+    } | null;
     upcoming: { section: string; effectiveOn: string }[];
     seo: Seo;
 };
 
 /** Owner overview: how the group is doing and what is coming. Owners run the group; pricing is set by the platform. */
-export default function GroupOverview({ group, health, upcoming, seo }: Props) {
+export default function GroupOverview({ group, health, upcoming, insights = null, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const r = group.rules;
     return (
@@ -61,6 +71,36 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                 <Kpi label="Average time to accept" value={health.avgAcceptMinutes === null ? '—' : `${health.avgAcceptMinutes} min`} />
                 <Kpi label="Quiet seats this month" value={health.quietSeats === null ? '—' : String(health.quietSeats)} />
             </div>
+            {insights && (
+                <Card className="mt-6 space-y-3 p-6">
+                    <h2 className="font-semibold">This week’s insights</h2>
+                    <p>{insights.summary}</p>
+                    <p className="text-xs text-muted">
+                        Week of {insights.week}
+                        {insights.aiWritten ? ' · summary written by AI from the figures below' : ''}
+                    </p>
+                    <div className="grid gap-4 text-sm sm:grid-cols-3">
+                        {(
+                            [
+                                [
+                                    'Cities to strengthen',
+                                    insights.data.weakCities.map(
+                                        (c) =>
+                                            `${c.city}: ${[c.unplaced ? `${c.unplaced} unplaced` : '', c.waiting ? `${c.waiting} waiting` : ''].filter(Boolean).join(', ')}`,
+                                    ),
+                                ],
+                                ['Teams to check in with', insights.data.slowTeams.map((t) => `${t.team}: ${t.reason}`)],
+                                ['Rising', insights.data.rising.map((t) => `${t.team}: ${t.before} → ${t.now}`)],
+                            ] as [string, string[]][]
+                        ).map(([h, items]) => (
+                            <div key={h}>
+                                <p className="font-medium">{h}</p>
+                                {items.length === 0 ? <p className="text-muted">Nothing this week</p> : items.map((x) => <p key={x}>{x}</p>)}
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
                 <Card className="p-6">
                     <h2 className="font-semibold">Network rules</h2>

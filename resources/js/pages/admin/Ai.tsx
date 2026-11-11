@@ -20,6 +20,11 @@ type Props = {
     problems: { status: string; reason: string; count: number }[];
     prompts: { key: string; versions: Version[]; placeholders: string[] }[];
     credits: { per_seat: number; per_seat_premium: number; daily_cap: number };
+    suggestions: { kind: string; key: string; used: number; dismissed: number; snoozed: number; reasons: Record<string, number> }[];
+    impact: Record<
+        'withSuggestions' | 'without',
+        { referrals: number; contactHours: number | null; updatesOnTime: number | null; closeRate: number | null }
+    >;
     testResult?: { version: number; text: string | null; meta: string } | null;
     status?: string;
     seo: Seo;
@@ -145,7 +150,21 @@ function PromptEditor({ p }: { p: Props['prompts'][number] }) {
 }
 
 /** Admin → AI: what AI costs and who uses it, the prompts behind it, and the credit defaults. */
-export default function Ai({ month, totals, byFeature, byModel, byTeam, problems, prompts, credits, testResult, status, seo }: Props) {
+export default function Ai({
+    month,
+    totals,
+    byFeature,
+    byModel,
+    byTeam,
+    problems,
+    prompts,
+    credits,
+    suggestions,
+    impact,
+    testResult,
+    status,
+    seo,
+}: Props) {
     const c = useForm(credits);
     return (
         <AdminLayout title="AI">
@@ -198,6 +217,39 @@ export default function Ai({ month, totals, byFeature, byModel, byTeam, problems
                     <Table head={['Team', 'Calls', 'Credits', 'Cost']} rows={byTeam.map((r) => [r.team, r.calls, r.credits, money(r.cost)])} />
                     <h2 className="font-semibold">Blocked and failed</h2>
                     <Table head={['Outcome', 'Reason', 'Times']} rows={problems.map((r) => [r.status, r.reason, r.count])} />
+                </Card>
+                <Card className="space-y-4 p-5">
+                    <h2 className="font-semibold">Suggestions: what members do with them</h2>
+                    <Table
+                        head={['Type', 'Suggestion', 'Used', 'Dismissed', 'Snoozed', 'Dismissal reasons']}
+                        rows={suggestions.map((r) => [
+                            r.kind.replace('_', ' '),
+                            r.key.replace('_', ' '),
+                            r.used,
+                            r.dismissed,
+                            r.snoozed,
+                            Object.entries(r.reasons)
+                                .map(([k, n]) => `${k.replace('_', ' ')} ${n}`)
+                                .join(', ') || '—',
+                        ])}
+                    />
+                    <h2 className="font-semibold">Impact (last 90 days)</h2>
+                    <Table
+                        head={['Accepted referrals', 'Count', 'Typical hours to first contact', 'Updates on time', 'Close rate']}
+                        rows={(
+                            [
+                                ['With a suggestion used', impact.withSuggestions],
+                                ['Without', impact.without],
+                            ] as const
+                        ).map(([l, m]) => [
+                            l,
+                            m.referrals,
+                            m.contactHours ?? '—',
+                            m.updatesOnTime === null ? '—' : `${m.updatesOnTime}%`,
+                            m.closeRate === null ? '—' : `${m.closeRate}%`,
+                        ])}
+                    />
+                    <p className="text-xs text-muted">A comparison, not proof of cause: teams that use suggestions may differ in other ways.</p>
                 </Card>
                 {prompts.map((p) => (
                     <PromptEditor key={p.key} p={p} />

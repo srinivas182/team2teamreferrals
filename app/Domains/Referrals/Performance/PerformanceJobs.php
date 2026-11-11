@@ -46,6 +46,7 @@ final class PerformanceJobs extends Command
         app(\App\Domains\Referrals\Nurture::class)->clientTouchpoints();
         if (now()->isMonday()) {
             app(\App\Domains\Referrals\Nurture::class)->senderDigest();
+            app(\App\Domains\Community\Insights\GroupInsights::class)->run();
         }
         // New badges every day; removals only at the monthly re-check below.
         if (! ($this->option('cards') || now()->day === 1)) {

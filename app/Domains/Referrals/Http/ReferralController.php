@@ -55,8 +55,12 @@ final class ReferralController
             ->map(fn (Referral $x) => $x->created_at->diffInMinutes($x->accepted_at)) : collect();
         $avg = $times->isEmpty() ? null : $times->avg();
 
+        $group = Group::query()->where('slug', $d['group'])->firstOrFail();
+
         return response()->json(['territory' => $r['territory'], 'team' => $team?->name, 'role' => $team ? $r['role'] : null, 'backup' => $r['role'] === 'holder' ? $r['seat']->backup?->name : null,
-            'avgAcceptMinutes' => is_numeric($avg) ? (int) round((float) $avg) : null]);
+            'avgAcceptMinutes' => is_numeric($avg) ? (int) round((float) $avg) : null,
+            // No one to receive it here: the best nearby seat holders in this network.
+            'matches' => $team === null ? \App\Domains\Referrals\Assist\Matches::nearby($group, (int) $d['city_id'], Team::of($this->user($request))?->id) : []]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -172,6 +176,9 @@ final class ReferralController
                     'canDraftClient' => $receiving && $referral->status === 'accepted', 'tones' => \App\Domains\Referrals\Assist\Drafts::TONES,
                     'reasons' => AssistController::DISMISS_REASONS, 'draft' => session('draft')];
             })(),
+            // Couldn't be placed (declined or expired with no backup): the sender can send it on to a nearby match.
+            'matches' => in_array($referral->status, ['declined', 'expired'], true) && Team::of($user)?->id === $referral->sender_team_id
+                ? \App\Domains\Referrals\Assist\Matches::nearby($referral->group, $referral->seat->territory_id, $referral->sender_team_id) : [],
             'introduction' => $referral->introduced_from_group_id !== null ? ['from' => (string) DB::table('groups')->where('id', $referral->introduced_from_group_id)->value('name'),
                 'explanation' => \App\Domains\Referrals\Introductions::feeExplanation(\App\Domains\Referrals\Introductions::fromIndustry($referral), $referral->group->industry)] : null,
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
@@ -310,6 +317,24 @@ final class ReferralController
         })->reverse()->values();
 
         return Inertia::render('app/Credits', ['entries' => $entries, 'giveGet' => \App\Domains\Referrals\Credits::giveGet($team), 'seo' => SeoData::private('Credits')->toArray()]);
+    }
+
+    /** Send an unplaced referral on to a nearby match: a copy, with the client's agreement to that business. */
+    public function resend(Request $request, Referral $referral): RedirectResponse
+    {
+        $user = $this->user($request);
+        abort_unless(in_array($referral->status, ['declined', 'expired'], true) && Team::of($user)?->id === $referral->sender_team_id, 403);
+        $d = $request->validate(['city_id' => ['required', 'integer'], 'consent' => ['accepted']], ['consent.accepted' => 'Confirm your client agrees to be referred to this team.']);
+        $match = collect(\App\Domains\Referrals\Assist\Matches::nearby($referral->group, $referral->seat->territory_id, $referral->sender_team_id))->firstWhere('cityId', (int) $d['city_id']);
+        abort_if($match === null, 422, 'That team is no longer a match.');
+        $answers = [...(array) $referral->answers, 'client_name' => $referral->client_name, 'client_phone' => $referral->client_phone, 'client_email' => $referral->client_email];
+        $r = $this->referrals->send($user, $referral->group, City::query()->findOrFail((int) $d['city_id']), $answers, true, $referral->notes, true);
+        if ($r['referral'] === null) {
+            return back()->with('status', 'duplicate');
+        }
+        DB::table('ai_suggestions')->insert(['team_id' => $referral->sender_team_id, 'user_id' => $user->id, 'referral_id' => $referral->id, 'kind' => 'match', 'key' => 'nearby', 'status' => 'used', 'created_at' => now(), 'updated_at' => now()]);
+
+        return redirect()->to('/app/referrals/'.$r['referral']->ulid)->with('status', 'referral-sent');
     }
 
     /** Helpful or not: feedback on one AI output, from the team it was made for. */
