@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 24 — Reciprocity credits and earnings
+- Credit ledger: +1 for each referral a team sends that is accepted, +2 bonus when it closes as Won (confirmed), −1 for each referral a team accepts. Rates are group rules (admin group editor; shown on the owner's overview). Each entry belongs to one referral and is recorded once, so balances always match the referral records (verified by recomputing from the referrals in tests).
+- Give/get on profiles: referrals given (accepted) and received, and the credit balance.
+- Minimum-balance rule (off by default): when an owner switches it on, teams below the threshold (default −5) are flagged on the owner's overview. Flagged, never blocked.
+- Earnings dashboard (Portal → Earnings), net of platform fees and computed from the fee records: expected, received this year and all time, overdue, referrals in progress, and breakdowns by network and by partner team; plus the team's give/get.
+- Year-end export: the whole year as CSV, and a PDF summary for the accountant (gross referral fees received, platform fees, net earnings, fees paid to other teams, and every fee in the year).
+- Wording fix: the challenge threshold is the service score (Sprint 19), not the trust score; labels corrected.
+- Data: credit_ledger. Earnings are computed live from the fee records rather than stored as snapshots, so they can never drift from the records.
+- 377 PHP tests in total (4 new).
+
 ### Sprint 23 — Long-term nurture referrals and client portal
 - Lead temperature from the form's timeline answer: hot (within 30 days), warm (1–3 months), future (later, or just exploring).
 - Future leads are never lost: once accepted, the receiving team gets a monthly check-in prompt ("Future lead check-ins", its own notification type) until the lead is upgraded, closed or lost. One tap: still nurturing (optionally choosing the next check-in date), ready now, or lost (closes it with the reason).

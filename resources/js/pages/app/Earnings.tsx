@@ -23,7 +23,11 @@ type Fee = {
     status: string;
     reference: string | null;
 };
+type Split = { label: string; received: number; expected: number };
+type Dash = { expected: number; receivedYtd: number; receivedAll: number; overdue: number; inProgress: number; byGroup: Split[]; byPartner: Split[] };
 type Props = {
+    dashboard: Dash;
+    giveGet: { given: number; received: number; balance: number };
     fees: Fee[];
     totals: { toPay: number; toReceive: number; receivedThisYear: number; platformOwed: number };
     canAct: boolean;
@@ -34,7 +38,7 @@ type Props = {
 const usd = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 
 /** Referral fees between teams (paid directly; Team to Team never holds the money). */
-export default function Earnings({ fees, totals, canAct, status, seo }: Props) {
+export default function Earnings({ dashboard: d, giveGet, fees, totals, canAct, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [refs, setRefs] = useState<Record<number, string>>({});
     const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -46,6 +50,51 @@ export default function Earnings({ fees, totals, canAct, status, seo }: Props) {
                     {statusMessage(status)}
                 </Alert>
             )}
+            <div className="mb-4 grid max-w-5xl gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {[
+                    ['Expected', usd(d.expected)],
+                    ['Received this year', usd(d.receivedYtd)],
+                    ['Received all time', usd(d.receivedAll)],
+                    ['Overdue', usd(d.overdue)],
+                    ['Referrals in progress', String(d.inProgress)],
+                ].map(([l, v]) => (
+                    <Card key={l} className="p-4">
+                        <div className="font-display text-xl font-bold tabular">{v}</div>
+                        <div className="text-xs text-muted">{l} (net of platform fees)</div>
+                    </Card>
+                ))}
+            </div>
+            <div className="mb-6 grid max-w-5xl gap-4 md:grid-cols-3">
+                {(
+                    [
+                        ['By network', d.byGroup],
+                        ['By partner team', d.byPartner],
+                    ] as [string, Split[]][]
+                ).map(([title, rows]) => (
+                    <Card key={title} className="p-4 text-sm">
+                        <h3 className="mb-2 font-semibold">{title}</h3>
+                        {rows.length === 0 && <p className="text-muted">Nothing yet.</p>}
+                        {rows.map((r) => (
+                            <div key={r.label} className="flex justify-between py-1">
+                                <span>{r.label}</span>
+                                <span className="text-muted tabular">
+                                    {usd(r.received)} · {usd(r.expected)} expected
+                                </span>
+                            </div>
+                        ))}
+                    </Card>
+                ))}
+                <Card className="p-4 text-sm">
+                    <h3 className="mb-2 font-semibold">Give and get</h3>
+                    <p>
+                        {giveGet.given} referrals given (accepted) · {giveGet.received} received
+                    </p>
+                    <p className="mt-1">
+                        Credit balance:{' '}
+                        <span className={`font-semibold tabular ${giveGet.balance < 0 ? 'text-warning' : 'text-success'}`}>{giveGet.balance}</span>
+                    </p>
+                </Card>
+            </div>
             <div className="mb-6 grid max-w-5xl gap-4 sm:grid-cols-3">
                 {[
                     ['To pay', totals.toPay],
@@ -139,6 +188,12 @@ export default function Earnings({ fees, totals, canAct, status, seo }: Props) {
             </Card>
             <div className="mt-4 flex max-w-5xl items-center gap-2 text-sm">
                 <span className="text-muted">For your accountant:</span>
+                <a className="font-medium text-primary" href={`/app/earnings/export.csv?month=${month.slice(0, 4)}`}>
+                    {month.slice(0, 4)} CSV
+                </a>
+                <a className="font-medium text-primary" href={`/app/earnings/${month.slice(0, 4)}.pdf`}>
+                    {month.slice(0, 4)} PDF summary
+                </a>
                 <Input type="month" aria-label="Month" className="h-9 w-44" value={month} onChange={(e) => setMonth(e.target.value)} />
                 <Button variant="secondary" size="sm" asChild>
                     <a href={`/app/earnings/export.csv?month=${month}`}>

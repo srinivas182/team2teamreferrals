@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use stdClass;
 
 final class FeeController
 {
@@ -43,10 +44,51 @@ final class FeeController
                     - (int) $rows->where('payee_team_id', $team->id)->where('status', 'received')->filter(fn ($f) => str_starts_with((string) $f->received_at, (string) now()->year))->sum('platform_fee_cents')) / 100,
                 'platformOwed' => (int) $rows->where('payee_team_id', $team->id)->where('platform_fee_status', 'owed')->sum('platform_fee_cents') / 100,
             ],
+            'dashboard' => self::dashboard($team, $rows),
+            'giveGet' => \App\Domains\Referrals\Credits::giveGet($team),
             'canAct' => in_array($team->roleOf($this->user($request)), ['leader', 'assistant'], true),
             'status' => session('status'),
             'seo' => SeoData::private('Earnings')->toArray(),
         ]);
+    }
+
+    /**
+     * Earnings for the referring side, net of the platform fee: expected, received (this year, all time), overdue,
+     * referrals in progress, and breakdowns by network and partner. Computed from the fee records themselves.
+     *
+     * @param  \Illuminate\Support\Collection<int, stdClass>  $rows
+     * @return array<string, mixed>
+     */
+    private static function dashboard(Team $team, \Illuminate\Support\Collection $rows): array
+    {
+        $in = $rows->where('payee_team_id', $team->id);
+        $net = fn ($set) => ((int) $set->sum('amount_cents') - (int) $set->sum('platform_fee_cents')) / 100;
+        $received = $in->where('status', 'received');
+        $ytd = $received->filter(fn ($f) => str_starts_with((string) $f->received_at, (string) now()->year));
+        $groups = DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->join('groups as g', 'g.id', '=', 'r.group_id')
+            ->where('f.payee_team_id', $team->id)->whereIn('f.status', ['due', 'paid', 'received'])->groupBy('g.name')
+            ->selectRaw("g.name as label, sum(case when f.status = 'received' then f.amount_cents - f.platform_fee_cents else 0 end) as received, sum(case when f.status <> 'received' then f.amount_cents - f.platform_fee_cents else 0 end) as expected")->get();
+        $partners = $in->whereIn('status', ['due', 'paid', 'received'])->groupBy('payer')->map(fn ($set, $name) => ['label' => (string) $name,
+            'received' => $net($set->where('status', 'received')), 'expected' => $net($set->where('status', '!=', 'received'))])->values();
+
+        return [
+            'expected' => $net($in->whereIn('status', ['due', 'paid'])), 'receivedYtd' => $net($ytd), 'receivedAll' => $net($received),
+            'overdue' => $net($in->where('status', 'due')->filter(fn ($f) => (string) $f->due_on < now()->toDateString())),
+            'inProgress' => Referral::query()->where(['sender_team_id' => $team->id, 'status' => 'accepted'])->whereNull('closed_at')->count(),
+            'byGroup' => $groups->map(fn ($g) => ['label' => (string) $g->label, 'received' => (int) $g->received / 100, 'expected' => (int) $g->expected / 100])->values(),
+            'byPartner' => $partners,
+        ];
+    }
+
+    /** Year-end summary PDF for the accountant: earnings by network and partner, and every fee in the year. */
+    public function yearPdf(Request $request, int $year): \Illuminate\Http\Response
+    {
+        $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
+        $rows = DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->join('teams as p', 'p.id', '=', 'f.payer_team_id')->join('teams as q', 'q.id', '=', 'f.payee_team_id')
+            ->where(fn ($w) => $w->where('f.payer_team_id', $team->id)->orWhere('f.payee_team_id', $team->id))->where('f.created_at', 'like', $year.'%')->orderBy('f.created_at')
+            ->get(['f.*', 'r.client_name', 'p.name as payer', 'q.name as payee']);
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.earnings-year', ['team' => $team, 'year' => $year, 'rows' => $rows])->download("referral-earnings-{$year}.pdf");
     }
 
     public function statement(Request $request, int $fee): \Symfony\Component\HttpFoundation\StreamedResponse
@@ -75,9 +117,10 @@ final class FeeController
     public function export(Request $request): \Illuminate\Http\Response
     {
         $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
-        $month = (string) $request->validate(['month' => ['required', 'date_format:Y-m']])['month'];
+        // A month (YYYY-MM) or a whole year (YYYY) for the year-end export.
+        $period = (string) $request->validate(['month' => ['required', 'regex:/^\d{4}(-\d{2})?$/']])['month'];
 
-        return response(Fees::csv($team, $month), 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => "attachment; filename=\"referral-fees-{$month}.csv\""]);
+        return response(Fees::csv($team, $period), 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => "attachment; filename=\"referral-fees-{$period}.csv\""]);
     }
 
     public function propose(Request $request, Referral $referral): RedirectResponse

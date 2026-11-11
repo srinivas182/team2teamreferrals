@@ -24,7 +24,14 @@ type Props = {
     seats: { group: string; territory: string; founding: boolean }[];
     strength: { score: number };
     company: { name: string; cities: number } | null;
-    record: { closed: number; value: number | null; rating: number | null; ratings: number; thanks: { from: string; note: string }[] };
+    record: {
+        closed: number;
+        value: number | null;
+        rating: number | null;
+        ratings: number;
+        thanks: { from: string; note: string }[];
+        giveGet: { given: number; received: number; balance: number };
+    };
     seo: Seo;
 };
 
@@ -106,6 +113,9 @@ export default function TeamPreview({ team, licenses, seats, strength, company, 
                             <div className="text-xs text-muted">{record.value !== null ? 'closed value' : 'value not shown'}</div>
                         </div>
                     </div>
+                    <p className="mt-3 text-center text-sm text-muted">
+                        Gives {record.giveGet.given} · gets {record.giveGet.received} referrals
+                    </p>
                     {record.thanks.map((t) => (
                         <blockquote key={t.note} className="mt-3 rounded-md bg-bg p-3 text-sm">
                             “{t.note}” <span className="text-muted">· {t.from}</span>

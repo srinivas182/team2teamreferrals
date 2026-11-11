@@ -133,6 +133,7 @@ final class Referrals
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         app(Pipeline::class)->start($ref);
         app(Nurture::class)->onAccepted($ref);
+        Credits::onAccepted($ref);
         Events\ReferralChanged::dispatch($ref, 'status');
         $this->event($ref, 'accepted', $ref->receiver, $user);
         app(ReferralAgreements::class)->start($ref);

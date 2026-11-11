@@ -246,6 +246,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 // Referral fees (Tier A): earnings, statements, paid/received, export; per-referral proposals; the owner's default.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
     Route::get('app/earnings', [App\Domains\Referrals\Http\FeeController::class, 'index'])->name('earnings');
+    Route::get('app/earnings/{year}.pdf', [App\Domains\Referrals\Http\FeeController::class, 'yearPdf'])->where('year', '20[0-9]{2}')->name('earnings.year');
     Route::get('app/earnings/export.csv', [App\Domains\Referrals\Http\FeeController::class, 'export'])->name('earnings.export');
     Route::get('app/earnings/{fee}/statement.pdf', [App\Domains\Referrals\Http\FeeController::class, 'statement'])->whereNumber('fee')->name('earnings.statement');
     Route::post('app/earnings/{fee}/paid', [App\Domains\Referrals\Http\FeeController::class, 'paid'])->whereNumber('fee')->name('earnings.paid');

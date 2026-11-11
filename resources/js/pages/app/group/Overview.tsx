@@ -14,6 +14,7 @@ type Props = {
     group: {
         slug: string;
         feeAllowed: boolean;
+        flaggedTeams: { team: string; balance: number }[];
         feeDefault: { type: string; value: number } | null;
         feeDueDays: number;
         trainingRequired: boolean;
@@ -68,7 +69,11 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                             ['Accept or decline within', `${r.accept_hours} hours`],
                             ['First contact within', `${r.first_contact_hours} hours`],
                             ['Status update every', `${r.update_days} days`],
-                            ['Seat challenge', `after ${r.challenge_days} days below trust ${r.challenge_threshold}`],
+                            ['Seat challenge', `after ${r.challenge_days} days below a service score of ${r.challenge_threshold}`],
+                            [
+                                'Reciprocity credits',
+                                `+${r.credit_sent} sent and accepted, +${r.credit_closed} on a Won close, ${r.credit_received} per referral accepted${r.min_balance_enabled ? `; flagged below ${r.min_balance}` : ''}`,
+                            ],
                             ['Company cap', `${r.company_cap_pct}% of a state’s seats`],
                         ].map(([a, b]) => (
                             <li key={a} className="flex justify-between gap-3">
@@ -82,6 +87,21 @@ export default function GroupOverview({ group, health, upcoming, seo }: Props) {
                         Pricing is set by Team to Team.
                     </p>
                 </Card>
+                {group.flaggedTeams.length > 0 && (
+                    <Card className="p-6">
+                        <h2 className="font-semibold">Teams taking much more than they give</h2>
+                        <p className="mt-1 text-sm text-muted">
+                            Flagged by your minimum-balance rule. Nothing is blocked; a friendly word often helps.
+                        </p>
+                        <ul className="mt-2 text-sm">
+                            {group.flaggedTeams.map((f) => (
+                                <li key={f.team}>
+                                    {f.team} · balance {f.balance}
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+                )}
                 {group.feeAllowed && <FeeDefault slug={group.slug} fee={group.feeDefault} dueDays={group.feeDueDays} />}
                 <Card className="p-6">
                     <a href={`/app/group/${group.slug}/messages`} className="float-right text-sm font-medium text-primary">
