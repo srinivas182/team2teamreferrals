@@ -20,7 +20,11 @@ use Throwable;
 /** Admin → AI: versioned prompts (edit, history, rollback, test run), usage and cost reporting, and credit defaults. */
 final class AiAdminController
 {
-    /** Sample input for test runs: invented, never member data. */
+    /**
+     * Sample input for test runs: invented, never member data.
+     *
+     * @var array<string, array<string, string>>
+     */
     public const SAMPLES = [
         'lead_summary' => ['referral' => "Industry: Solar installers\nCity: Houston, TX\nClient: Sam P.\nTiming: hot\nRoof type: Asphalt shingle\nAverage monthly bill: 240\nSender’s notes: Wants quotes before the summer; interested in a battery.", 'fee_rule' => 'You may mention the agreed referral fee only if it appears in the data.'],
     ];
@@ -116,7 +120,7 @@ final class AiAdminController
         Prompts::active($key); // the default is version 1 in the history before anything else happens
         $v = DB::table('ai_prompts')->where(['key' => $key, 'version' => $version])->first();
         abort_if($v === null, 404);
-        $vars = self::SAMPLES[$key] ?? [];
+        $vars = self::SAMPLES[$key]; // every prompt has a sample (enforced by a test)
         try {
             $r = $ai->complete(Prompts::fill((string) $v->template, $vars), 'admin_test', 300, Prompts::fill((string) $v->system, $vars));
             $result = ['version' => $version, 'text' => trim($r['text']), 'meta' => "{$r['provider']} · {$r['model']} · \${$r['cost_usd']}"];

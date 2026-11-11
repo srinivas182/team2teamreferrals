@@ -80,3 +80,7 @@ it('[2] keeps the default as version 1 even when the first action is an edit', f
     $this->actingAs($this->admin)->post('/admin/ai/prompts/lead_summary', ['system' => $d['system'], 'template' => $d['template'].' Be brief.', 'note' => 'Shorter']);
     expect(DB::table('ai_prompts')->orderBy('version')->pluck('note', 'version')->all())->toBe([1 => 'Default', 2 => 'Shorter']);
 });
+
+it('has invented sample data for every prompt, so each can be test-run', function () {
+    expect(array_keys(App\Domains\Platform\Http\Controllers\AiAdminController::SAMPLES))->toEqualCanonicalizing(array_keys(Prompts::DEFAULTS));
+});

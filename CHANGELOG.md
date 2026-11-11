@@ -10,7 +10,8 @@ Completes Sprint 29 (items 2 and 5), each proven by a test in tests/Feature/Ai/A
 5. Usage and cost reporting by month: calls, cost, credits, blocked and failed totals; by feature, by provider and model, top teams; blocked/failed reasons; helpful/not helpful feedback per prompt version.
 - Credit defaults (free credits per seat, with premium, daily cap) editable on the same page; they apply from the next allowance.
 - Fixed in review: a prompt edit made before anyone opened the AI page would have been saved as version 1, losing the default from the history.
-- 448 PHP tests in total (6 new).
+- Every prompt must have invented sample data for test runs (enforced by a test).
+- 449 PHP tests in total (7 new).
 
 ### Sprint 29a — AI foundation (core) and lead summaries
 Checklist items delivered here (2 and 5 follow in 29b), each proven by a test in tests/Feature/Ai/AiFoundationTest.php:
