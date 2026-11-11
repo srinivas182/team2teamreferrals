@@ -5,7 +5,7 @@ import { PortalLayout } from '@/layouts/PortalLayout';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type Entry = { kind: string; credits: number; balance: number; at: string; referral: string; client: string; group: string };
+type Entry = { kind: string; credits: number; balance: number; at: string; referral: string; client: string; group: string; crossIndustry?: boolean };
 const words: Record<string, string> = {
     sent_accepted: 'Referral you sent was accepted',
     closed_won: 'Referral you sent closed as Won',
@@ -65,7 +65,8 @@ export default function Credits({
                                 <tr key={i} className="border-t border-line">
                                     <td className="px-4 py-2.5 text-muted tabular">{e.at}</td>
                                     <td className="px-4 py-2.5">
-                                        {words[e.kind] ?? e.kind} ·{' '}
+                                        {words[e.kind] ?? e.kind}
+                                        {e.crossIndustry ? ' (cross-industry)' : ''} ·{' '}
                                         <a href={`/app/referrals/${e.referral}`} className="text-primary hover:underline">
                                             {e.client}
                                         </a>

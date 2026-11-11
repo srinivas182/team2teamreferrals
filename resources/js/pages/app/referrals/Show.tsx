@@ -40,6 +40,7 @@ type Props = {
     isReceiver: boolean;
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
+    introduction?: { from: string; explanation: string } | null;
     nurture: {
         temperature: string | null;
         nextAt: string | null;
@@ -102,6 +103,7 @@ export default function ReferralShow({
     isReceiver,
     agreement: ag,
     closing,
+    introduction = null,
     nurture,
     fee,
     muted,
@@ -192,6 +194,14 @@ export default function ReferralShow({
                     </Card>
                     {pipeline && <Progress id={r.id} p={pipeline} clientTerm={terms.client ?? 'client'} />}
                     {nurture.temperature === 'future' || nurture.touchpoints.length > 0 ? <NurturePanel id={r.id} n={nurture} /> : null}
+                    {introduction && (
+                        <Card className="p-4 text-sm">
+                            <strong>Cross-industry introduction</strong> from the {introduction.from}. {introduction.explanation}
+                        </Card>
+                    )}
+                    <a href={`/app/introduce?referral=${r.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                        Introduce this client to other pros they need →
+                    </a>
                     {closing && <ClosingPanel id={r.id} c={closing} />}
                     {fee && <FeePanel id={r.id} fee={fee} />}
                     {ag && (

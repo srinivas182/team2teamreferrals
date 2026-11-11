@@ -40,6 +40,10 @@ final class Fees
         if ($ref->group->industry->tier !== Tier::Open) {
             return null;
         }
+        // Cross-industry: a fee only when both industries allow fees.
+        if ($ref->introduced_from_group_id !== null && ! Introductions::feeAllowed(Introductions::fromIndustry($ref), $ref->group->industry)) {
+            return null;
+        }
 
         return $ref->fee_type !== null ? ['type' => $ref->fee_type, 'value' => (int) $ref->fee_value] : self::groupDefault($ref->group);
     }

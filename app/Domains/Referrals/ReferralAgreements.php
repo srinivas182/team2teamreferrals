@@ -42,6 +42,8 @@ final class ReferralAgreements
         $stateId = (int) DB::table('states')->where('code', $ref->seat->state_code)->value('id');
         $addenda = DB::table('agreement_state_addenda')->join('states', 'states.id', '=', 'agreement_state_addenda.state_id')->where(['industry_id' => $industry->id, 'state_id' => $stateId])
             ->get(['states.name as state', 'text'])->map(fn ($a) => ['state' => (string) $a->state, 'text' => (string) $a->text])->values()->all();
+        // A credited introduction: no fee clause, and the no-fee clause instead.
+        $v['clauses'] = Introductions::agreementClauses($ref, $v['clauses']);
         $sections = AgreementRenderer::render($v['clauses'], $data, $addenda);
         DB::table('referral_agreements')->insert([
             'referral_id' => $ref->id, 'status' => 'pending', 'scope' => $v['scope'], 'version' => $v['version'], 'sections' => json_encode($sections),

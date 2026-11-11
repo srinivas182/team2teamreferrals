@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?\Illuminate\Support\Carbon $last_nudged_at
  * @property ?string $close_status
  * @property ?string $temperature
+ * @property ?int $introduced_from_group_id
  * @property ?\Illuminate\Support\Carbon $client_emails_stopped_at
  * @property ?string $nurture_next_at
  * @property ?string $protection_until
@@ -68,7 +69,7 @@ final class Referral extends Model
 {
     use HasUlids;
 
-    protected $fillable = ['client_token', 'group_id', 'seat_id', 'sender_team_id', 'sender_user_id', 'receiver_team_id', 'routed_to', 'status', 'client_name', 'client_phone', 'client_email', 'answers', 'notes', 'consent_at', 'consent_method', 'consent_text', 'respond_by', 'accepted_at', 'decline_reason'];
+    protected $fillable = ['client_token', 'group_id', 'introduced_from_group_id', 'seat_id', 'sender_team_id', 'sender_user_id', 'receiver_team_id', 'routed_to', 'status', 'client_name', 'client_phone', 'client_email', 'answers', 'notes', 'consent_at', 'consent_method', 'consent_text', 'respond_by', 'accepted_at', 'decline_reason'];
 
     protected $attributes = ['thanks_public' => false, 'client_token' => null, 'status' => 'sent', 'notes' => null, 'client_phone' => null, 'client_email' => null, 'accepted_at' => null, 'decline_reason' => null];
 

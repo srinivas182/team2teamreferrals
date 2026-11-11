@@ -24,6 +24,7 @@ final class Badges
         'top_referrer' => ['name' => 'Top Referrer', 'how' => 'Be in the top 10% of your network by referrals sent and accepted in the last 90 days (once at least 3 teams have sent referrals).', 'keep' => 'Keep sending referrals your network accepts. Checked monthly.'],
         'perfect_updates' => ['name' => 'Perfect Updates', 'how' => 'Accept at least 5 referrals in the last 90 days and never miss an update deadline on them.', 'keep' => 'Update the referring team before every deadline. One missed update removes it at the next monthly check.'],
         'top_giver' => ['name' => 'Top giver', 'how' => 'Be in the top 10% of your network by credit balance (referrals given minus received) once at least 3 teams have given.', 'keep' => 'Keep giving at least as much as you receive. Checked monthly.'],
+        'connector' => ['name' => 'Connector', 'how' => 'Make at least 3 cross-industry introductions in the last 90 days that the other team accepts.', 'keep' => 'Keep introducing clients to the other industries they need. Checked monthly.'],
         'network_builder' => ['name' => 'Network builder', 'how' => 'Invite 3 or more pros who get their licence verified and accept a first referral.', 'keep' => 'Kept while those invitees remain members. Checked monthly.'],
     ];
 
@@ -52,6 +53,9 @@ final class Badges
             $acceptedIds = (clone $received)->whereNotNull('accepted_at')->pluck('id');
             if ($acceptedIds->count() >= 5 && ! DB::table('referral_events')->whereIn('referral_id', $acceptedIds)->where(['event' => 'missed_update', 'team_id' => $team->id])->exists()) {
                 $earned[] = "{$team->id}|perfect_updates|";
+            }
+            if (DB::table('referrals')->where('sender_team_id', $team->id)->whereNotNull('introduced_from_group_id')->whereNotNull('accepted_at')->where('created_at', '>=', $since)->count() >= 3) {
+                $earned[] = "{$team->id}|connector|";
             }
             if (DB::table('invite_signups')->where('inviter_team_id', $team->id)->whereIn('status', ['rewarded', 'badge', 'capped'])->count() >= 3) {
                 $earned[] = "{$team->id}|network_builder|";

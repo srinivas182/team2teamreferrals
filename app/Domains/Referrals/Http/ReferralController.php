@@ -160,6 +160,8 @@ final class ReferralController
                 'touchpoints' => DB::table('nurture_touchpoints')->where('referral_id', $referral->id)->where('kind', '!=', 'prompt')->orderByDesc('id')->limit(12)->get(['kind', 'source', 'note', 'created_at'])
                     ->map(fn ($t) => ['kind' => (string) $t->kind, 'source' => (string) $t->source, 'note' => $t->note, 'at' => substr((string) $t->created_at, 0, 10)]),
             ],
+            'introduction' => $referral->introduced_from_group_id !== null ? ['from' => (string) DB::table('groups')->where('id', $referral->introduced_from_group_id)->value('name'),
+                'explanation' => \App\Domains\Referrals\Introductions::feeExplanation(\App\Domains\Referrals\Introductions::fromIndustry($referral), $referral->group->industry)] : null,
             'muted' => \App\Domains\Referrals\Conversations::muted($referral, $user),
             'quickReplies' => $team !== null ? \App\Domains\Referrals\Conversations::quickReplies($team) : [],
             'clientLink' => $team?->id === $referral->sender_team_id && $referral->client_token ? url('/r/'.$referral->client_token) : null,
@@ -286,13 +288,13 @@ final class ReferralController
     {
         $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
         $rows = DB::table('credit_ledger as l')->join('referrals as r', 'r.id', '=', 'l.referral_id')->join('groups as g', 'g.id', '=', 'l.group_id')
-            ->where('l.team_id', $team->id)->orderBy('l.id')->get(['l.kind', 'l.credits', 'l.created_at', 'r.ulid', 'r.client_name', 'g.name as group']);
+            ->where('l.team_id', $team->id)->orderBy('l.id')->get(['l.kind', 'l.credits', 'l.created_at', 'r.ulid', 'r.client_name', 'r.introduced_from_group_id', 'g.name as group']);
         $running = 0;
         $entries = $rows->map(function ($e) use (&$running) {
             $running += (int) $e->credits;
 
             return ['kind' => (string) $e->kind, 'credits' => (int) $e->credits, 'balance' => $running, 'at' => substr((string) $e->created_at, 0, 10),
-                'referral' => (string) $e->ulid, 'client' => Referral::shorten((string) $e->client_name), 'group' => (string) $e->group];
+                'referral' => (string) $e->ulid, 'client' => Referral::shorten((string) $e->client_name), 'group' => (string) $e->group, 'crossIndustry' => $e->introduced_from_group_id !== null];
         })->reverse()->values();
 
         return Inertia::render('app/Credits', ['entries' => $entries, 'giveGet' => \App\Domains\Referrals\Credits::giveGet($team), 'seo' => SeoData::private('Credits')->toArray()]);

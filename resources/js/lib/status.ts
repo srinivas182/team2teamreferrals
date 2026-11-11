@@ -149,6 +149,9 @@ const messages: Record<string, string> = {
     'rsvp-maybe': 'Saved as maybe.',
     'rsvp-no': 'Saved.',
     'checked-in': 'You’re checked in. Enjoy the event!',
+    'introduction-sent': 'Introduction sent. Track it with your other referrals.',
+    'introductions-sent': 'Introductions sent. Each one is tracked with your other referrals.',
+    'pairing-saved': 'Pairing rule saved.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
