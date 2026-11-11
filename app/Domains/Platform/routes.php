@@ -28,6 +28,11 @@ Route::middleware(['web', 'auth', 'signed'])->get('files/{path}', PrivateFileCon
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:settings.manage'])
     ->prefix('admin')->name('admin.')->group(function (): void {
         Route::get('system/export', [SystemSettingsController::class, 'export'])->name('system.export');
+        Route::get('ai', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'index'])->name('ai');
+        Route::post('ai/prompts/{key}', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'savePrompt'])->name('ai.prompts.save');
+        Route::post('ai/prompts/{key}/{version}/activate', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'activate'])->whereNumber('version')->name('ai.prompts.activate');
+        Route::post('ai/prompts/{key}/{version}/test', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'test'])->whereNumber('version')->middleware('throttle:10,1')->name('ai.prompts.test');
+        Route::post('ai/credits', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'saveCredits'])->name('ai.credits');
         Route::get('system/{tab?}', [SystemSettingsController::class, 'show'])->whereIn('tab', ['overview', 'general', 'email', 'sms', 'payments', 'storage', 'cdn', 'ai', 'modules'])->name('system');
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');

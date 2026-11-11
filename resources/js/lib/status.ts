@@ -154,6 +154,9 @@ const messages: Record<string, string> = {
     'pairing-saved': 'Pairing rule saved.',
     'ai-feedback': 'Thanks for the feedback.',
     'ai-credits-bought': 'AI credits added. They’ll appear on your next invoice.',
+    'ai-prompt-saved': 'New prompt version saved.',
+    'ai-prompt-live': 'That version is now live.',
+    'ai-credits-saved': 'Credit defaults saved.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
