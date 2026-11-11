@@ -19,6 +19,7 @@ import {
     Users,
     Wallet,
     Sprout,
+    HandHeart,
 } from 'lucide-react';
 
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number };
@@ -38,6 +39,7 @@ export const portalNav: NavItem[] = [
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
     { label: 'Nurture', href: '/app/nurture', icon: Sprout },
+    { label: 'Credits', href: '/app/credits', icon: HandHeart },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },

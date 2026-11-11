@@ -63,6 +63,48 @@ final class Credits
         if ($credits === 0) {
             return;
         }
-        DB::table('credit_ledger')->insertOrIgnore(['team_id' => $teamId, 'group_id' => $ref->group_id, 'referral_id' => $ref->id, 'kind' => $kind, 'credits' => $credits, 'created_at' => now()]);
+        if (DB::table('credit_ledger')->insertOrIgnore(['team_id' => $teamId, 'group_id' => $ref->group_id, 'referral_id' => $ref->id, 'kind' => $kind, 'credits' => $credits, 'created_at' => now()]) === 1) {
+            // Giving (or only taking) moves the team on every waitlist it's on.
+            $team = Team::query()->find($teamId);
+            if ($team !== null) {
+                DB::table('seat_waitlist')->where('team_id', $teamId)->update(['score' => \App\Domains\Network\Licenses\Licenses::rankScore($team)]);
+            }
+        }
+    }
+
+    /**
+     * "Top giver" in a network: the top 10% of teams by balance (at least one, once 3+ teams have given),
+     * as of the start of this month so the badge refreshes monthly.
+     *
+     * @return list<int> team ids
+     */
+    public static function topGivers(Group $group): array
+    {
+        $rows = DB::table('credit_ledger')->where('group_id', $group->id)->where('created_at', '<', now()->startOfMonth())
+            ->groupBy('team_id')->selectRaw('team_id, sum(credits) as b')->havingRaw('sum(credits) > 0')->orderByDesc('b')->get();
+        if ($rows->count() < 3) {
+            return [];
+        }
+
+        return array_values(array_map('intval', $rows->take(max(1, intdiv($rows->count(), 10)))->pluck('team_id')->all()));
+    }
+
+    /**
+     * A team's position in a network by balance (1 = gives the most), and how many teams are ranked.
+     *
+     * @return array{rank: int, of: int}
+     */
+    public static function rank(Team $team, int $groupId): array
+    {
+        $rows = DB::table('credit_ledger')->where('group_id', $groupId)->groupBy('team_id')->selectRaw('team_id, sum(credits) as b')->orderByDesc('b')->pluck('team_id')->map(fn ($id) => (int) $id);
+        $pos = $rows->search($team->id);
+
+        return ['rank' => is_int($pos) ? $pos + 1 : $rows->count() + 1, 'of' => max($rows->count(), 1)];
+    }
+
+    /** Recognised generous holders get extra days before a seat challenge can start. */
+    public static function challengeGraceDays(Team $team, int $groupId): int
+    {
+        return self::balance($team, $groupId) >= 5 ? 10 : 0;
     }
 }

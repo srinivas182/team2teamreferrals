@@ -68,9 +68,12 @@ final class Licenses
         $verified = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'verified'])->count();
         $pending = DB::table('team_licenses')->where(['team_id' => $team->id, 'status' => 'pending'])->count();
 
-        // Licenses up to 60, profile strength up to 30, 10 for being on the platform, and up to 20 for pros they invited
-        // before launch who claimed a reservation and got a license verified. Capped at 100.
-        return min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + (int) round(\App\Domains\Network\Onboarding\ProfileStrength::for($team)['score'] * 0.3) + 10 + min(20, 5 * self::verifiedInvites($team)));
+        // Licenses up to 60, profile strength up to 30, 10 for being on the platform, up to 20 for pros they invited
+        // before launch who claimed a reservation and got a license verified, and reciprocity: up to +15 for giving
+        // referrals (3 per credit) or down to −10 for only taking. Between 0 and 100.
+        $reciprocity = max(-10, min(15, 3 * \App\Domains\Referrals\Credits::balance($team)));
+
+        return max(0, min(100, ($verified > 0 ? 60 : 0) + ($pending > 0 && $verified === 0 ? 20 : 0) + (int) round(\App\Domains\Network\Onboarding\ProfileStrength::for($team)['score'] * 0.3) + 10 + min(20, 5 * self::verifiedInvites($team)) + $reciprocity));
     }
 
     /** Pros this team invited (through its reservation links) who claimed and have a verified license. */

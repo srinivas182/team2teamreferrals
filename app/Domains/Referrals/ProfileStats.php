@@ -12,7 +12,7 @@ final class ProfileStats
 {
     public const MIN_RATINGS = 3;
 
-    /** @return array{closed: int, value: ?float, rating: ?float, ratings: int, thanks: array<int, array{from: string, note: string}>, giveGet: array{given: int, received: int, balance: int}} */
+    /** @return array{closed: int, value: ?float, rating: ?float, ratings: int, thanks: array<int, array{from: string, note: string}>, giveGet: array{given: int, received: int, balance: int}, topGiverIn: array<int, string>} */
     public static function for(Team $team): array
     {
         $closed = Referral::query()->where('receiver_team_id', $team->id)->whereIn('close_status', ['confirmed', 'auto_confirmed']);
@@ -26,6 +26,8 @@ final class ProfileStats
             'rating' => $count >= self::MIN_RATINGS ? round((float) (clone $ratings)->avg('stars'), 1) : null,
             'ratings' => $count,
             'giveGet' => Credits::giveGet($team),
+            'topGiverIn' => \App\Domains\Network\Groups\Models\Group::query()->whereIn('id', DB::table('credit_ledger')->where('team_id', $team->id)->distinct()->pluck('group_id'))->get()
+                ->filter(fn ($g) => in_array($team->id, Credits::topGivers($g), true))->map(fn ($g) => (string) $g->name)->values()->all(),
             'thanks' => Referral::query()->with('receiver:id,name')->where(['sender_team_id' => $team->id, 'thanks_public' => true])->whereNotNull('thanks_note')->latest('thanks_at')->limit(6)->get()
                 ->map(fn (Referral $r) => ['from' => (string) $r->receiver?->name, 'note' => (string) $r->thanks_note])->values()->all(),
         ];

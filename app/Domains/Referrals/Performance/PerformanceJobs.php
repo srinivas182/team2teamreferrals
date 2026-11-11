@@ -38,6 +38,10 @@ final class PerformanceJobs extends Command
         app(\App\Domains\Referrals\Closing::class)->autoConfirm();
         app(\App\Domains\Referrals\Fees::class)->remind();
         app(\App\Domains\Referrals\Nurture::class)->prompts();
+        app(\App\Domains\Referrals\Nurture::class)->clientTouchpoints();
+        if (now()->isMonday()) {
+            app(\App\Domains\Referrals\Nurture::class)->senderDigest();
+        }
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             foreach ($holders as $team) {
@@ -64,6 +68,9 @@ final class PerformanceJobs extends Command
             'sent' => Referral::query()->where('sender_team_id', $team->id)->whereBetween('created_at', [$start, $end])->count(),
             'avg_accept_minutes' => $mins->isEmpty() ? null : (int) round((float) $mins->avg()),
             'parts' => $score['parts'], 'tips' => ServiceScore::topTips($score),
+            // Give and get, and where the team stands in its network.
+            'giveGet' => \App\Domains\Referrals\Credits::giveGet($team),
+            'rank' => ($gid = DB::table('seats')->where('primary_team_id', $team->id)->value('group_id')) ? \App\Domains\Referrals\Credits::rank($team, (int) $gid) : null,
         ];
         DB::table('report_cards')->insert(['team_id' => $team->id, 'period' => $period, 'score' => $score['score'], 'data' => json_encode($data), 'created_at' => now()]);
         $month = $start->format('F');

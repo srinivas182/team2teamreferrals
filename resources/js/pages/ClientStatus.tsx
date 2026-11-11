@@ -28,6 +28,7 @@ type Props = {
     temperature: string | null;
     canCheckIn: boolean;
     flash: string | null;
+    emailsStopped: boolean;
     contactHours: number;
     stage: { label: string; kind: string } | null;
     seo: Seo;
@@ -48,6 +49,7 @@ export default function ClientStatus({
     temperature,
     canCheckIn,
     flash,
+    emailsStopped,
     seo,
 }: Props) {
     const accepted = status === 'accepted';
@@ -64,6 +66,9 @@ export default function ClientStatus({
         <PublicLayout>
             <SeoHead seo={seo} />
             <section className="mx-auto max-w-xl px-5 py-14">
+                {(flash === 'client-emails-stopped' || emailsStopped) && (
+                    <p className="mb-4 rounded-md bg-bg p-3 text-sm">We won’t send you any more check-in emails.</p>
+                )}
                 <h1 className="font-display text-3xl font-extrabold">Hi {firstName},</h1>
                 <p className="mt-2 text-muted">Here’s where your introduction stands. We’ll keep this page up to date.</p>
                 <Card className="mt-6 p-6">
