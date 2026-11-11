@@ -298,3 +298,9 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('admin/pairings', [App\Domains\Referrals\Http\IntroductionController::class, 'pairings'])->name('admin.pairings');
     Route::post('admin/pairings', [App\Domains\Referrals\Http\IntroductionController::class, 'savePairing'])->name('admin.pairings.save');
 });
+
+// One-tap confirmation from the chat bot: a signed link (30 minutes, single use), no login needed.
+Route::middleware(['web', 'noindex:always', 'signed', 'throttle:20,10'])->group(function (): void {
+    Route::get('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'show'])->where('draft', '[0-9A-Za-z]{26}')->name('bot.confirm');
+    Route::post('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'send'])->where('draft', '[0-9A-Za-z]{26}')->name('bot.confirm.send');
+});

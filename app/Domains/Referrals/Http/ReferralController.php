@@ -55,7 +55,8 @@ final class ReferralController
 
         return ['group' => (string) (DB::table('groups')->where('id', $dr->group_id)->value('slug') ?? ''), 'cityId' => $city !== null ? $city->id : 0, 'cityName' => $city ? $city->name.', '.$city->state->code : '',
             'draft' => (string) $dr->ulid, 'notes' => (string) ($dr->notes ?? ''), 'review' => json_decode((string) $dr->review, true) ?: [], 'aiUsed' => (bool) $dr->ai_used,
-            'answers' => array_filter(['client_name' => $dr->client_name, 'client_phone' => $dr->client_phone, 'client_email' => $dr->client_email])];
+            // Answers the chat bot collected, plus the client's details.
+            'answers' => [...(array) json_decode((string) ($dr->answers ?? '[]'), true), ...array_filter(['client_name' => $dr->client_name, 'client_phone' => $dr->client_phone, 'client_email' => $dr->client_email])]];
     }
 
     /** Portal → Drafts: the member's intake address, and drafts waiting to be checked and sent. */

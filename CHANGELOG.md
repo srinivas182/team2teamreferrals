@@ -4,6 +4,20 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 32a — WhatsApp and SMS referral bot
+Checklist items delivered here (5, 9's status-reply part, 10, 12, the WhatsApp voice/photo path and the cost cap follow in 32b), each proven by a test in tests/Feature/Referrals/ChatBotTest.php:
+1. One Twilio number for WhatsApp and SMS (WhatsApp messages arrive as "whatsapp:+1…" on the same webhook, signature-checked).
+2. Members are identified by their verified phone (existing phone verification); unverified or unknown numbers never reach the bot.
+3. Conversational capture: the first detailed message becomes a draft through the Sprint 31 extractor (contacts verified against what was written); the bot then asks one question at a time for anything missing: network (numbered), client name, phone or email, city, and the network's required questions (numbered choices, yes/no, numbers, dates).
+4. Draft confirmation link, and 7. one-tap confirmation: a signed link valid 30 minutes and usable once, showing the summary with one button, "My client agreed. Send it"; possible duplicates ask "Send anyway?"; problems link to the full form, which carries the bot's answers.
+6. STOP, START and HELP are handled first on both channels. "cancel" is a carrier opt-out word, so it opts out; the bot uses "discard" to drop a draft.
+8. Members and clients kept apart on the same number: verified member phones go to the bot; everything else goes to the existing client flow (consent YES, opt-outs).
+9. Privacy: chat replies use short client names; the conversation is deleted when the referral is sent, and after 14 days at most.
+11. Limits: 20 messages per 10 minutes per phone, sessions end after 30 quiet minutes, "discard" at any time.
+- Done when: a member completes a referral entirely by WhatsApp and confirms it in one tap (tested over signed Twilio webhooks).
+- Outside dependencies (open items): Meta business verification for WhatsApp Business, and A2P 10DLC registration for US texting.
+- 474 PHP tests in total (4 new).
+
 ### Sprint 31b — Voice-note and card-scan intake
 Completes Sprint 31 (items 2 and 3), each proven by a test in tests/Feature/Referrals/IntakeMediaTest.php:
 2. Voice notes (Portal → Drafts): record up to 2 minutes in the browser; transcribed by OpenAI (Anthropic's API doesn't transcribe audio); the transcript is shown for the member to correct, and the corrected text is what becomes the draft. The audio is never stored.
