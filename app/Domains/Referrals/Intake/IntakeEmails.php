@@ -51,5 +51,7 @@ final class IntakeEmails
             }
         }
         DB::table('intake_messages')->whereIn('id', $old->pluck('id'))->update(['body' => null, 'subject' => null, 'media_path' => null, 'purged_at' => now()]);
+        // Chat conversations follow the same 14-day rule.
+        DB::table('bot_messages')->where('created_at', '<', now()->subDays(Extractor::EXPIRES_DAYS))->delete();
     }
 }
