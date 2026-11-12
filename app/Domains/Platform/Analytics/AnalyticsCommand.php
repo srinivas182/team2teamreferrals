@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 final class AnalyticsCommand extends Command
 {
-    protected $signature = 't2t:analytics {action=ship : ship, backfill, status or benchmark} {--events=10000000 : benchmark events} {--max-ms=500 : benchmark limit per query}
+    protected $signature = 't2t:analytics {action=ship : ship, backfill, status or benchmark} {--events=10000000 : benchmark events} {--max-ms=250 : benchmark limit per query (the PRD allows 500; we keep a 2x margin)}
         {--clickhouse-url= : benchmark against this ClickHouse directly (CI)} {--clickhouse-user=default} {--clickhouse-password=}';
 
     protected $description = 'Ship records to the analytics store (every minute), backfill from zero, show status, or run the speed check';

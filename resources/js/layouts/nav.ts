@@ -44,6 +44,7 @@ export const portalNav: NavItem[] = [
     { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
+    { label: 'Dashboard', href: '/app/dashboard', icon: Gauge },
     { label: 'Feed', href: '/app/feed', icon: MessagesSquare, module: 'community' },
     { label: 'Events', href: '/app/events', icon: CalendarDays, module: 'events' },
     { label: 'Directory', href: '/app/directory', icon: BookUser, module: 'community' },

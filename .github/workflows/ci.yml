@@ -132,7 +132,7 @@ jobs:
         run: cp .env.example .env && php artisan key:generate
       - name: Tests
         run: vendor/bin/pest --compact
-      - name: Analytics speed check (10 million events, ClickHouse, under 500 ms)
+      - name: Analytics speed check (10 million events, ClickHouse, under 250 ms: a 2x margin on the PRD's 500)
         run: php artisan t2t:analytics benchmark --clickhouse-url="$CLICKHOUSE_URL" --clickhouse-user="$CLICKHOUSE_USER" --clickhouse-password="$CLICKHOUSE_PASSWORD"
 
   docker:

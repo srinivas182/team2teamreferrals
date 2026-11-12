@@ -20,7 +20,7 @@ final class NextActions
 
     public const STALLED_DAYS = 14;
 
-    /** @return list<array{key: string, title: string, body: string, urgency: int, action: string, label: string}> */
+    /** @return list<array{key: string, title: string, body: string, urgency: int, action: string, label: string, due: ?string}> */
     public static function for(Referral $ref, Team $team): array
     {
         $ref->loadMissing(['group', 'sender']);
@@ -30,7 +30,7 @@ final class NextActions
         $url = '/app/referrals/'.$ref->ulid;
         if ($receiving && $ref->status === 'sent') {
             $hours = max(0, (int) $now->diffInHours($ref->respond_by, false));
-            $out[] = ['key' => 'respond', 'title' => 'Accept or decline', 'body' => "Answer within {$hours} hours to keep your response score up.", 'urgency' => 100 - min(90, $hours), 'action' => $url, 'label' => 'Open'];
+            $out[] = ['key' => 'respond', 'title' => 'Accept or decline', 'body' => "Answer within {$hours} hours to keep your response score up.", 'urgency' => 100 - min(90, $hours), 'action' => $url, 'label' => 'Open', 'due' => $ref->respond_by->toIso8601String()];
         }
         if ($receiving && $ref->status === 'accepted' && $ref->close_status === null && ! in_array($ref->stage, ['won', 'lost'], true)) {
             $window = (int) $ref->group->rule('first_contact_hours');
@@ -38,18 +38,18 @@ final class NextActions
                 $due = CarbonImmutable::parse($ref->accepted_at ?? $ref->created_at)->addHours($window);
                 $late = $due->isPast();
                 $out[] = ['key' => 'first_contact', 'title' => $late ? 'First contact is overdue' : 'Contact the client', 'body' => ($ref->temperature === 'hot' ? 'Hot lead: ' : '').($late ? 'call today and log it.' : 'call by '.$due->format('D g:i A').' and log the call.'),
-                    'urgency' => $late ? 95 : ($ref->temperature === 'hot' ? 85 : 70), 'action' => $url.'#log-call', 'label' => 'Log a call'];
+                    'urgency' => $late ? 95 : ($ref->temperature === 'hot' ? 85 : 70), 'action' => $url.'#log-call', 'label' => 'Log a call', 'due' => $due->toIso8601String()];
             }
             $updateDays = (int) $ref->group->rule('update_days');
             $last = CarbonImmutable::parse($ref->last_update_at ?? $ref->accepted_at ?? $ref->created_at);
             $due = $last->addDays($updateDays);
             if ($now->diffInDays($due, false) <= 1) {
                 $out[] = ['key' => 'update', 'title' => $due->isPast() ? 'Update overdue' : 'Update '.$ref->sender->name, 'body' => $due->isPast() ? 'The referring team is waiting: send a short update now.' : 'An update is due by '.$due->format('D j M').'.',
-                    'urgency' => $due->isPast() ? 90 : 60, 'action' => $url.'#messages', 'label' => 'Draft an update'];
+                    'urgency' => $due->isPast() ? 90 : 60, 'action' => $url.'#messages', 'label' => 'Draft an update', 'due' => $due->toIso8601String()];
             }
             $since = CarbonImmutable::parse($ref->stage_changed_at ?? $ref->accepted_at ?? $ref->created_at);
             if ($ref->first_contact_at !== null && $since->diffInDays($now) >= self::STALLED_DAYS) {
-                $out[] = ['key' => 'stalled', 'title' => 'No progress for '.(int) $since->diffInDays($now).' days', 'body' => 'Check in with the client, then move the stage or mark it lost.', 'urgency' => 50, 'action' => $url.'#pipeline', 'label' => 'Check in'];
+                $out[] = ['key' => 'stalled', 'title' => 'No progress for '.(int) $since->diffInDays($now).' days', 'body' => 'Check in with the client, then move the stage or mark it lost.', 'urgency' => 50, 'action' => $url.'#pipeline', 'label' => 'Check in', 'due' => null];
             }
         }
         $hidden = DB::table('ai_suggestions')->where(['team_id' => $team->id, 'referral_id' => $ref->id, 'kind' => 'next_action'])
@@ -63,7 +63,7 @@ final class NextActions
     /**
      * The team's most urgent actions across its referrals, capped per day so the list stays useful.
      *
-     * @return list<array{key: string, title: string, body: string, urgency: int, action: string, label: string, referral: string}>
+     * @return list<array{key: string, title: string, body: string, urgency: int, action: string, label: string, due: ?string, referral: string}>
      */
     public static function forTeam(Team $team): array
     {

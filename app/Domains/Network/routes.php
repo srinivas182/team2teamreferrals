@@ -185,6 +185,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
     Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
     Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
+    Route::get('app/dashboard', [App\Domains\Referrals\Dashboard\DashboardController::class, 'team'])->name('dashboard');
+    Route::get('app/dashboard/kpi/{kpi}', [App\Domains\Referrals\Dashboard\DashboardController::class, 'drill'])->where('kpi', '[a-z_]+')->name('dashboard.drill');
+    Route::get('app/dashboard/export.csv', [App\Domains\Referrals\Dashboard\DashboardController::class, 'csv'])->name('dashboard.csv');
+    Route::get('app/dashboard/kpi/{kpi}/export.csv', [App\Domains\Referrals\Dashboard\DashboardController::class, 'csv'])->where('kpi', '[a-z_]+')->name('dashboard.drill.csv');
+    Route::get('app/dashboard/export.pdf', [App\Domains\Referrals\Dashboard\DashboardController::class, 'pdf'])->middleware('throttle:10,10')->name('dashboard.pdf');
+    Route::post('app/dashboard/views', [App\Domains\Referrals\Dashboard\DashboardController::class, 'saveView'])->name('dashboard.views.save');
+    Route::post('app/dashboard/views/{view}/delete', [App\Domains\Referrals\Dashboard\DashboardController::class, 'deleteView'])->whereNumber('view')->name('dashboard.views.delete');
     Route::get('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'create'])->middleware('module:cross_industry')->name('introduce');
     Route::post('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'store'])->middleware('throttle:20,10')->middleware('module:cross_industry')->name('introduce.store');
     Route::post('app/referrals/{referral}/assist/{key}/{action}', [App\Domains\Referrals\Http\AssistController::class, 'act'])->where('key', '[a-z_]{2,40}')->whereIn('action', ['use', 'dismiss', 'snooze'])->middleware('throttle:60,10')->name('assist.act');
