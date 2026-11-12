@@ -32,7 +32,7 @@ final class RecognitionController
             ->map(fn (Team $t) => ['name' => $t->name, 'slug' => $t->slug, 'cities' => $seats->where('primary_team_id', $t->id)->pluck('territory_name')->unique()->values(),
                 'groups' => $seats->where('primary_team_id', $t->id)->pluck('name')->unique()->values(),
                 'specialties' => json_decode((string) DB::table('teams')->where('id', $t->id)->value('specialties'), true) ?: [],
-                'languages' => json_decode((string) DB::table('teams')->where('id', $t->id)->value('languages'), true) ?: [], 'badges' => Badges::of($t)])
+                'languages' => json_decode((string) DB::table('teams')->where('id', $t->id)->value('languages'), true) ?: [], 'badges' => Badges::of($t), 'trust' => \App\Domains\Referrals\Trust\TrustScore::stored($t->id)['score'] ?? null])
             ->filter(fn ($t) => empty($f['specialty']) || in_array($f['specialty'], $t['specialties'], true))
             ->filter(fn ($t) => empty($f['language']) || in_array($f['language'], $t['languages'], true))
             ->filter(fn ($t) => empty($f['badge']) || collect($t['badges'])->contains('key', $f['badge']))->values();

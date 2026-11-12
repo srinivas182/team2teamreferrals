@@ -28,6 +28,9 @@ Route::middleware(['web', 'auth', 'signed'])->get('files/{path}', PrivateFileCon
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:settings.manage'])
     ->prefix('admin')->name('admin.')->group(function (): void {
         Route::get('system/export', [SystemSettingsController::class, 'export'])->name('system.export');
+        Route::get('trust', [App\Domains\Referrals\Trust\TrustController::class, 'index'])->name('trust');
+        Route::post('trust/preview', [App\Domains\Referrals\Trust\TrustController::class, 'preview'])->name('trust.preview');
+        Route::post('trust', [App\Domains\Referrals\Trust\TrustController::class, 'save'])->name('trust.save');
         Route::get('ai', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'index'])->name('ai');
         Route::post('ai/prompts/{key}', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'savePrompt'])->name('ai.prompts.save');
         Route::post('ai/prompts/{key}/{version}/activate', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'activate'])->whereNumber('version')->name('ai.prompts.activate');

@@ -170,6 +170,7 @@ const messages: Record<string, string> = {
     'video-render': 'Rendering started. It usually takes a few minutes.',
     'video-publish': 'Published as the training version.',
     'video-rollback': 'Rolled back to the previous training video.',
+    'trust-weights-saved': 'Weights saved. Trust scores update at the next nightly run.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

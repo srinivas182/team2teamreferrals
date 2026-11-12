@@ -25,6 +25,8 @@ final class PerformanceController
         $score = ServiceScore::for($team);
 
         return Inertia::render('app/Performance', [
+            // The public trust score, explained part by part (recomputed nightly).
+            'trust' => \App\Domains\Referrals\Trust\TrustScore::stored($team->id),
             'score' => $score, 'tips' => ServiceScore::topTips($score), 'minReferrals' => ServiceScore::MIN_REFERRALS, 'windowDays' => ServiceScore::WINDOW_DAYS,
             'cards' => DB::table('report_cards')->where('team_id', $team->id)->orderByDesc('period')->limit(12)->get()
                 ->map(fn ($c) => ['period' => (string) $c->period, 'score' => $c->score, 'data' => json_decode((string) $c->data, true)]),

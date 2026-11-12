@@ -28,6 +28,8 @@ final class ProfileStats
             'giveGet' => Credits::giveGet($team),
             // From the badge engine (re-checked monthly).
             'badges' => \App\Domains\Community\Badges\Badges::of($team),
+            // The trust score (nightly): a number, or "New".
+            'trust' => ($t = Trust\TrustScore::stored($team->id)) !== null ? ['score' => $t['score'], 'status' => $t['status']] : null,
             'topGiverIn' => array_values(array_map(fn ($b) => (string) $b['group'], array_filter(\App\Domains\Community\Badges\Badges::of($team), fn ($b) => $b['key'] === 'top_giver'))),
             'builder' => collect(\App\Domains\Community\Badges\Badges::of($team))->contains('key', 'network_builder'),
             'thanks' => Referral::query()->with('receiver:id,name')->where(['sender_team_id' => $team->id, 'thanks_public' => true])->whereNotNull('thanks_note')->latest('thanks_at')->limit(6)->get()
