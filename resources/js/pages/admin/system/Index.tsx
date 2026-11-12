@@ -16,6 +16,7 @@ import {
     CheckCircle2,
     XCircle,
     MinusCircle,
+    Clapperboard,
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
@@ -47,6 +48,7 @@ type Props = {
     cdn: Channel;
     ai: Channel & { spent: number };
     aiFallback: Channel;
+    video: Channel;
     messagingSpent: number;
     modules: { key: string; label: string; affects: string; enabled: boolean; available: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
@@ -65,6 +67,7 @@ const tabs = [
     ['storage', 'Storage', HardDrive],
     ['cdn', 'CDN', Globe],
     ['ai', 'AI', Sparkles],
+    ['video', 'Video', Clapperboard],
     ['modules', 'Modules', ToggleRight],
 ] as const;
 
@@ -227,6 +230,7 @@ export default function SystemSettings({
     cdn,
     ai,
     aiFallback,
+    video,
     messagingSpent,
     modules,
     overview,
@@ -508,6 +512,16 @@ export default function SystemSettings({
                 </div>
             )}
 
+            {tab === 'video' && (
+                <ProviderTab
+                    title="Video provider"
+                    intro="Renders training videos with a stock AI presenter (needs the AI training videos module on). Finished videos are stored on your own storage."
+                    channel={video}
+                    url="/admin/system/video"
+                    provider="video"
+                    checks={checks}
+                />
+            )}
             {tab === 'modules' && (
                 <Card className="max-w-3xl">
                     <ul className="divide-y divide-line">

@@ -163,6 +163,13 @@ const messages: Record<string, string> = {
     'draft-unavailable': 'A draft isn’t available right now (AI is off, out of credits or busy). You can write the message yourself.',
     'draft-discarded': 'Draft discarded and the original deleted.',
     'voice-transcribed': 'Here’s what we heard. Check it, then make the draft.',
+    'video-script-saved': 'Script saved.',
+    'video-draft-unavailable': 'An AI draft isn’t available right now. You can write the script yourself.',
+    'video-submit': 'Submitted for approval.',
+    'video-approve': 'Approved. Choose a presenter and voice to render it.',
+    'video-render': 'Rendering started. It usually takes a few minutes.',
+    'video-publish': 'Published as the training version.',
+    'video-rollback': 'Rolled back to the previous training video.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

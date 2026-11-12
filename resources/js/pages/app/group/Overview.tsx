@@ -46,6 +46,7 @@ type Props = {
 
 /** Owner overview: how the group is doing and what is coming. Owners run the group; pricing is set by the platform. */
 export default function GroupOverview({ group, health, upcoming, insights = null, seo }: Props) {
+    const { modules } = usePage<{ modules?: Record<string, boolean> }>().props;
     const { auth } = usePage<SharedProps>().props;
     const r = group.rules;
     return (
@@ -58,6 +59,11 @@ export default function GroupOverview({ group, health, upcoming, insights = null
                 <a href={`/app/group/${group.slug}/seat-map`} className="mr-2 text-sm font-medium text-primary">
                     Seat map and invitations
                 </a>
+                {modules?.ai_videos && (
+                    <a href={`/app/group/${group.slug}/training-video`} className="mr-2 text-sm font-medium text-primary">
+                        Training video
+                    </a>
+                )}
                 <Badge>{group.industry}</Badge>
                 {group.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}
                 <Badge>{group.visibility === 'open' ? 'Open to applications' : 'Invite only'}</Badge>

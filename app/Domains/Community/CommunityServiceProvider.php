@@ -18,6 +18,8 @@ final class CommunityServiceProvider extends ServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $s): void {
             $s->command('t2t:feed:digest')->dailyAt('07:30')->onOneServer();
             $s->call(fn () => app(Events\Events::class)->reminders())->name('event-reminders')->everyFifteenMinutes()->onOneServer();
+            // Training video renders: backup check for the provider's callback.
+            $s->call(fn () => app(\App\Domains\Network\Training\Video\VideoStudio::class)->poll())->name('video-renders')->everyFiveMinutes()->onOneServer();
         });
     }
 }

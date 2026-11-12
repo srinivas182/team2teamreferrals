@@ -91,6 +91,15 @@ final class ProviderCatalogue
                 'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'This provider pauses for the month when reached'],
             ]],
         ],
+        // AI presenter videos for training (Admin → Settings → Video).
+        'video' => [
+            'none' => ['label' => 'Not connected', 'fields' => []],
+            'heygen' => ['label' => 'HeyGen', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true],
+                'price_per_minute' => ['label' => 'Price per video minute (USD)', 'required' => true, 'hint' => 'From your HeyGen plan; used for the platform’s cost reporting'],
+                'webhook_secret' => ['label' => 'Webhook secret (optional)', 'secret' => true, 'hint' => 'Lets HeyGen tell us when a video is ready; without it we check every 5 minutes'],
+            ]],
+        ],
         // Used automatically when the main AI provider fails or reaches its spend cap.
         'ai_fallback' => [
             'none' => ['label' => 'No fallback', 'fields' => []],

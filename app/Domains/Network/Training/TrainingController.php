@@ -49,6 +49,12 @@ final class TrainingController
         return Inertia::render('app/training/Show', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name],
             'lessons' => json_decode((string) $m->lessons, true),
+            // Videos your networks made for this training (AI presenter), shown before the lessons.
+            'networkVideos' => DB::table('video_scripts as v')->join('groups as g', 'g.id', '=', 'v.group_id')->where(['v.industry_id' => $industry->id, 'v.status' => 'published'])
+                ->whereIn('v.group_id', DB::table('seats')->where('primary_team_id', ($t = $request->user() !== null ? \App\Domains\Network\Seats\Models\Team::of($request->user()) : null) !== null ? $t->id : 0)->pluck('group_id'))
+                ->get(['v.title', 'v.script', 'v.video_path', 'v.captions_path', 'g.name'])->map(fn ($v) => ['network' => (string) $v->name, 'title' => (string) $v->title, 'transcript' => (string) $v->script,
+                    'url' => \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->url((string) $v->video_path),
+                    'captions' => $v->captions_path ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->url((string) $v->captions_path) : null])->values(),
             'done' => $p ? array_map('intval', (array) json_decode((string) $p->lessons_done, true)) : [],
             // Answers stay on the server; retakes show only the questions missed last time.
             'questions' => array_values(array_map(fn ($i) => ['index' => $i, 'q' => $qs[$i]['q'], 'options' => $qs[$i]['options']], $missed ?? array_keys($qs))),

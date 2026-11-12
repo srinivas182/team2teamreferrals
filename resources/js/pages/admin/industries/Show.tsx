@@ -68,6 +68,7 @@ export default function IndustryShow({
     status,
     seo,
 }: Props) {
+    const { modules } = usePage<{ modules?: Record<string, boolean> }>().props;
     const errors = usePage().props.errors as Record<string, string>;
     const basics = useForm({
         name: i.name,
@@ -152,6 +153,11 @@ export default function IndustryShow({
                 <Link href={`/admin/industries/${i.slug}/training`} className="text-sm font-medium text-primary">
                     Training
                 </Link>
+                {modules?.ai_videos && (
+                    <Link href={`/admin/training/${i.slug}/videos`} className="text-sm font-medium text-primary">
+                        Training videos
+                    </Link>
+                )}
                 <Link href={`/admin/industries/${i.slug}/messages`} className="mr-2 text-sm font-medium text-primary">
                     Messages
                 </Link>
