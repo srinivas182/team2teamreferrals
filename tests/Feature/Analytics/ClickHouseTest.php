@@ -27,14 +27,14 @@ it('stores events, replaces a re-shipped event, and answers daily queries', func
     expect($rows[0]['events'])->toBe(2)->and($rows[0]['value'])->toBe(6)->and($this->store->health()['ok'])->toBeTrue();
 });
 
-it('DONE WHEN: dashboard queries return in under 500 ms over 10 million events', function () {
+it('DONE WHEN: dashboard queries return in under 500 ms over 10 million events (we hold 250 ms)', function () {
     $s = app(Settings::class);
     $s->set('analytics.driver', 'clickhouse');
     foreach (['url' => getenv('CLICKHOUSE_URL'), 'user' => getenv('CLICKHOUSE_USER'), 'database' => 't2t_bench'] as $k => $v) {
         $s->set("analytics.clickhouse.{$k}", (string) $v);
     }
     $s->set('analytics.clickhouse.password', (string) getenv('CLICKHOUSE_PASSWORD'), secret: true);
-    $code = Artisan::call('t2t:analytics', ['action' => 'benchmark', '--events' => 10_000_000, '--max-ms' => 500]);
+    $code = Artisan::call('t2t:analytics', ['action' => 'benchmark', '--events' => 10_000_000, '--max-ms' => 250]);
     fwrite(STDERR, "\n".Artisan::output());
     expect($code)->toBe(0);
 });

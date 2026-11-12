@@ -4,6 +4,22 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 35a — Team dashboard
+Checklist items delivered here (the owner dashboard, command palette, shortcuts and guards follow in 35b), each proven by tests in tests/Feature/Referrals/TeamDashboardTest.php:
+0. Speed margin: ClickHouse keeps pre-computed daily totals per team and network (recomputed for the days each batch touches, so re-shipped events never count twice); dashboards read those. The CI speed check now requires under 250 ms on 10 million events, a 2x margin on the PRD's 500.
+1. Team dashboard (Portal → Dashboard): received, accepted, typical response time, sent, sent and accepted, won, lost, conversion, fees received, fees owed and overdue, credits earned, trust score, credit balance; an action bar with live countdowns to each deadline.
+3. KPI cards compared with the previous period of the same length; charts of referrals and fees by day (from the analytics store); presets or custom dates.
+4. Every number opens its records (Portal → Dashboard → any card), each record linked.
+5. Saved views: named periods, one opening by default.
+6. CSV (the summary, or any number's records) and PDF (the summary).
+8. Each KPI is defined once, as the query for its records; the number and the list come from the same query, and a test checks every KPI against its records.
+9. Short client names only in drill-downs and exports, never contact details.
+12. Changes on small numbers are marked "small numbers".
+13. Charts are light SVG with a "Show as table" view.
+- Fixed in review: a flaky test (it also scanned the signed-in member's own email, which the test factory sometimes puts at example.com); it now checks client emails specifically, and passed 8 runs in a row.
+- New guard: CI workflow files must parse (a colon in a step name once made GitHub run no jobs at all); symfony/yaml added as a development dependency.
+- 510 PHP tests in total (6 new; 2 ClickHouse tests run in CI).
+
 ### Sprint 34b — Trust score
 Completes Sprint 34, each proven by a test in tests/Feature/Referrals/TrustScoreTest.php:
 3. Trust score from five parts, built from real records: response speed (answered before the deadline; expiring unanswered counts as late), update compliance (no missed update), conversion (won share of closed), fee reliability (paid by the due date, as payer) and outcome accuracy (wins not disputed by the sender). Weights are set by super admins in Admin → Trust score.
