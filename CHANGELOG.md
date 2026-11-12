@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 36a — Network dashboard, revenue and network CRM
+Checklist items delivered here (the report builder and scheduled reports follow in 36b), each proven by tests in tests/Feature/Referrals/NetworkAdminTest.php:
+1. Admin → Network dashboard: teams with a seat, networks with members, seats filled and open, referrals, accepted, won, conversion, breaches; compared with the previous period; SLA trend (referrals and breaches by day); top networks and cities. Every number opens its records.
+- Revenue by type (Admin → Revenue): seat subscriptions, premium memberships, private network plans, AI credit packs, platform fees collected, less discounts, account credits and refunds, from paid invoices; compared with the previous period; the invoices behind it; CSV. Referral fees between teams are never platform revenue, and sales tax is shown but kept out. New invoice lines now carry an explicit type; older ones are classified by one tested rule.
+2. Admin → Network CRM: every referral, filtered by industry, network, state, city, sender, receiver, stage and dates; 50 per page; CSV.
+6. Client privacy: short client names everywhere; full contact details for one referral need a stated reason and are logged.
+7. Separate permissions: the dashboard and CRM need "view referrals"; revenue needs "view revenue" (support staff see the CRM and a dashboard without revenue).
+12. The admin menu's "Network CRM" and "Revenue" placeholders are now real, with "Network dashboard" added; a guard checks every admin menu link opens.
+- Fixed: the intermittent test failure seen on CI in Sprint 35b. A trust-score test sat exactly on a rounding boundary (7 of 8 = 87.5%), and because each record's weight depends on its exact age, slow runs tipped it to 87 or 88. The product behaviour is right; the test now uses 8 of 9 (88.9%).
+- 521 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 35b — Owner dashboard, command palette and shortcuts
 Completes Sprint 35, each proven by tests in tests/Feature/Referrals/OwnerDashboardTest.php, tests/Feature/Platform/MenuReachableTest.php and resources/js/__tests__/shortcuts.test.tsx:
 2. Owner dashboard (/app/owner/dashboard): seats filled, referrals, accepted, won, conversion, breaches (missed first contact, missed updates, disputed closes), fees overdue; compared with the previous period; top referrers and top closers; every number opens its records (same shared-definition rule as the team dashboard), with CSV. Owners only.

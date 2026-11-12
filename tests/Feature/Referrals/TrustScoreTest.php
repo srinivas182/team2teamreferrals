@@ -74,7 +74,9 @@ it('shows "New" under 3 accepted referrals', function () {
 });
 
 it('builds each part from real behaviour: on-time answers, missed updates, wins, disputed wins', function () {
-    foreach ([false, false, true, false] as $late) {
+    // 9 received, 1 late: 8/9 = 88.9%, well clear of a rounding boundary (7/8 = 87.5% flipped between 87 and 88
+    // depending on the seconds between records, because each record's weight depends on its exact age).
+    foreach ([false, false, true, false, false] as $late) {
         ($this->refer)($this->a, $this->b, late: $late);
     }
     $rs = Referral::where('receiver_team_id', $this->b->id)->orderBy('id')->get();
@@ -84,8 +86,8 @@ it('builds each part from real behaviour: on-time answers, missed updates, wins,
     ($this->refer)($this->a, $this->b, outcome: 'disputed');
     ($this->refer)($this->a, $this->b, outcome: 'lost');
     $p = TrustScore::compute($this->b)['parts'];
-    expect($p['response']['points'])->toBe(88)->and($p['response']['items'])->toBe(8)      // 7 of 8 on time
-        ->and($p['updates']['points'])->toBe(88)                                           // 1 missed of 8
+    expect($p['response']['points'])->toBe(89)->and($p['response']['items'])->toBe(9)      // 8 of 9 on time
+        ->and($p['updates']['points'])->toBe(89)                                           // 1 missed of 9
         ->and($p['conversion']['points'])->toBe(67)->and($p['conversion']['items'])->toBe(3) // 2 won, 1 lost
         ->and($p['accuracy']['points'])->toBe(67)                                          // 1 of 3 wins disputed
         ->and($p['fees']['points'])->toBeNull();                                           // no fees: doesn't count
