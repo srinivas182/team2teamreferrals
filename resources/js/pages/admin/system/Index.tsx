@@ -17,6 +17,7 @@ import {
     XCircle,
     MinusCircle,
     Clapperboard,
+    BarChart3,
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
@@ -49,6 +50,10 @@ type Props = {
     ai: Channel & { spent: number };
     aiFallback: Channel;
     video: Channel;
+    analytics: Channel & {
+        health: { ok: boolean; detail: string };
+        sources: Record<string, { shipped: number; pending: number; shippedAt: string | null }>;
+    };
     messagingSpent: number;
     modules: { key: string; label: string; affects: string; enabled: boolean; available: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
@@ -68,6 +73,7 @@ const tabs = [
     ['cdn', 'CDN', Globe],
     ['ai', 'AI', Sparkles],
     ['video', 'Video', Clapperboard],
+    ['analytics', 'Analytics', BarChart3],
     ['modules', 'Modules', ToggleRight],
 ] as const;
 
@@ -231,6 +237,7 @@ export default function SystemSettings({
     ai,
     aiFallback,
     video,
+    analytics,
     messagingSpent,
     modules,
     overview,
@@ -520,6 +527,32 @@ export default function SystemSettings({
                     url="/admin/system/video"
                     provider="video"
                     checks={checks}
+                />
+            )}
+            {tab === 'analytics' && (
+                <ProviderTab
+                    title="Analytics store"
+                    intro="Where reporting data lives, so dashboards stay fast. MySQL works to start (ideally a separate database); switch to ClickHouse for large volumes, then run a backfill."
+                    channel={analytics}
+                    url="/admin/system/analytics"
+                    provider="analytics"
+                    checks={checks}
+                    extra={
+                        <Card className="p-5">
+                            <h3 className="font-semibold">{analytics.health.ok ? 'Healthy' : 'Not reachable'}</h3>
+                            <p className="text-sm text-muted">{analytics.health.detail}</p>
+                            <ul className="mt-3 space-y-1 text-sm">
+                                {Object.entries(analytics.sources).map(([k, v]) => (
+                                    <li key={k} className="flex justify-between gap-4">
+                                        <span>{k.replace('_', ' ')}</span>
+                                        <span className="text-muted tabular">
+                                            {v.shipped.toLocaleString()} shipped · {v.pending.toLocaleString()} waiting
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </Card>
+                    }
                 />
             )}
             {tab === 'modules' && (

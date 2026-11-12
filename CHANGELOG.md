@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 34a — Analytics pipeline
+Checklist items delivered here (the trust score follows in 34b), each proven by tests in tests/Feature/Analytics:
+1. Event stream from every module: the referral timeline, seat history, credits, feed posts, referral fees, invoices, event RSVPs and profile statistics, shipped every minute.
+2. Daily and near-real-time aggregates (daily rollups per team and per network).
+5. Backfill from zero (t2t:analytics backfill), the same process as shipping.
+7. No lost events: the platform's own records are the source; each source resumes from a saved position (append-only tables by id, records that change by update time); if the store is down nothing moves and the next run catches up. Fixed event keys mean re-shipping replaces rather than duplicates; fee payments arrive later as their own events.
+8. No client personal data in analytics: IDs, types, amounts and times only (tested across every stored value).
+13. Switchable store (Admin → Settings → Analytics): MySQL by default (a separate database recommended, e.g. DigitalOcean Managed MySQL), or ClickHouse (a Droplet or ClickHouse Cloud), with health and per-source progress.
+6. (part) CI now runs a real ClickHouse; the speed check generates 10 million events and requires dashboard queries under 500 ms (t2t:analytics benchmark).
+- Hosting decision recorded: DigitalOcean (US region). DigitalOcean has no managed ClickHouse, so production starts on Managed MySQL and moves to ClickHouse on a Droplet as volume grows.
+- 497 PHP tests in total (7 new; the 2 ClickHouse tests run in CI).
+
 ### Sprint 33b — AI training videos
 Completes Sprint 33, each proven by a test in tests/Feature/Network/TrainingVideoTest.php:
 1. Script editor with approval: draft, submit, approve. Tier A owners approve their own scripts after reading them; Tier B scripts need a platform admin.
