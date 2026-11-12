@@ -65,7 +65,7 @@ final class PricingRules
             }
             if ($pct > 0) {
                 $sum = array_sum(array_column($groupLines, 'amount_cents'));
-                $lines[] = ['description' => "Multi-city discount: {$pct}% for {$held} seats in ".DB::table('groups')->where('id', $groupId)->value('name'), 'amount_cents' => -(int) round($sum * $pct / 100), 'free_reason' => null];
+                $lines[] = ['type' => 'discount', 'description' => "Multi-city discount: {$pct}% for {$held} seats in ".DB::table('groups')->where('id', $groupId)->value('name'), 'amount_cents' => -(int) round($sum * $pct / 100), 'free_reason' => null];
             }
         }
         // A coupon, for its remaining months.
@@ -74,13 +74,13 @@ final class PricingRules
         $subtotal = array_sum(array_column($lines, 'amount_cents'));
         if ($r !== null && $subtotal > 0) {
             $off = $r->percent_off ? (int) round($subtotal * $r->percent_off / 100) : min((int) $r->amount_off_cents, $subtotal);
-            $lines[] = ['description' => "Coupon {$r->code}", 'amount_cents' => -$off, 'free_reason' => null, 'redemption_id' => (int) $r->id];
+            $lines[] = ['type' => 'discount', 'description' => "Coupon {$r->code}", 'amount_cents' => -$off, 'free_reason' => null, 'redemption_id' => (int) $r->id];
             $subtotal -= $off;
         }
         // Account credits last, never taking the total below zero.
         $available = (int) DB::table('billing_credits')->where(['owner_type' => $type, 'owner_id' => $id])->selectRaw('coalesce(sum(amount_cents - used_cents), 0) as left_cents')->value('left_cents');
         if ($available > 0 && $subtotal > 0) {
-            $lines[] = ['description' => 'Account credit', 'amount_cents' => -min($available, $subtotal), 'free_reason' => null, 'credit' => true];
+            $lines[] = ['type' => 'account_credit', 'description' => 'Account credit', 'amount_cents' => -min($available, $subtotal), 'free_reason' => null, 'credit' => true];
         }
 
         return $lines;

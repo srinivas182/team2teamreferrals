@@ -50,29 +50,29 @@ final class Invoicing
                 && ($seat->trial_ends_at === null || $seat->trial_ends_at->lte($coming->endOfMonth()))) {
                 $free = (int) data_get($seat->group->pricing, 'annual_months_free', 2);
                 $byPayer[$key][] = ['seat_id' => $seat->id, 'group_id' => $seat->group_id, 'annual' => true, 'days' => 0, 'free_reason' => null, 'amount_cents' => PricingRules::annualCents($seat),
-                    'description' => "{$seat->territory_name} · {$seat->group->name} · annual plan, ".$coming->format('M Y').' to '.$coming->addYear()->subDay()->format('M Y').($free > 0 ? " ({$free} months free)" : '')];
+                    'type' => 'seat', 'description' => "{$seat->territory_name} · {$seat->group->name} · annual plan, ".$coming->format('M Y').' to '.$coming->addYear()->subDay()->format('M Y').($free > 0 ? " ({$free} months free)" : '')];
             }
         }
         // Premium membership (per team) and private network plans (per owning company), prorated by day.
         $days = fn ($since) => (int) max($start, CarbonImmutable::parse((string) $since)->startOfDay())->diffInDays($end->startOfDay()) + 1;
         foreach (DB::table('teams')->whereNotNull('premium_since')->where('premium_since', '<=', $end)->get(['id', 'premium_since']) as $t) {
             $d = $days($t->premium_since);
-            $byPayer['team:'.$t->id][] = ['days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('premium') * 100 * $d / $start->daysInMonth),
+            $byPayer['team:'.$t->id][] = ['type' => 'premium', 'days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('premium') * 100 * $d / $start->daysInMonth),
                 'description' => 'Premium membership · '.$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
         }
         foreach (DB::table('groups')->where('is_private', true)->whereNotNull('company_id')->where('created_at', '<=', $end)->get(['company_id', 'name', 'created_at']) as $g) {
             $d = $days($g->created_at);
-            $byPayer['company:'.$g->company_id][] = ['days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('private_network') * 100 * $d / $start->daysInMonth),
+            $byPayer['company:'.$g->company_id][] = ['type' => 'private_network', 'days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('private_network') * 100 * $d / $start->daysInMonth),
                 'description' => "Private network: {$g->name} · ".$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
         }
         // AI credit packs bought since the last invoice (already usable; charged here).
         foreach (DB::table('ai_credit_ledger')->where('kind', 'purchase')->whereNull('invoice_id')->where('created_at', '<=', $end->addDay()->endOfDay())->get() as $p) {
-            $byPayer['team:'.$p->team_id][] = ['ai_purchase_id' => (int) $p->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $p->price_cents, 'description' => 'AI credits: '.number_format((int) $p->credits).' credits'];
+            $byPayer['team:'.$p->team_id][] = ['type' => 'ai_credits', 'ai_purchase_id' => (int) $p->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $p->price_cents, 'description' => 'AI credits: '.number_format((int) $p->credits).' credits'];
         }
         // Platform fees owed on referral fees received (only while collection is switched on).
         if (PricingRules::platformFeeCollectionOn()) {
             foreach (DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->where('f.platform_fee_status', 'owed')->whereNull('f.platform_invoice_id')->get(['f.*', 'r.client_name']) as $f) {
-                $byPayer['team:'.$f->payee_team_id][] = ['platform_fee_id' => (int) $f->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $f->platform_fee_cents,
+                $byPayer['team:'.$f->payee_team_id][] = ['type' => 'platform_fee', 'platform_fee_id' => (int) $f->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $f->platform_fee_cents,
                     'description' => 'Platform fee on the $'.number_format($f->amount_cents / 100, 2)." referral fee for {$f->client_name}"];
             }
         }
@@ -85,7 +85,7 @@ final class Invoicing
             $lines = PricingRules::apply($type, (int) $id, $lines);
             $total = (int) max(0, array_sum(array_column($lines, 'amount_cents')));
             if ($total > 0 && PricingRules::stripeTaxOn() && ($tax = $this->salesTax($type, (int) $id, $total, $period)) > 0) {
-                $lines[] = ['days' => 0, 'free_reason' => null, 'amount_cents' => $tax, 'description' => 'Sales tax', 'tax' => true];
+                $lines[] = ['days' => 0, 'free_reason' => null, 'amount_cents' => $tax, 'description' => 'Sales tax', 'tax' => true, 'type' => 'tax'];
                 $total += $tax;
             }
             $invoiceId = DB::table('invoices')->insertGetId([
@@ -245,7 +245,7 @@ final class Invoicing
         $monthly = (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 10);
         $amount = (int) round($monthly * 100 * $days / $start->daysInMonth);
         $label = "{$seat->territory_name} · {$seat->group->name} · ".$start->format('M Y');
-        $line = ['seat_id' => $seat->id, 'group_id' => $seat->group_id, 'description' => $label.($days < $start->daysInMonth ? " ({$days} days)" : ''), 'days' => $days, 'amount_cents' => $amount, 'free_reason' => null];
+        $line = ['type' => 'seat', 'seat_id' => $seat->id, 'group_id' => $seat->group_id, 'description' => $label.($days < $start->daysInMonth ? " ({$days} days)" : ''), 'days' => $days, 'amount_cents' => $amount, 'free_reason' => null];
         // The value guarantee: a month in which no referral was offered to the seat is free.
         if (! $offered && $guarantee) {
             $line['amount_cents'] = 0;

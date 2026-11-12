@@ -330,3 +330,18 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     }
 });
 Route::post('webhooks/heygen', [App\Domains\Network\Training\Video\VideoStudioController::class, 'webhook'])->middleware('throttle:120,1')->name('webhooks.heygen');
+
+// Super admin: the network dashboard and CRM ("view referrals"); revenue ("view revenue").
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class])->group(function (): void {
+    Route::middleware('can:referrals.view')->group(function (): void {
+        Route::get('admin/network', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'dashboard'])->name('admin.network');
+        Route::get('admin/network/kpi/{kpi}', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'drill'])->where('kpi', '[a-z_]+')->name('admin.network.drill');
+        Route::get('admin/referrals', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'crm'])->name('admin.referrals');
+        Route::get('admin/referrals/export.csv', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'crmCsv'])->name('admin.referrals.csv');
+        Route::post('admin/referrals/{referral}/reveal', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'reveal'])->middleware('throttle:20,10')->name('admin.referrals.reveal');
+    });
+    Route::middleware('can:revenue.view')->group(function (): void {
+        Route::get('admin/revenue', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'revenuePage'])->name('admin.revenue');
+        Route::get('admin/revenue/export.csv', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'revenueCsv'])->name('admin.revenue.csv');
+    });
+});
