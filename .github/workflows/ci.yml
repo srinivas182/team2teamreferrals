@@ -76,7 +76,22 @@ jobs:
     needs: [changes, quick]
     if: needs.changes.outputs.code == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
+    # A real ClickHouse, so the analytics store and the 10-million-event speed target are tested, not assumed.
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server:24.8
+        ports: ['8123:8123']
+        env:
+          CLICKHOUSE_USER: ci
+          CLICKHOUSE_PASSWORD: ci-password
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+        options: >-
+          --health-cmd "wget -qO- http://localhost:8123/ping || exit 1" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CLICKHOUSE_URL: http://127.0.0.1:8123
+      CLICKHOUSE_USER: ci
+      CLICKHOUSE_PASSWORD: ci-password
     steps:
       - uses: actions/checkout@v7
       - name: Image rendering for share cards (librsvg, Inter font)
@@ -117,6 +132,8 @@ jobs:
         run: cp .env.example .env && php artisan key:generate
       - name: Tests
         run: vendor/bin/pest --compact
+      - name: Analytics speed check (10 million events, ClickHouse, under 500 ms)
+        run: php artisan t2t:analytics benchmark --clickhouse-url="$CLICKHOUSE_URL" --clickhouse-user="$CLICKHOUSE_USER" --clickhouse-password="$CLICKHOUSE_PASSWORD"
 
   docker:
     name: Docker image builds

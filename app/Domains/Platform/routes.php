@@ -37,7 +37,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');
         Route::put('system/modules', [SystemSettingsController::class, 'updateModules'])->name('system.modules');
-        Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai', 'ai_fallback', 'video'])->name('system.channel');
+        Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai', 'ai_fallback', 'video', 'analytics'])->name('system.channel');
         Route::post('system/email/test', [SystemSettingsController::class, 'testEmail'])->middleware('throttle:6,1')->name('system.email.test');
         Route::post('system/sms/test', [SystemSettingsController::class, 'testSms'])->middleware('throttle:6,1')->name('system.sms.test');
         Route::post('system/check/{provider}', [SystemSettingsController::class, 'check'])->middleware('throttle:12,1')->name('system.check');

@@ -41,6 +41,16 @@ final class PlatformServiceProvider extends ServiceProvider
 
             return new RecordingSmsSender(new LogSmsSender, 'log');
         });
+        // The analytics store: MySQL by default; ClickHouse once its settings are filled in (Admin → Settings → Analytics).
+        $this->app->bind(Analytics\AnalyticsStore::class, function ($app): Analytics\AnalyticsStore {
+            $s = $app->make(Settings::class);
+            if ($s->get('analytics.driver') === 'clickhouse' && $s->has('analytics.clickhouse.url')) {
+                return new Analytics\ClickHouseStore((string) $s->get('analytics.clickhouse.url'), (string) $s->get('analytics.clickhouse.user', 'default'),
+                    (string) $s->get('analytics.clickhouse.password', ''), (string) $s->get('analytics.clickhouse.database', 't2t'));
+            }
+
+            return new Analytics\MySqlStore;
+        });
         $this->app->bind(\App\Support\Sms\WhatsAppSender::class, function ($app): \App\Support\Sms\WhatsAppSender {
             $s = $app->make(Settings::class);
             if ($s->get('sms.driver') === 'twilio' && $s->has('sms.twilio.sid') && $s->has('sms.twilio.token') && $s->has('sms.twilio.whatsapp_from')) {
@@ -53,6 +63,11 @@ final class PlatformServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([Analytics\AnalyticsCommand::class]);
+        }
+        // Every minute: ship new records to the analytics store (never two runs at once).
+        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, fn (\Illuminate\Console\Scheduling\Schedule $s) => $s->command('t2t:analytics ship')->everyMinute()->withoutOverlapping()->onOneServer());
         $this->app->make(ApplyProviderSettings::class)();
         Event::listen(\App\Domains\Seo\Events\PublicUrlsChanged::class, Cdn\PurgeCdn::class);
         $this->loadRoutesFrom(__DIR__.'/routes.php');

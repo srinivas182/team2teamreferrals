@@ -91,6 +91,16 @@ final class ProviderCatalogue
                 'monthly_cap' => ['label' => 'Monthly spend cap (USD)', 'required' => true, 'hint' => 'This provider pauses for the month when reached'],
             ]],
         ],
+        // Where reporting data lives (Admin → Settings → Analytics). MySQL by default; ClickHouse for large volumes.
+        'analytics' => [
+            'mysql' => ['label' => 'MySQL (a separate database is recommended)', 'fields' => []],
+            'clickhouse' => ['label' => 'ClickHouse', 'fields' => [
+                'url' => ['label' => 'HTTP address', 'required' => true, 'hint' => 'For example https://clickhouse.internal:8443 (a Droplet or ClickHouse Cloud)'],
+                'user' => ['label' => 'User', 'required' => true],
+                'password' => ['label' => 'Password', 'secret' => true, 'required' => true],
+                'database' => ['label' => 'Database', 'required' => true, 'hint' => 'Created on first use'],
+            ]],
+        ],
         // AI presenter videos for training (Admin → Settings → Video).
         'video' => [
             'none' => ['label' => 'Not connected', 'fields' => []],
