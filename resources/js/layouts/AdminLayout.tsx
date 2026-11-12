@@ -1,6 +1,8 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { CommandPalette } from '@/components/ui/command';
+import { useShortcuts } from '@/lib/shortcuts';
 import {
     ArrowLeftRight,
     Search,
@@ -31,6 +33,21 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
+
+/** Admin → Settings tabs, reachable from the command palette. */
+const settingsTabs: [string, string][] = [
+    ['overview', 'Settings overview'],
+    ['general', 'General settings'],
+    ['email', 'Email'],
+    ['modules', 'Modules'],
+    ['sms', 'SMS and WhatsApp'],
+    ['payments', 'Payments'],
+    ['storage', 'Storage'],
+    ['ai', 'AI providers'],
+    ['video', 'Video provider'],
+    ['analytics', 'Analytics store'],
+    ['cdn', 'CDN'],
+];
 
 type Item = { label: string; href: string; icon: typeof LayoutDashboard; permission: string | null; ready: boolean };
 
@@ -63,6 +80,20 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
     const { url, props } = usePage<SharedProps>();
     const user = props.auth.user;
     const [palette, setPalette] = useState(false);
+    const [help, setHelp] = useState(false);
+    const shortcuts = useMemo(
+        () => [
+            { keys: 'g d', label: 'Go to the admin dashboard', href: '/admin' },
+            { keys: 'g s', label: 'Go to Settings', href: '/admin/system' },
+            { keys: 'g p', label: 'Go to the portal', href: '/app' },
+        ],
+        [],
+    );
+    useShortcuts(
+        shortcuts,
+        useCallback(() => setPalette(true), []),
+        useCallback(() => setHelp(true), []),
+    );
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -161,9 +192,18 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
             <CommandPalette
                 open={palette}
                 onOpenChange={setPalette}
-                items={allowed.map((n) => ({ group: 'Go to', label: n.label, icon: n.icon, onSelect: () => router.visit(n.href) }))}
+                items={[
+                    ...allowed.map((n) => ({ group: 'Go to', label: n.label, icon: n.icon, onSelect: () => router.visit(n.href) })),
+                    ...settingsTabs.map(([tab, label]) => ({
+                        group: 'Settings',
+                        label,
+                        icon: LayoutDashboard,
+                        onSelect: () => router.visit(`/admin/system?tab=${tab}`),
+                    })),
+                ]}
                 remote
             />
+            <ShortcutHelp open={help} onOpenChange={setHelp} shortcuts={shortcuts} />
             <Toaster />
         </TooltipProvider>
     );

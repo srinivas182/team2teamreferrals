@@ -185,6 +185,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
     Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
     Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
+    Route::get('app/group/{group}/dashboard', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'page'])->name('group.dashboard');
+    Route::get('app/group/{group}/dashboard/kpi/{kpi}', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'drill'])->where('kpi', '[a-z_]+')->name('group.dashboard.drill');
+    Route::get('app/group/{group}/dashboard/export.csv', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'csv'])->name('group.dashboard.csv');
+    Route::get('app/group/{group}/dashboard/kpi/{kpi}/export.csv', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'csv'])->where('kpi', '[a-z_]+')->name('group.dashboard.drill.csv');
+    Route::post('app/group/{group}/dashboard/check-in', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'checkIn'])->middleware('throttle:20,10')->name('group.dashboard.checkin');
+    // The owner menu: /app/owner/... goes to the owner's network page (or a choice when they own several).
+    Route::get('app/owner/{page?}', [App\Domains\Referrals\Dashboard\OwnerDashboardController::class, 'shortcut'])->where('page', '[a-z-]+')->name('owner.shortcut');
     Route::get('app/dashboard', [App\Domains\Referrals\Dashboard\DashboardController::class, 'team'])->name('dashboard');
     Route::get('app/dashboard/kpi/{kpi}', [App\Domains\Referrals\Dashboard\DashboardController::class, 'drill'])->where('kpi', '[a-z_]+')->name('dashboard.drill');
     Route::get('app/dashboard/export.csv', [App\Domains\Referrals\Dashboard\DashboardController::class, 'csv'])->name('dashboard.csv');

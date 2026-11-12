@@ -8,10 +8,8 @@ import {
     Home,
     Inbox,
     KanbanSquare,
-    LifeBuoy,
     Map,
     MessagesSquare,
-    Plug,
     Send,
     ShieldAlert,
     UserCog,
@@ -31,6 +29,7 @@ import {
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number; module?: string };
 
 /** Portal navigation (information architecture, docs/design/information-architecture.md). */
+// Integrations (Sprints 44-45) and Help (Sprint 48) return to the menu with the sprints that build them.
 export const portalNav: NavItem[] = [
     { label: 'Home', href: '/app', icon: Home },
     { label: 'Inbox', href: '/app/inbox', icon: Inbox },
@@ -38,12 +37,10 @@ export const portalNav: NavItem[] = [
     { label: 'Sent', href: '/app/sent', icon: Send },
     { label: 'Earnings', href: '/app/earnings', icon: Wallet },
     { label: 'Groups', href: '/app/groups', icon: Users },
-    { label: 'Community', href: '/app/community', icon: MessagesSquare },
     { label: 'Team', href: '/app/team', icon: UserCog },
     { label: 'Company', href: '/app/company', icon: Building2 },
     { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
-    { label: 'Integrations', href: '/app/integrations', icon: Plug },
     { label: 'Dashboard', href: '/app/dashboard', icon: Gauge },
     { label: 'Feed', href: '/app/feed', icon: MessagesSquare, module: 'community' },
     { label: 'Events', href: '/app/events', icon: CalendarDays, module: 'events' },
@@ -59,14 +56,15 @@ export const portalNav: NavItem[] = [
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },
-    { label: 'Help', href: '/app/help', icon: LifeBuoy },
 ];
 
+/** Owner pages go through /app/owner/…, which opens the owner's network (or asks which, if they own several). */
 export const ownerNav: NavItem[] = [
-    { label: 'Group overview', href: '/app/group', icon: Gauge },
-    { label: 'Seat map', href: '/app/group/seats', icon: Map },
-    { label: 'Applications', href: '/app/group/applications', icon: UserPlus },
-    { label: 'Members and enforcement', href: '/app/group/members', icon: ShieldAlert },
+    { label: 'Owner dashboard', href: '/app/owner/dashboard', icon: Gauge },
+    { label: 'Group overview', href: '/app/owner', icon: Gauge },
+    { label: 'Seat map', href: '/app/owner/seat-map', icon: Map },
+    { label: 'Applications', href: '/app/owner/applications', icon: UserPlus },
+    { label: 'Members and enforcement', href: '/app/owner/challenges', icon: ShieldAlert },
 ];
 
 export const mobileTabs: NavItem[] = [
