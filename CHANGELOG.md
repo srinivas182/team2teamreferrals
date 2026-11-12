@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 36b — Report builder and scheduled reports
+Completes Sprint 36 and Phase F, each proven by tests in tests/Feature/Platform/ReportsTest.php:
+3. Report builder (Admin → Reports; Owner → Reports): referrals, revenue, seats or teams; choose columns, filters (state, industry, stage), grouping (network, industry, state, month, stage, status) and period; preview up to 500 rows; save.
+4. Scheduled email reports: weekly (a weekday) or monthly (day 1–28) at a chosen hour in the schedule's time zone (defaulting to the creator's own), with a short summary and the CSV attached.
+5. Done when (tested): the super admin schedules a weekly revenue report for Monday 8:00 Chicago time and receives it at that time, with the correct figures; the next run moves to the following Monday; it is never sent twice.
+8. Owner reports only ever read their own network, never revenue, and owners send them only to themselves; access is checked for each recipient on every run, so a former owner is skipped ("No access to this report") and receives nothing.
+9. Reports never contain client contact details (short names only), in emails or files.
+10. Every delivery is logged (sent, retrying, failed, skipped, with the reason); failed sends retry on later runs, 3 attempts in all; schedules pause and resume.
+11. Large reports (over 5,000 rows, configurable as REPORTS_ATTACH_ROWS) are built in the background and sent as a private download link, valid 7 days for that recipient only.
+- Fixed in review: owner report actions received the network's name in place of the report or schedule (route values are passed by position, and owner addresses start with the network); every action now reads them by name, and the owner test covers export, pause and resume. The reports page queried a user "name" column that doesn't exist (names are first and last name); found by the admin menu guard, and the page is now tested with a delivery shown.
+- 527 PHP tests in total (6 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 36a — Network dashboard, revenue and network CRM
 Checklist items delivered here (the report builder and scheduled reports follow in 36b), each proven by tests in tests/Feature/Referrals/NetworkAdminTest.php:
 1. Admin → Network dashboard: teams with a seat, networks with members, seats filled and open, referrals, accepted, won, conversion, breaches; compared with the previous period; SLA trend (referrals and breaches by day); top networks and cities. Every number opens its records.

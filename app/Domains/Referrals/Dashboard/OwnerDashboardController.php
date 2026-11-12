@@ -98,7 +98,7 @@ final class OwnerDashboardController
     /** /app/owner/{page}: the owner's network page, or a choice when they own several. */
     public function shortcut(Request $request, ?string $page = null): Response|RedirectResponse
     {
-        $map = ['dashboard' => '/dashboard', 'seat-map' => '/seat-map', 'applications' => '/applications', 'challenges' => '/challenges', '' => ''];
+        $map = ['dashboard' => '/dashboard', 'seat-map' => '/seat-map', 'applications' => '/applications', 'challenges' => '/challenges', 'reports' => '/reports', '' => ''];
         $page = (string) $page;
         abort_unless(array_key_exists($page, $map), 404);
         $groups = $this->owned($this->user($request));

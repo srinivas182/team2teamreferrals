@@ -174,6 +174,13 @@ const messages: Record<string, string> = {
     'view-saved': 'View saved.',
     'view-deleted': 'View deleted.',
     'checkin-sent': 'Check-in sent.',
+    'report-saved': 'Report saved.',
+    'report-deleted': 'Report deleted.',
+    'report-scheduled': 'Scheduled. It will arrive by email at the chosen time.',
+    'report-building': 'This report is large, so we’re building it and will email you a private download link.',
+    'schedule-pause': 'Schedule paused.',
+    'schedule-resume': 'Schedule resumed.',
+    'schedule-delete': 'Schedule deleted.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
