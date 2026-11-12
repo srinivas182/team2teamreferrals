@@ -17,7 +17,8 @@ Checklist items delivered here (the owner dashboard, command palette, shortcuts 
 12. Changes on small numbers are marked "small numbers".
 13. Charts are light SVG with a "Show as table" view.
 - Fixed in review: a flaky test (it also scanned the signed-in member's own email, which the test factory sometimes puts at example.com); it now checks client emails specifically, and passed 8 runs in a row.
-- 509 PHP tests in total (5 new; 2 ClickHouse tests run in CI).
+- New guard: CI workflow files must parse (a colon in a step name once made GitHub run no jobs at all); symfony/yaml added as a development dependency.
+- 510 PHP tests in total (6 new; 2 ClickHouse tests run in CI).
 
 ### Sprint 34b — Trust score
 Completes Sprint 34, each proven by a test in tests/Feature/Referrals/TrustScoreTest.php:
