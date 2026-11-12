@@ -22,7 +22,7 @@ final class Modules
         'ai_intake' => ['label' => 'AI intake', 'affects' => 'Forwarded emails, voice notes and card photos becoming draft referrals', 'default' => false],
         'chat_bot' => ['label' => 'WhatsApp and SMS bot', 'affects' => 'Sending referrals by chat, and status replies by WhatsApp or SMS', 'default' => false],
         'ai_insights' => ['label' => 'AI owner insights', 'affects' => 'The AI-written weekly summary for network owners (the figures are sent either way)', 'default' => false],
-        'ai_videos' => ['label' => 'AI training videos', 'affects' => 'Creating training videos with an AI presenter; needs Network training on. Published videos keep playing', 'default' => false, 'available' => false],
+        'ai_videos' => ['label' => 'AI training videos', 'affects' => 'Creating training videos with an AI presenter; needs Network training on. Published videos keep playing', 'default' => false],
         'consumer_requests' => ['label' => 'Consumer requests', 'affects' => '"Request a pro" forms on city pages and the consumer portal', 'default' => true, 'available' => false],
         'partner_directory' => ['label' => 'Partner directory', 'affects' => 'Paid partner listings and the directory page', 'default' => true, 'available' => false],
     ];

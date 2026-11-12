@@ -30,6 +30,7 @@ final class AiAdminController
         'owner_insights' => ['network' => 'Solar Installers Network', 'figures' => 'Cities to strengthen: Houston, TX (3 unplaced). Teams to check in with: Sunrise Solar (typically accepts in 20 hours). Rising: Peak Power (1 → 5 referrals).'],
         'intake_extract' => ['text' => "Fwd: New lead\nHi, my neighbour Maria Lopez in Houston, TX wants solar panels before summer. Her number is [phone hidden].", 'networks' => 'Solar Installers Network (Solar installers)'],
         'intake_photo_read' => [],
+        'training_video_script' => ['network' => 'Solar Installers Network', 'facts' => "Accept or decline a referral within 24 hours.\nMake first contact within 24 hours of accepting.\nUpdate the referring team at least every 7 days.\nReferral fees are allowed when agreed in the referral agreement."],
         'lead_summary' => ['referral' => "Industry: Solar installers\nCity: Houston, TX\nClient: Sam P.\nTiming: hot\nRoof type: Asphalt shingle\nAverage monthly bill: 240\nSender’s notes: Wants quotes before the summer; interested in a battery.", 'fee_rule' => 'You may mention the agreed referral fee only if it appears in the data.'],
     ];
 

@@ -70,7 +70,20 @@ final class Training
             return false;
         }
 
-        return self::required($group) && now()->greaterThanOrEqualTo(self::enforcedFrom($group)) && ! $this->passed($user, $group->industry);
+        if (! self::required($group) || now()->lessThan(self::enforcedFrom($group))) {
+            return false;
+        }
+        if (! $this->passed($user, $group->industry)) {
+            return true;
+        }
+        // A network that published its own video with "require a retake": passed since then.
+        if ($group->training_retake_at !== null) {
+            $passedAt = DB::table('training_progress')->where(['user_id' => $user->id, 'module_id' => $this->module($group->industry)->id])->value('passed_at');
+
+            return $passedAt === null || CarbonImmutable::parse((string) $passedAt)->lt($group->training_retake_at);
+        }
+
+        return false;
     }
 
     /** Who receives a new referral for a seat: the holder, or the backup while the holder isn't trained (or is inactive). */

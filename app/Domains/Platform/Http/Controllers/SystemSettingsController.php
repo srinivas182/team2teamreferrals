@@ -58,6 +58,7 @@ final class SystemSettingsController
             'cdn' => $channel('cdn'),
             'ai' => [...$channel('ai'), 'spent' => app(AiProvider::class)->spentThisMonth()],
             'aiFallback' => $channel('ai_fallback'),
+            'video' => $channel('video'),
             'messagingSpent' => \App\Domains\Referrals\Bot\ChatStatus::spentThisMonth(),
             'modules' => collect(Modules::ALL)->map(fn ($m, $k) => ['key' => $k, 'label' => $m['label'], 'affects' => $m['affects'], 'enabled' => app(Modules::class)->enabled($k), 'available' => $m['available'] ?? true])->values(),
             'overview' => collect(ProviderChecks::PROVIDERS)->map(fn ($label, $k) => ['key' => $k, 'label' => $label, 'driver' => $s->get($k.'.driver'), 'last' => app(ProviderChecks::class)->last()[$k] ?? null, 'health' => in_array($k, ['mail', 'sms'], true) ? ProviderHealth::for($k) : null])->values(),
@@ -104,7 +105,7 @@ final class SystemSettingsController
     /** Payments, storage and AI share one handler: pick a driver, fill its fields. */
     public function updateChannel(Request $request, string $channel): RedirectResponse
     {
-        abort_unless(in_array($channel, ['sms', 'payments', 'storage', 'ai', 'ai_fallback', 'cdn'], true), 404);
+        abort_unless(in_array($channel, ['sms', 'payments', 'storage', 'ai', 'ai_fallback', 'cdn', 'video'], true), 404);
         $driver = (string) $request->validate(['driver' => ['required', Rule::in(ProviderCatalogue::drivers($channel))]])['driver'];
 
         return $this->saveProvider($channel, $driver, ["{$channel}.driver" => $driver], $request);

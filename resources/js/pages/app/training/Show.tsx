@@ -10,12 +10,22 @@ import { cn } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type Lesson = { title: string; minutes: number; body: string; video_url: string | null; transcript: string | null };
+type Lesson = {
+    title: string;
+    minutes: number;
+    body: string;
+    video_url: string | null;
+    transcript: string | null;
+    ai_presenter?: boolean;
+    captions_url?: string | null;
+};
+type NetworkVideo = { network: string; title: string; transcript: string; url: string; captions: string | null };
 type Q = { index: number; q: string; options: string[] };
 type Result = { score: number; passed: boolean; wrong: { index: number; why: string; q: string }[] };
 type Props = {
     industry: { slug: string; name: string };
     lessons: Lesson[];
+    networkVideos?: NetworkVideo[];
     done: number[];
     questions: Q[];
     retake: boolean;
@@ -25,7 +35,7 @@ type Props = {
     seo: Seo;
 };
 
-export default function TrainingShow({ industry, lessons, done, questions, retake, passMark, passed, result, seo }: Props) {
+export default function TrainingShow({ industry, lessons, networkVideos = [], done, questions, retake, passMark, passed, result, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [open, setOpen] = useState(() =>
         Math.max(
@@ -50,6 +60,23 @@ export default function TrainingShow({ industry, lessons, done, questions, retak
                 <div className="h-2 rounded-full bg-bg" aria-label={`${done.length} of ${lessons.length} lessons done`}>
                     <div className="h-2 rounded-full bg-primary" style={{ width: `${(done.length / Math.max(1, lessons.length)) * 100}%` }} />
                 </div>
+                {networkVideos.map((v) => (
+                    <div key={v.network + v.title} className="space-y-2 rounded-md border border-line p-4">
+                        <p className="text-sm font-semibold">
+                            {v.network}: {v.title}
+                        </p>
+                        <div className="relative">
+                            <video src={v.url} controls className="w-full rounded-md" crossOrigin="anonymous">
+                                {v.captions && <track kind="captions" src={v.captions} srcLang="en" label="English" default />}
+                            </video>
+                            <span className="absolute top-2 left-2 rounded bg-black/70 px-2 py-0.5 text-xs text-white">AI presenter</span>
+                        </div>
+                        <details className="text-sm">
+                            <summary className="cursor-pointer text-muted">Transcript</summary>
+                            <p className="mt-2 whitespace-pre-wrap">{v.transcript}</p>
+                        </details>
+                    </div>
+                ))}
                 {lessons.map((l, i) => (
                     <Card key={i} className="p-0">
                         <button
@@ -67,7 +94,18 @@ export default function TrainingShow({ industry, lessons, done, questions, retak
                         </button>
                         {open === i && (
                             <div className="space-y-3 border-t border-line p-4">
-                                {l.video_url && <video src={l.video_url} controls className="w-full rounded-md" />}
+                                {l.video_url && (
+                                    <div className="relative">
+                                        <video src={l.video_url} controls className="w-full rounded-md" crossOrigin="anonymous">
+                                            {l.captions_url && <track kind="captions" src={l.captions_url} srcLang="en" label="English" default />}
+                                        </video>
+                                        {l.ai_presenter && (
+                                            <span className="absolute top-2 left-2 rounded bg-black/70 px-2 py-0.5 text-xs text-white">
+                                                AI presenter
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 <p>{l.body}</p>
                                 {l.transcript && (
                                     <details className="text-sm text-muted">

@@ -304,3 +304,15 @@ Route::middleware(['web', 'noindex:always', 'signed', 'throttle:20,10'])->group(
     Route::get('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'show'])->where('draft', '[0-9A-Za-z]{26}')->middleware('module:chat_bot')->name('bot.confirm');
     Route::post('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'send'])->where('draft', '[0-9A-Za-z]{26}')->middleware('module:chat_bot')->name('bot.confirm.send');
 });
+
+// AI training videos: platform admins (industry default) and group owners (their network). Off with the "AI training videos" switch.
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', 'module:ai_videos'])->group(function (): void {
+    foreach (['admin/training/{industry}/videos' => 'admin.training.videos', 'app/group/{group}/training-video' => 'group.training-video'] as $base => $name) {
+        Route::get($base, [App\Domains\Network\Training\Video\VideoStudioController::class, 'page'])->name($name);
+        Route::post($base.'/scripts', [App\Domains\Network\Training\Video\VideoStudioController::class, 'store'])->name($name.'.store');
+        Route::post($base.'/draft', [App\Domains\Network\Training\Video\VideoStudioController::class, 'draft'])->middleware('throttle:10,10')->name($name.'.draft');
+        Route::post($base.'/scripts/{script}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'update'])->where('script', '[0-9A-Za-z]{26}')->name($name.'.update');
+        Route::post($base.'/scripts/{script}/{action}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'act'])->where('script', '[0-9A-Za-z]{26}')->whereIn('action', ['submit', 'approve', 'render', 'publish', 'rollback'])->middleware('throttle:30,10')->name($name.'.act');
+    }
+});
+Route::post('webhooks/heygen', [App\Domains\Network\Training\Video\VideoStudioController::class, 'webhook'])->middleware('throttle:120,1')->name('webhooks.heygen');

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * A network of pros in one industry: one seat per territory. Rules and pricing are set per group.
  *
+ * @property ?\Illuminate\Support\Carbon $training_retake_at
  * @property int $id
  * @property int $industry_id
  * @property-read Industry $industry every group belongs to an industry (required foreign key)
@@ -35,7 +36,7 @@ final class Group extends Model
 
     protected function casts(): array
     {
-        return ['rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean', 'is_private' => 'boolean'];
+        return ['training_retake_at' => 'datetime', 'rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean', 'is_private' => 'boolean'];
     }
 
     /**

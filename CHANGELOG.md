@@ -4,6 +4,22 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 33b — AI training videos
+Completes Sprint 33, each proven by a test in tests/Feature/Network/TrainingVideoTest.php:
+1. Script editor with approval: draft, submit, approve. Tier A owners approve their own scripts after reading them; Tier B scripts need a platform admin.
+2. HeyGen integration (Admin → Settings → Video): stock presenters and English voices only (custom "talking photo" likenesses excluded), 720p with captions.
+3. Render queue and status: started on request; checked by HeyGen's signed callback and a 5-minute backup poll; one automatic retry; credits refunded if it still fails.
+4. Publish as a training version. Platform admins: the video and its script (as the transcript) go onto a chosen lesson of the industry training, as a new version. Group owners: a network video shown to their members above the lessons. Either can require a retake (industry: minimum version; network: passed since the publish date). One-step rollback.
+5. Estimate before rendering (150 spoken words a minute, numbers included); 50 AI credits a minute for owners, free for platform admins (cost recorded).
+6. AI-drafted scripts from the network's actual rules (versioned prompt training_video_script), edited before submitting.
+7. Compliance check at submit: no fee talk in Tier B.
+8. Captions on the video and the transcript underneath.
+9. Finished videos and captions stored on our own storage.
+11. "AI presenter" label on every generated video.
+- Switch: "AI training videos" (Admin → Settings → Modules), off by default, and only available while Network training is on. Studio links appear on the admin industry page and the owner overview when it's on.
+- New guard test: every provider channel has a settings tab (the Video tab was nearly missed).
+- 490 PHP tests in total (6 new).
+
 ### Sprint 33a — Module switches that work, one per module
 Each proven by a test in tests/Feature/Platform/ModuleSwitchesTest.php:
 - Admin → Settings → Modules now has a switch per module: Network training, Community, Events, Cross-industry introductions, AI lead summaries, AI message drafts, AI intake, WhatsApp and SMS bot, AI owner insights (plus Push and Pre-launch as before). Each is independent.
