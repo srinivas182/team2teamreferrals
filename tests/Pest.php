@@ -34,3 +34,11 @@ function fakeSms(): FakeSms
 
     return $fake;
 }
+
+/** Switch modules on, as an admin would in Admin → Settings → Modules (the AI modules are off by default). */
+function modulesOn(string ...$keys): void
+{
+    foreach ($keys as $k) {
+        app(App\Domains\Platform\Settings\Settings::class)->set('modules.'.$k, '1');
+    }
+}

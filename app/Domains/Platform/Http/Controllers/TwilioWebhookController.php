@@ -50,7 +50,7 @@ final class TwilioWebhookController
         $reply = null;
         $isKeyword = in_array($word, ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT', 'START', 'UNSTOP', 'HELP', 'INFO'], true);
         // A verified member's phone talks to the referral bot (opt-out and help keywords still come first).
-        $member = $isKeyword ? null : \App\Domains\Identity\Models\User::query()->where('phone', $from)->whereNotNull('phone_verified_at')->first();
+        $member = $isKeyword || ! app(\App\Domains\Platform\Modules\Modules::class)->enabled('chat_bot') ? null : \App\Domains\Identity\Models\User::query()->where('phone', $from)->whereNotNull('phone_verified_at')->first();
         if ($member !== null) {
             $text = (string) $request->input('Body');
             $echo = '';

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
+    modulesOn('chat_bot', 'ai_intake');
     Artisan::call('t2t:locations:import', ['--path' => base_path('tests/fixtures/locations')]);
     Artisan::call('t2t:catalogue:sync');
     Notification::fake();

@@ -65,6 +65,11 @@ final class Training
 
     public function blocks(User $user, Group $group): bool
     {
+        // Network training switched off: no training requirement anywhere (all tiers).
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('training')) {
+            return false;
+        }
+
         return self::required($group) && now()->greaterThanOrEqualTo(self::enforcedFrom($group)) && ! $this->passed($user, $group->industry);
     }
 

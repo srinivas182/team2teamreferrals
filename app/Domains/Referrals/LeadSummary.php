@@ -24,6 +24,9 @@ final class LeadSummary
     /** @return array{summary: string, usageId: ?int}|null */
     public function for(Referral $ref, User $viewer): ?array
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('ai_summaries')) {
+            return null;
+        }
         $team = Team::of($viewer);
         if ($team === null || $team->id !== $ref->receiver_team_id) {
             return null; // only for the team deciding whether to accept

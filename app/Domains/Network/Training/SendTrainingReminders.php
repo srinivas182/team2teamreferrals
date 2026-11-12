@@ -22,6 +22,9 @@ final class SendTrainingReminders extends Command
 
     public function handle(Training $training, Notifier $notifier): int
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('training')) {
+            return self::SUCCESS; // Network training switched off
+        }
         foreach (['train3' => 3, 'train7' => 7] as $kind => $days) {
             $rows = DB::table('seat_applications')->join('team_members', 'team_members.team_id', '=', 'seat_applications.team_id')
                 ->selectRaw('team_members.user_id, min(seat_applications.created_at) as first_at, min(seat_applications.group_id) as group_id')

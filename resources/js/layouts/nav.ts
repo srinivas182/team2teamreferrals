@@ -27,7 +27,8 @@ import {
     CalendarDays,
 } from 'lucide-react';
 
-export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number };
+/** `module`: hidden when that module is switched off in Admin → Settings → Modules. */
+export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number; module?: string };
 
 /** Portal navigation (information architecture, docs/design/information-architecture.md). */
 export const portalNav: NavItem[] = [
@@ -43,19 +44,19 @@ export const portalNav: NavItem[] = [
     { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
     { label: 'Billing', href: '/app/billing', icon: CreditCard },
     { label: 'Integrations', href: '/app/integrations', icon: Plug },
-    { label: 'Feed', href: '/app/feed', icon: MessagesSquare },
-    { label: 'Events', href: '/app/events', icon: CalendarDays },
-    { label: 'Directory', href: '/app/directory', icon: BookUser },
-    { label: 'Leaderboards', href: '/app/leaderboards', icon: Trophy },
-    { label: 'Badges', href: '/app/badges', icon: Award },
-    { label: 'Drafts', href: '/app/drafts', icon: Inbox },
+    { label: 'Feed', href: '/app/feed', icon: MessagesSquare, module: 'community' },
+    { label: 'Events', href: '/app/events', icon: CalendarDays, module: 'events' },
+    { label: 'Directory', href: '/app/directory', icon: BookUser, module: 'community' },
+    { label: 'Leaderboards', href: '/app/leaderboards', icon: Trophy, module: 'community' },
+    { label: 'Badges', href: '/app/badges', icon: Award, module: 'community' },
+    { label: 'Drafts', href: '/app/drafts', icon: Inbox, module: 'ai_intake' },
     { label: 'Nurture', href: '/app/nurture', icon: Sprout },
     { label: 'Credits', href: '/app/credits', icon: HandHeart },
     { label: 'Share profile', href: '/app/share', icon: QrCode },
     { label: 'Invites', href: '/app/invites', icon: UserPlus },
     { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
-    { label: 'Training', href: '/app/training', icon: GraduationCap },
+    { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },
     { label: 'Help', href: '/app/help', icon: LifeBuoy },
 ];

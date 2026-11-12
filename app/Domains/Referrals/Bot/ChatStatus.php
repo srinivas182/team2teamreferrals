@@ -27,6 +27,9 @@ final class ChatStatus
     /** @param array<string, mixed> $data the notification's data (client, city, team) */
     public function send(User $user, string $type, array $data): void
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('chat_bot')) {
+            return;
+        }
         $channel = $user->chat_channel;
         if (! isset(self::TYPES[$type]) || ! in_array($channel, ['whatsapp', 'sms'], true) || $user->phone === null || $user->phone_verified_at === null) {
             return;

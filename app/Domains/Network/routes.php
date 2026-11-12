@@ -159,13 +159,13 @@ Route::middleware(['web', 'module:prelaunch'])->group(function (): void {
 
 // Training: lessons and quiz for members; the group switch for owners.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
-    Route::get('app/training', [App\Domains\Network\Training\TrainingController::class, 'index'])->name('training.index');
-    Route::get('app/training/{industry}', [App\Domains\Network\Training\TrainingController::class, 'show'])->name('training.show');
-    Route::post('app/training/{industry}/lessons/{index}', [App\Domains\Network\Training\TrainingController::class, 'lesson'])->whereNumber('index')->name('training.lesson');
-    Route::post('app/training/{industry}/quiz', [App\Domains\Network\Training\TrainingController::class, 'submit'])->middleware('throttle:20,60')->name('training.submit');
+    Route::get('app/training', [App\Domains\Network\Training\TrainingController::class, 'index'])->middleware('module:training')->name('training.index');
+    Route::get('app/training/{industry}', [App\Domains\Network\Training\TrainingController::class, 'show'])->middleware('module:training')->name('training.show');
+    Route::post('app/training/{industry}/lessons/{index}', [App\Domains\Network\Training\TrainingController::class, 'lesson'])->whereNumber('index')->middleware('module:training')->name('training.lesson');
+    Route::post('app/training/{industry}/quiz', [App\Domains\Network\Training\TrainingController::class, 'submit'])->middleware('throttle:20,60')->middleware('module:training')->name('training.submit');
     Route::post('app/group/{group}/training', [App\Domains\Network\Training\TrainingController::class, 'ownerSwitch'])->name('training.switch');
-    Route::get('app/training/{industry}/certificate.pdf', [App\Domains\Network\Training\TrainingController::class, 'certificate'])->name('training.certificate');
-    Route::get('app/training/{industry}/refresher', [App\Domains\Network\Training\TrainingController::class, 'refresher'])->name('training.refresher');
+    Route::get('app/training/{industry}/certificate.pdf', [App\Domains\Network\Training\TrainingController::class, 'certificate'])->middleware('module:training')->name('training.certificate');
+    Route::get('app/training/{industry}/refresher', [App\Domains\Network\Training\TrainingController::class, 'refresher'])->middleware('module:training')->name('training.refresher');
     Route::post('app/team/members/{member}/remind-training', [App\Domains\Network\Training\TrainingController::class, 'remind'])->middleware('throttle:20,60')->name('training.remind');
 });
 
@@ -185,16 +185,16 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::post('app/referrals/{referral}/thanks', [App\Domains\Referrals\Http\ReferralController::class, 'thank'])->name('referrals.thanks');
     Route::post('app/referrals/{referral}/thanks/public', [App\Domains\Referrals\Http\ReferralController::class, 'thanksPublic'])->name('referrals.thanks.public');
     Route::post('app/referrals/{referral}/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureCheckIn'])->name('referrals.nurture');
-    Route::get('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'create'])->name('introduce');
-    Route::post('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'store'])->middleware('throttle:20,10')->name('introduce.store');
+    Route::get('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'create'])->middleware('module:cross_industry')->name('introduce');
+    Route::post('app/introduce', [App\Domains\Referrals\Http\IntroductionController::class, 'store'])->middleware('throttle:20,10')->middleware('module:cross_industry')->name('introduce.store');
     Route::post('app/referrals/{referral}/assist/{key}/{action}', [App\Domains\Referrals\Http\AssistController::class, 'act'])->where('key', '[a-z_]{2,40}')->whereIn('action', ['use', 'dismiss', 'snooze'])->middleware('throttle:60,10')->name('assist.act');
     Route::post('app/referrals/{referral}/resend', [App\Domains\Referrals\Http\ReferralController::class, 'resend'])->middleware('throttle:10,10')->name('referrals.resend');
-    Route::post('app/referrals/{referral}/draft', [App\Domains\Referrals\Http\AssistController::class, 'draft'])->middleware('throttle:20,10')->name('assist.draft');
-    Route::post('app/intake/voice', [App\Domains\Referrals\Http\IntakeMediaController::class, 'voice'])->middleware('throttle:10,10')->name('intake.voice');
-    Route::post('app/intake/{intake}/draft', [App\Domains\Referrals\Http\IntakeMediaController::class, 'draftFromTranscript'])->whereNumber('intake')->middleware('throttle:20,10')->name('intake.draft');
-    Route::post('app/intake/photo', [App\Domains\Referrals\Http\IntakeMediaController::class, 'photo'])->middleware('throttle:10,10')->name('intake.photo');
-    Route::get('app/drafts', [App\Domains\Referrals\Http\ReferralController::class, 'drafts'])->name('drafts');
-    Route::post('app/drafts/{draft}/discard', [App\Domains\Referrals\Http\ReferralController::class, 'discardDraft'])->where('draft', '[0-9A-Za-z]{26}')->name('drafts.discard');
+    Route::post('app/referrals/{referral}/draft', [App\Domains\Referrals\Http\AssistController::class, 'draft'])->middleware('throttle:20,10')->middleware('module:ai_drafts')->name('assist.draft');
+    Route::post('app/intake/voice', [App\Domains\Referrals\Http\IntakeMediaController::class, 'voice'])->middleware('throttle:10,10')->middleware('module:ai_intake')->name('intake.voice');
+    Route::post('app/intake/{intake}/draft', [App\Domains\Referrals\Http\IntakeMediaController::class, 'draftFromTranscript'])->whereNumber('intake')->middleware('throttle:20,10')->middleware('module:ai_intake')->name('intake.draft');
+    Route::post('app/intake/photo', [App\Domains\Referrals\Http\IntakeMediaController::class, 'photo'])->middleware('throttle:10,10')->middleware('module:ai_intake')->name('intake.photo');
+    Route::get('app/drafts', [App\Domains\Referrals\Http\ReferralController::class, 'drafts'])->middleware('module:ai_intake')->name('drafts');
+    Route::post('app/drafts/{draft}/discard', [App\Domains\Referrals\Http\ReferralController::class, 'discardDraft'])->where('draft', '[0-9A-Za-z]{26}')->middleware('module:ai_intake')->name('drafts.discard');
     Route::post('app/ai/feedback', [App\Domains\Referrals\Http\ReferralController::class, 'aiFeedback'])->middleware('throttle:60,10')->name('ai.feedback');
     Route::get('app/credits', [App\Domains\Referrals\Http\ReferralController::class, 'credits'])->name('credits');
     Route::get('app/nurture', [App\Domains\Referrals\Http\ReferralController::class, 'nurtureList'])->name('nurture');
@@ -301,6 +301,6 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 
 // One-tap confirmation from the chat bot: a signed link (30 minutes, single use), no login needed.
 Route::middleware(['web', 'noindex:always', 'signed', 'throttle:20,10'])->group(function (): void {
-    Route::get('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'show'])->where('draft', '[0-9A-Za-z]{26}')->name('bot.confirm');
-    Route::post('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'send'])->where('draft', '[0-9A-Za-z]{26}')->name('bot.confirm.send');
+    Route::get('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'show'])->where('draft', '[0-9A-Za-z]{26}')->middleware('module:chat_bot')->name('bot.confirm');
+    Route::post('bot/confirm/{draft}', [App\Domains\Referrals\Bot\BotConfirmController::class, 'send'])->where('draft', '[0-9A-Za-z]{26}')->middleware('module:chat_bot')->name('bot.confirm.send');
 });
