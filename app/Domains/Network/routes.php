@@ -345,3 +345,17 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::get('admin/revenue/export.csv', [App\Domains\Referrals\Dashboard\NetworkAdminController::class, 'revenueCsv'])->name('admin.revenue.csv');
     });
 });
+
+// Reports: Admin → Reports (the whole network) and Owner → Reports (that network only).
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function () {
+    foreach (['admin/reports' => 'admin.reports', 'app/group/{group}/reports' => 'group.reports'] as $base => $name) {
+        Route::get($base, [App\Domains\Platform\Reports\ReportsController::class, 'index'])->name($name);
+        Route::post($base.'/preview', [App\Domains\Platform\Reports\ReportsController::class, 'preview'])->middleware('throttle:30,1')->name($name.'.preview');
+        Route::post($base, [App\Domains\Platform\Reports\ReportsController::class, 'save'])->name($name.'.save');
+        Route::get($base.'/{report}/export.csv', [App\Domains\Platform\Reports\ReportsController::class, 'export'])->where('report', '[0-9A-Za-z]{26}')->middleware('throttle:20,10')->name($name.'.export');
+        Route::post($base.'/{report}/delete', [App\Domains\Platform\Reports\ReportsController::class, 'destroy'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.delete');
+        Route::post($base.'/{report}/schedules', [App\Domains\Platform\Reports\ReportsController::class, 'schedule'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.schedule');
+        Route::post($base.'/schedules/{schedule}/{action}', [App\Domains\Platform\Reports\ReportsController::class, 'scheduleAction'])->whereNumber('schedule')->whereIn('action', ['pause', 'resume', 'delete'])->name($name.'.schedule.action');
+    }
+    Route::get('reports/file/{file}', [App\Domains\Platform\Reports\ReportsController::class, 'file'])->name('reports.file');
+});
