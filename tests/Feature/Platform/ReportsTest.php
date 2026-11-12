@@ -106,7 +106,7 @@ it('[8] keeps owner reports to their own network, never revenue, and stops them 
     $this->post("{$base}/schedules/{$id}/resume")->assertSessionHas('status', 'schedule-resume');
     $this->get('/app/group/movers-network/reports')->assertForbidden(); // not their network
     $this->solar->owners()->detach($this->owner->id);
-    DB::table('report_schedules')->update(['next_run_at' => now()->subMinute()]);
+    DB::table('report_recipient_runs')->update(['next_run_at' => now()->subMinute()]);
     Artisan::call('t2t:reports');
     Mail::assertNothingSent();
     expect(DB::table('report_deliveries')->first())->status->toBe('skipped')->error->toBe('No access to this report');
@@ -115,7 +115,8 @@ it('[8] keeps owner reports to their own network, never revenue, and stops them 
 it('[9] sends emails without contact details', function () {
     $this->actingAs($this->admin)->post('/admin/reports', ['name' => 'Referrals', 'dataset' => 'referrals', 'preset' => 'last_30']);
     $s = (object) ['id' => 0, 'report_id' => DB::table('saved_reports')->value('id'), 'frequency' => 'weekly'];
-    DB::table('report_schedules')->insert(['report_id' => $s->report_id, 'frequency' => 'weekly', 'weekday' => 1, 'hour' => 8, 'timezone' => 'UTC', 'recipients' => json_encode([$this->admin->id]), 'next_run_at' => now()->subMinute(), 'created_at' => now(), 'updated_at' => now()]);
+    $sid = DB::table('report_schedules')->insertGetId(['report_id' => $s->report_id, 'frequency' => 'weekly', 'weekday' => 1, 'hour' => 8, 'timezone' => 'UTC', 'recipients' => json_encode([$this->admin->id]), 'next_run_at' => now()->subMinute(), 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('report_recipient_runs')->insert(['schedule_id' => $sid, 'user_id' => $this->admin->id, 'next_run_at' => now()->subMinute()]);
     Artisan::call('t2t:reports');
     Mail::assertSent(ReportMail::class, function (ReportMail $m) {
         $html = $m->render();
@@ -129,12 +130,12 @@ it('[10] retries failed sends, gives up after 3 attempts, and respects pause', f
     $this->post('/admin/reports/'.($this->ulid)().'/schedules', ['frequency' => 'monthly', 'day' => 1, 'hour' => 7, 'timezone' => 'UTC', 'recipients' => [$this->admin->id]]);
     $id = (int) DB::table('report_schedules')->value('id');
     $this->post("/admin/reports/schedules/{$id}/pause");
-    DB::table('report_schedules')->update(['next_run_at' => now()->subMinute()]);
+    DB::table('report_recipient_runs')->update(['next_run_at' => now()->subMinute()]);
     Artisan::call('t2t:reports');
     Mail::assertNothingSent();
     $this->post("/admin/reports/schedules/{$id}/resume");
-    expect(CarbonImmutable::parse((string) DB::table('report_schedules')->value('next_run_at'))->isFuture())->toBeTrue();
-    DB::table('report_schedules')->update(['next_run_at' => now()->subMinute()]);
+    expect(CarbonImmutable::parse((string) DB::table('report_recipient_runs')->value('next_run_at'))->isFuture())->toBeTrue();
+    DB::table('report_recipient_runs')->update(['next_run_at' => now()->subMinute()]);
     Mail::shouldReceive('to')->andThrow(new RuntimeException('SMTP down'));
     Artisan::call('t2t:reports');
     expect(DB::table('report_deliveries')->value('status'))->toBe('retrying');
@@ -157,4 +158,35 @@ it('[11] sends large reports as a private link that only its recipient can open'
     $this->get((string) $link)->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
     $this->actingAs($this->owner)->get((string) $link)->assertForbidden();
     $this->actingAs($this->admin)->get(str_replace('signature=', 'signature=x', (string) $link))->assertForbidden();
+});
+
+it('[10] sends at the chosen hour in each recipient’s own time zone', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-11-12 10:00', 'America/Chicago'));
+    $ny = User::factory()->create(['two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now(), 'timezone' => 'America/New_York']);
+    $ny->assignRole(Permissions::SUPER_ADMIN);
+    $this->actingAs($this->admin)->post('/admin/reports', ['name' => 'Weekly revenue', 'dataset' => 'revenue', 'preset' => 'last_7']);
+    $this->post('/admin/reports/'.($this->ulid)().'/schedules', ['frequency' => 'weekly', 'weekday' => 1, 'hour' => 8, 'timezone' => 'America/Los_Angeles', 'recipients' => [$this->admin->id, $ny->id]]);
+    $at = fn (User $u) => CarbonImmutable::parse((string) DB::table('report_recipient_runs')->where('user_id', $u->id)->value('next_run_at'), 'UTC');
+    expect($at($ny)->setTimezone('America/New_York')->format('D H:i'))->toBe('Mon 08:00')
+        ->and($at($this->admin)->setTimezone('America/Chicago')->format('D H:i'))->toBe('Mon 08:00');
+    $this->travelTo($at($ny)->addMinutes(5)); // 8:05 in New York, 7:05 in Chicago
+    Artisan::call('t2t:reports');
+    Mail::assertSent(ReportMail::class, fn ($m) => $m->hasTo($ny->email));
+    Mail::assertNotSent(ReportMail::class, fn ($m) => $m->hasTo($this->admin->email));
+    $this->travelTo($at($this->admin)->addMinutes(5)); // 8:05 in Chicago
+    Artisan::call('t2t:reports');
+    Mail::assertSent(ReportMail::class, fn ($m) => $m->hasTo($this->admin->email));
+    Mail::assertSent(ReportMail::class, 2); // New York not sent twice
+});
+
+it('carries existing schedules over to per-recipient send times', function () {
+    $this->actingAs($this->admin)->post('/admin/reports', ['name' => 'R', 'dataset' => 'seats', 'preset' => 'last_30']);
+    $sid = DB::table('report_schedules')->insertGetId(['report_id' => DB::table('saved_reports')->value('id'), 'frequency' => 'weekly', 'weekday' => 3, 'hour' => 9, 'timezone' => 'UTC',
+        'recipients' => json_encode([$this->admin->id]), 'next_run_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('report_recipient_runs')->delete();
+    (require database_path('migrations/2027_01_10_000000_report_recipient_runs.php'))->down();
+    (require database_path('migrations/2027_01_10_000000_report_recipient_runs.php'))->up();
+    $run = DB::table('report_recipient_runs')->where('schedule_id', $sid)->first();
+    expect((int) $run->user_id)->toBe($this->admin->id)
+        ->and(CarbonImmutable::parse((string) $run->next_run_at, 'UTC')->setTimezone('America/Chicago')->format('D H:i'))->toBe('Wed 09:00');
 });

@@ -84,7 +84,13 @@ function ScheduleForm({ r, p }: { r: Report; p: Props }) {
                     </option>
                 ))}
             </select>
-            <Input aria-label="Time zone" className="h-9 w-48" value={f.timezone} onChange={(e) => setF({ ...f, timezone: e.target.value })} />
+            <Input
+                aria-label="Backup time zone"
+                title="Reports go out at the chosen hour in each recipient’s own time zone; this is used only if theirs can’t be read"
+                className="h-9 w-48"
+                value={f.timezone}
+                onChange={(e) => setF({ ...f, timezone: e.target.value })}
+            />
             {p.recipients.length > 1 && (
                 <select
                     aria-label="Recipients"
@@ -283,7 +289,7 @@ export default function Reports(p: Props) {
                         <div key={s.id} className="flex flex-wrap items-center gap-2 text-sm">
                             <span>
                                 {s.frequency === 'weekly' ? `Every ${DAYS[(s.weekday ?? 1) - 1]}` : `Monthly on day ${s.day}`} at{' '}
-                                {String(s.hour).padStart(2, '0')}:00 ({s.timezone}) to {s.recipients.join(', ')}
+                                {String(s.hour).padStart(2, '0')}:00 in each recipient’s own time zone to {s.recipients.join(', ')}
                             </span>
                             <span className="text-muted">{s.paused ? 'Paused' : `next ${s.next.slice(0, 16)} UTC`}</span>
                             <button

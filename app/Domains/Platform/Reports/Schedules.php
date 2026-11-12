@@ -8,6 +8,7 @@ use App\Domains\Identity\Models\User;
 use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Referrals\Dashboard\Period;
 use Carbon\CarbonImmutable;
+use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,8 @@ use stdClass;
 use Throwable;
 
 /**
- * Scheduled reports: weekly or monthly at a chosen hour in the schedule's time zone. Access is checked for each
+ * Scheduled reports: weekly or monthly at a chosen hour in each recipient's own time zone (the schedule's when
+ * they haven't set one). Access is checked for each
  * recipient on every run (an owner's report never leaves their network; revenue needs "view revenue"). Up to
  * attachRows() rows go as an attached CSV; larger reports are saved privately and sent as a 7-day download link for
  * that recipient only. Failed sends retry on later runs (3 attempts in all); every attempt is logged.
@@ -44,17 +46,42 @@ final class Schedules
         return $at->utc();
     }
 
-    /** Every 15 minutes: run what's due, then retry recent failures. */
+    /** A recipient's own time zone, or the schedule's when they haven't set one. */
+    public static function zoneFor(int $userId, string $fallback): string
+    {
+        $tz = DB::table('users')->where('id', $userId)->value('timezone');
+
+        return is_string($tz) && in_array($tz, DateTimeZone::listIdentifiers(), true) ? $tz : $fallback;
+    }
+
+    /** Set each recipient's next send time (on creating or resuming a schedule). */
+    public static function plan(stdClass $s): void
+    {
+        $ids = array_map('intval', (array) json_decode((string) $s->recipients, true));
+        DB::table('report_recipient_runs')->where('schedule_id', $s->id)->whereNotIn('user_id', $ids)->delete();
+        foreach ($ids as $uid) {
+            DB::table('report_recipient_runs')->updateOrInsert(['schedule_id' => $s->id, 'user_id' => $uid],
+                ['next_run_at' => self::nextRun((string) $s->frequency, $s->weekday, $s->day, (int) $s->hour, self::zoneFor($uid, (string) $s->timezone))]);
+        }
+        $first = DB::table('report_recipient_runs')->where('schedule_id', $s->id)->min('next_run_at');
+        DB::table('report_schedules')->where('id', $s->id)->update(['next_run_at' => $first ?? now(), 'updated_at' => now()]);
+    }
+
+    /** Every 15 minutes: send to each recipient whose own time has come, then retry recent failures. */
     public static function runDue(): int
     {
         $sent = 0;
-        foreach (DB::table('report_schedules')->where('paused', false)->where('next_run_at', '<=', now())->get() as $s) {
-            // Move the schedule on first, so a slow or failing run is never repeated.
-            DB::table('report_schedules')->where('id', $s->id)->update(['last_run_at' => now(), 'updated_at' => now(),
-                'next_run_at' => self::nextRun((string) $s->frequency, $s->weekday, $s->day, (int) $s->hour, (string) $s->timezone)]);
-            foreach ((array) json_decode((string) $s->recipients, true) as $uid) {
-                $sent += (int) self::deliver($s, (int) $uid, null);
-            }
+        $due = DB::table('report_recipient_runs as rr')->join('report_schedules as s', 's.id', '=', 'rr.schedule_id')
+            ->where('s.paused', false)->where('rr.next_run_at', '<=', now())->get(['rr.id as run_id', 'rr.user_id', 's.*']);
+        foreach ($due as $s) {
+            // Move this recipient on first, so a slow or failing run is never repeated.
+            DB::table('report_recipient_runs')->where('id', $s->run_id)->update(['last_run_at' => now(),
+                'next_run_at' => self::nextRun((string) $s->frequency, $s->weekday, $s->day, (int) $s->hour, self::zoneFor((int) $s->user_id, (string) $s->timezone))]);
+            $sent += (int) self::deliver($s, (int) $s->user_id, null);
+        }
+        foreach ($due->pluck('id')->unique() as $scheduleId) {
+            DB::table('report_schedules')->where('id', $scheduleId)->update(['last_run_at' => now(), 'updated_at' => now(),
+                'next_run_at' => DB::table('report_recipient_runs')->where('schedule_id', $scheduleId)->min('next_run_at') ?? now()]);
         }
         foreach (DB::table('report_deliveries')->where('status', 'retrying')->where('attempts', '<', self::MAX_ATTEMPTS)->get() as $d) {
             $s = DB::table('report_schedules')->where('id', $d->schedule_id)->first();

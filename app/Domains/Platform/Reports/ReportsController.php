@@ -112,10 +112,10 @@ final class ReportsController
         if ($recipients === []) {
             throw ValidationException::withMessages(['recipients' => 'Choose who receives this report.']);
         }
-        DB::table('report_schedules')->insert(['report_id' => $r->id, 'frequency' => $d['frequency'], 'weekday' => $d['frequency'] === 'weekly' ? (int) $d['weekday'] : null,
+        $id = DB::table('report_schedules')->insertGetId(['report_id' => $r->id, 'frequency' => $d['frequency'], 'weekday' => $d['frequency'] === 'weekly' ? (int) $d['weekday'] : null,
             'day' => $d['frequency'] === 'monthly' ? (int) $d['day'] : null, 'hour' => (int) $d['hour'], 'timezone' => $d['timezone'], 'recipients' => json_encode($recipients), 'paused' => false,
-            'next_run_at' => Schedules::nextRun($d['frequency'], isset($d['weekday']) ? (int) $d['weekday'] : null, isset($d['day']) ? (int) $d['day'] : null, (int) $d['hour'], $d['timezone']),
-            'created_at' => now(), 'updated_at' => now()]);
+            'next_run_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+        Schedules::plan(DB::table('report_schedules')->where('id', $id)->firstOrFail());
 
         return back()->with('status', 'report-scheduled');
     }
@@ -129,8 +129,10 @@ final class ReportsController
         $this->report((string) DB::table('saved_reports')->where('id', $s->report_id)->value('ulid'), $group);
         match ($action) {
             'pause' => DB::table('report_schedules')->where('id', $s->id)->update(['paused' => true, 'updated_at' => now()]),
-            'resume' => DB::table('report_schedules')->where('id', $s->id)->update(['paused' => false, 'updated_at' => now(),
-                'next_run_at' => Schedules::nextRun((string) $s->frequency, $s->weekday, $s->day, (int) $s->hour, (string) $s->timezone)]),
+            'resume' => (function () use ($s) {
+                DB::table('report_schedules')->where('id', $s->id)->update(['paused' => false, 'updated_at' => now()]);
+                Schedules::plan($s); // fresh next times, so nothing missed while paused is sent late
+            })(),
             default => DB::table('report_schedules')->where('id', $s->id)->delete(),
         };
 

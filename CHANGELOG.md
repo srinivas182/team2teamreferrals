@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 36c — Scheduled reports in each recipient's own time zone
+Completes Sprint 36 item 10, proven by tests in tests/Feature/Platform/ReportsTest.php:
+- Each recipient has their own next send time: the chosen hour in their own time zone (members always have one, set from their team's city or chosen in notification settings). A Monday 8:00 report reaches New York at 8:00 New York time and Chicago at 8:00 Chicago time, once each. The schedule's time zone is now a backup, used only if a recipient's can't be read.
+- Pausing and resuming apply to every recipient; resuming sets fresh send times, so nothing missed while paused is sent late.
+- Existing schedules are carried over to per-recipient send times on upgrade (tested against existing data).
+- 529 PHP tests in total (2 new; 2 ClickHouse tests run in CI).
+
 ### Sprint 36b — Report builder and scheduled reports
 Completes Sprint 36 and Phase F, each proven by tests in tests/Feature/Platform/ReportsTest.php:
 3. Report builder (Admin → Reports; Owner → Reports): referrals, revenue, seats or teams; choose columns, filters (state, industry, stage), grouping (network, industry, state, month, stage, status) and period; preview up to 500 rows; save.
