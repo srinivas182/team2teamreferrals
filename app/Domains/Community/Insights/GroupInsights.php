@@ -85,7 +85,8 @@ final class GroupInsights
     public function summary(Group $group, array $f): array
     {
         $plain = self::plain($f);
-        if (! $this->ai->enabled()) {
+        // The figures always go out; the AI-written summary only with "AI owner insights" on.
+        if (! $this->ai->enabled() || ! app(\App\Domains\Platform\Modules\Modules::class)->enabled('ai_insights')) {
             return [$plain, false];
         }
         try {

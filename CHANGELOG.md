@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 33a — Module switches that work, one per module
+Each proven by a test in tests/Feature/Platform/ModuleSwitchesTest.php:
+- Admin → Settings → Modules now has a switch per module: Network training, Community, Events, Cross-industry introductions, AI lead summaries, AI message drafts, AI intake, WhatsApp and SMS bot, AI owner insights (plus Push and Pre-launch as before). Each is independent.
+- Fixed: Community, Events, Cross-industry and AI switches existed but did nothing. Every available switch is now enforced: its menu entries are hidden (sidebar, command palette), its pages and actions answer 404, and its scheduled jobs and background work stop. Data is kept, so switching back on restores everything.
+- Network training off removes the training requirement everywhere, Tier B included (owner's decision; on the counsel list), along with training pages and reminders; certificates are kept.
+- The single "AI features" switch is split into the AI modules above; an existing installation's choice carries over to each of them on upgrade (data migration, tested against existing data). AI modules default to off. Next actions, close-likelihood and best matches are plain rules and aren't switched.
+- AI owner insights off: owners still get the weekly figures, in plain words.
+- Placeholders: Consumer requests, Partner directory and AI training videos are shown as arriving in a later sprint, with the switch disabled.
+- New guard test: every available switch must be checked somewhere in the code.
+- 484 PHP tests in total (5 new; AI and chat tests now switch on the module they exercise).
+
 ### Sprint 32b — Chat status replies, WhatsApp voice and photos, channel choice and cost cap
 Completes Sprint 32, each proven by a test in tests/Feature/Referrals/ChatStatusTest.php:
 5. Status replies when a referral the member sent is accepted or declined ("Your referral for Maria L. in Hurricane, UT was accepted by Hurricane Sun"), by WhatsApp or SMS.

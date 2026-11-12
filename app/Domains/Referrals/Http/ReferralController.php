@@ -226,6 +226,7 @@ final class ReferralController
 
                 return ['actions' => $team !== null ? \App\Domains\Referrals\Assist\NextActions::for($referral, $team) : [],
                     'score' => $receiving ? \App\Domains\Referrals\Assist\CloseLikelihood::for($referral) : null,
+                    'drafts' => app(\App\Domains\Platform\Modules\Modules::class)->enabled('ai_drafts'),
                     'canDraftClient' => $receiving && $referral->status === 'accepted', 'tones' => \App\Domains\Referrals\Assist\Drafts::TONES,
                     'reasons' => AssistController::DISMISS_REASONS, 'draft' => session('draft')];
             })(),

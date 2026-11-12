@@ -48,7 +48,7 @@ type Props = {
     ai: Channel & { spent: number };
     aiFallback: Channel;
     messagingSpent: number;
-    modules: { key: string; label: string; affects: string; enabled: boolean }[];
+    modules: { key: string; label: string; affects: string; enabled: boolean; available: boolean }[];
     overview: { key: string; label: string; driver: string | null; last: Check | null; health: Health | null }[];
     maintenance: boolean;
     checks: Record<string, Check> | null;
@@ -516,8 +516,14 @@ export default function SystemSettings({
                                 <div className="min-w-0 flex-1">
                                     <div className="font-medium">{m.label}</div>
                                     <div className="text-sm text-muted">{m.affects}</div>
+                                    {!m.available && (
+                                        <div className="mt-1 text-xs font-medium text-muted">
+                                            Arrives in a later sprint; the switch does nothing yet.
+                                        </div>
+                                    )}
                                 </div>
                                 <input
+                                    disabled={!m.available}
                                     type="checkbox"
                                     role="switch"
                                     aria-label={m.label}

@@ -106,6 +106,9 @@ final class Events
     /** Every 15 minutes: a reminder a day before and an hour before, each in the member's own time zone. */
     public function reminders(): void
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('events')) {
+            return;
+        }
         foreach (['day' => [23 * 60, 24 * 60 + 15], 'hour' => [45, 75]] as $which => [$from, $to]) {
             $events = DB::table('events')->whereNull('cancelled_at')->whereBetween('starts_at', [now()->addMinutes($from), now()->addMinutes($to)])->get();
             foreach ($events as $e) {

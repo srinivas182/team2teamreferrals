@@ -122,6 +122,7 @@ export default function ReferralShow({
     status,
     seo,
 }: Props) {
+    const { modules } = usePage<{ modules?: Record<string, boolean> }>().props;
     // Live: anything that changes on this referral reloads here instantly (10-second refresh if real-time is off).
     const [typing, setTyping] = useState<string | null>(null);
     const [filter, setFilter] = useState('');
@@ -210,9 +211,11 @@ export default function ReferralShow({
                             <strong>Cross-industry introduction</strong> from the {introduction.from}. {introduction.explanation}
                         </Card>
                     )}
-                    <a href={`/app/introduce?referral=${r.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                        Introduce this client to other pros they need →
-                    </a>
+                    {modules?.cross_industry !== false && (
+                        <a href={`/app/introduce?referral=${r.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                            Introduce this client to other pros they need →
+                        </a>
+                    )}
                     {closing && <ClosingPanel id={r.id} c={closing} />}
                     {fee && <FeePanel id={r.id} fee={fee} />}
                     {ag && (
@@ -663,6 +666,7 @@ type Assist = {
     tones: string[];
     reasons: string[];
     draft: { text: string; usageId: number; to: string } | null;
+    drafts?: boolean;
 };
 
 const REASON_LABELS: Record<string, string> = {
@@ -737,37 +741,39 @@ function AssistCard({ id, a, onUse }: { id: string; a: Assist; onUse: (text: str
                     </div>
                 </div>
             ))}
-            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                <span className="text-xs text-muted">AI draft (1 credit):</span>
-                <select
-                    aria-label="Tone"
-                    className="h-8 rounded-md border border-line bg-surface px-2 text-xs"
-                    value={tone}
-                    onChange={(e) => setTone(e.target.value)}
-                >
-                    {a.tones.map((t) => (
-                        <option key={t} value={t}>
-                            {t}
-                        </option>
-                    ))}
-                </select>
-                <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'partner', tone }, { preserveScroll: true })}
-                >
-                    Draft an update to the other team
-                </Button>
-                {a.canDraftClient && (
+            {a.drafts !== false && (
+                <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                    <span className="text-xs text-muted">AI draft (1 credit):</span>
+                    <select
+                        aria-label="Tone"
+                        className="h-8 rounded-md border border-line bg-surface px-2 text-xs"
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value)}
+                    >
+                        {a.tones.map((t) => (
+                            <option key={t} value={t}>
+                                {t}
+                            </option>
+                        ))}
+                    </select>
                     <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'client', tone }, { preserveScroll: true })}
+                        onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'partner', tone }, { preserveScroll: true })}
                     >
-                        Draft a message to the client
+                        Draft an update to the other team
                     </Button>
-                )}
-            </div>
+                    {a.canDraftClient && (
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => router.post(`/app/referrals/${id}/draft`, { to: 'client', tone }, { preserveScroll: true })}
+                        >
+                            Draft a message to the client
+                        </Button>
+                    )}
+                </div>
+            )}
             {a.draft && (
                 <div className="space-y-2 rounded-md bg-bg p-3">
                     <p className="text-xs text-muted">Draft · check it and edit before sending. Nothing is sent automatically.</p>

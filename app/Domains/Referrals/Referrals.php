@@ -67,6 +67,9 @@ final class Referrals
         if (! in_array($home->id, array_map(fn (Group $g) => $g->id, $this->groupsFor($sender)), true)) {
             throw ValidationException::withMessages(['group' => 'You can send referrals in groups you’ve been approved into.']);
         }
+        if ($from !== null && ! app(\App\Domains\Platform\Modules\Modules::class)->enabled('cross_industry')) {
+            throw ValidationException::withMessages(['group' => 'Cross-industry introductions aren’t available.']);
+        }
         if ($from !== null && ! Introductions::allowed($from->industry, $group->industry)) {
             throw ValidationException::withMessages(['group' => 'Introductions between these industries aren’t available.']);
         }

@@ -19,6 +19,9 @@ final class IntakeEmails
 
     public function handle(string $to, string $from, string $subject, string $text, string $messageId): string
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('ai_intake')) {
+            return 'disabled';
+        }
         $started = hrtime(true);
         $user = IntakeAddress::user($to);
         if ($user === null) {

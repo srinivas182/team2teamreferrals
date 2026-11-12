@@ -51,14 +51,18 @@ final class PerformanceJobs extends Command
         }
         // New badges every day; removals only at the monthly re-check below.
         if (! ($this->option('cards') || now()->day === 1)) {
-            \App\Domains\Community\Badges\Badges::recheck(revoke: false);
+            if (app(\App\Domains\Platform\Modules\Modules::class)->enabled('community')) {
+                \App\Domains\Community\Badges\Badges::recheck(revoke: false);
+            }
         }
         if ($this->option('cards') || now()->day === 1) {
             $period = now()->subMonthNoOverflow()->format('Y-m');
             // The 1st: re-check every badge, freeze last month's leaderboards, then send each network's recap.
-            \App\Domains\Community\Badges\Badges::recheck();
-            \App\Domains\Community\Badges\Leaderboards::snapshot($period);
-            app(\App\Domains\Community\Badges\MonthlyRecap::class)->send($period);
+            if (app(\App\Domains\Platform\Modules\Modules::class)->enabled('community')) {
+                \App\Domains\Community\Badges\Badges::recheck();
+                \App\Domains\Community\Badges\Leaderboards::snapshot($period);
+                app(\App\Domains\Community\Badges\MonthlyRecap::class)->send($period);
+            }
             foreach ($holders as $team) {
                 $this->card($team, $period, $notifier);
             }

@@ -16,6 +16,9 @@ final class FeedDigest
 
     public function run(): void
     {
+        if (! app(\App\Domains\Platform\Modules\Modules::class)->enabled('community')) {
+            return;
+        }
         $due = User::query()->where(fn ($q) => $q->where('feed_digest', 'daily')->orWhere(fn ($w) => $w->where('feed_digest', 'weekly')->when(! now()->isMonday(), fn ($x) => $x->whereRaw('1 = 0'))))->get();
         foreach ($due as $user) {
             $team = Team::of($user);

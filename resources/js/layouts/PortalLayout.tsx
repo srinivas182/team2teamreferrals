@@ -59,17 +59,25 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
+    // Menu entries for switched-off modules are hidden (the pages themselves answer 404).
+
+    const { modules } = usePage<{ modules?: Record<string, boolean> }>().props;
+
+    const shown = (n: NavItem) => !n.module || modules?.[n.module] !== false;
+
     const commands = useMemo<CommandItem[]>(
         () => [
             { group: 'Actions', label: 'Send a referral', icon: Plus, shortcut: 'S', onSelect: () => router.visit('/app/send') },
-            ...[...portalNav, ...(isGroupOwner ? ownerNav : [])].map((n) => ({
-                group: 'Go to',
-                label: n.label,
-                icon: n.icon,
-                onSelect: () => router.visit(n.href),
-            })),
+            ...[...portalNav, ...(isGroupOwner ? ownerNav : [])]
+                .filter((n) => !n.module || modules?.[n.module] !== false)
+                .map((n) => ({
+                    group: 'Go to',
+                    label: n.label,
+                    icon: n.icon,
+                    onSelect: () => router.visit(n.href),
+                })),
         ],
-        [isGroupOwner],
+        [isGroupOwner, modules],
     );
 
     return (
@@ -97,7 +105,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </Link>
                     </div>
                     <nav className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Portal">
-                        {portalNav.map((n) => (
+                        {portalNav.filter(shown).map((n) => (
                             <NavLink key={n.href} item={withBadge(n)} current={isCurrent(url, n.href)} />
                         ))}
                         {isGroupOwner && (
