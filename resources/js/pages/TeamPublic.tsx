@@ -34,6 +34,7 @@ type Props = {
         topGiverIn: string[];
         builder: boolean;
         badges: { key: string; name: string; group: string | null }[];
+        trust?: { score: number | null; status: string } | null;
     };
     viewer: 'guest' | 'member' | 'self';
     sendUrl: string | null;
@@ -81,6 +82,7 @@ export default function TeamPublic({ team, cities, groups, licenses, serviceScor
                             <BadgeCheck className="size-3" aria-hidden /> {l} license verified
                         </Badge>
                     ))}
+                    {record.trust && <Badge tone="info">{record.trust.status === 'new' ? 'New member' : `Trust score ${record.trust.score}`}</Badge>}
                     {record.badges.map((b) => (
                         <Badge key={b.key + (b.group ?? '')} tone="sender">
                             {b.name}

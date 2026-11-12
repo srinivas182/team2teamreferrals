@@ -6,7 +6,15 @@ import { PortalLayout } from '@/layouts/PortalLayout';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type Row = { team: string; sent?: number; closed?: number; score: number | null; responseMinutes?: number | null; updatesOnTime?: number | null };
+type Row = {
+    team: string;
+    sent?: number;
+    closed?: number;
+    score: number | null;
+    trust?: number | null;
+    responseMinutes?: number | null;
+    updatesOnTime?: number | null;
+};
 type Props = {
     groups: { slug: string; name: string }[];
     group: { slug: string; name: string; serviceOnly: boolean } | null;
@@ -38,6 +46,7 @@ export default function Leaderboards({ groups, group, monthly, allTime, seo }: P
               ['Referrals sent', (r) => String(r.sent ?? 0)],
               ['Closed', (r) => String(r.closed ?? 0)],
               ['Service score', (r) => (r.score === null ? '—' : String(r.score))],
+              ['Trust', (r) => (r.trust == null ? 'New' : String(r.trust))],
           ];
     return (
         <PortalLayout title="Leaderboards" user={{ name: auth.user?.name ?? '', team: '' }}>

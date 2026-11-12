@@ -64,10 +64,13 @@ final class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([Analytics\AnalyticsCommand::class]);
+            $this->commands([Analytics\AnalyticsCommand::class, \App\Domains\Referrals\Trust\TrustCommand::class]);
         }
         // Every minute: ship new records to the analytics store (never two runs at once).
-        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, fn (\Illuminate\Console\Scheduling\Schedule $s) => $s->command('t2t:analytics ship')->everyMinute()->withoutOverlapping()->onOneServer());
+        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {
+            $s->command('t2t:analytics ship')->everyMinute()->withoutOverlapping()->onOneServer();
+            $s->command('t2t:trust')->dailyAt('02:30')->onOneServer(); // nightly trust scores
+        });
         $this->app->make(ApplyProviderSettings::class)();
         Event::listen(\App\Domains\Seo\Events\PublicUrlsChanged::class, Cdn\PurgeCdn::class);
         $this->loadRoutesFrom(__DIR__.'/routes.php');

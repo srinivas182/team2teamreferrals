@@ -17,6 +17,7 @@ type T = {
     specialties: string[];
     languages: string[];
     badges: { key: string; name: string }[];
+    trust?: number | null;
 };
 type Props = {
     teams: T[];
@@ -79,6 +80,7 @@ export default function Directory({ teams, filters, groups, specialties, languag
                         <a href={`/t/${t.slug}`} className="font-semibold hover:underline">
                             {t.name}
                         </a>
+                        {t.trust != null && <span className="ml-2 text-xs text-muted">Trust {t.trust}</span>}
                         <p className="text-sm text-muted">
                             {t.groups.join(' · ')} · {t.cities.join(', ')}
                         </p>

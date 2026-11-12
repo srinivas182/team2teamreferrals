@@ -4,6 +4,19 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 34b — Trust score
+Completes Sprint 34, each proven by a test in tests/Feature/Referrals/TrustScoreTest.php:
+3. Trust score from five parts, built from real records: response speed (answered before the deadline; expiring unanswered counts as late), update compliance (no missed update), conversion (won share of closed), fee reliability (paid by the due date, as payer) and outcome accuracy (wins not disputed by the sender). Weights are set by super admins in Admin → Trust score.
+4. "New" under 3 accepted referrals.
+6. Recomputed nightly (2:30 am), with a history row per team per night.
+9. Tier-aware: fee reliability only counts where there are fees, so in Tier B it drops out and its weight is shared among the others.
+10. Explained to each team on the Performance page: every part, its tip, and what doesn't have enough items yet.
+11. Fair and current: the last 12 months, half weight after six months; a part needs at least 3 items to count.
+12. Weight changes are previewed (teams up and down, average change, biggest movers) before saving, audited, and applied at the next nightly run.
+- Shown on public profiles ("Trust score 87" or "New member"), in the member directory and on Tier A/C leaderboards; Tier B leaderboards stay service-only. Seat challenges keep using the service score.
+- Fixed: Admin → AI (Sprint 29b) had no menu entry: an early placeholder marked "not ready" stopped the 29b edit from adding it. It's now in the menu, next to Trust score.
+- 504 PHP tests in total (7 new; 2 ClickHouse tests run in CI).
+
 ### Sprint 34a — Analytics pipeline
 Checklist items delivered here (the trust score follows in 34b), each proven by tests in tests/Feature/Analytics:
 1. Event stream from every module: the referral timeline, seat history, credits, feed posts, referral fees, invoices, event RSVPs and profile statistics, shipped every minute.

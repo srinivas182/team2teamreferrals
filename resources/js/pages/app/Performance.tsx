@@ -33,6 +33,11 @@ type Ch = {
     choice: string;
 };
 type Props = {
+    trust?: {
+        score: number | null;
+        status: string;
+        parts: Record<string, { label: string; tip: string; points: number | null; items: number }>;
+    } | null;
     challenges: Ch[];
     isLeader: boolean;
     score: Score;
@@ -48,6 +53,7 @@ type Props = {
 
 /** The service score, fully explained: every part, the numbers behind it, and what would help most. */
 export default function Performance({
+    trust = null,
     challenges = [],
     isLeader = false,
     score,
@@ -65,6 +71,24 @@ export default function Performance({
     const s = score.score;
     return (
         <PortalLayout title="Performance" user={{ name: auth.user?.name ?? '', team: '' }}>
+            {trust && (
+                <div className="mb-6 max-w-5xl rounded-lg border border-line bg-surface p-5">
+                    <h2 className="font-semibold">Trust score: {trust.status === 'new' ? 'New' : trust.score}</h2>
+                    <p className="text-sm text-muted">
+                        What other members see on your profile. Last 12 months, recent activity counting more; updated nightly.
+                        {trust.status === 'new' ? ' You’ll get a score after 3 accepted referrals.' : ''}
+                    </p>
+                    <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                        {Object.entries(trust.parts).map(([k, p]) => (
+                            <li key={k}>
+                                <span className="font-medium">{p.label}: </span>
+                                {p.points === null ? <span className="text-muted">not enough yet ({p.items} of 3)</span> : `${p.points}`}
+                                {p.points !== null && p.points < 80 && <span className="block text-xs text-muted">{p.tip}</span>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             <SeoHead seo={seo} />
             {status && (
                 <Alert tone="success" className="mb-4 max-w-5xl">

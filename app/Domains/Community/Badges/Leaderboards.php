@@ -40,7 +40,7 @@ final class Leaderboards
             return ['team' => $t->name,
                 'sent' => DB::table('referrals')->where('sender_team_id', $t->id)->whereNotNull('accepted_at')->where($in)->count(),
                 'closed' => DB::table('referrals')->where('receiver_team_id', $t->id)->whereIn('close_status', ['confirmed', 'auto_confirmed'])->where($in)->count(),
-                'score' => ServiceScore::for($t, $to)['score']];
+                'score' => ServiceScore::for($t, $to)['score'], 'trust' => \App\Domains\Referrals\Trust\TrustScore::stored($t->id)['score'] ?? null];
         });
         $sorted = self::serviceOnly($group)
             ? $rows->sortByDesc(fn ($r) => [$r['score'] ?? -1, $r['updatesOnTime'] ?? -1])
