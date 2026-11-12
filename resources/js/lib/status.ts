@@ -173,6 +173,7 @@ const messages: Record<string, string> = {
     'trust-weights-saved': 'Weights saved. Trust scores update at the next nightly run.',
     'view-saved': 'View saved.',
     'view-deleted': 'View deleted.',
+    'checkin-sent': 'Check-in sent.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

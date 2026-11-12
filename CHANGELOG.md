@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 35b — Owner dashboard, command palette and shortcuts
+Completes Sprint 35, each proven by tests in tests/Feature/Referrals/OwnerDashboardTest.php, tests/Feature/Platform/MenuReachableTest.php and resources/js/__tests__/shortcuts.test.tsx:
+2. Owner dashboard (/app/owner/dashboard): seats filled, referrals, accepted, won, conversion, breaches (missed first contact, missed updates, disputed closes), fees overdue; compared with the previous period; top referrers and top closers; every number opens its records (same shared-definition rule as the team dashboard), with CSV. Owners only.
+10. Tier-aware: in restricted networks there's no fee card, rankings use service quality, and there's no closers ranking.
+11. Teams to check in with (owners only): 2+ breaches in the period or a service score below the network's challenge threshold, each with its reasons, and a one-tap, editable check-in sent to the team (at most once a week per team).
+7. Command palette everywhere: main actions (send a referral, forward a lead or record a voice note, introduce a client, invite a pro, log a call, find a member, download the dashboard) alongside every screen, leaving out switched-off modules; the admin palette also reaches every Settings tab.
+15. Keyboard shortcuts: N new referral; / or Cmd/Ctrl+K the palette; ? the shortcut list; G then D, I, P, F, H, E, O to go to dashboard, inbox, pipeline, feed, home, events, owner dashboard. Never while typing in a field.
+14. Guards: every portal menu link must open for a real owner with every module on, and every portal page must be in the menu or palette (or on a list of pages reached from inside others, with reasons).
+- Fixed, found by the new guard: the owner menu's four links pointed to pages that don't exist (they now go through /app/owner/…, which opens the owner's network or asks which); "Community" duplicated "Feed" and led nowhere; "Integrations" and "Help" led nowhere and are hidden until Sprints 44–45 and 48 build them.
+- 516 PHP tests in total (6 new; 2 ClickHouse tests run in CI); 13 front-end tests (3 new).
+
 ### Sprint 35a — Team dashboard
 Checklist items delivered here (the owner dashboard, command palette, shortcuts and guards follow in 35b), each proven by tests in tests/Feature/Referrals/TeamDashboardTest.php:
 0. Speed margin: ClickHouse keeps pre-computed daily totals per team and network (recomputed for the days each batch touches, so re-shipped events never count twice); dashboards read those. The CI speed check now requires under 250 ms on 10 million events, a 2x margin on the PRD's 500.

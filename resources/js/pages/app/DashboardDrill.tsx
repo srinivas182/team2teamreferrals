@@ -12,11 +12,12 @@ type Props = {
     kpi: { key: string; label: string; kind: string; records: string; value: number | null };
     rows: Row[];
     period: { preset: string; from: string; to: string; label: string };
+    base?: string;
     seo: Seo;
 };
 
 /** The records behind one dashboard number. */
-export default function DashboardDrill({ kpi, rows, period, seo }: Props) {
+export default function DashboardDrill({ kpi, rows, period, base = '/app/dashboard', seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const q = period.preset === 'custom' ? `?preset=custom&from=${period.from}&to=${period.to}` : `?preset=${period.preset}`;
     return (
@@ -24,13 +25,13 @@ export default function DashboardDrill({ kpi, rows, period, seo }: Props) {
             <SeoHead seo={seo} />
             <div className="max-w-5xl space-y-3">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <Link href={`/app/dashboard${q}`} className="inline-flex items-center gap-1 text-primary">
+                    <Link href={`${base}${q}`} className="inline-flex items-center gap-1 text-primary">
                         <ArrowLeft className="size-4" aria-hidden /> Dashboard
                     </Link>
                     <span className="text-muted">
                         {period.label}: {period.from} to {period.to}
                     </span>
-                    <a href={`/app/dashboard/kpi/${kpi.key}/export.csv${q}`} className="ml-auto inline-flex items-center gap-1 text-primary">
+                    <a href={`${base}/kpi/${kpi.key}/export.csv${q}`} className="ml-auto inline-flex items-center gap-1 text-primary">
                         <Download className="size-4" aria-hidden /> CSV
                     </a>
                 </div>

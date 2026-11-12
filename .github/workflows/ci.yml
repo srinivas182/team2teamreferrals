@@ -131,7 +131,22 @@ jobs:
       - name: Prepare environment
         run: cp .env.example .env && php artisan key:generate
       - name: Tests
-        run: vendor/bin/pest --compact
+        run: vendor/bin/pest --compact --log-junit storage/junit.xml
+      # When tests fail, name each failing test (with its message) as an annotation on the run.
+      - name: Report failing tests
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          try:
+              root = ET.parse('storage/junit.xml').getroot()
+          except Exception as e:
+              print(f"::error title=No test report::{e}"); raise SystemExit
+          for case in root.iter('testcase'):
+              for f in list(case.findall('failure')) + list(case.findall('error')):
+                  msg = (f.get('message') or f.text or '').strip().replace('\n', ' ')[:400]
+                  print(f"::error title=Failed test::{case.get('classname')} > {case.get('name')}: {msg}")
+          PY
       - name: "Analytics speed check (10 million events, ClickHouse, under 250 ms, a 2x margin on the PRD's 500)"
         run: php artisan t2t:analytics benchmark --clickhouse-url="$CLICKHOUSE_URL" --clickhouse-user="$CLICKHOUSE_USER" --clickhouse-password="$CLICKHOUSE_PASSWORD"
 

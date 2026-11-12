@@ -1,7 +1,8 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { Bell, Plus, Search } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
+import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommandPalette, type CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,6 +11,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTeamLive } from '@/lib/realtime';
+import { useShortcuts } from '@/lib/shortcuts';
 import { mobileTabs, ownerNav, portalNav, type NavItem } from './nav';
 import type { SharedProps } from '@/types/auth';
 
@@ -36,11 +38,23 @@ function NavLink({ item, current }: { item: NavItem; current: boolean }) {
 }
 
 /** Signed-in member area: sidebar on desktop, bottom tabs on phones, command palette on Ctrl/⌘ K. */
+// Main actions in the command palette (switched-off modules left out).
+const paletteActions: { label: string; href: string; icon: typeof Plus; module?: string; shortcut?: string }[] = [
+    { label: 'Send a referral', href: '/app/send', icon: Plus, shortcut: 'N' },
+    { label: 'Forward a lead, record a voice note or scan a card', href: '/app/drafts', icon: Plus, module: 'ai_intake' },
+    { label: 'Introduce a client to another industry', href: '/app/introduce', icon: Plus, module: 'cross_industry' },
+    { label: 'Invite a pro', href: '/app/invites', icon: Plus },
+    { label: 'Log a call or move a referral', href: '/app/pipeline', icon: Plus },
+    { label: 'Find a member', href: '/app/directory', icon: Search, module: 'community' },
+    { label: 'Download my dashboard (PDF)', href: '/app/dashboard/export.pdf', icon: Plus },
+];
+
 export function PortalLayout({ title, actions, children, user = { name: 'Member', team: '' }, isGroupOwner = false }: Props) {
     const { url, props } = usePage<SharedProps>();
     const unread = props.notifications?.unread ?? 0;
     const latest = props.notifications?.latest ?? [];
     const [palette, setPalette] = useState(false);
+    const [help, setHelp] = useState(false);
     useTeamLive();
     const counts = (props as unknown as { referralUnread?: { inbox: number; sent: number } }).referralUnread ?? { inbox: 0, sent: 0 };
     const withBadge = (n: NavItem): NavItem => ({
@@ -65,9 +79,39 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
 
     const shown = (n: NavItem) => !n.module || modules?.[n.module] !== false;
 
+    const shortcuts = useMemo(
+        () => [
+            { keys: 'n', label: 'New referral', href: '/app/send' },
+
+            { keys: 'g h', label: 'Go to Home', href: '/app' },
+
+            { keys: 'g d', label: 'Go to Dashboard', href: '/app/dashboard' },
+
+            { keys: 'g i', label: 'Go to Inbox', href: '/app/inbox' },
+
+            { keys: 'g p', label: 'Go to Pipeline', href: '/app/pipeline' },
+
+            ...(modules?.community !== false ? [{ keys: 'g f', label: 'Go to Feed', href: '/app/feed' }] : []),
+
+            ...(modules?.events !== false ? [{ keys: 'g e', label: 'Go to Events', href: '/app/events' }] : []),
+
+            ...(isGroupOwner ? [{ keys: 'g o', label: 'Go to Owner dashboard', href: '/app/owner/dashboard' }] : []),
+        ],
+
+        [modules, isGroupOwner],
+    );
+
+    useShortcuts(
+        shortcuts,
+        useCallback(() => setPalette(true), []),
+        useCallback(() => setHelp(true), []),
+    );
+
     const commands = useMemo<CommandItem[]>(
         () => [
-            { group: 'Actions', label: 'Send a referral', icon: Plus, shortcut: 'S', onSelect: () => router.visit('/app/send') },
+            ...paletteActions
+                .filter((a) => !a.module || modules?.[a.module] !== false)
+                .map((a) => ({ group: 'Actions', label: a.label, icon: a.icon, shortcut: a.shortcut, onSelect: () => router.visit(a.href) })),
             ...[...portalNav, ...(isGroupOwner ? ownerNav : [])]
                 .filter((n) => !n.module || modules?.[n.module] !== false)
                 .map((n) => ({
@@ -238,6 +282,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                 </nav>
             </div>
             <CommandPalette open={palette} onOpenChange={setPalette} items={commands} remote />
+            <ShortcutHelp open={help} onOpenChange={setHelp} shortcuts={shortcuts} />
             <Toaster />
         </TooltipProvider>
     );
