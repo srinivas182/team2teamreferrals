@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Artisan;
  */
 beforeEach(function () {
     if (! getenv('CLICKHOUSE_URL')) {
+        // In CI these must run: a missing ClickHouse there is a failure, never a silent skip.
+        expect(getenv('GITHUB_ACTIONS'))->toBeFalsy('CI must provide CLICKHOUSE_URL for the analytics tests.');
         $this->markTestSkipped('No ClickHouse here (CI runs these).');
     }
     $this->store = new ClickHouseStore((string) getenv('CLICKHOUSE_URL'), (string) getenv('CLICKHOUSE_USER'), (string) getenv('CLICKHOUSE_PASSWORD'), 't2t_test');

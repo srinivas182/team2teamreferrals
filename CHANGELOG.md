@@ -12,7 +12,7 @@ Checklist items delivered here (the trust score follows in 34b), each proven by 
 7. No lost events: the platform's own records are the source; each source resumes from a saved position (append-only tables by id, records that change by update time); if the store is down nothing moves and the next run catches up. Fixed event keys mean re-shipping replaces rather than duplicates; fee payments arrive later as their own events.
 8. No client personal data in analytics: IDs, types, amounts and times only (tested across every stored value).
 13. Switchable store (Admin → Settings → Analytics): MySQL by default (a separate database recommended, e.g. DigitalOcean Managed MySQL), or ClickHouse (a Droplet or ClickHouse Cloud), with health and per-source progress.
-6. (part) CI now runs a real ClickHouse; the speed check generates 10 million events and requires dashboard queries under 500 ms (t2t:analytics benchmark).
+6. (part) CI now runs a real ClickHouse; a dedicated step generates 10 million events and requires dashboard queries under 500 ms (t2t:analytics benchmark), posting the timings as a notice on the run. The ClickHouse tests fail rather than skip in CI if ClickHouse is missing.
 - Hosting decision recorded: DigitalOcean (US region). DigitalOcean has no managed ClickHouse, so production starts on Managed MySQL and moves to ClickHouse on a Droplet as volume grows.
 - 497 PHP tests in total (7 new; the 2 ClickHouse tests run in CI).
 

@@ -8,17 +8,23 @@ use Illuminate\Console\Command;
 
 final class AnalyticsCommand extends Command
 {
-    protected $signature = 't2t:analytics {action=ship : ship, backfill, status or benchmark} {--events=10000000 : benchmark events} {--max-ms=500 : benchmark limit per query}';
+    protected $signature = 't2t:analytics {action=ship : ship, backfill, status or benchmark} {--events=10000000 : benchmark events} {--max-ms=500 : benchmark limit per query}
+        {--clickhouse-url= : benchmark against this ClickHouse directly (CI)} {--clickhouse-user=default} {--clickhouse-password=}';
 
     protected $description = 'Ship records to the analytics store (every minute), backfill from zero, show status, or run the speed check';
 
-    public function handle(AnalyticsStore $store, Shipper $shipper): int
+    public function handle(): int
     {
+        // Resolved only when needed, so the speed check can run against a given ClickHouse without app settings.
+        $store = fn (): AnalyticsStore => $this->option('clickhouse-url')
+            ? new ClickHouseStore((string) $this->option('clickhouse-url'), (string) $this->option('clickhouse-user'), (string) $this->option('clickhouse-password'), 't2t_bench')
+            : app(AnalyticsStore::class);
+
         return match ((string) $this->argument('action')) {
-            'ship' => $this->report($shipper->run()),
-            'backfill' => $this->done('Backfilled '.number_format($shipper->backfill()).' records into '.$store->name().'.'),
-            'status' => $this->status($store, $shipper),
-            'benchmark' => $this->benchmark($store),
+            'ship' => $this->report(app(Shipper::class)->run()),
+            'backfill' => $this->done('Backfilled '.number_format(app(Shipper::class)->backfill()).' records into '.$store()->name().'.'),
+            'status' => $this->status($store(), app(Shipper::class)),
+            'benchmark' => $this->benchmark($store()),
             default => self::INVALID,
         };
     }
@@ -70,7 +76,11 @@ final class AnalyticsCommand extends Command
             $t = microtime(true);
             $rows = $store->daily($scope, $id, now()->subYear()->toDateString(), now()->toDateString());
             $ms = (int) round((microtime(true) - $t) * 1000);
-            $this->line(sprintf('%s dashboard (a year, daily): %d ms, %d rows', $scope, $ms, count($rows)));
+            $msg = sprintf('%s dashboard (a year, daily) over %s events: %d ms, %d rows', $scope, number_format($n), $ms, count($rows));
+            $this->line($msg);
+            if (getenv('GITHUB_ACTIONS')) {
+                $this->line('::notice title=Analytics speed check::'.$msg); // readable in the CI run's annotations
+            }
             $failed = $failed || $ms > $max || $rows === [];
         }
         $store->reset();
