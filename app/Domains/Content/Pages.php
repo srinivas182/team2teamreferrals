@@ -31,6 +31,10 @@ final class Pages
     {
         $used = [];
         foreach (Route::getRoutes()->getRoutes() as $r) {
+            // Only addresses the app shows (GET): a page and a form can share one, like /contact (page) and its POST.
+            if (! in_array('GET', $r->methods(), true) || $r->getName() === 'content.page') {
+                continue;
+            }
             $first = explode('/', $r->uri())[0];
             if ($first !== '' && ! str_contains($first, '{')) {
                 $used[] = $first;
@@ -117,7 +121,31 @@ final class Pages
     public static function unpublish(stdClass $page, User $by): void
     {
         DB::table('cms_pages')->where('id', $page->id)->update(['status' => 'unpublished', 'publish_at' => null, 'updated_at' => now()]);
+        Menus::forget();
         activity('content')->causedBy($by)->event('page-unpublished')->withProperties(['page' => $page->ulid])->log('Page unpublished');
+    }
+
+    /** The core pages, created once as drafts for the content pack (Sprint 38) to fill. Returns how many were added. */
+    public static function createCore(User $by): int
+    {
+        $core = [
+            ['how-it-works', 'How it works', 'page', [['type' => 'steps', 'heading' => 'How it works', 'items' => []]]],
+            ['pricing', 'Pricing', 'landing', [['type' => 'pricing', 'heading' => 'Pricing', 'plans' => []]]],
+            ['about', 'About Team to Team Referrals', 'page', [['type' => 'rich_text', 'html' => '']]],
+            ['faq', 'Questions and answers', 'page', [['type' => 'faq', 'heading' => 'Questions and answers', 'items' => []]]],
+            ['contact', 'Contact us', 'page', [['type' => 'contact_form', 'heading' => 'Send us a message', 'intro' => 'We answer within one business day.']]],
+            ['terms', 'Terms of service', 'legal', [['type' => 'rich_text', 'html' => '']]],
+            ['privacy', 'Privacy policy', 'legal', [['type' => 'rich_text', 'html' => '']]],
+        ];
+        $n = 0;
+        foreach ($core as [$slug, $title, $template, $blocks]) {
+            if (! DB::table('cms_pages')->where('slug', $slug)->exists()) {
+                self::save(null, ['title' => $title, 'slug' => $slug, 'template' => $template, 'answer_summary' => null, 'seo' => [], 'blocks' => $blocks], $by);
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     /** Every minute: publish pages whose time has come. */
@@ -154,6 +182,7 @@ final class Pages
             }
             $next = (string) $hop;
         }
+        Menus::forget();
         DB::table('redirects')->updateOrInsert(['from_path' => $from], ['to_path' => $to, 'code' => in_array($code, [301, 302], true) ? $code : 301, 'automatic' => $automatic,
             'created_by' => $by?->id, 'updated_at' => now(), 'created_at' => now()]);
     }
@@ -173,6 +202,7 @@ final class Pages
             DB::table('cms_pages')->where('id', $fresh->id)->update(['status' => 'published', 'published_version_id' => $versionId, 'published_slug' => $fresh->slug,
                 'published_at' => now(), 'publish_at' => null, 'updated_at' => now()]);
         });
+        Menus::forget(); // a newly live page may complete a menu link
         activity('content')->causedBy($by)->event('page-published')->withProperties(['page' => $fresh->ulid, 'version' => $versionId])->log('Page published');
     }
 

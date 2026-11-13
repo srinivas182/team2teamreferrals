@@ -18,7 +18,7 @@ final class Blocks
 {
     public const TYPES = [
         'hero' => 'Hero', 'features' => 'Features', 'steps' => 'Steps', 'stats' => 'Stats', 'testimonials' => 'Testimonials',
-        'faq' => 'FAQ', 'pricing' => 'Pricing', 'cta' => 'Call to action', 'rich_text' => 'Rich text', 'media' => 'Image or video',
+        'faq' => 'FAQ', 'pricing' => 'Pricing', 'cta' => 'Call to action', 'rich_text' => 'Rich text', 'media' => 'Image or video', 'contact_form' => 'Contact form',
     ];
 
     /** Video embeds only from these hosts. */
@@ -53,7 +53,8 @@ final class Blocks
             'hero' => ['heading' => $t('heading', 120), 'subheading' => $t('subheading', 300), 'cta_label' => $t('cta_label', 40), 'cta_url' => $url('cta_url'), 'image' => $url('image'), 'image_alt' => $t('image_alt', 160)],
             'features', 'steps' => ['heading' => $t('heading', 120), 'items' => $items('items', ['title', 'text'])],
             'stats' => ['items' => $items('items', ['value', 'label'], 6)],
-            'testimonials' => ['items' => array_map(fn ($i) => [...$i, 'consent_id' => null], $items('items', ['quote', 'author', 'business']))],
+            'testimonials' => ['items' => self::testimonials(is_array($b['items'] ?? null) ? $b['items'] : [], $fail)],
+            'contact_form' => ['heading' => $t('heading', 120), 'intro' => $t('intro', 300)],
             'faq' => ['heading' => $t('heading', 120), 'items' => $items('items', ['q', 'a'], 20)],
             'pricing' => ['heading' => $t('heading', 120), 'plans' => array_map(fn ($p) => [...$p, 'features' => array_values(array_filter(array_map('trim', explode("\n", $p['features']))))],
                 self::checkLinks($items('plans', ['name', 'price', 'period', 'features', 'cta_label', 'cta_url'], 4), $fail))],
@@ -96,6 +97,63 @@ final class Blocks
         }
 
         return array_values(array_filter($out));
+    }
+
+    /**
+     * Testimonial quotes. Linked to a member's approved, consented testimonial, the words come from their record (so
+     * they can't be edited into something the member didn't say); typed quotes are shown without review markup.
+     *
+     * @param  array<mixed>  $raw
+     * @return list<array{quote: string, author: string, business: string, consent_id: ?int}>
+     */
+    private static function testimonials(array $raw, callable $fail): array
+    {
+        $out = [];
+        foreach (array_slice($raw, 0, 12) as $i) {
+            $i = is_array($i) ? $i : [];
+            $id = isset($i['consent_id']) && is_numeric($i['consent_id']) && (int) $i['consent_id'] > 0 ? (int) $i['consent_id'] : null;
+            if ($id !== null) {
+                $t = \Illuminate\Support\Facades\DB::table('testimonials')->where(['id' => $id, 'status' => 'approved'])->first();
+                if ($t === null) {
+                    $fail('that testimonial isn’t approved (or was withdrawn).'); // throws
+
+                    continue;
+                }
+                $out[] = ['quote' => (string) $t->quote, 'author' => (string) $t->author_name, 'business' => (string) ($t->business ?? ''), 'consent_id' => $id];
+
+                continue;
+            }
+            $quote = mb_substr(trim(strip_tags((string) ($i['quote'] ?? ''))), 0, 600);
+            if ($quote !== '') {
+                $out[] = ['quote' => $quote, 'author' => mb_substr(trim(strip_tags((string) ($i['author'] ?? ''))), 0, 120), 'business' => mb_substr(trim(strip_tags((string) ($i['business'] ?? ''))), 0, 160), 'consent_id' => null];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * When a page is shown: consented quotes are re-checked, so a withdrawn testimonial disappears at once.
+     *
+     * @param  list<array<string, mixed>>  $blocks
+     * @return list<array<string, mixed>>
+     */
+    public static function resolve(array $blocks): array
+    {
+        $ids = [];
+        foreach ($blocks as $b) {
+            if (($b['type'] ?? '') === 'testimonials') {
+                foreach ((array) ($b['items'] ?? []) as $i) {
+                    if (! empty($i['consent_id'])) {
+                        $ids[] = (int) $i['consent_id'];
+                    }
+                }
+            }
+        }
+        $live = $ids === [] ? [] : \Illuminate\Support\Facades\DB::table('testimonials')->whereIn('id', $ids)->where('status', 'approved')->pluck('id')->all();
+
+        return array_map(fn ($b) => ($b['type'] ?? '') !== 'testimonials' ? $b : [...$b, 'items' => array_values(array_filter((array) ($b['items'] ?? []),
+            fn ($i) => empty($i['consent_id']) || in_array((int) $i['consent_id'], $live, true)))], $blocks);
     }
 
     /**

@@ -103,7 +103,7 @@ it('[3] publishes scheduled posts when their time comes', function () {
 it('[4] manages header and footer menus shown on public pages', function () {
     $this->actingAs($this->editor)->post('/admin/content/menus', ['location' => 'header', 'items' => [['label' => 'Blog', 'url' => '/blog'], ['label' => 'Bad', 'url' => 'javascript:alert(1)']]])->assertSessionHasErrors('items');
     $this->post('/admin/content/menus', ['location' => 'header', 'items' => [['label' => 'Blog', 'url' => '/blog'], ['label' => 'Partner site', 'url' => 'https://example.org']]])->assertSessionHas('status', 'menu-saved');
-    $this->get('/blog')->assertInertia(fn ($p) => $p->where('menus.header.1', ['label' => 'Partner site', 'url' => 'https://example.org']));
+    $this->get('/blog')->assertInertia(fn ($p) => $p->where('menus.header', [['Blog', '/blog'], ['Partner site', 'https://example.org']]));
 });
 
 it('[6] lists published pages and posts, with their answers, in the sitemap and llms.txt (never drafts or hidden ones)', function () {

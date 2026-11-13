@@ -48,7 +48,7 @@ final class PublicPageController
 
     private function render(stdClass $page, stdClass $v, bool $preview): Response
     {
-        $blocks = (array) json_decode((string) $v->blocks, true);
+        $blocks = Blocks::resolve(array_values((array) json_decode((string) $v->blocks, true))); // consent re-checked when shown
         $seo = (array) json_decode((string) $v->seo, true);
         $url = rtrim((string) config('seo.canonical_url', config('app.url')), '/').'/'.$page->slug;
         $summary = (string) ($v->answer_summary ?? '');
@@ -56,7 +56,7 @@ final class PublicPageController
         $schema = [Schema::organization(),
             ['@context' => 'https://schema.org', '@type' => 'WebPage', 'name' => $v->title, 'description' => $summary, 'url' => $url, 'dateModified' => date(DATE_ATOM, (int) strtotime($modified))],
             Schema::breadcrumbs([['Home', '/'], [(string) $v->title, '/'.$page->slug]]), // [name, address] pairs
-            ...Blocks::schema(array_values($blocks), (string) $v->title, $url)];
+            ...Blocks::schema($blocks, (string) $v->title, $url)];
         $data = $preview ? SeoData::private('Preview: '.$v->title) : new SeoData(
             title: (string) (($seo['title'] ?? '') !== '' ? $seo['title'] : $v->title.' · Team to Team Referrals'),
             description: (string) (($seo['description'] ?? '') !== '' ? $seo['description'] : $summary),
@@ -64,8 +64,9 @@ final class PublicPageController
             schema: $schema, modifiedAt: $modified);
 
         return Inertia::render('CmsPage', [
-            'page' => ['title' => (string) $v->title, 'summary' => $summary, 'template' => (string) $page->template, 'updated' => substr($modified, 0, 10), 'blocks' => array_values($blocks)],
+            'page' => ['title' => (string) $v->title, 'summary' => $summary, 'template' => (string) $page->template, 'updated' => substr($modified, 0, 10), 'blocks' => $blocks],
             'preview' => $preview ? ['version' => (int) $v->number] : null,
+            'contactToken' => collect($blocks)->contains('type', 'contact_form') ? \App\Support\FormGuard::token() : null,
             'seo' => $data->toArray(),
         ]);
     }

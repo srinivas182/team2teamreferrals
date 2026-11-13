@@ -28,6 +28,7 @@ type Props = {
     versions: { id: number; number: number; title: string; at: string; by: string; preview: string }[];
     blockTypes: Record<string, string>;
     media?: { url: string; alt: string }[];
+    approved?: { id: number; label: string }[];
     summary: { min: number; max: number };
     status?: string;
     seo: Seo;
@@ -95,7 +96,7 @@ const LABEL: Record<string, string> = {
 
 const str = (v: unknown) => (typeof v === 'string' ? v : Array.isArray(v) ? v.join('\n') : '');
 
-function BlockEditor({ b, set }: { b: B; set: (b: B) => void }) {
+function BlockEditor({ b, set, approved = [] }: { b: B; set: (b: B) => void; approved?: { id: number; label: string }[] }) {
     return (
         <div className="space-y-2">
             {(FIELDS[b.type] ?? []).map(([key, label, kind]) => {
@@ -107,6 +108,23 @@ function BlockEditor({ b, set }: { b: B; set: (b: B) => void }) {
                             <legend className="px-1 text-sm font-medium">{label}</legend>
                             {list.map((item, i) => (
                                 <div key={i} className="flex flex-wrap items-start gap-2">
+                                    {b.type === 'testimonials' && (
+                                        <select
+                                            aria-label="Approved testimonial"
+                                            className="h-9 rounded-md border border-line bg-surface px-2 text-sm"
+                                            value={str(item.consent_id)}
+                                            onChange={(e) =>
+                                                set({ ...b, [key]: list.map((x, j) => (j === i ? { ...x, consent_id: e.target.value } : x)) })
+                                            }
+                                        >
+                                            <option value="">Typed quote (no review markup)</option>
+                                            {approved.map((t) => (
+                                                <option key={t.id} value={String(t.id)}>
+                                                    {t.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
                                     {sub.map((f) => (
                                         <textarea
                                             key={f}
@@ -158,7 +176,7 @@ function BlockEditor({ b, set }: { b: B; set: (b: B) => void }) {
 }
 
 /** Admin → Website → a page: build it from blocks, preview, publish (now or later), and roll back. */
-export default function ContentEdit({ page, draft, versions, blockTypes, media, summary, status, seo }: Props) {
+export default function ContentEdit({ page, draft, versions, blockTypes, media, approved, summary, status, seo }: Props) {
     const f = useForm({
         title: draft?.title ?? '',
         slug: page?.slug ?? '',
@@ -267,6 +285,7 @@ export default function ContentEdit({ page, draft, versions, blockTypes, media, 
                             </div>
                             <BlockEditor
                                 b={b}
+                                approved={approved}
                                 set={(nb) =>
                                     f.setData(
                                         'blocks',
