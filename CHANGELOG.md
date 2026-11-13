@@ -4,6 +4,20 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 38a — Content pack: sections, industry templates, core pages, install
+Checklist items delivered here (blog posts, help articles, the email/SMS review, legal drafts, the video script and the demo workspace follow in 38b), each proven by tests in tests/Feature/Content/ContentPackTest.php:
+1. Section library: 29 ready-made sections built from the existing blocks (heroes, how it works, value, proof, fees by tier, pricing, FAQs, calls to action, industry and city, images), inserted from the page editor ("Insert a ready-made section"). All are valid and together pass the AEO essentials.
+2. Six industry page templates (landing, how it works, FAQ, pricing, join, and a city page template), created as drafts per industry from Admin → Website ("Create industry pages"), in the industry's own words (its pro and client terms, territory unit) and with the fee section its tier allows: Tier A explains fees as a share of what the receiving team earns, Tier B says no referral fees (RESPA Section 8), Tier C explains flat listings.
+3. Core pages with real copy, published on install: How it works, Pricing, About, FAQ and Contact (the home page remains the designed landing page). Installing again never overwrites a page someone has edited.
+4. Original illustrations (no licensing needed): network, steps and shield; photo slots can be filled from the media library.
+6. City and industry copy sections ({city}, {industry}, {pro}, {clients}…).
+12. (part) One install command, t2t:install: database, industry catalogue, US locations (bundled data by default) and the content pack; safe to run again.
+13. Figures come from live settings, never typed into copy: {seat_price} (the lowest any network charges), {trial_months}, {annual_months_free}, premium and private network prices, AI credits, industry and city counts. Filled when pages, structured data, llms.txt and sitemap summaries are produced; a price change in Admin → Billing or a network's pricing updates them at once.
+14. Every seeded page passes the AEO essentials, with no unfilled placeholders.
+- Copy checked against what's built: premium is described by its AI credits only (directory placement isn't a premium feature).
+- Fixed in review: the industry templates read the industry vocabulary from the wrong property (they would silently have used generic "pro" and "client"); the figures cache now clears on price changes rather than after 5 minutes.
+- 550 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 37b-2 — Core pages, public-link guard, Contact form, testimonials, legal pages
 Completes Sprint 37, each proven by tests in tests/Feature/Content/CorePagesTest.php:
 2. Core pages created in one click (Admin → Website → Create core pages) as drafts for the content pack: How it works, Pricing, About, FAQ, Contact, Terms and Privacy, with the right templates; created once.

@@ -29,6 +29,7 @@ type Props = {
     blockTypes: Record<string, string>;
     media?: { url: string; alt: string }[];
     approved?: { id: number; label: string }[];
+    sections?: { key: string; name: string; group: string; blocks: B[] }[];
     summary: { min: number; max: number };
     status?: string;
     seo: Seo;
@@ -176,7 +177,7 @@ function BlockEditor({ b, set, approved = [] }: { b: B; set: (b: B) => void; app
 }
 
 /** Admin → Website → a page: build it from blocks, preview, publish (now or later), and roll back. */
-export default function ContentEdit({ page, draft, versions, blockTypes, media, approved, summary, status, seo }: Props) {
+export default function ContentEdit({ page, draft, versions, blockTypes, media, approved, sections = [], summary, status, seo }: Props) {
     const f = useForm({
         title: draft?.title ?? '',
         slug: page?.slug ?? '',
@@ -191,6 +192,7 @@ export default function ContentEdit({ page, draft, versions, blockTypes, media, 
         blocks: (draft?.blocks ?? []) as B[],
     });
     const [adding, setAdding] = useState('hero');
+    const [section, setSection] = useState('');
     const [at, setAt] = useState('');
     const blocks = f.data.blocks;
     const move = (i: number, d: number) => {
@@ -310,6 +312,38 @@ export default function ContentEdit({ page, draft, versions, blockTypes, media, 
                         </select>
                         <Button size="sm" variant="secondary" onClick={() => f.setData('blocks', [...blocks, { type: adding }])}>
                             Add block
+                        </Button>
+                        <span className="mx-2 text-muted">or</span>
+                        <select
+                            aria-label="Section"
+                            className="h-9 rounded-md border border-line bg-surface px-2 text-sm"
+                            value={section}
+                            onChange={(e) => setSection(e.target.value)}
+                        >
+                            <option value="">Insert a ready-made section…</option>
+                            {Array.from(new Set(sections.map((x) => x.group))).map((g) => (
+                                <optgroup key={g} label={g}>
+                                    {sections
+                                        .filter((x) => x.group === g)
+                                        .map((x) => (
+                                            <option key={x.key} value={x.key}>
+                                                {x.name}
+                                            </option>
+                                        ))}
+                                </optgroup>
+                            ))}
+                        </select>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={!section}
+                            onClick={() => {
+                                const x = sections.find((y) => y.key === section);
+                                if (x) f.setData('blocks', [...blocks, ...x.blocks]);
+                                setSection('');
+                            }}
+                        >
+                            Insert section
                         </Button>
                     </Card>
                     <Card className="grid gap-3 p-4 sm:grid-cols-2">

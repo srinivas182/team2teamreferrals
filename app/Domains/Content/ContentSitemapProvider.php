@@ -29,7 +29,7 @@ final class ContentSitemapProvider implements SitemapProvider
         $out = [];
         foreach (DB::table('cms_pages as p')->join('cms_page_versions as v', 'v.id', '=', 'p.published_version_id')->where('p.status', 'published')->orderBy('p.slug')->get(['p.slug', 'p.published_at', 'v.title', 'v.answer_summary', 'v.seo']) as $p) {
             if (! (bool) (json_decode((string) $p->seo, true)['noindex'] ?? false)) {
-                $out[] = ['path' => '/'.$p->slug, 'title' => (string) $p->title, 'summary' => (string) $p->answer_summary, 'modified' => (string) $p->published_at];
+                $out[] = ['path' => '/'.$p->slug, 'title' => Tokens::fill((string) $p->title), 'summary' => Tokens::fill((string) $p->answer_summary), 'modified' => (string) $p->published_at];
             }
         }
         if (DB::table('posts')->where('status', 'published')->exists()) {
@@ -37,7 +37,7 @@ final class ContentSitemapProvider implements SitemapProvider
         }
         foreach (DB::table('posts')->where('status', 'published')->orderByDesc('published_at')->get(['slug', 'title', 'answer_summary', 'updated_at', 'seo']) as $p) {
             if (! (bool) (json_decode((string) $p->seo, true)['noindex'] ?? false)) {
-                $out[] = ['path' => '/blog/'.$p->slug, 'title' => (string) $p->title, 'summary' => (string) $p->answer_summary, 'modified' => (string) $p->updated_at];
+                $out[] = ['path' => '/blog/'.$p->slug, 'title' => Tokens::fill((string) $p->title), 'summary' => Tokens::fill((string) $p->answer_summary), 'modified' => (string) $p->updated_at];
             }
         }
 

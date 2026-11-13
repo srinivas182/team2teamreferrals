@@ -62,7 +62,7 @@ final class Pages
      *
      * @param  array{title: string, slug: string, template: string, answer_summary: ?string, seo: array<string, mixed>, blocks: list<array<string, mixed>>}  $d
      */
-    public static function save(?stdClass $page, array $d, User $by): string
+    public static function save(?stdClass $page, array $d, ?User $by): string
     {
         $slug = self::normaliseSlug($d['slug']);
         if (DB::table('cms_pages')->where('slug', $slug)->when($page, fn ($q, $p) => $q->where('id', '!=', $p->id))->exists()) {
@@ -86,7 +86,7 @@ final class Pages
             $number = (int) DB::table('cms_page_versions')->where('page_id', $id)->max('number') + 1;
             $vid = DB::table('cms_page_versions')->insertGetId(['page_id' => $id, 'number' => $number, 'title' => mb_substr(trim($d['title']), 0, 160),
                 'answer_summary' => $d['answer_summary'] !== null ? mb_substr(trim($d['answer_summary']), 0, 400) : null, 'seo' => json_encode($seo), 'blocks' => json_encode($blocks),
-                'created_by' => $by->id, 'created_at' => now()]);
+                'created_by' => $by?->id, 'created_at' => now()]);
             DB::table('cms_pages')->where('id', $id)->update(['draft_version_id' => $vid]);
 
             return (string) DB::table('cms_pages')->where('id', $id)->value('ulid');
@@ -94,7 +94,7 @@ final class Pages
     }
 
     /** Publish the draft now, or on a schedule. */
-    public static function publish(stdClass $page, ?string $at, User $by): void
+    public static function publish(stdClass $page, ?string $at, ?User $by): void
     {
         $v = DB::table('cms_page_versions')->where('id', $page->draft_version_id)->first();
         abort_if($v === null, 422, 'Save the page first.');

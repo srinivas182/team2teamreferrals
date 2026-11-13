@@ -20,6 +20,7 @@ final class AdminContentController
 {
     public function index(): Response
     {
+        $industries = DB::table('industries')->where('status', 'active')->orderBy('name')->get(['slug', 'name'])->values();
         $pages = DB::table('cms_pages as p')->leftJoin('cms_page_versions as v', 'v.id', '=', 'p.draft_version_id')->orderBy('p.slug')
             ->get(['p.ulid', 'p.slug', 'p.status', 'p.publish_at', 'p.published_at', 'p.template', 'v.title'])
             ->map(fn ($p) => ['id' => (string) $p->ulid, 'title' => (string) $p->title, 'slug' => (string) $p->slug, 'status' => (string) $p->status, 'template' => (string) $p->template,
@@ -27,6 +28,7 @@ final class AdminContentController
 
         return Inertia::render('admin/content/Index', [
             'pages' => $pages,
+            'industries' => $industries,
             'redirects' => DB::table('redirects')->orderBy('from_path')->get(['id', 'from_path', 'to_path', 'code', 'hits', 'automatic'])->values(),
             'status' => session('status'),
             'seo' => SeoData::private('Website')->toArray(),
@@ -48,6 +50,7 @@ final class AdminContentController
                 ->map(fn ($x) => ['id' => (int) $x->id, 'number' => (int) $x->number, 'title' => (string) $x->title, 'at' => substr((string) $x->created_at, 0, 16), 'by' => trim($x->first_name.' '.$x->last_name),
                     'preview' => URL::temporarySignedRoute('content.preview', now()->addHour(), ['page' => $p->ulid, 'v' => $x->id], false)])->values(),
             'blockTypes' => Blocks::TYPES, 'summary' => ['min' => Pages::SUMMARY_MIN, 'max' => Pages::SUMMARY_MAX],
+            'sections' => collect(\App\Domains\Content\Sections::all())->map(fn ($x, $k) => ['key' => $k, 'name' => $x['name'], 'group' => $x['group'], 'blocks' => $x['blocks']])->values(),
             'approved' => DB::table('testimonials')->where('status', 'approved')->orderByDesc('id')->get(['id', 'quote', 'author_name'])->map(fn ($t) => ['id' => (int) $t->id, 'label' => $t->author_name.': '.mb_strimwidth((string) $t->quote, 0, 60, '…')])->values(),
             'media' => DB::table('media')->orderByDesc('id')->limit(200)->get(['path', 'alt'])->map(fn ($m) => ['url' => \App\Domains\Content\MediaLibrary::url((string) $m->path), 'alt' => (string) $m->alt])->values(),
             'status' => session('status'),
@@ -78,6 +81,14 @@ final class AdminContentController
         };
 
         return back()->with('status', 'page-'.$action.($action === 'publish' && $request->filled('at') ? '-scheduled' : ''));
+    }
+
+    public function industryPages(Request $request): RedirectResponse
+    {
+        $slug = (string) $request->validate(['industry' => ['required', 'string', 'exists:industries,slug']])['industry'];
+        $n = \App\Domains\Content\ContentPack::industryPages(\App\Domains\Network\Industries\Models\Industry::query()->where('slug', $slug)->firstOrFail(), $this->user($request));
+
+        return back()->with('status', $n > 0 ? 'industry-pages-created' : 'industry-pages-exist');
     }
 
     public function core(Request $request): RedirectResponse

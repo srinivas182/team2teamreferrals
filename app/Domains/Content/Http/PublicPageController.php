@@ -48,7 +48,10 @@ final class PublicPageController
 
     private function render(stdClass $page, stdClass $v, bool $preview): Response
     {
-        $blocks = Blocks::resolve(array_values((array) json_decode((string) $v->blocks, true))); // consent re-checked when shown
+        // Consent re-checked, then figures filled from live settings ({seat_price}…).
+        $blocks = array_values(\App\Domains\Content\Tokens::fillAll(Blocks::resolve(array_values((array) json_decode((string) $v->blocks, true)))));
+        $v->title = \App\Domains\Content\Tokens::fill((string) $v->title);
+        $v->answer_summary = \App\Domains\Content\Tokens::fill((string) $v->answer_summary);
         $seo = (array) json_decode((string) $v->seo, true);
         $url = rtrim((string) config('seo.canonical_url', config('app.url')), '/').'/'.$page->slug;
         $summary = (string) ($v->answer_summary ?? '');
