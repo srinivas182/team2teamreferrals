@@ -102,10 +102,11 @@ final class TrustScore
     }
 
     /** Nightly: every team with a seat (or any referral history) is recomputed and stored. */
-    public static function recomputeAll(): int
+    /** @param list<int>|null $only recompute just these teams (the demo workspace uses this to leave real teams alone) */
+    public static function recomputeAll(?array $only = null): int
     {
-        $teams = Team::query()->whereIn('id', DB::table('seats')->whereNotNull('primary_team_id')->select('primary_team_id'))
-            ->orWhereIn('id', DB::table('referrals')->select('receiver_team_id'))->get();
+        $teams = Team::query()->where(fn ($q) => $q->whereIn('id', DB::table('seats')->whereNotNull('primary_team_id')->select('primary_team_id'))
+            ->orWhereIn('id', DB::table('referrals')->select('receiver_team_id')))->when($only !== null, fn ($q) => $q->whereIn('id', $only))->get();
         foreach ($teams as $t) {
             $r = self::compute($t);
             DB::table('trust_scores')->updateOrInsert(['team_id' => $t->id], ['score' => $r['score'], 'status' => $r['status'], 'parts' => json_encode($r['parts']), 'computed_at' => now()]);

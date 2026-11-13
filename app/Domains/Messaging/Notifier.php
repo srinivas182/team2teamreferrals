@@ -43,8 +43,10 @@ final class Notifier
         // A reply-by-email address travels with the email only; it's never shown in other channels.
         $replyTo = isset($data['_reply_to']) && is_string($data['_reply_to']) ? $data['_reply_to'] : null;
         unset($data['_reply_to']);
+        // Demo accounts (…@demo.invalid, a domain that can never receive mail) get in-app notifications only.
+        $demo = str_ends_with(strtolower((string) $user->email), '@'.\App\Domains\Content\Demo\DemoWorkspace::DOMAIN);
         foreach ($def['channels'] as $channel) {
-            if (! $this->prefs->allows($user, $type, $channel)) {
+            if (! $this->prefs->allows($user, $type, $channel) || ($demo && $channel !== 'database')) {
                 continue;
             }
             $w = $this->templates->wording($type, $channel, $industry?->id, $groupId);
