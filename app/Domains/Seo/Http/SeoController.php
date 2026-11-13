@@ -97,6 +97,16 @@ final class SeoController
             $lines[] = $qa['a'];
             $lines[] = '';
         }
+        // Website pages and blog posts with the answer each one gives (what answer engines quote).
+        $summaries = array_filter(\App\Domains\Content\ContentSitemapProvider::entries(), fn ($e) => $e['summary'] !== '');
+        if ($summaries !== []) {
+            $lines[] = '## Pages and articles';
+            $lines[] = '';
+            foreach ($summaries as $e) {
+                $lines[] = '- ['.$e['title'].']('.$base.$e['path'].'): '.$e['summary'];
+            }
+            $lines[] = '';
+        }
         foreach ($this->sitemaps->all() as $key => $provider) {
             $lines[] = '## '.ucfirst($key);
             $lines[] = '';

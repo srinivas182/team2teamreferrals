@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 37b-1 — Blog, menus, media library, sitemap and llms.txt
+Checklist items delivered here (core pages, Contact form, testimonial consent and legal approval follow in 37b-2), each proven by tests in tests/Feature/Content/BlogMediaTest.php:
+3. Blog (/blog, /blog/category/…, /blog/…): posts with categories, authors, a "reviewed by" expert, cover images and scheduled publishing. Publishing needs an answer summary (40–320 characters) and a body; posts lead with the answer, then author, reviewer, published and updated dates; Article data carries author, reviewer, description, image and dates; breadcrumbs; bodies are cleaned like rich text.
+4. Menus: header and footer links managed in Admin → Website → Menus (links must start with / or https://); public pages use them when set and the built-in links otherwise. Shared with public pages only.
+5. Media library (Admin → Website → Media): images are identified by their bytes, virus-scanned, and re-encoded to WebP at most 1600 px wide plus a 480 px version, which removes location and camera data; a description (alt text) is required. Library images are offered in the page builder's image fields and as post covers.
+6. Published pages and posts join the sitemap (/sitemaps/content.xml) and llms.txt with their answer summaries, never drafts or pages kept out of search.
+16. (part) The blog index is added to the Lighthouse checks in CI. The production Docker image now includes PHP's GD extension (WebP).
+- Fixed in review: every page loaded the public menus, including portal and admin pages that never show them; caught by the page query budgets and now limited to public pages.
+- Known gap, fixed in 37b-2: the built-in public links to /how-it-works, /pricing, /groups and /find-a-pro lead to pages that don't exist yet; 37b-2 adds a public-link guard (every public link opens or is hidden until its page is published).
+- 540 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 37a — Website page builder
 Checklist items delivered here (the blog, menus, media library, Contact form, legal versions, testimonial consent and the facts index follow in 37b), each proven by tests in tests/Feature/Content/PageBuilderTest.php:
 1. Admin → Website: a block-based page builder with hero, features, steps, stats, testimonials, FAQ, pricing, call to action, rich text, and image or video blocks; add, move and remove blocks; landing, standard and legal templates.

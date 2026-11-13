@@ -79,19 +79,23 @@ final class Schema
     }
 
     /** @return array<string, mixed> */
-    public static function article(string $headline, string $path, string $author, string $published, ?string $modified = null): array
+    public static function article(string $headline, string $path, string $author, string $published, ?string $modified = null, ?string $description = null, ?string $reviewer = null, ?string $image = null): array
     {
         $base = rtrim((string) config('seo.canonical_url'), '/');
 
-        return [
+        return array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'Article',
             'headline' => $headline,
+            'description' => $description,
+            'image' => $image,
             'mainEntityOfPage' => $base.'/'.ltrim($path, '/'),
             'author' => ['@type' => 'Person', 'name' => $author],
+            // "Reviewed by" (an expert who checked the facts), where there is one.
+            'reviewedBy' => $reviewer !== null && $reviewer !== '' ? ['@type' => 'Person', 'name' => $reviewer] : null,
             'publisher' => ['@id' => $base.'/#organization'],
             'datePublished' => $published,
             'dateModified' => $modified ?? $published,
-        ];
+        ], fn ($v) => $v !== null);
     }
 }

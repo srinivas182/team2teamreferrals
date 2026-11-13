@@ -27,6 +27,7 @@ type Props = {
     draft: { title: string; answer_summary: string | null; seo: Record<string, string | boolean>; blocks: B[] } | null;
     versions: { id: number; number: number; title: string; at: string; by: string; preview: string }[];
     blockTypes: Record<string, string>;
+    media?: { url: string; alt: string }[];
     summary: { min: number; max: number };
     status?: string;
     seo: Seo;
@@ -143,7 +144,11 @@ function BlockEditor({ b, set }: { b: B; set: (b: B) => void }) {
                                 onChange={(e) => set({ ...b, [key]: e.target.value })}
                             />
                         ) : (
-                            <Input value={str(b[key])} onChange={(e) => set({ ...b, [key]: e.target.value })} />
+                            <Input
+                                value={str(b[key])}
+                                list={key === 'image' ? 'media-library' : undefined}
+                                onChange={(e) => set({ ...b, [key]: e.target.value })}
+                            />
                         )}
                     </Field>
                 );
@@ -153,7 +158,7 @@ function BlockEditor({ b, set }: { b: B; set: (b: B) => void }) {
 }
 
 /** Admin → Website → a page: build it from blocks, preview, publish (now or later), and roll back. */
-export default function ContentEdit({ page, draft, versions, blockTypes, summary, status, seo }: Props) {
+export default function ContentEdit({ page, draft, versions, blockTypes, media, summary, status, seo }: Props) {
     const f = useForm({
         title: draft?.title ?? '',
         slug: page?.slug ?? '',
@@ -312,6 +317,14 @@ export default function ContentEdit({ page, draft, versions, blockTypes, summary
                         </label>
                     </Card>
                 </div>
+                {/* Images from the media library, offered in every image field. */}
+                <datalist id="media-library">
+                    {(media ?? []).map((m) => (
+                        <option key={m.url} value={m.url}>
+                            {m.alt}
+                        </option>
+                    ))}
+                </datalist>
                 <aside className="space-y-3">
                     <Card className="space-y-2 p-4">
                         <Button
