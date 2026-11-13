@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 38b-1 — Demo workspace and the fresh-install "done when"
+Checklist items delivered here (blog posts, help articles, legal drafts, the video script and the agreement review follow in 38b-2), each proven by tests in tests/Feature/Content/DemoWorkspaceTest.php:
+11. Demo workspace (t2t:demo; t2t:install --demo): a demo network owner and teams in three networks (Solar and Residential agents, which allow fees, and Mortgage, which doesn't), each with a verified license, a seat in its own territory and the training passed; network fee defaults; referrals over the past 90 days at every stage (waiting, declined, in progress, won and confirmed, lost) with fees due and received; feed posts, an announcement and an upcoming event; then analytics shipped and trust scores computed, so every dashboard is populated. Built through the real services, not hand-made rows.
+- Safety: refused in production unless --force (demo installs only); demo accounts use @demo.invalid (a domain that can never receive mail) and get in-app notifications only; client phones are in the range reserved for fiction (555-0100 to 555-0199); while it runs, texts, WhatsApp, push and email are log-only; only places taking seats are used, one per seat territory.
+- Reset (t2t:demo reset): every demo record is registered, and a reset removes exactly those; real teams, referrals and seats stay; a seat that existed before the demo is released, never deleted. Trust scores are computed for demo teams only.
+12. Done when (tested from a blank database): t2t:install --demo shows a finished public site and populated team, owner and network dashboards with no manual setup.
+7. Notification guard: every notification type has email text, and every type that texts has SMS wording within two text segments (300 characters).
+- Fixed in review, found by running a real fresh install: the demo first picked cities in states not open for seats, and could put two teams in one seat territory; it now picks only open places in distinct territories. Found by the reset test: the demo recomputed trust scores for real teams too; it now leaves them alone.
+- 554 PHP tests in total (4 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 38a — Content pack: sections, industry templates, core pages, install
 Checklist items delivered here (blog posts, help articles, the email/SMS review, legal drafts, the video script and the demo workspace follow in 38b), each proven by tests in tests/Feature/Content/ContentPackTest.php:
 1. Section library: 29 ready-made sections built from the existing blocks (heroes, how it works, value, proof, fees by tier, pricing, FAQs, calls to action, industry and city, images), inserted from the page editor ("Insert a ready-made section"). All are valid and together pass the AEO essentials.
