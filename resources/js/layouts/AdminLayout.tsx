@@ -65,7 +65,7 @@ const nav: Item[] = [
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: true },
     { label: 'Reports', href: '/admin/reports', icon: DollarSign, permission: 'referrals.view', ready: true },
     { label: 'Growth', href: '/admin/growth', icon: Rocket, permission: 'growth.manage', ready: false },
-    { label: 'Website builder', href: '/admin/content', icon: PanelsTopLeft, permission: 'content.manage', ready: false },
+    { label: 'Website', href: '/admin/content', icon: PanelsTopLeft, permission: 'content.manage', ready: true },
     { label: 'Training', href: '/admin/training', icon: GraduationCap, permission: 'training.manage', ready: false },
     { label: 'AI', href: '/admin/ai', icon: Sparkles, permission: 'settings.manage', ready: true },
     { label: 'Trust score', href: '/admin/trust', icon: ShieldCheck, permission: 'settings.manage', ready: true },

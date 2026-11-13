@@ -4,6 +4,19 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 37a — Website page builder
+Checklist items delivered here (the blog, menus, media library, Contact form, legal versions, testimonial consent and the facts index follow in 37b), each proven by tests in tests/Feature/Content/PageBuilderTest.php:
+1. Admin → Website: a block-based page builder with hero, features, steps, stats, testimonials, FAQ, pricing, call to action, rich text, and image or video blocks; add, move and remove blocks; landing, standard and legal templates.
+6. AEO per block: semantic HTML, and structured data that matches what's on the page (FAQ to FAQPage with the visible questions, steps to HowTo, pricing to Offers), plus Organization, WebPage and breadcrumbs on every page. A required answer summary (40–320 characters) is shown first on the page and used as its description.
+7. Done when (tested): a content editor builds and publishes a landing page using only the builder, and it passes the AEO essentials.
+8. Every save is a version; signed previews of any version (never indexed); publish now or on a schedule (published every minute); one-click rollback to any version; unpublish.
+9. Needs "manage content", so a marketing editor can run the website with no billing or admin access.
+10. Safe content: rich text is cleaned by HTMLPurifier (no scripts, event handlers or javascript: links); links must start with / or https://; videos only from YouTube (privacy-enhanced) or Vimeo; images need a description (alt text).
+12. Website pages are served only where the app has no route, and can't take an address the app uses; when a published page's address changes, the old address redirects to the new one (301); redirects can't form loops; manual redirects (301 or 302) count their visits.
+- Data note: a page's blocks are stored inside each version (an ordered list), not as separate rows, so every version is a complete snapshot and preview and rollback are exact.
+- Fixed in review: structured data for FAQs and breadcrumbs passed keyed items to helpers that expect [question, answer] and [name, address] pairs, which would have published empty questions and breadcrumbs; caught by the analyser and covered by the done-when test.
+- 535 PHP tests in total (6 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 36c — Scheduled reports in each recipient's own time zone
 Completes Sprint 36 item 10, proven by tests in tests/Feature/Platform/ReportsTest.php:
 - Each recipient has their own next send time: the chosen hour in their own time zone (members always have one, set from their team's city or chosen in notification settings). A Monday 8:00 report reaches New York at 8:00 New York time and Chicago at 8:00 Chicago time, once each. The schedule's time zone is now a backup, used only if a recipient's can't be read.

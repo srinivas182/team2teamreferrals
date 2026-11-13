@@ -181,6 +181,13 @@ const messages: Record<string, string> = {
     'schedule-pause': 'Schedule paused.',
     'schedule-resume': 'Schedule resumed.',
     'schedule-delete': 'Schedule deleted.',
+    'page-saved': 'Draft saved. Preview it, then publish when ready.',
+    'page-publish': 'Published.',
+    'page-publish-scheduled': 'Scheduled. It goes live at the chosen time.',
+    'page-rollback': 'That version is live again.',
+    'page-unpublish': 'Unpublished. The page is offline.',
+    'redirect-saved': 'Redirect saved.',
+    'redirect-deleted': 'Redirect deleted.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 
