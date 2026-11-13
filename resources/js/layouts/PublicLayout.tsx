@@ -48,7 +48,15 @@ const footer = [
 
 export function PublicLayout({ children, current }: { children: ReactNode; current?: string }) {
     // While pre-launch is on, "Claim your city" goes to the reservation page; afterwards, to sign-up.
-    const claimHref = usePage<{ modules?: Record<string, boolean> }>().props.modules?.prelaunch ? '/reserve' : '/register';
+    const shared = usePage<{ modules?: Record<string, boolean>; menus?: Record<string, { label: string; url: string }[]> }>().props;
+    const claimHref = shared.modules?.prelaunch ? '/reserve' : '/register';
+    // Menus set in Admin → Website replace the defaults.
+    const header: readonly (readonly [string, string])[] = shared.menus?.header?.length
+        ? shared.menus.header.map((m) => [m.label, m.url] as const)
+        : nav;
+    const footerGroups: readonly (readonly [string, readonly (readonly [string, string])[]])[] = shared.menus?.footer?.length
+        ? [['Site', shared.menus.footer.map((m) => [m.label, m.url] as const)]]
+        : footer;
     const [open, setOpen] = useState(false);
     return (
         <TooltipProvider>
@@ -65,7 +73,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                             <Logo className="h-9 w-[150px]" />
                         </Link>
                         <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
-                            {nav.map(([label, href]) => (
+                            {header.map(([label, href]) => (
                                 <Link
                                     key={href}
                                     href={href}
@@ -101,7 +109,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                     {open && (
                         <div className="border-t border-line bg-surface md:hidden">
                             <nav className="mx-auto flex max-w-content flex-col px-5 py-3" aria-label="Main">
-                                {nav.map(([label, href]) => (
+                                {header.map(([label, href]) => (
                                     <Link key={href} href={href} className="rounded-md px-2 py-3 font-medium">
                                         {label}
                                     </Link>
@@ -127,7 +135,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                                 The referral network for licensed teams. Hand out-of-area leads to teams you trust, and get paid when they close.
                             </p>
                         </div>
-                        {footer.map(([title, links]) => (
+                        {footerGroups.map(([title, links]) => (
                             <nav key={title} aria-label={title}>
                                 <h2 className="text-sm font-semibold">{title}</h2>
                                 <ul className="mt-3 space-y-2">

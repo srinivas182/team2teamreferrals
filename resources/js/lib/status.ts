@@ -188,6 +188,13 @@ const messages: Record<string, string> = {
     'page-unpublish': 'Unpublished. The page is offline.',
     'redirect-saved': 'Redirect saved.',
     'redirect-deleted': 'Redirect deleted.',
+    'post-saved': 'Draft saved.',
+    'post-publish': 'Published.',
+    'post-publish-scheduled': 'Scheduled. It goes live at the chosen time.',
+    'post-unpublish': 'Unpublished.',
+    'category-saved': 'Category added.',
+    'menu-saved': 'Menu saved.',
+    'media-uploaded': 'Image uploaded, converted to WebP and checked.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

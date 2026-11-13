@@ -48,6 +48,7 @@ final class AdminContentController
                 ->map(fn ($x) => ['id' => (int) $x->id, 'number' => (int) $x->number, 'title' => (string) $x->title, 'at' => substr((string) $x->created_at, 0, 16), 'by' => trim($x->first_name.' '.$x->last_name),
                     'preview' => URL::temporarySignedRoute('content.preview', now()->addHour(), ['page' => $p->ulid, 'v' => $x->id], false)])->values(),
             'blockTypes' => Blocks::TYPES, 'summary' => ['min' => Pages::SUMMARY_MIN, 'max' => Pages::SUMMARY_MAX],
+            'media' => DB::table('media')->orderByDesc('id')->limit(200)->get(['path', 'alt'])->map(fn ($m) => ['url' => \App\Domains\Content\MediaLibrary::url((string) $m->path), 'alt' => (string) $m->alt])->values(),
             'status' => session('status'),
             'seo' => SeoData::private($v !== null ? (string) $v->title : 'New page')->toArray(),
         ]);

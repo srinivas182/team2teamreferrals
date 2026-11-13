@@ -37,6 +37,8 @@ final class HandleInertiaRequests extends Middleware
             ],
             'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
+            // Header and footer menus set in Admin → Website (cached); the public layout falls back to its defaults.
+            'menus' => fn () => $request->is('app', 'app/*', 'admin', 'admin/*') ? [] : \App\Domains\Content\Menus::all(), // public pages only
             // Real-time (Mercure): which team channel to listen on; null when broadcasting is off (tests, local).
             'realtime' => fn () => config('broadcasting.default') === 'mercure' && ($u = $request->user()) instanceof \App\Domains\Identity\Models\User
                 ? ['team' => \App\Domains\Network\Seats\Models\Team::of($u)?->ulid] : null,

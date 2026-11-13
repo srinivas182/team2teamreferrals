@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
+import { ContentTabs } from '@/pages/admin/content/Tabs';
 import type { Seo } from '@/types/seo';
 
 type Page = { id: string; title: string; slug: string; status: string; template: string; publishAt: string | null; publishedAt: string | null };
@@ -18,6 +19,7 @@ export default function ContentIndex({ pages, redirects, status, seo }: { pages:
     return (
         <AdminLayout title="Website">
             <SeoHead seo={seo} />
+            <ContentTabs current="/admin/content" />
             <div className="max-w-5xl space-y-4">
                 {status && <Alert tone="success">{statusMessage(status)}</Alert>}
                 <div className="flex justify-end">
