@@ -85,6 +85,16 @@ final class Group extends Model
             'credit_sent' => 1, 'credit_closed' => 2, 'credit_received' => -1, 'min_balance_enabled' => false, 'min_balance' => -5];
     }
 
+    protected static function booted(): void
+    {
+        // Website figures ("from $10 a month") follow pricing changes at once.
+        self::saved(function (self $g): void {
+            if ($g->wasChanged('pricing')) {
+                \App\Domains\Content\Tokens::forget();
+            }
+        });
+    }
+
     /** @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} */
     public static function defaultPricing(Industry $industry): array
     {

@@ -71,6 +71,7 @@ final class AdminBillingController
                 $s->set("billing.{$k}", (string) $d[$k]);
             }
         }
+        \App\Domains\Content\Tokens::forget(); // website figures follow the new prices at once
         foreach (['invite_reward_months' => 'invites.reward_months', 'invite_cap' => 'invites.cap', 'owner_per_seats' => 'invites.owner_per_seats'] as $k => $key) {
             if (array_key_exists($k, $d)) {
                 $s->set($key, (string) $d[$k]);

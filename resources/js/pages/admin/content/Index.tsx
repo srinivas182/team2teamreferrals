@@ -14,7 +14,20 @@ type Page = { id: string; title: string; slug: string; status: string; template:
 type Redirect = { id: number; from_path: string; to_path: string; code: number; hits: number; automatic: boolean };
 
 /** Admin → Website: the pages, and redirects. */
-export default function ContentIndex({ pages, redirects, status, seo }: { pages: Page[]; redirects: Redirect[]; status?: string; seo: Seo }) {
+export default function ContentIndex({
+    pages,
+    redirects,
+    industries = [],
+    status,
+    seo,
+}: {
+    pages: Page[];
+    redirects: Redirect[];
+    industries?: { slug: string; name: string }[];
+    status?: string;
+    seo: Seo;
+}) {
+    const ind = useForm({ industry: '' });
     const f = useForm({ from: '', to: '', code: '301' });
     return (
         <AdminLayout title="Website">
@@ -23,6 +36,26 @@ export default function ContentIndex({ pages, redirects, status, seo }: { pages:
             <div className="max-w-5xl space-y-4">
                 {status && <Alert tone="success">{statusMessage(status)}</Alert>}
                 <div className="flex justify-end gap-2">
+                    <select
+                        aria-label="Industry"
+                        className="h-10 rounded-md border border-line bg-surface px-2 text-sm"
+                        value={ind.data.industry}
+                        onChange={(e) => ind.setData('industry', e.target.value)}
+                    >
+                        <option value="">Industry pages for…</option>
+                        {industries.map((i) => (
+                            <option key={i.slug} value={i.slug}>
+                                {i.name}
+                            </option>
+                        ))}
+                    </select>
+                    <Button
+                        variant="secondary"
+                        disabled={!ind.data.industry}
+                        onClick={() => ind.post('/admin/content/industry-pages', { preserveScroll: true })}
+                    >
+                        Create industry pages
+                    </Button>
                     <Button variant="secondary" onClick={() => router.post('/admin/content/core', {}, { preserveScroll: true })}>
                         Create core pages
                     </Button>

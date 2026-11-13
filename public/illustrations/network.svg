@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="t"><title id="t">Connected cities</title>
+<rect width="640" height="360" rx="24" fill="#eef2ff"/>
+<g stroke="#6366f1" stroke-width="3" stroke-linecap="round" opacity=".55" fill="none">
+<path d="M110 220 L230 140 L350 190 L470 110 L560 170"/><path d="M230 140 L300 260 L470 110"/><path d="M110 220 L300 260 L560 170"/></g>
+<g fill="#4f46e5"><circle cx="110" cy="220" r="14"/><circle cx="230" cy="140" r="14"/><circle cx="350" cy="190" r="14"/><circle cx="470" cy="110" r="14"/><circle cx="560" cy="170" r="14"/><circle cx="300" cy="260" r="14"/></g>
+<g fill="#fff"><circle cx="110" cy="220" r="5"/><circle cx="230" cy="140" r="5"/><circle cx="350" cy="190" r="5"/><circle cx="470" cy="110" r="5"/><circle cx="560" cy="170" r="5"/><circle cx="300" cy="260" r="5"/></g>
+</svg>

@@ -203,6 +203,8 @@ const messages: Record<string, string> = {
     'testimonial-decline': 'Declined.',
     'core-pages-created': 'Core pages created as drafts: How it works, Pricing, About, FAQ, Contact, Terms and Privacy.',
     'core-pages-exist': 'The core pages already exist.',
+    'industry-pages-created': 'Industry pages created as drafts: landing, how it works, FAQ, pricing, join, and a city page template.',
+    'industry-pages-exist': 'That industry’s pages already exist.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

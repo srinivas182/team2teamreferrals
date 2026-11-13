@@ -19,6 +19,9 @@ final class ContentServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([InstallCommand::class]);
+        }
         $this->app->booted(function () {
             Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:content.manage'])->prefix('admin/content')->group(function (): void {
                 Route::get('/', [AdminContentController::class, 'index'])->name('admin.content');
@@ -34,6 +37,7 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::post('posts/{post}', [AdminBlogController::class, 'save'])->where('post', '[0-9A-Za-z]{26}')->name('admin.content.posts.update');
                 Route::post('posts/{post}/{action}', [AdminBlogController::class, 'act'])->where('post', '[0-9A-Za-z]{26}')->whereIn('action', ['publish', 'unpublish'])->name('admin.content.posts.act');
                 Route::post('core', [AdminContentController::class, 'core'])->name('admin.content.core');
+                Route::post('industry-pages', [AdminContentController::class, 'industryPages'])->name('admin.content.industry-pages');
                 Route::get('messages', [Http\ContactController::class, 'inbox'])->name('admin.content.messages');
                 Route::post('messages/{message}/handled', [Http\ContactController::class, 'handled'])->whereNumber('message')->name('admin.content.messages.handled');
                 Route::get('testimonials', [Http\TestimonialController::class, 'review'])->name('admin.content.testimonials');
