@@ -34,6 +34,7 @@ type Props = {
     avatars: { id: string; name: string }[];
     voices: { id: string; name: string }[];
     draft?: string | null;
+    defaultScript: string;
     status?: string;
     seo: Seo;
 };
@@ -237,6 +238,13 @@ export default function VideoStudio(p: Props) {
                     <textarea rows={8} className={area} value={f.data.script} onChange={(e) => f.setData('script', e.target.value)} />
                 </Field>
                 <div className="flex flex-wrap gap-2">
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => f.setData({ ...f.data, title: f.data.title || 'How referrals work here', script: p.defaultScript })}
+                    >
+                        Start from the default script
+                    </Button>
                     <Button size="sm" variant="secondary" onClick={() => router.post(`${p.base}/draft`, {}, opts)}>
                         <Sparkles className="size-4" aria-hidden /> Draft with AI from the rules
                     </Button>

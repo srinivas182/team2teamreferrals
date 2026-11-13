@@ -45,7 +45,7 @@ final class VideoStudioController
             'base' => $base, 'scripts' => $scripts, 'configured' => $configured,
             'lessons' => $group === null ? array_map(fn ($l) => (string) $l['title'], (array) json_decode((string) app(Training::class)->module($industry)->lessons, true)) : [],
             'avatars' => $configured ? rescue(fn () => $this->heygen->avatars(), [], false) : [], 'voices' => $configured ? rescue(fn () => $this->heygen->voices(), [], false) : [],
-            'draft' => session('script_draft'), 'status' => session('status'),
+            'draft' => session('script_draft'), 'defaultScript' => VideoStudio::defaultScript($industry, $group), 'status' => session('status'),
             'seo' => SeoData::private('Training videos')->toArray(),
         ]);
     }

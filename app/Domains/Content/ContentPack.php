@@ -71,4 +71,49 @@ final class ContentPack
 
         return $n;
     }
+
+    /**
+     * Starter writing, installed as DRAFTS only: the ten blog posts (reviewer shown as "Review pending" until the owner
+     * names one), the help-centre articles, and the Terms and Privacy drafts for the attorney. Anything that already
+     * exists, or that someone has edited, is left alone. Returns [posts, help articles, legal pages] added.
+     *
+     * @return array{0: int, 1: int, 2: int}
+     */
+    public static function installDrafts(?User $by = null): array
+    {
+        $posts = 0;
+        foreach (Pack\StarterPosts::all() as $p) {
+            $sources = $p['sources'] === [] ? '' : '<h2>Sources</h2><ul>'.implode('', array_map(fn ($s) => '<li><a href="'.e($s[1]).'">'.e($s[0]).'</a></li>', $p['sources'])).'</ul>';
+            $posts += self::draftPost($p['slug'], $p['title'], $p['summary'], $p['body'].$sources.'<p><em>Facts checked '.Pack\StarterPosts::CHECKED.'.</em></p>', $p['category'], $by) ? 1 : 0;
+        }
+        $help = 0;
+        foreach (Pack\HelpArticles::all() as $a) {
+            $help += self::draftPost($a['slug'], $a['title'], $a['summary'], $a['body'], 'Help centre', $by) ? 1 : 0;
+        }
+        $legal = 0;
+        foreach (Pack\LegalDrafts::all() as $slug => $d) {
+            $page = DB::table('cms_pages')->where('slug', $slug)->first();
+            $html = $page !== null ? (string) (json_decode((string) DB::table('cms_page_versions')->where('id', $page->draft_version_id)->value('blocks'), true)[0]['html'] ?? 'x') : '';
+            if ($page !== null && ($page->status !== 'draft' || trim(strip_tags($html)) !== '')) {
+                continue; // published, already written, or someone has worked on it: only empty drafts are filled
+            }
+            Pages::save($page, ['title' => $d['title'], 'slug' => $slug, 'template' => 'legal', 'answer_summary' => $d['summary'], 'seo' => [], 'blocks' => [['type' => 'rich_text', 'html' => $d['html']]]], $by);
+            $legal++;
+        }
+
+        return [$posts, $help, $legal];
+    }
+
+    private static function draftPost(string $slug, string $title, string $summary, string $body, string $category, ?User $by): bool
+    {
+        if (DB::table('posts')->where('slug', $slug)->exists()) {
+            return false;
+        }
+        $catSlug = \Illuminate\Support\Str::slug($category);
+        $cat = DB::table('blog_categories')->where('slug', $catSlug)->value('id')
+            ?? DB::table('blog_categories')->insertGetId(['slug' => $catSlug, 'name' => $category, 'created_at' => now(), 'updated_at' => now()]);
+        Posts::save(null, ['title' => $title, 'slug' => $slug, 'answer_summary' => $summary, 'body' => $body, 'category_id' => (int) $cat, 'author_id' => null, 'reviewer' => null, 'cover_media_id' => null, 'seo' => []], $by);
+
+        return true;
+    }
 }
