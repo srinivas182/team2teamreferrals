@@ -18,6 +18,7 @@ type Post = {
     publish_at: string | null;
     published_at: string | null;
     category: string | null;
+    reviewPending: boolean;
 };
 
 /** Admin → Website → Blog: posts and categories. */
@@ -67,6 +68,11 @@ export default function Posts({
                                         <Badge tone={p.status === 'published' ? 'success' : p.status === 'scheduled' ? 'info' : 'neutral'}>
                                             {p.status}
                                         </Badge>
+                                        {p.reviewPending && (
+                                            <Badge tone="warning" className="ml-1">
+                                                Review pending
+                                            </Badge>
+                                        )}
                                     </td>
                                     <td className="px-4 py-2 text-muted">
                                         {p.status === 'scheduled' ? `goes live ${p.publish_at}` : (p.published_at ?? '').slice(0, 10)}

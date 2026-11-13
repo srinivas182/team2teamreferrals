@@ -104,8 +104,8 @@ export default function PostEdit({ post, categories, authors, media, status, seo
                                 ))}
                             </select>
                         </Field>
-                        <Field label="Reviewed by (optional: the expert who checked the facts)">
-                            <Input value={f.data.reviewer} onChange={(e) => f.setData('reviewer', e.target.value)} />
+                        <Field label="Reviewed by (the expert who checked the facts)" error={f.errors.reviewer}>
+                            <Input placeholder="Review pending" value={f.data.reviewer} onChange={(e) => f.setData('reviewer', e.target.value)} />
                         </Field>
                         <Field label="Cover image (from the media library)">
                             <select className={sel} value={f.data.cover_media_id} onChange={(e) => f.setData('cover_media_id', e.target.value)}>

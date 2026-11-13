@@ -171,3 +171,19 @@ it('uses stock presenters only, checks the callback signature, and respects perm
     app(Settings::class)->set('modules.training', '0');
     $this->actingAs($this->owner)->get($base)->assertNotFound(); // no training, no training videos
 });
+
+it('offers a free default script built from the rules, which passes the checks in open and restricted industries', function () {
+    $open = $this->g->industry;
+    $script = VideoStudio::defaultScript($open, $this->g);
+    expect($script)->toContain('Solar Installers Network')->toContain('share of what the receiving team earns')->toContain('consent');
+    expect(str_word_count($script))->toBeGreaterThan(150);
+    $restricted = App\Domains\Network\Industries\Models\Industry::query()->where('tier', App\Domains\Network\Industries\Tier::Restricted)->firstOrFail();
+    $b = VideoStudio::defaultScript($restricted, null);
+    expect($b)->toContain('without any payment')->not->toMatch('/\b(referral fees?|fee|commission split|kickback|paid for referrals?)\b/i');
+    $this->actingAs($this->admin)->get('/admin/training/'.$restricted->slug.'/videos')->assertInertia(fn ($p) => $p->where('defaultScript', $b));
+    // It submits cleanly in the restricted industry (no fee talk), with no AI involved.
+    $studio = app(VideoStudio::class);
+    $ulid = $studio->create($this->admin, $restricted, null, 0, 'How referrals work here', $b);
+    $studio->submit($this->admin, DB::table('video_scripts')->where('ulid', $ulid)->first());
+    expect(DB::table('video_scripts')->where('ulid', $ulid)->value('status'))->toBe('submitted');
+});

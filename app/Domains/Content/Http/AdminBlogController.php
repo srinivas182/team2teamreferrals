@@ -24,7 +24,8 @@ final class AdminBlogController
     {
         return Inertia::render('admin/content/Posts', [
             'posts' => DB::table('posts as p')->leftJoin('blog_categories as c', 'c.id', '=', 'p.category_id')->orderByDesc('p.updated_at')
-                ->get(['p.ulid', 'p.title', 'p.slug', 'p.status', 'p.publish_at', 'p.published_at', 'c.name as category'])->values(),
+                ->get(['p.ulid', 'p.title', 'p.slug', 'p.status', 'p.publish_at', 'p.published_at', 'p.reviewer', 'c.name as category'])
+                ->map(fn ($p) => [...(array) $p, 'reviewPending' => Posts::needsReviewer((string) $p->slug, $p->reviewer)])->values(),
             'categories' => DB::table('blog_categories')->orderBy('name')->get(['id', 'slug', 'name'])->values(),
             'status' => session('status'), 'seo' => SeoData::private('Blog')->toArray(),
         ]);

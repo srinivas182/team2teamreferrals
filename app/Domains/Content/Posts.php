@@ -14,7 +14,7 @@ use stdClass;
 final class Posts
 {
     /** @param array{title: string, slug: string, answer_summary: ?string, body: string, category_id: ?int, author_id: ?int, reviewer: ?string, cover_media_id: ?int, seo: array<string, mixed>} $d */
-    public static function save(?stdClass $post, array $d, User $by): string
+    public static function save(?stdClass $post, array $d, ?User $by): string
     {
         $slug = strtolower(trim($d['slug'], ' /'));
         if (! preg_match('#^[a-z0-9]+(?:-[a-z0-9]+)*$#', $slug)) {
@@ -24,7 +24,7 @@ final class Posts
             throw ValidationException::withMessages(['slug' => 'Another post already uses that address.']);
         }
         $row = ['slug' => $slug, 'title' => mb_substr(trim($d['title']), 0, 160), 'answer_summary' => $d['answer_summary'] !== null ? mb_substr(trim($d['answer_summary']), 0, 400) : null,
-            'body' => Blocks::purify($d['body']), 'category_id' => $d['category_id'], 'author_id' => $d['author_id'] ?? $by->id, 'reviewer' => $d['reviewer'] !== null ? mb_substr(trim($d['reviewer']), 0, 120) : null,
+            'body' => Blocks::purify($d['body']), 'category_id' => $d['category_id'], 'author_id' => $d['author_id'] ?? $by?->id, 'reviewer' => $d['reviewer'] !== null ? mb_substr(trim($d['reviewer']), 0, 120) : null,
             'cover_media_id' => $d['cover_media_id'], 'updated_at' => now(),
             'seo' => json_encode(['title' => mb_substr(trim((string) ($d['seo']['title'] ?? '')), 0, 70), 'description' => mb_substr(trim((string) ($d['seo']['description'] ?? '')), 0, 170), 'noindex' => (bool) ($d['seo']['noindex'] ?? false)])];
         if ($post === null) {
@@ -38,8 +38,17 @@ final class Posts
         return (string) $post->ulid;
     }
 
+    /** Starter posts make legal and industry claims: they need a named reviewer before they can go live. */
+    public static function needsReviewer(string $slug, ?string $reviewer): bool
+    {
+        return trim((string) $reviewer) === '' && in_array($slug, array_column(Pack\StarterPosts::all(), 'slug'), true);
+    }
+
     public static function publish(stdClass $post, ?string $at, User $by): void
     {
+        if (self::needsReviewer((string) $post->slug, $post->reviewer)) {
+            throw ValidationException::withMessages(['reviewer' => 'Review pending: this post makes legal and industry claims. Name the expert who checked the facts before publishing.']);
+        }
         $len = mb_strlen(trim((string) $post->answer_summary));
         if ($len < Pages::SUMMARY_MIN || $len > Pages::SUMMARY_MAX) {
             throw ValidationException::withMessages(['answer_summary' => 'Before publishing, add an answer summary of '.Pages::SUMMARY_MIN.' to '.Pages::SUMMARY_MAX.' characters: the one or two sentences answer engines quote.']);

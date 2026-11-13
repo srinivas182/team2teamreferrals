@@ -283,6 +283,29 @@ final class VideoStudio
         ]);
     }
 
+    /**
+     * The written default script: free, needs no AI, and is built from the same rules as the network's training, so
+     * every network can start from it. In restricted industries it never mentions fees (the submit check would refuse).
+     */
+    public static function defaultScript(Industry $industry, ?Group $group): string
+    {
+        $rule = fn (string $k, int $d) => $group !== null ? (int) ($group->rule($k) ?? $d) : $d;
+        $name = $group !== null ? $group->name : 'the '.$industry->name.' network';
+        $money = $industry->tier === Tier::Open
+            ? 'If a fee is agreed, it is written into the referral agreement before you send the client, as a share of what the receiving team earns from the referral, never a share of the sale price. Teams pay each other directly.'
+            : 'In this industry, referrals are exchanged without any payment of any kind. Instead, members earn credits and recognition, which have no cash value.';
+
+        return implode("\n\n", [
+            'Welcome to '.$name.'. In the next two minutes we will cover the rules every member follows, so that clients are looked after and every referral is easy to trust.',
+            'First, consent. Only refer a client who has agreed to be referred. Tell them who you are introducing them to and why. Their contact details stay private until the receiving team accepts the referral.',
+            'Second, speed. When a referral arrives, accept or decline it within '.$rule('accept_hours', 24).' hours. A quick no is better than a slow yes, because it lets the referring team find someone else. After you accept, contact the client within '.$rule('first_contact_hours', 24).' hours.',
+            'Third, updates. Keep the referring team informed at least every '.$rule('update_days', 7).' days. They lent you their client’s trust, and the timeline shows them how it is going without chasing you.',
+            'Fourth, the money. '.$money,
+            'Finally, closing. When the work is done, or the client decides not to go ahead, mark the referral won or lost. The referring team confirms the outcome. Your trust score reflects how quickly you respond, how often you update, and how accurately you report outcomes.',
+            'That is it. Complete the short quiz after this video, and you are ready to send and receive referrals in '.$name.'.',
+        ]);
+    }
+
     private function authorise(User $user, stdClass $s): void
     {
         $group = $s->group_id ? Group::query()->find((int) $s->group_id) : null;
