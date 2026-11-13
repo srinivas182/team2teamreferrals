@@ -4,6 +4,17 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 37b-2 — Core pages, public-link guard, Contact form, testimonials, legal pages
+Completes Sprint 37, each proven by tests in tests/Feature/Content/CorePagesTest.php:
+2. Core pages created in one click (Admin → Website → Create core pages) as drafts for the content pack: How it works, Pricing, About, FAQ, Contact, Terms and Privacy, with the right templates; created once.
+- Public-link guard: public menus (the admin's, or the built-in ones) show only links that open (an app page, a published website page, a redirect, or an outside https link), so the site never links to "not found"; menus are worked out in two queries and cached, cleared whenever pages, redirects or menus change. A test also checks every link written into public page code.
+14. Contact form (a website block, on the Contact page): a hidden field and a start time keep bots out, 5 messages an hour per visitor; messages are saved to Admin → Website → Messages and staff with support or content rights (and super admins) are notified. The profile lead form now uses the same shared protection (FormGuard).
+13. Genuine testimonials: members write one in the portal (Share your experience) and tick an explicit consent; staff approve or decline; a testimonials block item linked to an approved one uses the member's own words (an edited quote is replaced) and is the only kind marked up as a Review. Withdrawing consent removes it from the page and its structured data at once; typed quotes are shown without review markup.
+15. Legal pages publish normally (the owner reports the attorney has approved them) and show their effective date; every change is kept as a version.
+16. AEO gate: a page using every block type passes the AEO essentials (description, canonical address, indexing and structured data); the test fails if a block type is added without being covered.
+- Fixed in review: the reserved-address check treated the Contact form's POST address as taken, blocking the Contact page; it now reserves only addresses the app shows (GET). The public-link filter first checked links one at a time (the home page went from 6 queries to 26, caught by the page budgets); it now works them out at once and caches the result.
+- 545 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 37b-1 — Blog, menus, media library, sitemap and llms.txt
 Checklist items delivered here (core pages, Contact form, testimonial consent and legal approval follow in 37b-2), each proven by tests in tests/Feature/Content/BlogMediaTest.php:
 3. Blog (/blog, /blog/category/…, /blog/…): posts with categories, authors, a "reviewed by" expert, cover images and scheduled publishing. Publishing needs an answer summary (40–320 characters) and a body; posts lead with the answer, then author, reviewer, published and updated dates; Article data carries author, reviewer, description, image and dates; breadcrumbs; bodies are cleaned like rich text.

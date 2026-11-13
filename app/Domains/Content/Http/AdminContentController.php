@@ -48,6 +48,7 @@ final class AdminContentController
                 ->map(fn ($x) => ['id' => (int) $x->id, 'number' => (int) $x->number, 'title' => (string) $x->title, 'at' => substr((string) $x->created_at, 0, 16), 'by' => trim($x->first_name.' '.$x->last_name),
                     'preview' => URL::temporarySignedRoute('content.preview', now()->addHour(), ['page' => $p->ulid, 'v' => $x->id], false)])->values(),
             'blockTypes' => Blocks::TYPES, 'summary' => ['min' => Pages::SUMMARY_MIN, 'max' => Pages::SUMMARY_MAX],
+            'approved' => DB::table('testimonials')->where('status', 'approved')->orderByDesc('id')->get(['id', 'quote', 'author_name'])->map(fn ($t) => ['id' => (int) $t->id, 'label' => $t->author_name.': '.mb_strimwidth((string) $t->quote, 0, 60, '…')])->values(),
             'media' => DB::table('media')->orderByDesc('id')->limit(200)->get(['path', 'alt'])->map(fn ($m) => ['url' => \App\Domains\Content\MediaLibrary::url((string) $m->path), 'alt' => (string) $m->alt])->values(),
             'status' => session('status'),
             'seo' => SeoData::private($v !== null ? (string) $v->title : 'New page')->toArray(),
@@ -79,6 +80,13 @@ final class AdminContentController
         return back()->with('status', 'page-'.$action.($action === 'publish' && $request->filled('at') ? '-scheduled' : ''));
     }
 
+    public function core(Request $request): RedirectResponse
+    {
+        $n = Pages::createCore($this->user($request));
+
+        return back()->with('status', $n > 0 ? 'core-pages-created' : 'core-pages-exist');
+    }
+
     public function redirectStore(Request $request): RedirectResponse
     {
         $d = $request->validate(['from' => ['required', 'string', 'max:200', 'regex:#^/[A-Za-z0-9/_.-]*$#'], 'to' => ['required', 'string', 'max:300'], 'code' => ['required', 'in:301,302']]);
@@ -93,6 +101,7 @@ final class AdminContentController
     public function redirectDelete(int $redirect): RedirectResponse
     {
         DB::table('redirects')->where('id', $redirect)->delete();
+        \App\Domains\Content\Menus::forget();
 
         return back()->with('status', 'redirect-deleted');
     }

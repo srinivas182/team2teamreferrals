@@ -9,6 +9,8 @@ export function ContentTabs({ current }: { current: string }) {
                 ['/admin/content/posts', 'Blog'],
                 ['/admin/content/menus', 'Menus'],
                 ['/admin/content/media', 'Media'],
+                ['/admin/content/messages', 'Messages'],
+                ['/admin/content/testimonials', 'Testimonials'],
             ].map(([href, label]) => (
                 <Link
                     key={href}

@@ -22,7 +22,10 @@ export default function ContentIndex({ pages, redirects, status, seo }: { pages:
             <ContentTabs current="/admin/content" />
             <div className="max-w-5xl space-y-4">
                 {status && <Alert tone="success">{statusMessage(status)}</Alert>}
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    <Button variant="secondary" onClick={() => router.post('/admin/content/core', {}, { preserveScroll: true })}>
+                        Create core pages
+                    </Button>
                     <Link href="/admin/content/new" className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-white">
                         New page
                     </Link>

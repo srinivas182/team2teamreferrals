@@ -8,55 +8,15 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-const nav = [
-    ['How it works', '/how-it-works'],
-    ['Groups', '/groups'],
-    ['Find a pro', '/find-a-pro'],
-    ['Pricing', '/pricing'],
-    ['Blog', '/blog'],
-] as const;
-
-const footer = [
-    [
-        'Product',
-        [
-            ['How it works', '/how-it-works'],
-            ['Pricing', '/pricing'],
-            ['Group directory', '/groups'],
-            ['Find a pro', '/find-a-pro'],
-        ],
-    ],
-    [
-        'Company',
-        [
-            ['About', '/about'],
-            ['Blog', '/blog'],
-            ['Help centre', '/help'],
-            ['Contact', '/contact'],
-        ],
-    ],
-    [
-        'Legal',
-        [
-            ['Terms', '/legal/terms'],
-            ['Privacy', '/legal/privacy'],
-            ['SMS terms', '/legal/sms-terms'],
-            ['Cookies', '/legal/cookies'],
-        ],
-    ],
-] as const;
+// Header and footer links come from the server (Admin → Website menus, or the built-in ones), keeping only links that open.
 
 export function PublicLayout({ children, current }: { children: ReactNode; current?: string }) {
     // While pre-launch is on, "Claim your city" goes to the reservation page; afterwards, to sign-up.
-    const shared = usePage<{ modules?: Record<string, boolean>; menus?: Record<string, { label: string; url: string }[]> }>().props;
+    const shared = usePage<{ modules?: Record<string, boolean>; menus?: { header?: [string, string][]; footer?: [string, [string, string][]][] } }>()
+        .props;
     const claimHref = shared.modules?.prelaunch ? '/reserve' : '/register';
-    // Menus set in Admin → Website replace the defaults.
-    const header: readonly (readonly [string, string])[] = shared.menus?.header?.length
-        ? shared.menus.header.map((m) => [m.label, m.url] as const)
-        : nav;
-    const footerGroups: readonly (readonly [string, readonly (readonly [string, string])[]])[] = shared.menus?.footer?.length
-        ? [['Site', shared.menus.footer.map((m) => [m.label, m.url] as const)]]
-        : footer;
+    const header = shared.menus?.header ?? [];
+    const footerGroups = shared.menus?.footer ?? [];
     const [open, setOpen] = useState(false);
     return (
         <TooltipProvider>

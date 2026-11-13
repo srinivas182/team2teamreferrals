@@ -33,6 +33,11 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::get('posts/{post}', [AdminBlogController::class, 'edit'])->where('post', '[0-9A-Za-z]{26}')->name('admin.content.posts.edit');
                 Route::post('posts/{post}', [AdminBlogController::class, 'save'])->where('post', '[0-9A-Za-z]{26}')->name('admin.content.posts.update');
                 Route::post('posts/{post}/{action}', [AdminBlogController::class, 'act'])->where('post', '[0-9A-Za-z]{26}')->whereIn('action', ['publish', 'unpublish'])->name('admin.content.posts.act');
+                Route::post('core', [AdminContentController::class, 'core'])->name('admin.content.core');
+                Route::get('messages', [Http\ContactController::class, 'inbox'])->name('admin.content.messages');
+                Route::post('messages/{message}/handled', [Http\ContactController::class, 'handled'])->whereNumber('message')->name('admin.content.messages.handled');
+                Route::get('testimonials', [Http\TestimonialController::class, 'review'])->name('admin.content.testimonials');
+                Route::post('testimonials/{testimonial}/{decision}', [Http\TestimonialController::class, 'decide'])->whereNumber('testimonial')->whereIn('decision', ['approve', 'decline'])->name('admin.content.testimonials.decide');
                 Route::get('menus', [AdminBlogController::class, 'menus'])->name('admin.content.menus');
                 Route::post('menus', [AdminBlogController::class, 'saveMenu'])->name('admin.content.menus.save');
                 Route::get('media', [AdminBlogController::class, 'media'])->name('admin.content.media');
@@ -40,6 +45,12 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::get('{page}', [AdminContentController::class, 'edit'])->where('page', '[0-9A-Za-z]{26}')->name('admin.content.edit');
                 Route::post('{page}', [AdminContentController::class, 'save'])->where('page', '[0-9A-Za-z]{26}')->name('admin.content.update');
                 Route::post('{page}/{action}', [AdminContentController::class, 'act'])->where('page', '[0-9A-Za-z]{26}')->whereIn('action', ['publish', 'rollback', 'unpublish'])->name('admin.content.act');
+            });
+            Route::middleware(['web', 'throttle:5,60'])->post('contact', [Http\ContactController::class, 'send'])->name('contact.send');
+            Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+                Route::get('app/testimonial', [Http\TestimonialController::class, 'mine'])->name('testimonial');
+                Route::post('app/testimonial', [Http\TestimonialController::class, 'submit'])->middleware('throttle:10,60')->name('testimonial.submit');
+                Route::post('app/testimonial/{testimonial}/withdraw', [Http\TestimonialController::class, 'withdraw'])->whereNumber('testimonial')->name('testimonial.withdraw');
             });
             Route::middleware(['web', 'noindex:always', 'auth'])->get('preview/{page}', [PublicPageController::class, 'preview'])->where('page', '[0-9A-Za-z]{26}')->name('content.preview');
             Route::middleware(['web', 'edge.cache'])->group(function (): void {

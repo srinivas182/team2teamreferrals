@@ -195,6 +195,14 @@ const messages: Record<string, string> = {
     'category-saved': 'Category added.',
     'menu-saved': 'Menu saved.',
     'media-uploaded': 'Image uploaded, converted to WebP and checked.',
+    'contact-sent': 'Thanks, your message is on its way.',
+    'message-handled': 'Marked as handled.',
+    'testimonial-sent': 'Thank you! We’ll let you know when it’s published.',
+    'testimonial-withdrawn': 'Withdrawn. It’s removed from the website.',
+    'testimonial-approve': 'Approved. It can now be added to a page.',
+    'testimonial-decline': 'Declined.',
+    'core-pages-created': 'Core pages created as drafts: How it works, Pricing, About, FAQ, Contact, Terms and Privacy.',
+    'core-pages-exist': 'The core pages already exist.',
     'code-emailed': 'We emailed you a new 6-digit code. It replaces the one sent by text.',
 };
 

@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -79,12 +78,7 @@ final class ProfileController
             'client_name' => ['required', 'string', 'max:120'], 'client_phone' => ['nullable', 'required_without:client_email', 'string', 'max:32'], 'client_email' => ['nullable', 'email:rfc', 'max:190'],
             'need' => ['required', 'string', 'min:10', 'max:2000'], 'consent' => ['accepted'], 'started' => ['required', 'string'],
         ], ['consent.accepted' => 'Please confirm the client agreed to be contacted.']);
-        // Bots fill the hidden field or post instantly; a form left open for hours has gone stale.
-        $started = rescue(fn () => decrypt((string) $d['started']), 0, false);
-        $elapsed = (int) now()->timestamp - (is_numeric($started) ? (int) $started : 0);
-        if (filled($request->input('website_url')) || $elapsed < 3 || $elapsed > 7200) {
-            throw ValidationException::withMessages(['need' => 'Please try sending that again.']);
-        }
+        \App\Support\FormGuard::check($request, 'need'); // hidden field and timing (shared with the Contact form)
         $phone = $d['client_phone'] ? preg_replace('/\D+/', '', (string) $d['client_phone']) : null;
         $duplicate = DB::table('profile_leads')->where('team_id', $team->id)->where('created_at', '>=', now()->subDays(30))
             ->where(fn ($q) => $q->when($phone, fn ($w) => $w->orWhere('client_phone', $phone))->when($d['client_email'] ?? null, fn ($w) => $w->orWhere('client_email', strtolower((string) $d['client_email']))))->exists();
@@ -96,7 +90,7 @@ final class ProfileController
             'team_id' => $team->id, 'referrer_name' => $d['referrer_name'], 'referrer_email' => strtolower((string) $d['referrer_email']), 'referrer_business' => $d['referrer_business'] ?? null,
             'client_name' => $d['client_name'], 'client_phone' => $phone, 'client_email' => isset($d['client_email']) ? strtolower((string) $d['client_email']) : null, 'need' => $d['need'],
             'consent_text' => 'The referrer confirmed the client agreed to be contacted by '.$team->name.'.', 'verify_token_hash' => hash('sha256', $token),
-            'ip_hash' => hash('sha256', (string) $request->ip().'|'.config('app.key')), 'created_at' => now(), 'updated_at' => now(),
+            'ip_hash' => \App\Support\FormGuard::ipHash($request), 'created_at' => now(), 'updated_at' => now(),
         ]);
         Notification::route('mail', (string) $d['referrer_email'])->notify(new ProfileLeadVerify($team->name, url('/t/'.$team->slug.'/confirm/'.$token)));
 

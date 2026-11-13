@@ -44,6 +44,7 @@ const paletteActions: { label: string; href: string; icon: typeof Plus; module?:
     { label: 'Forward a lead, record a voice note or scan a card', href: '/app/drafts', icon: Plus, module: 'ai_intake' },
     { label: 'Introduce a client to another industry', href: '/app/introduce', icon: Plus, module: 'cross_industry' },
     { label: 'Invite a pro', href: '/app/invites', icon: Plus },
+    { label: 'Share your experience (a testimonial)', href: '/app/testimonial', icon: Plus },
     { label: 'Log a call or move a referral', href: '/app/pipeline', icon: Plus },
     { label: 'Find a member', href: '/app/directory', icon: Search, module: 'community' },
     { label: 'Download my dashboard (PDF)', href: '/app/dashboard/export.pdf', icon: Plus },
