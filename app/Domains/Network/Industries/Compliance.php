@@ -9,6 +9,7 @@ use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Network\Industries\Models\PlatformFeeRule;
 use App\Domains\Platform\Settings\Settings;
 use DomainException;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The compliance gate and the platform-fee lock. Every rule here is enforced in code, whatever a screen,
@@ -47,6 +48,8 @@ final class Compliance
         if (! $tier->allowsPlatformFee()) {
             $this->disableFees($industry);
         }
+        // The industry hub was reviewed for the old tier's rules: take it back to draft for a new review.
+        DB::table('industry_content')->where('industry_id', $industry->id)->where('status', 'published')->update(['status' => 'draft', 'updated_at' => now()]);
         activity('admin')->causedBy($by)->performedOn($industry)->event('industry-tier-changed')->withProperties(['old' => $old->value, 'new' => $tier->value])->log("Changed {$industry->name} to tier {$tier->value}");
     }
 

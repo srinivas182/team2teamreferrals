@@ -20,7 +20,8 @@ final class InstallCommand extends Command
         $this->call('t2t:locations:import', array_filter(['--path' => $this->option('locations') ?: database_path('data/us')]));
         $this->info('Content pack: '.ContentPack::install().' pages published.');
         [$posts, $help, $legal] = ContentPack::installDrafts();
-        $this->info("Drafts for review: {$posts} blog posts, {$help} help articles, {$legal} legal pages (not published).");
+        $hubs = Industry\IndustryContent::install();
+        $this->info("Drafts for review: {$posts} blog posts, {$help} help articles, {$legal} legal pages, {$hubs} industry hubs (not published).");
         if ($this->option('demo') && ! Demo\DemoWorkspace::exists()) {
             $this->call('t2t:demo', array_filter(['--force' => (bool) $this->option('force')]));
         }

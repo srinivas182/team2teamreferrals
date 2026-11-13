@@ -46,6 +46,11 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::post('menus', [AdminBlogController::class, 'saveMenu'])->name('admin.content.menus.save');
                 Route::get('media', [AdminBlogController::class, 'media'])->name('admin.content.media');
                 Route::post('media', [AdminBlogController::class, 'upload'])->middleware('throttle:60,10')->name('admin.content.media.upload');
+                Route::get('industries', [Http\AdminIndustryContentController::class, 'index'])->name('admin.content.industries');
+                Route::post('industries/install', [Http\AdminIndustryContentController::class, 'install'])->name('admin.content.industries.install');
+                Route::get('industries/{industry:slug}', [Http\AdminIndustryContentController::class, 'edit'])->name('admin.content.industries.edit');
+                Route::post('industries/{industry:slug}', [Http\AdminIndustryContentController::class, 'save'])->name('admin.content.industries.save');
+                Route::post('industries/{industry:slug}/{action}', [Http\AdminIndustryContentController::class, 'act'])->whereIn('action', ['publish', 'unpublish'])->name('admin.content.industries.act');
                 Route::get('{page}', [AdminContentController::class, 'edit'])->where('page', '[0-9A-Za-z]{26}')->name('admin.content.edit');
                 Route::post('{page}', [AdminContentController::class, 'save'])->where('page', '[0-9A-Za-z]{26}')->name('admin.content.update');
                 Route::post('{page}/{action}', [AdminContentController::class, 'act'])->where('page', '[0-9A-Za-z]{26}')->whereIn('action', ['publish', 'rollback', 'unpublish'])->name('admin.content.act');
@@ -57,7 +62,13 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::post('app/testimonial/{testimonial}/withdraw', [Http\TestimonialController::class, 'withdraw'])->whereNumber('testimonial')->name('testimonial.withdraw');
             });
             Route::middleware(['web', 'noindex:always', 'auth'])->get('preview/{page}', [PublicPageController::class, 'preview'])->where('page', '[0-9A-Za-z]{26}')->name('content.preview');
+            Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:content.manage'])
+                ->get('preview/industries/{slug}', [Http\IndustryHubController::class, 'preview'])->where('slug', '[a-z0-9-]+')->name('industries.preview');
+            // Industry hubs: the page carries a correction form, so only the list is cached at the edge.
+            Route::middleware('web')->get('industries/{slug}', [Http\IndustryHubController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('industries.show');
+            Route::middleware(['web', 'throttle:5,60'])->post('industries/{slug}/correction', [Http\IndustryHubController::class, 'correction'])->where('slug', '[a-z0-9-]+')->name('industries.correction');
             Route::middleware(['web', 'edge.cache'])->group(function (): void {
+                Route::get('industries', [Http\IndustryHubController::class, 'index'])->name('industries');
                 Route::get('blog', [BlogController::class, 'index'])->name('blog');
                 Route::get('blog/category/{category}', [BlogController::class, 'index'])->where('category', '[a-z0-9-]+')->name('blog.category');
                 Route::get('blog/{slug}', [BlogController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('blog.post');

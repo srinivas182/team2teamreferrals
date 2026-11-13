@@ -7,6 +7,7 @@ export function ContentTabs({ current }: { current: string }) {
             {[
                 ['/admin/content', 'Pages'],
                 ['/admin/content/posts', 'Blog'],
+                ['/admin/content/industries', 'Industries'],
                 ['/admin/content/menus', 'Menus'],
                 ['/admin/content/media', 'Media'],
                 ['/admin/content/messages', 'Messages'],

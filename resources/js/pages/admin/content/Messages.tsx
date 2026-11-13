@@ -8,7 +8,7 @@ import { statusMessage } from '@/lib/status';
 import { ContentTabs } from '@/pages/admin/content/Tabs';
 import type { Seo } from '@/types/seo';
 
-type M = { id: number; name: string; email: string; topic: string; message: string; status: string; created_at: string };
+type M = { id: number; name: string; email: string; topic: string; page: string | null; message: string; status: string; created_at: string };
 
 /** Admin → Website → Messages from the Contact page. */
 export default function Messages({ messages, status, seo }: { messages: M[]; status?: string; seo: Seo }) {
@@ -27,6 +27,11 @@ export default function Messages({ messages, status, seo }: { messages: M[]; sta
                                 {m.email}
                             </a>
                             <Badge tone="info">{m.topic}</Badge>
+                            {m.page && (
+                                <a href={m.page} className="text-xs text-primary">
+                                    {m.page}
+                                </a>
+                            )}
                             <span className="ml-auto text-xs text-muted">{m.created_at.slice(0, 16)}</span>
                         </div>
                         <p className="whitespace-pre-wrap">{m.message}</p>
