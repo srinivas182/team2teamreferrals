@@ -4,15 +4,24 @@ import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
 
 type Post = { slug: string; title: string; summary: string; date: string; image: string | null; alt: string };
-type Props = { posts: Post[]; page: number; pages: number; category: string | null; categories: { slug: string; name: string }[]; seo: Seo };
+type Props = {
+    posts: Post[];
+    intro: string;
+    page: number;
+    pages: number;
+    category: string | null;
+    categories: { slug: string; name: string }[];
+    seo: Seo;
+};
 
 /** The blog: newest first, each post with the answer it gives. */
-export default function Blog({ posts, page, pages, category, categories, seo }: Props) {
+export default function Blog({ posts, intro, page, pages, category, categories, seo }: Props) {
     return (
         <PublicLayout current="/blog">
             <SeoHead seo={seo} />
             <div className="mx-auto max-w-5xl px-4 py-10">
                 <h1 className="font-display text-4xl font-bold">{category ?? 'Blog'}</h1>
+                <p className="mt-3 max-w-3xl text-lg text-muted">{intro}</p>
                 {categories.length > 0 && (
                     <nav aria-label="Categories" className="mt-4 flex flex-wrap gap-2 text-sm">
                         <Link href="/blog" className="rounded-full border border-line px-3 py-1">

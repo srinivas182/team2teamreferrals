@@ -16,7 +16,9 @@ export default function FindAPro({ answer, industries, seo }: { answer: string; 
             <SeoHead seo={seo} />
             <section className="mx-auto max-w-3xl px-4 py-12">
                 <h1 className="font-display text-4xl font-bold">Find a trusted pro</h1>
-                <p className="mt-4 text-lg">{answer}</p>
+                {/* The question answer engines ask, shown with its answer (it is also the page's FAQ structured data). */}
+                <p className="mt-4 font-semibold">How do I find a trusted pro near me?</p>
+                <p className="mt-1 text-lg">{answer}</p>
                 <form
                     className="mt-8 grid gap-4 rounded-lg border border-line bg-surface p-5 sm:grid-cols-2"
                     onSubmit={(e) => {

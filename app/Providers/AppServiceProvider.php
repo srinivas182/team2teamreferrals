@@ -49,7 +49,12 @@ final class AppServiceProvider extends ServiceProvider
             });
         }
 
-        // Start loading assets for links as soon as the user shows intent.
-        Vite::prefetch(concurrency: 3);
+        // Prefetching every page's scripts after load is set per request (HandleInertiaRequests): portal and admin
+        // only, so public visitors on phones don't download the whole app.
+        // Public pages arrive fully rendered from the server, so on a phone the stylesheet and text come first: their
+        // scripts are fetched at low priority instead of competing with them (they still load right after, for
+        // interactivity). Keeps Largest Contentful Paint under 2.5 s on mobile (Sprint 43). The portal and admin keep
+        // full preloading: they are apps.
+        Vite::usePreloadTagAttributes(fn (?string $src, string $url) => str_ends_with($url, '.js') && ! request()->is('app', 'app/*', 'admin', 'admin/*') ? ['rel' => 'prefetch'] : []);
     }
 }

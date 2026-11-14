@@ -3,12 +3,17 @@ import { Input, Select, Textarea } from '@/components/ui/field';
 export type FormField = { key: string; label: string; type: string; required?: boolean; options?: string[] };
 export type Answer = string | string[] | boolean;
 
-/** One question from an industry's referral form, as the right kind of input. */
-export function AnswerInput({ f, value, onChange }: { f: FormField; value: Answer | undefined; onChange: (v: Answer) => void }) {
-    if (f.type === 'textarea') return <Textarea rows={3} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />;
+type Wiring = { id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean };
+
+/**
+ * One question from an industry's referral form, as the right kind of input. Inside a <Field>, it takes the field's id
+ * and description, so screen readers announce the question with the input (and the label click focuses it).
+ */
+export function AnswerInput({ f, value, onChange, ...wiring }: { f: FormField; value: Answer | undefined; onChange: (v: Answer) => void } & Wiring) {
+    if (f.type === 'textarea') return <Textarea rows={3} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} {...wiring} />;
     if (f.type === 'choice')
         return (
-            <Select value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)}>
+            <Select value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} {...wiring}>
                 <option value="">Choose…</option>
                 {(f.options ?? []).map((o) => (
                     <option key={o}>{o}</option>
@@ -17,7 +22,7 @@ export function AnswerInput({ f, value, onChange }: { f: FormField; value: Answe
         );
     if (f.type === 'multi_choice')
         return (
-            <div className="flex flex-wrap gap-3">
+            <div role="group" aria-label={f.label} id={wiring.id} aria-describedby={wiring['aria-describedby']} className="flex flex-wrap gap-3">
                 {(f.options ?? []).map((o) => {
                     const arr = (value as string[]) ?? [];
                     return (
@@ -35,7 +40,7 @@ export function AnswerInput({ f, value, onChange }: { f: FormField; value: Answe
         );
     if (f.type === 'boolean')
         return (
-            <Select value={value === undefined ? '' : value ? 'yes' : 'no'} onChange={(e) => onChange(e.target.value === 'yes')}>
+            <Select value={value === undefined ? '' : value ? 'yes' : 'no'} onChange={(e) => onChange(e.target.value === 'yes')} {...wiring}>
                 <option value="">Choose…</option>
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
@@ -46,6 +51,7 @@ export function AnswerInput({ f, value, onChange }: { f: FormField; value: Answe
             type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
             value={(value as string) ?? ''}
             onChange={(e) => onChange(e.target.value)}
+            {...wiring}
         />
     );
 }

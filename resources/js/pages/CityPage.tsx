@@ -92,7 +92,7 @@ export default function CityPage({ industry, state, city, answer, intro, seats, 
                 {request && <RequestForm block={request} pro={industry.terms.pro ?? 'pro'} place={`${city.name}, ${state.code}`} />}
                 <section aria-labelledby="how-to" className="mt-8">
                     <h2 id="how-to" className="font-display text-xl font-bold">
-                        How do I find a trusted {industry.terms.pro} in {city.name}?
+                        How do I find a trusted {industry.terms.pro} in {city.name}, {state.code}?
                     </h2>
                     <p className="mt-2">{howTo}</p>
                 </section>

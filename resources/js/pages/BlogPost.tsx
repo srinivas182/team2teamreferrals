@@ -17,11 +17,12 @@ type Props = {
         image: string | null;
         alt: string;
     };
+    related: { industries: { name: string; url: string }[]; articles: { title: string; url: string }[] };
     seo: Seo;
 };
 
 /** A blog post: the answer first, then the article. Its body is HTML cleaned on the server. */
-export default function BlogPost({ post, seo }: Props) {
+export default function BlogPost({ post, related, seo }: Props) {
     return (
         <PublicLayout current="/blog">
             <SeoHead seo={seo} />
@@ -53,6 +54,43 @@ export default function BlogPost({ post, seo }: Props) {
                 </p>
                 {post.image && <img src={post.image} alt={post.alt} className="mt-6 w-full rounded-lg" />}
                 <div className="prose mt-8 max-w-none" dangerouslySetInnerHTML={{ __html: post.body }} />
+                {(related.industries.length > 0 || related.articles.length > 0) && (
+                    <aside aria-labelledby="related" className="mt-10 border-t border-line pt-6">
+                        <h2 id="related" className="font-display text-xl font-bold">
+                            Related
+                        </h2>
+                        <div className="mt-3 grid gap-6 sm:grid-cols-2">
+                            {related.industries.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-semibold text-muted">Industries in this article</h3>
+                                    <ul className="mt-1 space-y-1">
+                                        {related.industries.map((l) => (
+                                            <li key={l.url}>
+                                                <Link href={l.url} className="text-primary">
+                                                    {l.name}: costs, licensing and referrals
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {related.articles.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-semibold text-muted">Read next</h3>
+                                    <ul className="mt-1 space-y-1">
+                                        {related.articles.map((l) => (
+                                            <li key={l.url}>
+                                                <Link href={l.url} className="text-primary">
+                                                    {l.title}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </aside>
+                )}
             </article>
         </PublicLayout>
     );

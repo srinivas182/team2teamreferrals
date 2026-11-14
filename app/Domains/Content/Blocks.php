@@ -88,6 +88,7 @@ final class Blocks
                 'steps' => $b['items'] !== [] ? ['@context' => 'https://schema.org', '@type' => 'HowTo', 'name' => $b['heading'] !== '' ? $b['heading'] : $title,
                     'step' => array_map(fn ($i, int $n) => ['@type' => 'HowToStep', 'position' => $n, 'name' => $i['title'], 'text' => $i['text']], $b['items'], range(1, max(1, count($b['items']))))] : null,
                 'pricing' => $b['plans'] !== [] ? ['@context' => 'https://schema.org', '@type' => 'Service', 'name' => $title, 'url' => $url,
+                    'provider' => ['@type' => 'Organization', 'name' => (string) config('seo.organization.name'), 'url' => (string) config('seo.canonical_url')], 'areaServed' => ['@type' => 'Country', 'name' => 'United States'],
                     'offers' => array_map(fn ($p) => ['@type' => 'Offer', 'name' => $p['name'], 'price' => preg_replace('/[^0-9.]/', '', (string) $p['price']), 'priceCurrency' => 'USD', 'url' => $url], $b['plans'])] : null,
                 // Review markup only for quotes linked to a member's recorded consent (Sprint 37b); otherwise none.
                 'testimonials' => ($genuine = array_values(array_filter($b['items'], fn ($i) => ! empty($i['consent_id'])))) !== []

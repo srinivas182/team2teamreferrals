@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { type MapData, type MapPoint, type MapStatus, STATUS_COLOR, STATUS_LABEL } from './types';
 
 const noop = () => () => undefined;
@@ -40,6 +40,16 @@ export function NetworkMap({
         () => false,
     );
     const [shown, setShown] = useState<Record<MapStatus, boolean>>({ held: true, waitlist: true, open: true });
+    // The map is drawn only when it is about to scroll into view, so a phone spends its first seconds on the text
+    // (keeps Total Blocking Time low, Sprint 43). Without IntersectionObserver it is drawn straight away.
+    const holder = useRef<HTMLDivElement>(null);
+    const [near, setNear] = useState(() => typeof IntersectionObserver === 'undefined');
+    useEffect(() => {
+        if (near || !holder.current) return;
+        const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setNear(true), { rootMargin: '300px' });
+        io.observe(holder.current);
+        return () => io.disconnect();
+    }, [near, mounted]);
     useEffect(() => {
         let stop = false;
         const load = () => {
@@ -82,12 +92,12 @@ export function NetworkMap({
                     </button>
                 ))}
             </div>
-            {mounted ? (
+            {mounted && near ? (
                 <Suspense fallback={<div className="aspect-[975/610] w-full animate-pulse rounded-lg bg-surface" />}>
                     <MapCanvas points={data.points} shown={shown} highlight={highlight} base={base} external={external} />
                 </Suspense>
             ) : (
-                <div className="aspect-[975/610] w-full rounded-lg border border-line bg-surface" />
+                <div ref={holder} className="aspect-[975/610] w-full rounded-lg border border-line bg-surface" />
             )}
             {caption && (
                 <figcaption className="mt-2 text-xs text-muted">

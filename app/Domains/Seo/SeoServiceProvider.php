@@ -28,6 +28,9 @@ final class SeoServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(PublicUrlsChanged::class, NotifySearchEngines::class);
+        if ($this->app->runningInConsole()) {
+            $this->commands([Audit\AuditCommand::class]);
+        }
 
         // Crawler endpoints need no session, cookies or CSRF; canonical redirects and security headers run globally.
         Route::group([], function (): void {
@@ -35,6 +38,14 @@ final class SeoServiceProvider extends ServiceProvider
             Route::get('sitemap.xml', [SeoController::class, 'sitemapIndex'])->name('seo.sitemap');
             Route::get('sitemaps/{key}.xml', [SeoController::class, 'sitemap'])->where('key', '[a-z0-9-]+')->name('seo.sitemap.part');
             Route::get('llms.txt', [SeoController::class, 'llms'])->name('seo.llms');
+            Route::get('og/{payload}.{signature}.png', fn (string $payload, string $signature) => PageImage::serve($payload, $signature))
+                ->where(['payload' => '[A-Za-z0-9_-]{8,1200}', 'signature' => '[a-f0-9]{16}'])->middleware('throttle:120,1')->name('seo.page-image');
+            Route::get('llms-full.txt', [SeoController::class, 'llmsFull'])->name('seo.llms-full');
+            Route::middleware(['web', 'noindex:always', 'auth', \App\Domains\Identity\Http\Middleware\EnsureAccountIsActive::class, 'verified', \App\Domains\Identity\Http\Middleware\EnsureStaff::class, 'can:settings.manage'])
+                ->prefix('admin')->name('admin.')->group(function (): void {
+                    Route::get('seo', [Http\SeoAdminController::class, 'index'])->name('seo');
+                    Route::post('seo/crawlers', [Http\SeoAdminController::class, 'crawlers'])->name('seo.crawlers');
+                });
             Route::get('{key}.txt', [SeoController::class, 'indexNowKey'])->where('key', '[a-f0-9]{32,128}')->name('seo.indexnow-key');
         });
     }

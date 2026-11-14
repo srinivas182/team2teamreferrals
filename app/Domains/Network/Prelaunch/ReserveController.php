@@ -85,7 +85,7 @@ final class ReserveController
             'share' => $s,
             'seo' => (new SeoData(title: "{$s['business']} reserved {$s['territory']}", description: "Founding member of {$s['group']} on Team to Team Referrals. Reserve your city before launch: one verified pro per city, per industry.",
                 path: "/reserve/c/{$shareId}", image: "/reserve/c/{$shareId}/og.png",
-                schema: [\App\Domains\Seo\Schema::breadcrumbs([['Home', '/'], ['Reserve your city', '/reserve'], ["{$s['business']}, {$s['territory']}", "/reserve/c/{$shareId}"]])]))->toArray(),
+                schema: [\App\Domains\Seo\Schema::organization(), \App\Domains\Seo\Schema::breadcrumbs([['Home', '/'], ['Reserve your city', '/reserve'], ["{$s['business']}, {$s['territory']}", "/reserve/c/{$shareId}"]])]))->toArray(),
             'caption' => "We’ve reserved {$s['territory']} on Team to Team Referrals as a founding member of {$s['group']}. Have a client moving here? We’re the verified pro to call.",
         ]);
     }
