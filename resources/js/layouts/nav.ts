@@ -24,13 +24,14 @@ import {
     Award,
     CalendarDays,
     Code2,
+    Plug,
 } from 'lucide-react';
 
 /** `module`: hidden when that module is switched off in Admin → Settings → Modules. */
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number; module?: string };
 
 /** Portal navigation (information architecture, docs/design/information-architecture.md). */
-// Integrations (Sprint 45) and Help (Sprint 48) return to the menu with the sprints that build them.
+// Help (Sprint 48) returns to the menu with the sprint that builds it.
 export const portalNav: NavItem[] = [
     { label: 'Home', href: '/app', icon: Home },
     { label: 'Inbox', href: '/app/inbox', icon: Inbox },
@@ -58,6 +59,7 @@ export const portalNav: NavItem[] = [
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },
+    { label: 'Integrations', href: '/app/integrations', icon: Plug },
     { label: 'Developers (API)', href: '/app/developers', icon: Code2 },
 ];
 
