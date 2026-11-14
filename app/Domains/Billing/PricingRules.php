@@ -23,7 +23,7 @@ final class PricingRules
     /** Plan prices from Admin → Billing (defaults until changed). */
     public static function price(string $plan): float
     {
-        $default = ['premium' => '19', 'private_network' => '49'][$plan] ?? '0';
+        $default = ['premium' => '19', 'private_network' => '49', 'api_plan' => '29'][$plan] ?? '0';
 
         return (float) app(Settings::class)->get("billing.{$plan}_price", $default);
     }

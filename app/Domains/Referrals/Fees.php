@@ -97,7 +97,7 @@ final class Fees
         abort_unless(is_array($p) && (int) $p['by'] !== $team->id, 422, 'There is no proposal from the other team to accept.');
         $this->mustBeBeforeSigning($ref);
         $ref->forceFill(['fee_type' => $p['type'], 'fee_value' => (int) $p['value'], 'fee_proposal' => null])->save();
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'fee_agreed', 'team_id' => $team->id, 'actor_id' => $user->id, 'meta' => json_encode(['fee' => self::describe(self::forReferral($ref))]), 'created_at' => now()]);
+        ReferralEvents::record($ref, 'fee_agreed', $team->id, $user->id, ['fee' => self::describe(self::forReferral($ref))]);
         // The agreement nobody has signed yet is regenerated, so it states the fee actually agreed.
         app(ReferralAgreements::class)->regenerate($ref);
     }

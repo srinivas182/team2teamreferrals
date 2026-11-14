@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $leader_id
  * @property ?int $company_id
  * @property ?int $sandbox_of_team_id
+ * @property ?\Illuminate\Support\Carbon $api_plan_since
+ * @property ?\Illuminate\Support\Carbon $api_plan_until
  * @property ?string $logo_path
  * @property ?string $bio
  * @property ?string $website
@@ -59,7 +61,7 @@ final class Team extends Model
 
     protected function casts(): array
     {
-        return ['social' => 'array', 'widget_domains' => 'array', 'profile_public' => 'boolean', 'show_deal_value' => 'boolean'];
+        return ['social' => 'array', 'widget_domains' => 'array', 'profile_public' => 'boolean', 'show_deal_value' => 'boolean', 'api_plan_since' => 'datetime', 'api_plan_until' => 'datetime'];
     }
 
     /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<User, $this> */

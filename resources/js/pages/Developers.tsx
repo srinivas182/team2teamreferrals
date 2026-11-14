@@ -28,14 +28,46 @@ type Spec = {
     servers: { url: string }[];
     tags: { name: string }[];
     paths: Record<string, Record<string, Operation>>;
+    webhooks: Record<string, { post: { summary: string } }>;
     components: { schemas: Record<string, Schema>; parameters: Record<string, Param> };
 };
-type Props = { spec: Spec; scopes: Record<string, string>; limits: { base: number; plan: number }; seo: Seo };
+type Props = {
+    spec: Spec;
+    scopes: Record<string, string>;
+    limits: { base: number; plan: number; planPrice: number; baseEndpoints: number; planEndpoints: number };
+    seo: Seo;
+};
+
+const VERIFY_NODE = `import crypto from 'node:crypto';
+
+// rawBody: the request body exactly as received (not re-serialized JSON)
+function isFromTeamToTeam(rawBody, header, secret) {
+  const pairs = header.split(',').map((p) => p.split('='));
+  const t = pairs.find(([k]) => k === 't')?.[1];
+  if (!t || Math.abs(Date.now() / 1000 - Number(t)) > 300) return false; // 5 minutes
+  const expected = crypto.createHmac('sha256', secret).update(t + '.' + rawBody).digest('hex');
+  return pairs.some(([k, v]) => k === 'v1' && v.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(v), Buffer.from(expected)));
+}`;
+
+const VERIFY_PHP = `function isFromTeamToTeam(string $rawBody, string $header, string $secret): bool
+{
+    $t = null; $sigs = [];
+    foreach (explode(',', $header) as $part) {
+        [$k, $v] = array_pad(explode('=', $part, 2), 2, '');
+        $k === 't' ? $t = (int) $v : ($k === 'v1' ? $sigs[] = $v : null);
+    }
+    if ($t === null || abs(time() - $t) > 300) return false; // 5 minutes
+    $expected = hash_hmac('sha256', $t.'.'.$rawBody, $secret);
+    foreach ($sigs as $sig) if (hash_equals($expected, $sig)) return true;
+    return false;
+}`;
 
 const METHOD_TONE: Record<string, string> = {
     get: 'bg-primary/10 text-primary',
     post: 'bg-success/15 text-success',
     patch: 'bg-warning/15 text-warning',
+    delete: 'bg-danger/15 text-danger',
 };
 
 /** /developers: the API documentation, generated from the same description the API is tested against. */
@@ -145,6 +177,64 @@ export default function Developers({ spec, scopes, limits, seo }: Props) {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </section>
+                <section aria-labelledby="webhooks" className="mt-10">
+                    <h2 id="webhooks" className="font-display text-2xl font-bold">
+                        Webhooks
+                    </h2>
+                    <div className="mt-3 grid gap-6 lg:grid-cols-2">
+                        <div className="space-y-3 text-sm">
+                            <p>
+                                Add an https address in <strong>Developers (API)</strong> (or with <code>POST /webhooks</code>) and we POST each event
+                                to it as JSON: <code>{'{ "id", "type", "created_at", "livemode", "team", "data": { "object" } }'}</code>. The object
+                                is the referral or lead as your team sees it at that moment, with the same privacy rules as the API.
+                            </p>
+                            <ul className="list-disc space-y-2 pl-5">
+                                <li>
+                                    <strong>Check the signature.</strong> Each request has{' '}
+                                    <code>T2T-Signature: t=&lt;unix time&gt;,v1=&lt;signature&gt;</code>, an HMAC-SHA256 of{' '}
+                                    <code>&lt;t&gt;.&lt;raw body&gt;</code> with your endpoint’s secret. Reject old timestamps. For 24 hours after you
+                                    make a new secret, a second <code>v1</code> signed with the old one is included.
+                                </li>
+                                <li>
+                                    <strong>Answer quickly</strong> with any 2xx within 10 seconds, then do the work. Anything else is retried after 1
+                                    minute, 5 minutes, 30 minutes, 2, 5, 10 and 6 hours (about a day). An endpoint that fails for 3 days in a row is
+                                    switched off and your team is told.
+                                </li>
+                                <li>
+                                    <strong>Expect repeats and any order.</strong> Retries and resends keep the same event <code>id</code>, so store
+                                    the ids you’ve handled. Use the object’s <code>updated_at</code> to keep the latest.
+                                </li>
+                                <li>
+                                    <strong>Test endpoints</strong> get events from the sandbox (<code>"livemode": false</code>); live endpoints get
+                                    real ones. Every endpoint has a “Send test event” button and a 30-day delivery log with “Send again”.
+                                </li>
+                                <li>
+                                    <strong>Endpoints:</strong> {limits.baseEndpoints} per team with the seat, up to {limits.planEndpoints} with the
+                                    API plan (${limits.planPrice.toFixed(2)}/month, which also raises the rate limit and adds a request log).
+                                </li>
+                            </ul>
+                            <h3 className="pt-2 font-semibold">Events</h3>
+                            <table className="w-full">
+                                <tbody>
+                                    {Object.entries(spec.webhooks).map(([type, w]) => (
+                                        <tr key={type} className="border-t border-line">
+                                            <td className="py-1.5 pr-3 align-top">
+                                                <code>{type}</code>
+                                            </td>
+                                            <td className="py-1.5 text-muted">{w.post.summary}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="space-y-3">
+                            <h3 className="font-semibold">Checking a signature (Node.js)</h3>
+                            <pre className="overflow-x-auto rounded-lg bg-ink p-4 text-xs text-white">{VERIFY_NODE}</pre>
+                            <h3 className="font-semibold">Checking a signature (PHP)</h3>
+                            <pre className="overflow-x-auto rounded-lg bg-ink p-4 text-xs text-white">{VERIFY_PHP}</pre>
+                        </div>
                     </div>
                 </section>
                 <section aria-labelledby="reference" className="mt-10">

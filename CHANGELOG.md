@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 44b — Signed webhooks, API plan, request log
+Tests: tests/Feature/Api/WebhooksTest.php (and the 44a API tests).
+1. Webhooks: each change on a referral (sent, accepted, declined, expired, passed to backup, stage changed, note, call, client confirmed, agreement signed, fee agreed, close confirmed, disputed or reopened) and each verified profile lead is POSTed to the team's https endpoints as JSON. Each team gets its own copy with the same privacy rules as the app (no client contact details for a receiver until it accepts).
+2. Signing: `T2T-Signature: t=<time>,v1=<HMAC-SHA256>`. A new secret can be made at any time, and the old one also signs for 24 hours. Secrets are stored encrypted and shown once. Copy-paste checks in Node.js and PHP are on /developers, and the tests run both.
+3. Delivery: an answer within 10 seconds counts. Failures are retried after 1 min, 5 min, 30 min, 2 h, 5 h, 10 h and 6 h (about a day). An endpoint that fails for 3 days in a row is switched off and the leader and its creator are told. Each delivery keeps the same event id on retries and resends. "Send test event" and "Send again" are available, with a 30-day delivery log showing what was sent and what came back.
+4. Safety: only public https addresses are allowed (no private, internal or cloud-metadata addresses), checked when added and on every attempt, with the checked address pinned. Redirects are not followed.
+5. Test endpoints receive sandbox events and live endpoints receive real ones. Teams pick all events or a list.
+6. Managed in Developers (API) by leaders and assistants (members can't see payloads), or by API with the webhooks:manage permission (9 new endpoints, documented in the OpenAPI description, including the event formats).
+7. API plan add-on, $29/month (price editable in Admin → Billing): 600 requests a minute instead of 60, 10 webhook endpoints instead of 1, and a 30-day request log (method, path, status, time, request id; never bodies or tokens). Switched on and off in Billing and billed for the days it's on, as an "API plans" revenue line. After switching off, only the oldest endpoint keeps receiving events, and the others show as paused.
+8. Every referral timeline entry is now written in one place, so new features can't miss webhooks.
+9. Fix from 44a: the API sandbox's sample seats are never invoiced and are left out of the admin network dashboard.
+
 ### Sprint 44a — Public REST API v1, developer docs and sandbox
 Tests: tests/Feature/Api/PublicApiTest.php.
 1. REST API at /api/v1 for every team, included with the seat: send, list and follow referrals (accept, decline, move stage, add notes, read the timeline), read and update profile leads, read networks, seats and cities, read and update the public profile. Receivers see the same masked client details as in the app until they accept.

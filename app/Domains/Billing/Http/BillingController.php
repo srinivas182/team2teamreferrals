@@ -72,6 +72,8 @@ final class BillingController
                     'packs' => collect(\App\Domains\Platform\Ai\AiCredits::PACKS)->map(fn ($cents, $credits) => ['credits' => $credits, 'price' => $cents / 100])->values()];
             })() : null,
             'premium' => $type === 'team' ? ['on' => DB::table('teams')->where('id', $id)->whereNotNull('premium_since')->exists(), 'price' => \App\Domains\Billing\PricingRules::price('premium')] : null,
+            'apiPlan' => $type === 'team' ? ['on' => \App\Domains\Api\ApiAccess::hasPlan(Team::query()->findOrFail($id)), 'price' => \App\Domains\Billing\PricingRules::price('api_plan'),
+                'perMinute' => \App\Domains\Api\ApiAccess::PLAN_PER_MINUTE, 'endpoints' => \App\Domains\Api\Webhooks\Webhooks::PLAN_ENDPOINTS] : null,
             'type' => $type, 'name' => $name, 'needsNewCard' => (bool) ($acc->needs_new_card ?? false),
             'invoices' => DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id])->orderByDesc('period')->limit(24)->get()
                 ->map(fn ($i) => ['id' => (int) $i->id, 'number' => (string) $i->number, 'period' => (string) $i->period, 'total' => $i->total_cents / 100, 'status' => (string) $i->status, 'failure' => $i->failure,
@@ -124,6 +126,26 @@ final class BillingController
             : DB::table('teams')->where('id', $id)->update(['premium_since' => null]);
 
         return back()->with('status', $on ? 'premium-on' : 'premium-off');
+    }
+
+    /**
+     * The API plan add-on (Sprint 44b): more requests a minute, more webhook endpoints and the request log. Billed for the
+     * days it's on; switching it off bills up to that day. Switching it back on within the same month carries on.
+     */
+    public function apiPlan(Request $request): RedirectResponse
+    {
+        $id = $this->payerId($request, 'team', needsStripe: false);
+        $on = $request->boolean('on');
+        $t = DB::table('teams')->where('id', $id)->first(['api_plan_since', 'api_plan_until']) ?? abort(404);
+        if ($on && ($t->api_plan_since === null || $t->api_plan_until !== null)) {
+            $resume = $t->api_plan_until !== null && now()->parse((string) $t->api_plan_until)->gte(now()->startOfMonth());
+            DB::table('teams')->where('id', $id)->update($resume ? ['api_plan_until' => null] : ['api_plan_since' => now(), 'api_plan_until' => null]);
+        } elseif (! $on && $t->api_plan_since !== null && $t->api_plan_until === null) {
+            DB::table('teams')->where('id', $id)->update(['api_plan_until' => now()]);
+        }
+        activity('billing')->causedBy($request->user())->performedOn(Team::query()->findOrFail($id))->event($on ? 'api-plan-on' : 'api-plan-off')->log($on ? 'API plan switched on' : 'API plan switched off');
+
+        return back()->with('status', $on ? 'api-plan-on' : 'api-plan-off');
     }
 
     /** Buy an AI credit pack: available straight away, charged on the team's next invoice. */

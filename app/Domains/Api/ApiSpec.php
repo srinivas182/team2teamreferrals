@@ -27,16 +27,18 @@ final class ApiSpec
         $op = fn (string $id, string $tag, string $summary, string $scope, array $extra) => ['operationId' => $id, 'tags' => [$tag], 'summary' => $summary,
             'x-scope' => $scope, ...$extra];
         $refId = $idParam('id', 'string', 'The referral id (e.g. 01J…).');
+        $hookId = $idParam('id', 'string', 'The endpoint id.');
 
         return [
             'openapi' => '3.1.0',
             'info' => ['title' => 'Team to Team Referrals API', 'version' => '1.0.0',
                 'description' => "Send and track referrals between verified teams, and read your leads, networks, seats and profile.\n\n"
                     ."Authenticate with a team API token: `Authorization: Bearer t2t_live_…`. Test tokens (`t2t_test_…`) work in a private sandbox network with sample teams and never contact anyone.\n\n"
-                    .'Errors use RFC 9457 problem details. Lists use cursor paging. Send an `Idempotency-Key` header with any POST or PATCH to retry it safely.'],
+                    ."Errors use RFC 9457 problem details. Lists use cursor paging. Send an `Idempotency-Key` header with any POST or PATCH to retry it safely.\n\n"
+                    .'Webhooks: every change on a referral (and every verified profile lead) can be sent to your https endpoint, signed with `T2T-Signature: t=<unix time>,v1=<HMAC-SHA256 of "<t>.<body>">`. Failed deliveries are retried for about 24 hours.'],
             'servers' => [['url' => rtrim((string) config('app.url'), '/').'/api/v1']],
             'security' => [['bearer' => []]],
-            'tags' => [['name' => 'Account'], ['name' => 'Referrals'], ['name' => 'Sandbox'], ['name' => 'Leads'], ['name' => 'Networks'], ['name' => 'Seats'], ['name' => 'Profile']],
+            'tags' => [['name' => 'Account'], ['name' => 'Referrals'], ['name' => 'Sandbox'], ['name' => 'Leads'], ['name' => 'Networks'], ['name' => 'Seats'], ['name' => 'Profile'], ['name' => 'Webhooks']],
             'paths' => [
                 '/me' => ['get' => $op('getMe', 'Account', 'The token and team you are calling as', '', ['responses' => ['200' => $ok('The token', $ref('Me')), ...$errors]])],
                 '/referrals' => [
@@ -96,7 +98,30 @@ final class ApiSpec
                     'patch' => $op('updateProfile', 'Profile', 'Update your team profile (only the fields you send)', 'profile:write', ['parameters' => [$idem],
                         'requestBody' => ['required' => true, ...$json($ref('ProfileUpdate'))], 'responses' => ['200' => $ok('The profile', $ref('Profile')), ...$errors, ...$invalid]]),
                 ],
+                '/webhooks' => [
+                    'get' => $op('listWebhooks', 'Webhooks', 'Your webhook endpoints (live endpoints for a live token, test endpoints for a test token)', 'webhooks:manage', [
+                        'responses' => ['200' => $ok('Your endpoints', $list('WebhookEndpoint')), ...$errors]]),
+                    'post' => $op('createWebhook', 'Webhooks', 'Add an endpoint; the signing secret is returned only now', 'webhooks:manage', ['parameters' => [$idem],
+                        'requestBody' => ['required' => true, ...$json($ref('WebhookEndpointInput'))], 'responses' => ['201' => $ok('The endpoint, with its secret', $ref('WebhookEndpointWithSecret')), ...$errors, ...$invalid]]),
+                ],
+                '/webhooks/{id}' => [
+                    'get' => $op('getWebhook', 'Webhooks', 'One endpoint', 'webhooks:manage', ['parameters' => [$hookId], 'responses' => ['200' => $ok('The endpoint', $ref('WebhookEndpoint')), ...$errors, ...$notFound]]),
+                    'patch' => $op('updateWebhook', 'Webhooks', 'Change the address, events or description, or switch it off or on', 'webhooks:manage', ['parameters' => [$hookId, $idem],
+                        'requestBody' => ['required' => true, ...$json($ref('WebhookEndpointInput'))], 'responses' => ['200' => $ok('The endpoint', $ref('WebhookEndpoint')), ...$errors, ...$notFound, ...$invalid]]),
+                    'delete' => $op('deleteWebhook', 'Webhooks', 'Delete an endpoint (and its delivery log)', 'webhooks:manage', ['parameters' => [$hookId], 'responses' => ['204' => ['description' => 'Deleted'], ...$errors, ...$notFound]]),
+                ],
+                '/webhooks/{id}/test' => ['post' => $op('testWebhook', 'Webhooks', 'Send a "ping" test event now', 'webhooks:manage', [
+                    'parameters' => [$hookId, $idem], 'responses' => ['201' => $ok('The delivery, with its result', $ref('WebhookDelivery')), ...$errors, ...$notFound]])],
+                '/webhooks/{id}/rotate-secret' => ['post' => $op('rotateWebhookSecret', 'Webhooks', 'Make a new signing secret (the old one also signs for 24 hours)', 'webhooks:manage', [
+                    'parameters' => [$hookId, $idem], 'responses' => ['200' => $ok('The endpoint, with its new secret', $ref('WebhookEndpointWithSecret')), ...$errors, ...$notFound]])],
+                '/webhooks/{id}/deliveries' => ['get' => $op('listWebhookDeliveries', 'Webhooks', 'An endpoint’s deliveries from the last 30 days, newest first', 'webhooks:manage', [
+                    'parameters' => [$hookId, $q('status', ['type' => 'string', 'enum' => ['pending', 'sending', 'retrying', 'succeeded', 'failed']], 'Filter by status.'), ...$paging],
+                    'responses' => ['200' => $ok('A page of deliveries', $list('WebhookDelivery')), ...$errors, ...$notFound, ...$invalid]])],
+                '/webhook-deliveries/{id}/resend' => ['post' => $op('resendWebhookDelivery', 'Webhooks', 'Send a delivered or failed event again (same event id)', 'webhooks:manage', [
+                    'parameters' => [$idParam('id', 'string', 'The delivery id.'), $idem], 'responses' => ['201' => $ok('The new delivery', $ref('WebhookDelivery')), ...$errors, ...$notFound, ...$invalid]])],
             ],
+            // What we POST to your endpoints (OpenAPI 3.1 webhooks).
+            'webhooks' => self::webhookEvents(),
             'components' => [
                 'securitySchemes' => ['bearer' => ['type' => 'http', 'scheme' => 'bearer', 'description' => 'A team API token from Portal → Developers.']],
                 'parameters' => ['IdempotencyKey' => ['name' => 'Idempotency-Key', 'in' => 'header', 'required' => false, 'schema' => ['type' => 'string', 'maxLength' => 100],
@@ -112,6 +137,22 @@ final class ApiSpec
                 'schemas' => self::schemas(),
             ],
         ];
+    }
+
+    /** @return array<string, mixed> one entry per event type */
+    private static function webhookEvents(): array
+    {
+        $out = [];
+        foreach ([...Webhooks\WebhookEvents::TYPES, 'ping' => 'A test event, sent only when you ask for one.'] as $type => $desc) {
+            $object = str_starts_with($type, 'lead.') ? 'Lead' : (str_starts_with($type, 'referral.') ? 'Referral' : null);
+            $out[$type] = ['post' => ['summary' => $desc, 'operationId' => 'webhook_'.str_replace('.', '_', $type),
+                'parameters' => [['name' => 'T2T-Signature', 'in' => 'header', 'required' => true, 'schema' => ['type' => 'string'], 'description' => 't=<unix time>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with your secret>. Two v1 values for 24 hours after a secret rotation.']],
+                'requestBody' => ['required' => true, 'content' => ['application/json' => ['schema' => ['allOf' => [['$ref' => '#/components/schemas/WebhookEvent'],
+                    ['properties' => ['type' => ['const' => $type], 'data' => ['type' => 'object', 'properties' => ['object' => $object !== null ? ['$ref' => '#/components/schemas/'.$object] : ['type' => 'object']]]]]]]]]],
+                'responses' => ['2XX' => ['description' => 'Received. Anything else, or no answer within 10 seconds, is retried.']]]];
+        }
+
+        return $out;
     }
 
     /** @return array<string, mixed> */
@@ -165,6 +206,19 @@ final class ApiSpec
                 'role' => ['enum' => ['primary', 'backup']], 'status' => $str, 'filled' => ['type' => 'boolean'], 'trial_ends_at' => $dt]),
             'Profile' => $s(['object' => ['const' => 'profile'], 'name' => $str, 'public' => ['type' => 'boolean'], 'url' => $nstr, 'bio' => $nstr, 'website' => $nstr, 'phone' => $nstr,
                 'service_area' => $nstr, 'founded_year' => ['type' => ['integer', 'null']], 'specialties' => ['type' => 'array', 'items' => $str], 'languages' => ['type' => 'array', 'items' => $str]]),
+            'WebhookEndpointInput' => $s(['url' => ['type' => 'string', 'format' => 'uri', 'description' => 'A public https address.'],
+                'events' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['*', ...array_keys(Webhooks\WebhookEvents::TYPES)]], 'description' => 'Event types, or ["*"] for all (the default).'],
+                'description' => $nstr, 'active' => ['type' => 'boolean', 'description' => 'Switch off or back on (PATCH only).']]),
+            'WebhookEndpoint' => $s(['id' => $str, 'object' => ['const' => 'webhook_endpoint'], 'url' => $str, 'description' => $nstr, 'mode' => ['enum' => ['live', 'test']],
+                'events' => ['type' => 'array', 'items' => $str], 'active' => ['type' => 'boolean'], 'disabled_reason' => $nstr, 'failing_since' => $dt, 'last_success_at' => $dt, 'created_at' => $dt]),
+            'WebhookEndpointWithSecret' => ['allOf' => [['$ref' => '#/components/schemas/WebhookEndpoint'], $s(['secret' => ['type' => 'string', 'description' => 'whsec_…: keep it private; used to check signatures.']])]],
+            'WebhookDelivery' => $s(['id' => $str, 'object' => ['const' => 'webhook_delivery'], 'event_id' => $str, 'event_type' => $str,
+                'status' => ['enum' => ['pending', 'sending', 'retrying', 'succeeded', 'failed']], 'attempts' => ['type' => 'integer'], 'next_attempt_at' => $dt,
+                'response_status' => ['type' => ['integer', 'null']], 'response_body' => $nstr, 'error' => $nstr, 'duration_ms' => ['type' => ['integer', 'null']], 'delivered_at' => $dt, 'created_at' => $dt,
+                'payload' => ['$ref' => '#/components/schemas/WebhookEvent']]),
+            'WebhookEvent' => $s(['id' => ['type' => 'string', 'description' => 'evt_…: the same on retries and resends, so you can ignore repeats.'], 'object' => ['const' => 'event'], 'type' => $str,
+                'api_version' => ['const' => 'v1'], 'created_at' => $dt, 'livemode' => ['type' => 'boolean', 'description' => 'false for sandbox (test) events.'], 'team' => $team,
+                'data' => $s(['object' => ['type' => 'object', 'description' => 'The referral or lead as your team sees it at that moment.']])], ['id', 'type', 'created_at', 'data']),
             'ProfileUpdate' => $s(['name' => $str, 'bio' => $nstr, 'website' => $nstr, 'phone' => $nstr, 'service_area' => $nstr, 'founded_year' => ['type' => ['integer', 'null']],
                 'specialties' => ['type' => 'array', 'items' => $str], 'languages' => ['type' => 'array', 'items' => $str]]),
         ];

@@ -1,6 +1,8 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import { Copy, KeyRound } from 'lucide-react';
 import { useState } from 'react';
+import { DeliveryLog, NewSecret, PlanCard, RequestLog, WebhookEndpoints } from '@/components/developers/Webhooks';
+import type { Delivery, Endpoint, LogRow, Plan } from '@/components/developers/Webhooks';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -29,13 +31,33 @@ type Props = {
     scopes: Record<string, string>;
     canManage: boolean;
     limit: number;
+    plan: Plan;
+    webhooks: Endpoint[];
+    deliveries: Delivery[];
+    eventTypes: Record<string, string>;
+    logs: LogRow[];
+    newSecret: { id: string; secret: string } | null;
     newToken: { id: string; plain: string } | null;
     status?: string;
     seo: Seo;
 };
 
-/** Portal → Developers: the team's API tokens. A new token is shown once. */
-export default function Developers({ tokens, scopes, canManage, limit, newToken, status, seo }: Props) {
+/** Portal → Developers: API tokens, webhooks, the API plan and the request log. Secrets and new tokens are shown once. */
+export default function Developers({
+    tokens,
+    scopes,
+    canManage,
+    limit,
+    plan,
+    webhooks,
+    deliveries,
+    eventTypes,
+    logs,
+    newSecret,
+    newToken,
+    status,
+    seo,
+}: Props) {
     const f = useForm<{ name: string; mode: 'live' | 'test'; scopes: string[]; expires_at: string }>({
         name: '',
         mode: 'test',
@@ -64,6 +86,7 @@ export default function Developers({ tokens, scopes, canManage, limit, newToken,
                         </Button>
                     </Card>
                 )}
+                {newSecret && <NewSecret secret={newSecret.secret} />}
                 <Card className="space-y-2 p-5 text-sm">
                     <p>
                         Use the API to send and track referrals from your own systems. Read the{' '}
@@ -163,6 +186,14 @@ export default function Developers({ tokens, scopes, canManage, limit, newToken,
                         ))}
                     </ul>
                 </Card>
+                <PlanCard plan={plan} />
+                {canManage && (
+                    <>
+                        <WebhookEndpoints endpoints={webhooks} eventTypes={eventTypes} plan={plan} />
+                        <DeliveryLog deliveries={deliveries} />
+                        {plan.on && <RequestLog logs={logs} />}
+                    </>
+                )}
             </div>
         </PortalLayout>
     );

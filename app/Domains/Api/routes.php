@@ -3,8 +3,10 @@
 use App\Domains\Api\Http\Controllers\AccountController;
 use App\Domains\Api\Http\Controllers\ReferralsController;
 use App\Domains\Api\Http\Controllers\SandboxController;
+use App\Domains\Api\Http\Controllers\WebhooksController;
 use App\Domains\Api\Http\Middleware\AuthenticateApiToken;
 use App\Domains\Api\Http\Middleware\Idempotency;
+use App\Domains\Api\Http\Middleware\LogApiRequest;
 use Illuminate\Support\Facades\Route;
 
 // Public REST API v1 (Sprint 44a). Stateless: no sessions or cookies; token authentication, scopes, rate limits by
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('api/v1')->name('api.v1.')->group(function (): void {
     Route::get('openapi.json', fn () => response()->json(App\Domains\Api\ApiSpec::document()))->middleware('throttle:60,1')->name('openapi');
 
-    Route::middleware([AuthenticateApiToken::class, 'throttle:api', Idempotency::class])->group(function (): void {
+    Route::middleware([LogApiRequest::class, AuthenticateApiToken::class, 'throttle:api', Idempotency::class])->group(function (): void {
         Route::get('me', [AccountController::class, 'me'])->name('me');
 
         Route::middleware('api.scope:referrals:read')->group(function (): void {
@@ -46,5 +48,16 @@ Route::prefix('api/v1')->name('api.v1.')->group(function (): void {
         });
         Route::get('profile', [AccountController::class, 'profile'])->middleware('api.scope:profile:read')->name('profile.show');
         Route::patch('profile', [AccountController::class, 'updateProfile'])->middleware('api.scope:profile:write')->name('profile.update');
+        Route::middleware('api.scope:webhooks:manage')->group(function (): void {
+            Route::get('webhooks', [WebhooksController::class, 'index'])->name('webhooks.index');
+            Route::post('webhooks', [WebhooksController::class, 'store'])->name('webhooks.store');
+            Route::get('webhooks/{id}', [WebhooksController::class, 'show'])->name('webhooks.show');
+            Route::patch('webhooks/{id}', [WebhooksController::class, 'update'])->name('webhooks.update');
+            Route::delete('webhooks/{id}', [WebhooksController::class, 'destroy'])->name('webhooks.destroy');
+            Route::post('webhooks/{id}/test', [WebhooksController::class, 'test'])->name('webhooks.test');
+            Route::post('webhooks/{id}/rotate-secret', [WebhooksController::class, 'rotate'])->name('webhooks.rotate');
+            Route::get('webhooks/{id}/deliveries', [WebhooksController::class, 'deliveries'])->name('webhooks.deliveries');
+            Route::post('webhook-deliveries/{id}/resend', [WebhooksController::class, 'resend'])->name('webhooks.resend');
+        });
     });
 });

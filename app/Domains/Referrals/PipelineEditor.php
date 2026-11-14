@@ -69,7 +69,7 @@ final class PipelineEditor
                 $to = $moves[$key];
                 foreach (Referral::query()->where(['group_id' => $group->id, 'status' => 'accepted', 'stage' => $key])->whereNull('closed_at')->get() as $ref) {
                     $ref->forceFill(['stage' => $to, 'stage_changed_at' => now()])->save();
-                    DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'stage', 'team_id' => null, 'actor_id' => $user->id, 'meta' => json_encode(['from' => $key, 'to' => $to, 'note' => 'The network’s pipeline changed']), 'created_at' => now()]);
+                    ReferralEvents::record($ref, 'stage', null, $user->id, ['from' => $key, 'to' => $to, 'note' => 'The network’s pipeline changed']);
                 }
             }
         });

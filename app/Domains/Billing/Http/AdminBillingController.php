@@ -43,7 +43,7 @@ final class AdminBillingController
                     'refunded' => (int) DB::table('refunds')->where('invoice_id', $i->id)->sum('amount_cents') / 100]),
             'coupons' => DB::table('coupons')->orderByDesc('id')->get(['id', 'code', 'percent_off', 'amount_off_cents', 'months', 'max_redemptions', 'redeemed', 'expires_on', 'active']),
             'settings' => ['platformFeeCollection' => PricingRules::platformFeeCollectionOn(), 'stripeTax' => PricingRules::stripeTaxOn(),
-                'premiumPrice' => PricingRules::price('premium'), 'inviteRewardMonths' => \App\Domains\Network\Invites\InviteRewards::setting('reward_months'),
+                'premiumPrice' => PricingRules::price('premium'), 'apiPlanPrice' => PricingRules::price('api_plan'), 'inviteRewardMonths' => \App\Domains\Network\Invites\InviteRewards::setting('reward_months'),
                 'inviteCap' => \App\Domains\Network\Invites\InviteRewards::setting('cap'), 'ownerPerSeats' => \App\Domains\Network\Invites\InviteRewards::setting('owner_per_seats'), 'privateNetworkPrice' => PricingRules::price('private_network'), 'stripeTaxSetting' => $s->get('billing.stripe_tax', '0'),
                 'consumerRequestFee' => (float) $s->get('billing.consumer_request_fee', '0')],
             'isSuperAdmin' => $this->user($request)->hasRole('super_admin'),
@@ -55,7 +55,7 @@ final class AdminBillingController
     public function settings(Request $request): RedirectResponse
     {
         $d = $request->validate(['platform_fee_collection' => ['sometimes', 'boolean'], 'stripe_tax' => ['sometimes', 'boolean'],
-            'premium_price' => ['sometimes', 'numeric', 'min:0', 'max:10000'], 'private_network_price' => ['sometimes', 'numeric', 'min:0', 'max:100000'],
+            'premium_price' => ['sometimes', 'numeric', 'min:0', 'max:10000'], 'api_plan_price' => ['sometimes', 'numeric', 'min:0', 'max:10000'], 'private_network_price' => ['sometimes', 'numeric', 'min:0', 'max:100000'],
             'invite_reward_months' => ['sometimes', 'integer', 'between:0,12'], 'invite_cap' => ['sometimes', 'integer', 'between:0,60'], 'owner_per_seats' => ['sometimes', 'integer', 'between:1,100'],
             'consumer_request_fee' => ['sometimes', 'numeric', 'min:0', 'max:1000']]);
         // Collecting platform fees is locked until a super admin switches it on (after legal sign-off).
@@ -72,7 +72,7 @@ final class AdminBillingController
                 $s->set("billing.{$k}", $d[$k] ? '1' : '0');
             }
         }
-        foreach (['premium_price', 'private_network_price', 'consumer_request_fee'] as $k) {
+        foreach (['premium_price', 'api_plan_price', 'private_network_price', 'consumer_request_fee'] as $k) {
             if (array_key_exists($k, $d)) {
                 $s->set("billing.{$k}", (string) $d[$k]);
             }

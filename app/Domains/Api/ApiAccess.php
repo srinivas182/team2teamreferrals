@@ -17,10 +17,10 @@ final class ApiAccess
 
     public const PLAN_PER_MINUTE = 600;
 
-    /** Whether the team has the API plan (the add-on arrives with billing in 44b; until then nobody has it). */
+    /** Whether the team has the API plan add-on (Portal → Billing; billed monthly from the day it starts). */
     public static function hasPlan(Team $team): bool
     {
-        return false;
+        return $team->api_plan_since !== null && $team->api_plan_until === null;
     }
 
     public static function perMinute(ApiToken $token): int

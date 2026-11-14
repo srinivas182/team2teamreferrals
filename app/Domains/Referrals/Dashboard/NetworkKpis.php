@@ -30,20 +30,23 @@ final class NetworkKpis
     public static function query(string $key, Period $p): Builder
     {
         $in = fn (string $col) => fn (Builder $q) => $q->whereBetween($col, [$p->from, $p->to]);
-        $refs = fn () => DB::table('referrals as r')->select('r.*');
+        // The API sandbox (sample teams, Sprint 44) is never part of the network's figures.
+        $sandbox = self::sandboxGroups();
+        $refs = fn () => DB::table('referrals as r')->select('r.*')->whereNotIn('r.group_id', $sandbox);
+        $realSeats = fn () => DB::table('seats')->whereNotNull('primary_team_id')->whereNotIn('group_id', $sandbox);
 
         return match ($key) {
-            'teams' => DB::table('teams as t')->select('t.*')->whereIn('t.id', DB::table('seats')->whereNotNull('primary_team_id')->select('primary_team_id')),
-            'groups' => DB::table('groups as g')->select('g.*')->whereIn('g.id', DB::table('seats')->whereNotNull('primary_team_id')->select('group_id')),
-            'seats_filled' => DB::table('seats as s')->select('s.*')->whereNotNull('s.primary_team_id'),
-            'seats_open' => DB::table('seats as s')->select('s.*')->whereNull('s.primary_team_id'),
+            'teams' => DB::table('teams as t')->select('t.*')->whereIn('t.id', $realSeats()->select('primary_team_id')),
+            'groups' => DB::table('groups as g')->select('g.*')->whereIn('g.id', $realSeats()->select('group_id')),
+            'seats_filled' => DB::table('seats as s')->select('s.*')->whereNotNull('s.primary_team_id')->whereNotIn('s.group_id', $sandbox),
+            'seats_open' => DB::table('seats as s')->select('s.*')->whereNull('s.primary_team_id')->whereNotIn('s.group_id', $sandbox),
             'referrals' => $refs()->where($in('r.created_at')),
             'accepted' => $refs()->where($in('r.created_at'))->whereNotNull('r.accepted_at'),
             'won' => $refs()->whereIn('r.close_status', ['confirmed', 'auto_confirmed'])->where($in('r.close_confirmed_at')),
             'conversion' => $refs()->where(fn ($q) => $q->where(fn ($w) => $w->whereIn('r.close_status', ['confirmed', 'auto_confirmed'])->where($in('r.close_confirmed_at')))
                 ->orWhere(fn ($w) => $w->where('r.stage', 'lost')->where($in('r.closed_at')))),
             'breaches' => DB::table('referral_events as e')->join('referrals as r', 'r.id', '=', 'e.referral_id')->select('e.*', 'r.ulid', 'r.client_name', 'r.group_id')
-                ->whereIn('e.event', OwnerKpis::BREACHES)->where($in('e.created_at')),
+                ->whereIn('e.event', OwnerKpis::BREACHES)->where($in('e.created_at'))->whereNotIn('r.group_id', $sandbox),
             default => throw new InvalidArgumentException("Unknown KPI {$key}"),
         };
     }
@@ -76,8 +79,9 @@ final class NetworkKpis
     /** @return list<array{day: string, referrals: int, breaches: int}> SLA trend: referrals and breaches per day */
     public static function trend(Period $p): array
     {
-        $refs = DB::table('referrals')->whereBetween('created_at', [$p->from, $p->to])->selectRaw('date(created_at) as d, count(*) as n')->groupByRaw('date(created_at)')->pluck('n', 'd');
-        $br = DB::table('referral_events')->whereIn('event', OwnerKpis::BREACHES)->whereBetween('created_at', [$p->from, $p->to])->selectRaw('date(created_at) as d, count(*) as n')->groupByRaw('date(created_at)')->pluck('n', 'd');
+        $sandbox = self::sandboxGroups();
+        $refs = DB::table('referrals')->whereNotIn('group_id', $sandbox)->whereBetween('created_at', [$p->from, $p->to])->selectRaw('date(created_at) as d, count(*) as n')->groupByRaw('date(created_at)')->pluck('n', 'd');
+        $br = DB::table('referral_events')->whereIn('referral_id', DB::table('referrals')->whereNotIn('group_id', $sandbox)->select('id'))->whereIn('event', OwnerKpis::BREACHES)->whereBetween('created_at', [$p->from, $p->to])->selectRaw('date(created_at) as d, count(*) as n')->groupByRaw('date(created_at)')->pluck('n', 'd');
         $out = [];
         for ($d = $p->from; $d->lte($p->to); $d = $d->addDay()) {
             $out[] = ['day' => $d->toDateString(), 'referrals' => (int) ($refs[$d->toDateString()] ?? 0), 'breaches' => (int) ($br[$d->toDateString()] ?? 0)];
@@ -89,9 +93,10 @@ final class NetworkKpis
     /** @return array{groups: list<array{name: string, slug: string, referrals: int}>, cities: list<array{name: string, referrals: int}>} */
     public static function top(Period $p): array
     {
-        $groups = DB::table('referrals as r')->join('groups as g', 'g.id', '=', 'r.group_id')->whereBetween('r.created_at', [$p->from, $p->to])
+        $sandbox = self::sandboxGroups();
+        $groups = DB::table('referrals as r')->join('groups as g', 'g.id', '=', 'r.group_id')->where('g.is_sandbox', false)->whereBetween('r.created_at', [$p->from, $p->to])
             ->groupBy('g.id', 'g.name', 'g.slug')->selectRaw('g.name, g.slug, count(*) as n')->orderByDesc('n')->limit(10)->get();
-        $cities = DB::table('referrals as r')->join('seats as s', 's.id', '=', 'r.seat_id')->whereBetween('r.created_at', [$p->from, $p->to])
+        $cities = DB::table('referrals as r')->join('seats as s', 's.id', '=', 'r.seat_id')->whereNotIn('r.group_id', $sandbox)->whereBetween('r.created_at', [$p->from, $p->to])
             ->groupBy('s.territory_name')->selectRaw('s.territory_name as name, count(*) as n')->orderByDesc('n')->limit(10)->get();
 
         return ['groups' => array_values($groups->map(fn ($g) => ['name' => (string) $g->name, 'slug' => (string) $g->slug, 'referrals' => (int) $g->n])->all()),
@@ -114,5 +119,10 @@ final class NetworkKpis
             'referrals' => ['id' => (string) $r->ulid, 'client' => Referral::shorten((string) $r->client_name), 'with' => ($teams[$r->sender_team_id] ?? '').' → '.($teams[$r->receiver_team_id] ?? ''), 'status' => (string) ($r->stage ?? $r->status), 'date' => substr((string) $r->created_at, 0, 10), 'link' => '/admin/referrals?q='.$r->ulid],
             default => ['id' => (string) $r->id, 'client' => Referral::shorten((string) $r->client_name), 'with' => (string) ($teams[$r->team_id] ?? ''), 'status' => str_replace('_', ' ', (string) $r->event), 'date' => substr((string) $r->created_at, 0, 10), 'link' => '/admin/referrals?q='.$r->ulid],
         })->all());
+    }
+
+    private static function sandboxGroups(): Builder
+    {
+        return DB::table('groups')->where('is_sandbox', true)->select('id');
     }
 }

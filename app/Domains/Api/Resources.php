@@ -8,6 +8,7 @@ use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Seats\Models\Team;
 use App\Domains\Referrals\Pipeline;
 use App\Domains\Referrals\Referral;
+use stdClass;
 
 /**
  * How things look in the API. The same privacy rules as the app: the receiving team sees only the client's first
@@ -63,6 +64,33 @@ final class Resources
             'updated_at' => $ref->updated_at?->toIso8601String(),
             'app_url' => url('/app/referrals/'.$ref->ulid),
         ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function lead(stdClass $l): array
+    {
+        return ['id' => (int) $l->id, 'object' => 'lead', 'status' => (string) $l->status, 'source' => (string) ($l->source ?? 'profile'),
+            'referrer' => ['name' => (string) $l->referrer_name, 'email' => (string) $l->referrer_email, 'business' => $l->referrer_business],
+            'client' => ['name' => (string) $l->client_name, 'phone' => $l->client_phone, 'email' => $l->client_email], 'need' => (string) $l->need,
+            'consent_text' => (string) $l->consent_text, 'verified_at' => $l->verified_at !== null ? now()->parse((string) $l->verified_at)->toIso8601String() : null,
+            'created_at' => now()->parse((string) $l->created_at)->toIso8601String()];
+    }
+
+    /** @return array<string, mixed> */
+    public static function webhookEndpoint(Webhooks\WebhookEndpoint $e): array
+    {
+        return ['id' => $e->ulid, 'object' => 'webhook_endpoint', 'url' => $e->url, 'description' => $e->description, 'mode' => $e->mode, 'events' => $e->events,
+            'active' => $e->is_active, 'disabled_reason' => $e->disabled_reason, 'failing_since' => $e->failing_since?->toIso8601String(),
+            'last_success_at' => $e->last_success_at?->toIso8601String(), 'created_at' => $e->created_at->toIso8601String()];
+    }
+
+    /** @return array<string, mixed> */
+    public static function webhookDelivery(Webhooks\WebhookDelivery $d): array
+    {
+        return ['id' => $d->ulid, 'object' => 'webhook_delivery', 'event_id' => $d->event_id, 'event_type' => $d->event_type, 'status' => $d->status, 'attempts' => $d->attempts,
+            'next_attempt_at' => $d->next_attempt_at?->toIso8601String(), 'response_status' => $d->response_status, 'response_body' => $d->response_body, 'error' => $d->error,
+            'duration_ms' => $d->duration_ms, 'delivered_at' => $d->delivered_at?->toIso8601String(), 'created_at' => $d->created_at->toIso8601String(),
+            'payload' => json_decode($d->payload, true)];
     }
 
     /** @return array{name: string, profile: ?string} */

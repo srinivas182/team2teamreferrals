@@ -120,12 +120,12 @@ final class AccountController extends Controller
         $page = DB::table('profile_leads')->where('team_id', $this->team($request)->id)->where('status', '!=', 'unverified')
             ->when(isset($d['status']), fn ($q) => $q->where('status', $d['status']))->orderByDesc('id')->cursorPaginate($this->limit($request));
 
-        return response()->json(Resources::page($page, array_values(array_map(fn ($l) => $this->lead($l), $page->items()))));
+        return response()->json(Resources::page($page, array_values(array_map(fn ($l) => Resources::lead($l), $page->items()))));
     }
 
     public function showLead(Request $request, int $id): JsonResponse
     {
-        return response()->json($this->lead($this->findLead($request, $id)));
+        return response()->json(Resources::lead($this->findLead($request, $id)));
     }
 
     public function updateLead(Request $request, int $id): JsonResponse
@@ -134,22 +134,12 @@ final class AccountController extends Controller
         $lead = $this->findLead($request, $id);
         DB::table('profile_leads')->where('id', $lead->id)->update(['status' => $d['status'], 'updated_at' => now()]);
 
-        return response()->json($this->lead($this->findLead($request, $id)));
+        return response()->json(Resources::lead($this->findLead($request, $id)));
     }
 
     private function findLead(Request $request, int $id): stdClass
     {
         return DB::table('profile_leads')->where(['id' => $id, 'team_id' => $this->team($request)->id])->where('status', '!=', 'unverified')->first() ?? abort(404);
-    }
-
-    /** @return array<string, mixed> */
-    private function lead(stdClass $l): array
-    {
-        return ['id' => (int) $l->id, 'object' => 'lead', 'status' => (string) $l->status, 'source' => (string) ($l->source ?? 'profile'),
-            'referrer' => ['name' => (string) $l->referrer_name, 'email' => (string) $l->referrer_email, 'business' => $l->referrer_business],
-            'client' => ['name' => (string) $l->client_name, 'phone' => $l->client_phone, 'email' => $l->client_email], 'need' => (string) $l->need,
-            'consent_text' => (string) $l->consent_text, 'verified_at' => $l->verified_at !== null ? now()->parse((string) $l->verified_at)->toIso8601String() : null,
-            'created_at' => now()->parse((string) $l->created_at)->toIso8601String()];
     }
 
     /** @return array<string, mixed> */
