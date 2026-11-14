@@ -47,10 +47,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // The public API answers every error as RFC 9457 problem details (Sprint 44a).
+        $exceptions->render(fn (Throwable $e, Request $request) => $request->is('api/*') ? App\Domains\Api\ApiProblem::from($e) : null);
 
         // Branded, noindex error pages. 500s keep Laravel's debug page while debugging.
         $exceptions->respond(function (Response $response, Throwable $e, Request $request): Response {
             $status = $response->getStatusCode();
+            if ($request->is('api/*')) {
+                return $response; // the API always answers in JSON (problem details)
+            }
             // An address that moved (a renamed post, page or group) redirects wherever the page that used it lives.
             if ($status === 404 && $request->isMethod('GET') && ($moved = Illuminate\Support\Facades\DB::table('redirects')->where('from_path', '/'.trim($request->path(), '/'))->first()) !== null) {
                 Illuminate\Support\Facades\DB::table('redirects')->where('id', $moved->id)->increment('hits');

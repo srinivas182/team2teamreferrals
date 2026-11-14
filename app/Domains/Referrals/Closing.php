@@ -143,6 +143,9 @@ final class Closing
     private function askClient(Referral $ref): void
     {
         $ref->loadMissing(['group.industry', 'receiver']);
+        if ($ref->group->is_sandbox) {
+            return; // the API sandbox never contacts anyone
+        }
         $token = Str::random(40);
         $ref->forceFill(['client_rating_token_hash' => hash('sha256', $token)])->save();
         $link = url('/rate/'.$token);

@@ -17,6 +17,7 @@ final class StaticPagesProvider implements SitemapProvider
         'groups.index' => ['daily', 0.9],
         'blog.index' => ['daily', 0.7],
         'find-a-pro' => ['weekly', 0.8],
+        'developers' => ['monthly', 0.4],
         'about' => ['yearly', 0.5],
     ];
 

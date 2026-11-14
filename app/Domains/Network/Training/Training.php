@@ -70,7 +70,7 @@ final class Training
             return false;
         }
 
-        if (! self::required($group) || now()->lessThan(self::enforcedFrom($group))) {
+        if ($group->is_sandbox || ! self::required($group) || now()->lessThan(self::enforcedFrom($group))) { // the API sandbox needs no training
             return false;
         }
         if (! $this->passed($user, $group->industry)) {
