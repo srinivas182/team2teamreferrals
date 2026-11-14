@@ -23,15 +23,18 @@ type Props = {
         terms: Record<string, string>;
         pricing: { seat_price: number; trial_months: number; value_guarantee: boolean };
     };
+    city?: { id: number; name: string } | null;
     seo: Seo;
 };
 
 const unitWord: Record<string, string> = { city: 'city', county: 'county', metro: 'metro area', state: 'state' };
 
-export default function Apply({ group, seo }: Props) {
+export default function Apply({ group, city: claimed, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
-    const [city, setCity] = useState<CityOption | null>(null);
-    const form = useForm({ city_id: 0, license_number: '' });
+    const [city, setCity] = useState<CityOption | null>(
+        claimed ? { id: claimed.id, name: claimed.name, state: '', county: null, population: 0, label: claimed.name } : null,
+    );
+    const form = useForm({ city_id: claimed?.id ?? 0, license_number: '' });
     const errors = form.errors as Record<string, string>;
     return (
         <PortalLayout title={`Apply to ${group.name}`} user={{ name: auth.user?.name ?? '', team: '' }}>

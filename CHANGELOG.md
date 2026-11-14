@@ -4,6 +4,20 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 40a — Public directory: groups, industry by state, city pages, claim flow
+Checklist items delivered here, each proven by tests in tests/Feature/Network/DirectoryTest.php:
+1. Group directory at /groups with search and filters (industry, state, city); with a city chosen, each network shows its seat there (holder, open or filled). Filtered views aren't indexed (they aren't separate pages).
+2. Group pages at /groups/{group}: answer paragraph, description, owners, rules summary (deadlines, training, fee rules from the tier, seat price), verified teams by state with their public facts, and open seats. Each team has a "Send referral" button: members go to the send form for that seat's city; visitors to the team's referral form on its profile.
+3. Industry by state pages (/industries/{industry}/{state}) and city pages (/industries/{industry}/{state}/{city}). City pages are indexed only once a seat is filled or waitlisted and the city is in one of the 300 largest metro areas (by population); others work but aren't indexed, so there are no thin pages. Industry by state pages are indexed once a seat is filled there. One address per page (lowercase state).
+4. "Claim this seat" (/claim/{group}/{city}): members go straight to the application with the city filled in; visitors sign up (or reserve, before launch) and come back to it afterwards. Applying leaves a pending application, through the existing license check, approval and training.
+5. CDN: directory pages are cached at the edge for visitors and refreshed as soon as a seat, team or group changes (the change sends the affected addresses to the CDN purge and search engines).
+6. Privacy: only team names, logos, cities, verified license states and aggregate stats (trust score, rating once there are 3 or more, confirmed closes, years in business). No phone numbers, emails or client data; teams with a private profile are left out.
+7. Search engines and AI tools: each page opens with a one-paragraph answer built from the data (e.g. "The verified installer for Houston, TX on Team to Team Referrals is Hurricane Sun..."); key facts are readable text, not only widgets; ItemList, LocalBusiness (stars only with 3+ ratings) and BreadcrumbList data; a "directory" sitemap with the pages worth indexing.
+- Team profiles: the referral form now has its own anchor (#refer), so "Send referral" from a directory page lands on it.
+- "Are you an installer?": a/an chosen correctly in page wording.
+- Still in 40b: the team profile upgrades (response time, referrals in the last 12 months, rating breakdown, verified credentials, nearby cities, group map, llms.txt).
+- 583 PHP tests in total (7 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 39c — Industry hubs for the last 20 industries (all 46 drafted)
 - The last 20 industries written in full and installed as drafts with "Review pending", completing all 46: Business brokers, Auto sales, RV and boat sales, Staffing and recruiting, Travel advisors, Wedding and event vendors, Cosmetic and elective medical, Fitness clubs, Franchise sales, Telecom and internet, Business software, Merchant services, Commercial cleaning, Custom home builders, Land, Ranch and farm, Livestock, Equipment, Funeral pre-planning, Timeshare and vacation ownership.
 - Cost figures only where a reliable public source exists: funeral medians for 2023 (National Funeral Directors Association). Elsewhere the cost line is left empty with a note why.

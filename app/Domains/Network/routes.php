@@ -359,3 +359,13 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     }
     Route::get('reports/file/{file}', [App\Domains\Platform\Reports\ReportsController::class, 'file'])->name('reports.file');
 });
+
+// Public directory (Sprint 40): groups, industry by state, city pages; cached at the edge and purged when seats change.
+Route::middleware(['web', 'edge.cache', 'throttle:120,1'])->group(function (): void {
+    Route::get('groups', [App\Domains\Network\Directory\DirectoryController::class, 'index'])->name('groups.directory');
+    Route::get('groups/{slug}', [App\Domains\Network\Directory\DirectoryController::class, 'group'])->where('slug', '[a-z0-9-]+')->name('directory.group');
+    Route::get('industries/{industry}/{state}', [App\Domains\Network\Directory\DirectoryController::class, 'state'])->where(['industry' => '[a-z0-9-]+', 'state' => '[a-zA-Z]{2}'])->name('directory.state');
+    Route::get('industries/{industry}/{state}/{city}', [App\Domains\Network\Directory\DirectoryController::class, 'city'])->where(['industry' => '[a-z0-9-]+', 'state' => '[a-zA-Z]{2}', 'city' => '[a-z0-9-]+'])->name('directory.city');
+});
+Route::middleware(['web', 'throttle:30,1'])->get('claim/{group}/{city}', [App\Domains\Network\Directory\DirectoryController::class, 'claim'])
+    ->where(['group' => '[a-z0-9-]+', 'city' => '[0-9]+'])->name('directory.claim');
