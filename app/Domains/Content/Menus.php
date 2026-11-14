@@ -21,10 +21,10 @@ final class Menus
     }
 
     /** Built-in links, used until menus are set in Admin → Website. */
-    public const DEFAULT_HEADER = [['How it works', '/how-it-works'], ['Groups', '/groups'], ['Find a pro', '/find-a-pro'], ['Pricing', '/pricing'], ['Blog', '/blog']];
+    public const DEFAULT_HEADER = [['How it works', '/how-it-works'], ['Groups', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro'], ['Pricing', '/pricing'], ['Blog', '/blog']];
 
     public const DEFAULT_FOOTER = [
-        ['Product', [['How it works', '/how-it-works'], ['Pricing', '/pricing'], ['Group directory', '/groups'], ['Find a pro', '/find-a-pro']]],
+        ['Product', [['How it works', '/how-it-works'], ['Pricing', '/pricing'], ['Group directory', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro']]],
         ['Company', [['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Status', '/status']]],
         ['Legal', [['Terms', '/terms'], ['Privacy', '/privacy']]],
     ];
@@ -67,6 +67,9 @@ final class Menus
             return true;
         }
         $path = '/'.trim((string) parse_url($url, PHP_URL_PATH), '/');
+        if ($path === '/industries') { // the industry list shows only once a hub is published
+            return DB::table('industry_content')->where('status', 'published')->exists();
+        }
         try {
             $route = \Illuminate\Support\Facades\Route::getRoutes()->match(\Illuminate\Http\Request::create($path, 'GET'));
             if ($route->getName() !== 'content.page') {

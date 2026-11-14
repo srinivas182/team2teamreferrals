@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 39b — Industry hubs for 20 more industries, care notice, Industries in the menu
+- 20 more industries written in full and installed as drafts with "Review pending" (26 of 46 now): Commercial real estate, Property management, Title and escrow, Home inspection, Medicare agents, Roofing, HVAC, Windows and siding, Pest control, Home security, Pool builders, Water treatment, Home warranty, Financial advisors, Tax and accounting, Estate planning attorneys, Senior living placement, In-home care, Hospice, Landscaping. Each has the answer-first summary, facts sheet, how it works, request wording, state and city openings, 8 questions and answers, 6 questions to ask before hiring, glossary, related industries, official lookups and dated sources.
+- Cost figures only where a reliable public source exists: Medicare Part B 2026 premium and deductible (CMS, Federal Register), assisted living and home health aide 2024 medians (Genworth and CareScout), hospice costs under Original Medicare (Medicare.gov). Elsewhere the cost line is left empty with a note why.
+- Facts checked 14 November 2026 against CFPB Regulation X, the 2010 HUD home warranty rule, CMS agent compensation rules, the SEC marketing rule, FINRA BrokerCheck and the SEC adviser search, IRS preparer guidance, CPAverify and the AICPA Code, EPA (Section 608, lead-safe RRP, pesticide applicators, home water treatment), the FTC Cooling-Off Rule, CPSC pool barrier guidelines, NPIC, NASCLA, NAIC, ARELLO, the ABA, HHS-OIG on the Anti-Kickback Statute, Medicare Care Compare and the Eldercare Locator.
+- Care industries (senior living, in-home care, hospice) add "general information, not medical advice" to their notice.
+- "Industries" added to the default header and footer menus; the link shows only once at least one hub is published, and appears or disappears as hubs are published, unpublished or sent back for review by a tier change.
+- 576 PHP tests in total (3 new, several widened to all 26 hubs: every hub passes the publishing checks except the reviewer, related links point only at real industries, no Tier B or C copy offers fees); 2 ClickHouse tests run in CI.
+
 ### Sprint 39a — Industry hubs: framework, review, disclosures, and six written samples
 Checklist items delivered here (the other 40 industries' copy follows in 39b and 39c), each proven by tests in tests/Feature/Content/IndustryHubTest.php:
 1–2. Industry hubs at /industries/{slug} and a list at /industries: answer-first summary, introduction and how the network works, in each industry's own words.

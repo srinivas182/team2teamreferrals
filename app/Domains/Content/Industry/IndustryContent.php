@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Content\Industry;
 
+use App\Domains\Content\Menus;
 use App\Domains\Content\Pages;
 use App\Domains\Content\Tokens;
 use App\Domains\Identity\Models\User;
@@ -138,12 +139,14 @@ final class IndustryContent
         $c = self::normalise((array) json_decode((string) $r->content, true));
         self::assertPublishable($industry, $c, $r->reviewer);
         DB::table('industry_content')->where('id', $r->id)->update(['status' => 'published', 'reviewed_on' => now()->toDateString(), 'published_at' => $r->published_at ?? now(), 'updated_at' => now()]);
+        Menus::forget(); // the Industries link appears once a hub is live
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-published')->withProperties(['reviewer' => $r->reviewer])->log('Industry hub published');
     }
 
     public static function unpublish(Industry $industry, User $by): void
     {
         DB::table('industry_content')->where('industry_id', $industry->id)->update(['status' => 'draft', 'updated_at' => now()]);
+        Menus::forget();
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-unpublished')->log('Industry hub unpublished');
     }
 
@@ -222,7 +225,7 @@ final class IndustryContent
         $t = $industry->terms();
         $legal = $industry->family === 'legal';
 
-        return match ($industry->tier) {
+        $notice = match ($industry->tier) {
             Tier::Open => null,
             Tier::Restricted => 'No referral fees: in this industry, '.$t['pros'].' exchange introductions without any payment, fee or other thing of value. '
                 .'{site_name} is not a '.$t['pro'].' and does not give '.mb_strtolower($industry->name).' advice; listing is not an endorsement.',
@@ -230,6 +233,8 @@ final class IndustryContent
                 .($legal ? 'This page may be considered attorney advertising. It is general information, not legal advice, and no attorney-client relationship is created by using it. ' : '')
                 .'Listing is not an endorsement.',
         };
+
+        return $notice === null ? null : $notice.($industry->family === 'care' ? ' This page is general information, not medical advice.' : '');
     }
 
     /** The plain statement of what the industry's tier means, for the facts sheet. */
