@@ -53,6 +53,7 @@ export const portalNav: NavItem[] = [
     { label: 'Share profile', href: '/app/share', icon: QrCode },
     { label: 'Invites', href: '/app/invites', icon: UserPlus },
     { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
+    { label: 'Open requests', href: '/app/requests', icon: Inbox },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },

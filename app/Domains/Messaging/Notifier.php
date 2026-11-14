@@ -44,7 +44,8 @@ final class Notifier
         $replyTo = isset($data['_reply_to']) && is_string($data['_reply_to']) ? $data['_reply_to'] : null;
         unset($data['_reply_to']);
         // Demo accounts (…@demo.invalid, a domain that can never receive mail) get in-app notifications only.
-        $demo = str_ends_with(strtolower((string) $user->email), '@'.\App\Domains\Content\Demo\DemoWorkspace::DOMAIN);
+        // So does any .invalid address (the platform's own website team, for example).
+        $demo = str_ends_with(strtolower((string) $user->email), '@'.\App\Domains\Content\Demo\DemoWorkspace::DOMAIN) || str_ends_with(strtolower((string) $user->email), '.invalid');
         foreach ($def['channels'] as $channel) {
             if (! $this->prefs->allows($user, $type, $channel) || ($demo && $channel !== 'database')) {
                 continue;

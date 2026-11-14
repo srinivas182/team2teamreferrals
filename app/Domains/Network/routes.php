@@ -369,3 +369,19 @@ Route::middleware(['web', 'edge.cache', 'throttle:120,1'])->group(function (): v
 });
 Route::middleware(['web', 'throttle:30,1'])->get('claim/{group}/{city}', [App\Domains\Network\Directory\DirectoryController::class, 'claim'])
     ->where(['group' => '[a-z0-9-]+', 'city' => '[0-9]+'])->name('directory.claim');
+
+// "Find a trusted pro" (Sprint 41): public requests, the phone check and confirmation; members' open request board.
+Route::middleware(['web', 'edge.cache'])->get('find-a-pro', [App\Domains\Referrals\Consumer\FindAProController::class, 'index'])->name('find-a-pro');
+Route::middleware(['web', 'noindex:always'])->group(function (): void {
+    Route::get('request/token', [App\Domains\Referrals\Consumer\FindAProController::class, 'token'])->middleware('throttle:60,1')->name('consumer.token');
+    Route::post('find-a-pro', [App\Domains\Referrals\Consumer\FindAProController::class, 'go'])->middleware('throttle:60,1')->name('find-a-pro.go');
+    Route::post('request/{group}/{city}', [App\Domains\Referrals\Consumer\FindAProController::class, 'store'])->where(['group' => '[a-z0-9-]+', 'city' => '[0-9]+'])->middleware('throttle:5,60')->name('consumer.store');
+    Route::get('request/{ulid}/verify', [App\Domains\Referrals\Consumer\FindAProController::class, 'verifyForm'])->where('ulid', '[0-9A-Za-z]{26}')->name('consumer.verify');
+    Route::post('request/{ulid}/verify', [App\Domains\Referrals\Consumer\FindAProController::class, 'verify'])->where('ulid', '[0-9A-Za-z]{26}')->middleware('throttle:10,10')->name('consumer.verify.post');
+    Route::post('request/{ulid}/resend', [App\Domains\Referrals\Consumer\FindAProController::class, 'resend'])->where('ulid', '[0-9A-Za-z]{26}')->middleware('throttle:3,10')->name('consumer.resend');
+    Route::get('request/{ulid}/done', [App\Domains\Referrals\Consumer\FindAProController::class, 'done'])->where('ulid', '[0-9A-Za-z]{26}')->name('consumer.done');
+});
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
+    Route::get('app/requests', [App\Domains\Referrals\Consumer\FindAProController::class, 'board'])->name('consumer.board');
+    Route::post('app/requests/{ulid}/take', [App\Domains\Referrals\Consumer\FindAProController::class, 'take'])->where('ulid', '[0-9A-Za-z]{26}')->middleware('throttle:30,1')->name('consumer.take');
+});

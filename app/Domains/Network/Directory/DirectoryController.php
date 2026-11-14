@@ -99,6 +99,8 @@ final class DirectoryController
         return Inertia::render('IndustryState', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'terms' => $t, 'hub' => $hub], 'state' => ['code' => $st->code, 'name' => $st->name],
             'answer' => $answer, 'seats' => $seats, 'open' => Directory::openPlaces($launch, 12, $st->code), 'group' => ['slug' => $launch->slug, 'name' => $launch->name],
+            'request' => \App\Domains\Referrals\Consumer\ConsumerRequests::allowed($launch)
+                ? ['group' => $launch->slug, 'cityId' => null, 'questions' => app(\App\Domains\Referrals\Consumer\ConsumerRequests::class)->questions($launch), 'pro' => null, 'responseHours' => null] : null,
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'seo' => (new SeoData(title: "{$industry->name} in {$st->name}: verified {$t['pros']} · {$site}", description: $answer, path: $path, index: count($seats) > 0,
                 schema: [Schema::organization(), $this->itemList(array_map(fn ($s) => [$s['team']['name'].', '.$s['territory'], '/t/'.$s['team']['slug']], $seats)),
@@ -133,11 +135,26 @@ final class DirectoryController
                 + ($team['rating'] !== null ? ['aggregateRating' => ['@type' => 'AggregateRating', 'ratingValue' => $team['rating'], 'ratingCount' => $team['ratings']]] : []);
         }
 
+        // "How do I find a trusted pro here?", answered in the open (nothing hidden behind the form).
+        $launch = $groups->first();
+        $canRequest = \App\Domains\Referrals\Consumer\ConsumerRequests::allowed($launch);
+        $holder = $held !== null ? $held['seat']['team'] : null;
+        $howTo = "On {$site}, each {$industry->territory_unit} has one verified {$t['pro']} per network: licensed where the law requires it, held to response deadlines and rated by clients and other pros. "
+            .($canRequest ? 'Describe what you need with the form on this page; after a quick text code to check your number, your request goes to '.($holder !== null ? $holder['name'] : 'the verified '.$t['pro'].' for '.$city->name)
+                .' alone (or their backup), never sold to several.' : 'This is a directory: contact the listed '.$t['pro'].' directly; '.$site.' does not route requests or take any fee.');
+        $schema[] = Schema::faq([["How do I find a trusted {$t['pro']} in {$city->name}, {$st->code}?", $howTo]]);
+        $schema[] = array_filter(['@context' => 'https://schema.org', '@type' => 'Service', 'name' => $industry->name.' in '.$city->name.', '.$st->code, 'serviceType' => $industry->name,
+            'areaServed' => ['@type' => 'City', 'name' => $city->name.', '.$st->name], 'provider' => $holder !== null ? ['@type' => 'LocalBusiness', 'name' => $holder['name'], 'url' => url('/t/'.$holder['slug'])] : null,
+            'url' => url($path)]);
+        $request = $canRequest ? ['group' => $launch->slug, 'cityId' => $city->id, 'questions' => app(\App\Domains\Referrals\Consumer\ConsumerRequests::class)->questions($launch),
+            'pro' => $holder['name'] ?? null, 'responseHours' => $holder !== null ? \App\Domains\Network\Profiles\ProfileRecord::response(\App\Domains\Network\Seats\Models\Team::query()->where('slug', (string) $holder['slug'])->firstOrFail())['hours'] : null] : null;
+
         return Inertia::render('CityPage', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'terms' => $t, 'hub' => $hub], 'state' => ['code' => $st->code, 'name' => $st->name],
             'city' => ['id' => $city->id, 'name' => $city->name, 'slug' => $city->slug], 'answer' => $answer,
             'intro' => $hub ? IndustryContent::placeSummary($industry, $st->name, $city->name) : null, 'seats' => $seats,
             'nearby' => Directory::nearby($groups->first(), $city), 'otherIndustries' => Directory::otherIndustries($city, $industry->id),
+            'howTo' => $howTo, 'request' => $request,
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'seo' => (new SeoData(title: "{$industry->name} in {$city->name}, {$st->code}: the verified {$t['pro']} · {$site}", description: $answer, path: $path, index: $index, schema: $schema))->toArray(),
         ]);

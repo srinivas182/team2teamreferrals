@@ -2,6 +2,7 @@
 const messages: Record<string, string> = {
     'verification-link-sent': 'We sent a new verification link to your email.',
     'code-sent': 'We texted you a new 6-digit code.',
+    'request-taken': 'The request is yours: contact the client soon.',
     'phone-verified': 'Your mobile number is verified.',
     'two-factor-authentication-enabled': 'Scan the QR code with your authenticator app, then enter the 6-digit code to finish.',
     'two-factor-authentication-confirmed': 'Two-step sign-in is on. Save your recovery codes somewhere safe.',

@@ -37,7 +37,8 @@ final class Fees
     /** @return array{type: string, value: int}|null */
     public static function forReferral(Referral $ref): ?array
     {
-        if ($ref->group->industry->tier !== Tier::Open) {
+        // Website requests aren't referrals between members: there is no member to pay.
+        if ($ref->group->industry->tier !== Tier::Open || $ref->source === 'consumer') {
             return null;
         }
         // Cross-industry: a fee only when both industries allow fees.

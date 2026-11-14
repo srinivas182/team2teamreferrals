@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ShieldAlert } from 'lucide-react';
+import { RequestForm, type RequestBlock } from '@/components/directory/RequestForm';
 import { OpenPlaces, TeamCard, type OpenPlace, type PublicTeam } from '@/components/directory/TeamCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -13,12 +14,13 @@ type Props = {
     seats: Seat[];
     open: OpenPlace[];
     group: { slug: string; name: string };
+    request: RequestBlock | null;
     disclosure: string | null;
     seo: Seo;
 };
 
 /** An industry in one state: the verified teams holding seats there, and the open seats. */
-export default function IndustryState({ industry, state, answer, seats, open, group, disclosure, seo }: Props) {
+export default function IndustryState({ industry, state, answer, seats, open, group, request, disclosure, seo }: Props) {
     return (
         <PublicLayout current="/groups">
             <SeoHead seo={seo} />
@@ -58,6 +60,7 @@ export default function IndustryState({ industry, state, answer, seats, open, gr
                     </div>
                     {seats.length === 0 && <p className="mt-3 text-muted">No seats are filled in {state.name} yet.</p>}
                 </section>
+                {request && <RequestForm block={request} pro={industry.terms.pro ?? 'pro'} place={state.name} />}
                 {open.length > 0 && (
                     <section aria-labelledby="open" className="mt-8">
                         <h2 id="open" className="font-display text-2xl font-bold">

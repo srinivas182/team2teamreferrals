@@ -17,6 +17,9 @@ final class Credits
 {
     public static function onAccepted(Referral $ref): void
     {
+        if ($ref->source === 'consumer') {
+            return; // credits reward members helping each other; website requests don't move them
+        }
         self::add($ref->sender_team_id, $ref, 'sent_accepted', (int) $ref->group->rule('credit_sent'));
         if ($ref->receiver_team_id !== null) {
             self::add($ref->receiver_team_id, $ref, 'received', (int) $ref->group->rule('credit_received'));
@@ -25,6 +28,9 @@ final class Credits
 
     public static function onWonConfirmed(Referral $ref): void
     {
+        if ($ref->source === 'consumer') {
+            return;
+        }
         self::add($ref->sender_team_id, $ref, 'closed_won', (int) $ref->group->rule('credit_closed'));
     }
 
