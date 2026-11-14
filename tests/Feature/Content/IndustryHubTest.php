@@ -27,8 +27,9 @@ beforeEach(function () {
     };
 });
 
-it('installs the six sample hubs as drafts with review pending, and none is public', function () {
-    expect(IndustryPack::all())->toHaveCount(6);
+it('installs the drafted hubs (26 of 46 so far) as drafts with review pending, and none is public', function () {
+    expect(IndustryPack::all())->toHaveCount(26)
+        ->and(array_diff(array_keys(IndustryPack::all()), Industry::query()->pluck('slug')->all()))->toBe([]); // every slug is a real industry
     foreach (array_keys(IndustryPack::all()) as $slug) {
         $r = IndustryContent::record(($this->industry)($slug));
         expect($r->status)->toBe('draft')->and($r->reviewer)->toBeNull();
@@ -39,7 +40,7 @@ it('installs the six sample hubs as drafts with review pending, and none is publ
     expect(IndustryContent::install())->toBe(0);
 });
 
-it('writes every sample to the publishing bar: only the named reviewer is missing', function () {
+it('writes every drafted hub to the publishing bar: only the named reviewer is missing', function () {
     foreach (array_keys(IndustryPack::all()) as $slug) {
         $i = ($this->industry)($slug);
         expect(array_keys(IndustryContent::problems($i, IndustryContent::content($i), null)))->toBe(['reviewer'], $slug)
@@ -148,7 +149,7 @@ it('lets editors write, check, preview and publish from Admin → Website → In
     $this->actingAs($member)->get('/preview/industries/solar')->assertForbidden();
     $this->actingAs($this->editor)->get('/admin/content/industries')->assertOk()
         ->assertInertia(fn ($p) => $p->where('industries', fn ($rows) => collect($rows)->firstWhere('slug', 'solar')['state'] === 'review_pending'
-            && collect($rows)->firstWhere('slug', 'hvac')['state'] === 'none'));
+            && collect($rows)->firstWhere('slug', 'auto-sales')['state'] === 'none'));
     $this->get('/admin/content/industries/solar')->assertInertia(fn ($p) => $p->where('problems', ['Review pending: name the expert who checked the facts.'])
         ->where('samples.city', fn ($s) => str_contains((string) $s, 'Austin, Texas')));
     $preview = $this->get('/preview/industries/solar')->assertOk()->viewData('page')['props'];
@@ -169,4 +170,36 @@ it('publishes the cost-data and review-standards pages on install, and never des
     }
     $all = str_replace(['never a share of the sale price', 'never of the sale'], '', (string) json_encode(IndustryPack::all(), JSON_UNESCAPED_UNICODE));
     expect($all)->not->toMatch('/(percent|%|share) of the (sale|sales|purchase|closing) price/i');
+});
+
+it('adds a medical notice to Tier B and C care hubs, and links related hubs only to real industries', function () {
+    foreach (['senior-living', 'in-home-care', 'hospice'] as $slug) {
+        expect(IndustryContent::disclosure(($this->industry)($slug)))->toEndWith('not medical advice.');
+    }
+    expect(IndustryContent::disclosure(($this->industry)('hospice')))->toStartWith('Directory only')
+        ->and(IndustryContent::disclosure(($this->industry)('estate-planning')))->toContain('attorney advertising')->not->toContain('medical');
+    $slugs = Industry::query()->pluck('slug')->all();
+    foreach (IndustryPack::all() as $slug => $c) {
+        expect(array_diff($c['related'], $slugs))->toBe([], $slug)->and($c['related'])->not->toContain($slug);
+    }
+});
+
+it('never offers referral fees in Tier B or C copy', function () {
+    foreach (IndustryPack::all() as $slug => $c) {
+        $i = ($this->industry)($slug);
+        if ($i->tier === Tier::Open) {
+            continue;
+        }
+        $copy = implode(' ', [$c['summary'], $c['intro'], $c['how'], $c['request'], ...array_column($c['faqs'], 'a')]);
+        expect($copy)->not->toMatch('/(you|members) (can |may )?(earn|receive|get) (a )?referral fee|share of what the receiving/i', $slug);
+    }
+});
+
+it('shows Industries in the site menu only once a hub is live', function () {
+    $links = fn () => array_column(App\Domains\Content\Menus::forPublic()['header'], 1);
+    expect($links())->not->toContain('/industries');
+    ($this->publish)('roofing');
+    expect($links())->toContain('/industries');
+    IndustryContent::unpublish(($this->industry)('roofing'), $this->editor);
+    expect($links())->not->toContain('/industries');
 });

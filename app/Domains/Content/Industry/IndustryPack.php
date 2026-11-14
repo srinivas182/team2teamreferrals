@@ -17,6 +17,12 @@ final class IndustryPack
     /** @return array<string, array<string, mixed>> industry slug => content (see IndustryContent::PARTS) */
     public static function all(): array
     {
+        return [...self::sample(), ...IndustryPackB::all()];
+    }
+
+    /** @return array<string, array<string, mixed>> the six samples written in Sprint 39a */
+    private static function sample(): array
+    {
         return [
             'real-estate' => [
                 'summary' => 'Real estate referrals connect a buyer or seller who is moving to a licensed agent in their new city. On {site_name}, agents send clients with their consent, the receiving agent accepts within the deadline, and any referral fee is agreed up front as a share of the receiving agent’s commission.',
