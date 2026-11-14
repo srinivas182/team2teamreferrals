@@ -15,6 +15,7 @@ final class NetworkServiceProvider extends ServiceProvider
     {
         $this->callAfterResolving(\App\Domains\Seo\Sitemap\SitemapRegistry::class, fn ($r) => $r->register(new Prelaunch\PrelaunchSitemapProvider));
         $this->callAfterResolving(\App\Domains\Seo\Sitemap\SitemapRegistry::class, fn ($r) => $r->register(new Profiles\ProfileSitemapProvider));
+        $this->callAfterResolving(\App\Domains\Seo\Sitemap\SitemapRegistry::class, fn ($r) => $r->register(new Directory\DirectorySitemapProvider));
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {
             $s->command('t2t:groups:scheduled')->dailyAt('06:00')->onOneServer();
             // Hourly so 72-hour offers pass on promptly; grace and release use whole days.
@@ -26,6 +27,18 @@ final class NetworkServiceProvider extends ServiceProvider
             $s->command('t2t:referrals:expire')->everyFifteenMinutes()->onOneServer();
             $s->command('t2t:performance')->dailyAt('08:00')->onOneServer();
         });
+        // Public directory pages follow their data: a seat, team or group change refreshes the cached pages.
+        Seats\Models\Seat::saved(fn (Seats\Models\Seat $s) => \Illuminate\Support\Facades\DB::afterCommit(fn () => Directory\DirectoryUrls::seatChanged((int) $s->id)));
+        Seats\Models\Seat::deleting(function (Seats\Models\Seat $s): void {
+            $paths = Directory\DirectoryUrls::forSeat((int) $s->id);
+            \Illuminate\Support\Facades\DB::afterCommit(fn () => $paths !== [] ? event(new \App\Domains\Seo\Events\PublicUrlsChanged($paths)) : null);
+        });
+        Seats\Models\Team::updated(function (Seats\Models\Team $t): void {
+            if ($t->wasChanged(['name', 'slug', 'logo_path', 'profile_public', 'bio', 'founded_year'])) {
+                \Illuminate\Support\Facades\DB::afterCommit(fn () => Directory\DirectoryUrls::teamChanged((int) $t->id));
+            }
+        });
+        Groups\Models\Group::saved(fn (Groups\Models\Group $g) => \Illuminate\Support\Facades\DB::afterCommit(fn () => Directory\DirectoryUrls::groupChanged((string) $g->slug)));
         $this->loadRoutesFrom(__DIR__.'/routes.php');
         if ($this->app->runningInConsole()) {
             $this->commands([ImportLocations::class, ImportMetros::class, Industries\Catalogue\SyncCatalogue::class, Groups\ApplyScheduledChanges::class, Seats\RunSeatLifecycle::class, Licenses\SendLicenseReminders::class, Onboarding\SendOnboardingNudges::class, Training\SendTrainingReminders::class, \App\Domains\Referrals\ExpireReferrals::class, \App\Domains\Referrals\Performance\PerformanceJobs::class]);

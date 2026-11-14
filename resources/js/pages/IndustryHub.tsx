@@ -1,5 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
 import { BadgeCheck, ExternalLink, ShieldAlert } from 'lucide-react';
+import { article } from '@/components/directory/TeamCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -159,7 +160,9 @@ export default function IndustryHub({ industry, content: c, disclosure, related,
                             <Link href="/contact">{industry.consumerRequests ? 'Request a pro' : 'Ask us a question'}</Link>
                         </Button>
                         <Button asChild variant="secondary">
-                            <Link href="/reserve">Are you a {industry.terms.pro}? Claim your city</Link>
+                            <Link href="/reserve">
+                                Are you {article(industry.terms.pro)} {industry.terms.pro}? Claim your city
+                            </Link>
                         </Button>
                     </div>
                 </section>

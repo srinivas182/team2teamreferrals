@@ -128,7 +128,7 @@ export default function TeamPublic({ team, cities, groups, licenses, serviceScor
                     </blockquote>
                 ))}
 
-                <Card className="mt-8 p-6">
+                <Card id="refer" className="mt-8 scroll-mt-20 p-6">
                     <h2 className="font-display text-xl font-bold">Refer a client to {team.name}</h2>
                     {status && done[status] && (
                         <Alert tone="success" className="mt-3">
