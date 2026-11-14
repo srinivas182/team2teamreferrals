@@ -62,4 +62,17 @@ final class PublicProfiles
 
         return ['view' => (int) ($rows['view'] ?? 0), 'qr' => (int) ($rows['qr'] ?? 0), 'link' => (int) ($rows['link'] ?? 0), 'referral' => (int) ($rows['referral'] ?? 0)];
     }
+
+    /** Teams whose profile search engines should list: public, holding a filled seat in a launched public network. */
+    public static function indexableQuery(): \Illuminate\Database\Query\Builder
+    {
+        return DB::table('teams')->where('teams.profile_public', true)->whereNotNull('teams.slug')
+            ->whereExists(fn ($q) => $q->from('seats')->join('groups', 'groups.id', '=', 'seats.group_id')->whereColumn('seats.primary_team_id', 'teams.id')
+                ->whereIn('seats.status', \App\Domains\Network\Directory\Directory::FILLED)->where(['groups.status' => 'live', 'groups.is_private' => false]));
+    }
+
+    public static function indexable(Team $team): bool
+    {
+        return self::indexableQuery()->where('teams.id', $team->id)->exists();
+    }
 }

@@ -144,3 +144,26 @@ describe('CommandPalette', () => {
         expect(ran).toBe('pipeline');
     });
 });
+
+describe('AnswerInput', () => {
+    it('is labelled by its question inside a Field, for every kind of answer', async () => {
+        const { AnswerInput } = await import('@/components/referrals/AnswerInput');
+        const kinds = [
+            { key: 'a', label: 'System size', type: 'text' },
+            { key: 'b', label: 'Roof type', type: 'choice', options: ['Tile', 'Metal'] },
+            { key: 'c', label: 'Anything else', type: 'textarea' },
+            { key: 'd', label: 'Owns the home', type: 'boolean' },
+        ];
+        const { container } = render(
+            <>
+                {kinds.map((f) => (
+                    <Field key={f.key} label={f.label}>
+                        <AnswerInput f={f} value={undefined} onChange={() => undefined} />
+                    </Field>
+                ))}
+            </>,
+        );
+        for (const f of kinds) expect(screen.getByLabelText(f.label)).toBeTruthy();
+        expect(await axe(container)).toHaveNoViolations();
+    });
+});

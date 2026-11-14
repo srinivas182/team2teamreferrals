@@ -45,7 +45,7 @@ final class DirectoryController
             'industries' => Industry::query()->whereIn('id', Directory::groups()->pluck('industry_id'))->orderBy('name')->get(['slug', 'name'])->map(fn ($i) => ['slug' => $i->slug, 'name' => $i->name])->values(),
             'states' => DB::table('states')->where('is_enabled', true)->orderBy('name')->get(['code', 'name']),
             'updatedOn' => substr((string) DB::table('seats')->max('updated_at'), 0, 10) ?: null,
-            'seo' => (new SeoData(title: 'Referral network directory · '.$site, description: $answer, path: '/groups', index: ! $filtered, // filtered views aren't separate pages
+            'seo' => (new SeoData(title: 'Referral network directory', description: $answer, path: '/groups', index: ! $filtered, // filtered views aren't separate pages
                 schema: [Schema::organization(), $this->itemList(array_map(fn ($g) => [$g['name'], '/groups/'.$g['slug']], $rows)), Schema::breadcrumbs([['Home', '/'], ['Directory', '/groups']])]))->toArray(),
         ]);
     }
@@ -75,7 +75,10 @@ final class DirectoryController
             'answer' => $answer, 'seats' => $seats, 'open' => Directory::openPlaces($group), 'map' => NetworkMap::forGroup($group),
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'viewer' => $request->user() instanceof User ? 'member' : 'guest',
-            'seo' => (new SeoData(title: "{$group->name}: verified {$t['pros']} by {$unit} · {$site}", description: $answer, path: $path,
+            // Indexed once someone public holds a seat; until then the page is mostly empty.
+            'seo' => (new SeoData(title: "{$group->name}: verified {$t['pros']} by {$unit}", description: $answer, path: $path, index: $seats !== [],
+                image: \App\Domains\Seo\PageImage::path(['eyebrow' => $industry->name.' referral network', 'title' => $group->name,
+                    'line' => count($seats).' '.(count($seats) === 1 ? 'seat' : 'seats').' filled · one verified '.$t['pro'].' per '.$unit, 'badge' => 'Verified pros only']),
                 schema: [Schema::organization(), $this->itemList(array_map(fn ($s) => [$s['team']['name'].', '.$s['territory'], '/t/'.$s['team']['slug']], $seats)),
                     Schema::breadcrumbs([['Home', '/'], ['Directory', '/groups'], [$group->name, $path]])]))->toArray(),
         ]);
@@ -102,7 +105,9 @@ final class DirectoryController
             'request' => \App\Domains\Referrals\Consumer\ConsumerRequests::allowed($launch)
                 ? ['group' => $launch->slug, 'cityId' => null, 'questions' => app(\App\Domains\Referrals\Consumer\ConsumerRequests::class)->questions($launch), 'pro' => null, 'responseHours' => null] : null,
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
-            'seo' => (new SeoData(title: "{$industry->name} in {$st->name}: verified {$t['pros']} · {$site}", description: $answer, path: $path, index: count($seats) > 0,
+            'seo' => (new SeoData(title: "{$industry->name} in {$st->name}: verified {$t['pros']}", description: $answer, path: $path, index: count($seats) > 0,
+                image: \App\Domains\Seo\PageImage::path(['eyebrow' => $industry->name.' · '.$st->name, 'title' => "Verified {$t['pros']} in {$st->name}",
+                    'line' => count($seats).' '.(count($seats) === 1 ? 'seat' : 'seats').' filled · one verified '.$t['pro'].' per area', 'badge' => count($seats) > 0 ? 'See who holds each seat' : 'Every seat is open']),
                 schema: [Schema::organization(), $this->itemList(array_map(fn ($s) => [$s['team']['name'].', '.$s['territory'], '/t/'.$s['team']['slug']], $seats)),
                     Schema::breadcrumbs([['Home', '/'], ['Industries', '/industries'], [$industry->name, '/industries/'.$industry->slug], [$st->name, $path]])]))->toArray(),
         ]);
@@ -144,7 +149,7 @@ final class DirectoryController
                 .' alone (or their backup), never sold to several.' : 'This is a directory: contact the listed '.$t['pro'].' directly; '.$site.' does not route requests or take any fee.');
         $schema[] = Schema::faq([["How do I find a trusted {$t['pro']} in {$city->name}, {$st->code}?", $howTo]]);
         $schema[] = array_filter(['@context' => 'https://schema.org', '@type' => 'Service', 'name' => $industry->name.' in '.$city->name.', '.$st->code, 'serviceType' => $industry->name,
-            'areaServed' => ['@type' => 'City', 'name' => $city->name.', '.$st->name], 'provider' => $holder !== null ? ['@type' => 'LocalBusiness', 'name' => $holder['name'], 'url' => url('/t/'.$holder['slug'])] : null,
+            'areaServed' => ['@type' => 'City', 'name' => $city->name.', '.$st->name], 'provider' => $holder !== null ? ['@type' => 'LocalBusiness', 'name' => $holder['name'], 'url' => url('/t/'.$holder['slug']), 'areaServed' => $city->name.', '.$st->code] : null,
             'url' => url($path)]);
         $request = $canRequest ? ['group' => $launch->slug, 'cityId' => $city->id, 'questions' => app(\App\Domains\Referrals\Consumer\ConsumerRequests::class)->questions($launch),
             'pro' => $holder['name'] ?? null, 'responseHours' => $holder !== null ? \App\Domains\Network\Profiles\ProfileRecord::response(\App\Domains\Network\Seats\Models\Team::query()->where('slug', (string) $holder['slug'])->firstOrFail())['hours'] : null] : null;
@@ -156,7 +161,10 @@ final class DirectoryController
             'nearby' => Directory::nearby($groups->first(), $city), 'otherIndustries' => Directory::otherIndustries($city, $industry->id),
             'howTo' => $howTo, 'request' => $request,
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
-            'seo' => (new SeoData(title: "{$industry->name} in {$city->name}, {$st->code}: the verified {$t['pro']} · {$site}", description: $answer, path: $path, index: $index, schema: $schema))->toArray(),
+            'seo' => (new SeoData(title: "{$industry->name} in {$city->name}, {$st->code}: the verified {$t['pro']}", description: $answer, path: $path, index: $index, schema: $schema,
+                image: \App\Domains\Seo\PageImage::path(['eyebrow' => $industry->name.' · '.$city->name.', '.$st->code, 'title' => $holder !== null ? (string) $holder['name'] : "{$industry->name} in {$city->name}",
+                    'line' => $holder !== null ? "The verified {$t['pro']} for {$city->name}, {$st->code}" : "One verified {$t['pro']} per city: this seat is open", 'badge' => $holder !== null ? 'Seat holder' : 'Open: claim it']),
+            ))->toArray(),
         ]);
     }
 

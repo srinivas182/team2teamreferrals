@@ -10,6 +10,9 @@ namespace App\Domains\Seo;
  */
 final readonly class SeoData
 {
+    /** Longest title search results show in full. */
+    public const TITLE_MAX = 70;
+
     /**
      * @param  list<array<string, mixed>>  $schema  JSON-LD objects for this page
      */
@@ -40,7 +43,9 @@ final readonly class SeoData
         $indexable = $this->index && (bool) config('seo.indexable');
 
         return [
-            'title' => $this->path === '/' ? $this->title : $this->title.' | '.$siteName,
+            // The site name is added only when it fits: search results cut titles at about 60–70 characters.
+            // Nor when the title already names the site.
+            'title' => $this->path === '/' || str_contains($this->title, $siteName) || mb_strlen($this->title.' | '.$siteName) > self::TITLE_MAX ? $this->title : $this->title.' | '.$siteName,
             'description' => mb_strimwidth($this->description, 0, 160, '…'),
             'canonical' => $base.($this->path === null ? '' : '/'.ltrim($this->path, '/')),
             'robots' => $indexable ? 'index, follow, max-image-preview:large, max-snippet:-1' : 'noindex, nofollow',

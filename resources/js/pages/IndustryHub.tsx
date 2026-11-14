@@ -32,6 +32,7 @@ type Props = {
     content: Content;
     disclosure: string | null;
     related: { slug: string; name: string }[];
+    articles: { title: string; url: string }[];
     states: { code: string; name: string }[];
     map: MapData;
     reviewer: string | null;
@@ -59,6 +60,7 @@ export default function IndustryHub({
     content: c,
     disclosure,
     related,
+    articles,
     states,
     map,
     reviewer,
@@ -257,6 +259,23 @@ export default function IndustryHub({
                                 <li key={r.slug}>
                                     <Link href={`/industries/${r.slug}`} className="inline-flex rounded-full border border-line px-3 py-1 text-sm">
                                         {r.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {articles.length > 0 && (
+                    <section aria-labelledby="articles" className="mt-8">
+                        <h2 id="articles" className="font-display text-2xl font-bold">
+                            Articles about {industry.name.toLowerCase()}
+                        </h2>
+                        <ul className="mt-3 space-y-1">
+                            {articles.map((a) => (
+                                <li key={a.url}>
+                                    <Link href={a.url} className="text-primary">
+                                        {a.title}
                                     </Link>
                                 </li>
                             ))}

@@ -40,6 +40,10 @@ it('gives every team a stable web address and a search-ready public page', funct
     $this->team->update(['name' => 'Hurricane Sun Energy']);
     expect($this->team->fresh()->slug)->toBe('hurricane-sun'); // printed QR cards keep working
     config(['seo.indexable' => true]);
+    // Before the network launches the page is thin, so search engines are told to skip it.
+    $this->get($this->url)->assertOk()->assertInertia(fn ($p) => $p->where('seo.robots', 'noindex, nofollow'));
+    $this->g->update(['status' => 'live']);
+    Illuminate\Support\Facades\Cache::flush();
     $this->get($this->url)->assertOk()->assertInertia(function ($p) {
         $seo = $p->toArray()['props']['seo'];
         expect(mb_strlen($seo['description']))->toBeGreaterThanOrEqual(50)->and($seo['canonical'])->toEndWith($this->url)

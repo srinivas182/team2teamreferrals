@@ -25,7 +25,7 @@ final class SeoController
             $lines[] = 'Disallow: '.$path;
         }
         $lines[] = 'Allow: /';
-        foreach ((array) config('seo.ai_crawlers') as $bot => $allowed) {
+        foreach (SeoAdminController::allowed(app(\App\Domains\Platform\Settings\Settings::class)) as $bot => $allowed) {
             $lines[] = '';
             $lines[] = 'User-agent: '.$bot;
             foreach ((array) config('seo.disallow') as $path) {
@@ -81,7 +81,21 @@ final class SeoController
         return $this->xml($xml);
     }
 
+    /** Lines listed per sitemap section in llms.txt; llms-full.txt lists every page. */
+    public const LLMS_SECTION_LIMIT = 200;
+
     public function llms(): Response
+    {
+        return $this->text(Cache::remember('seo:llms', (int) config('seo.sitemap.cache_seconds'), fn () => $this->llmsText(false)));
+    }
+
+    /** The full content index: everything in llms.txt plus every public page. Rebuilt whenever public pages change. */
+    public function llmsFull(): Response
+    {
+        return $this->text(Cache::remember('seo:llms-full', (int) config('seo.sitemap.cache_seconds'), fn () => $this->llmsText(true)));
+    }
+
+    private function llmsText(bool $full): string
     {
         $base = rtrim((string) config('seo.canonical_url'), '/');
         $lines = ['# '.config('seo.site_name'), '', '> '.config('seo.llms.summary'), '', '## Key facts', ''];
@@ -124,13 +138,24 @@ final class SeoController
         foreach ($this->sitemaps->all() as $key => $provider) {
             $lines[] = '## '.ucfirst($key);
             $lines[] = '';
+            $n = 0;
             foreach ($provider->urls() as $url) {
+                if (! $full && ++$n > self::LLMS_SECTION_LIMIT) {
+                    $lines[] = '- More pages in this section: '.$base.'/llms-full.txt';
+                    break;
+                }
                 $lines[] = '- '.$base.'/'.ltrim($url->path, '/');
             }
             $lines[] = '';
         }
+        if (! $full) {
+            $lines[] = '## Full index';
+            $lines[] = '';
+            $lines[] = '- Every public page: '.$base.'/llms-full.txt';
+            $lines[] = '';
+        }
 
-        return $this->text(implode("\n", $lines));
+        return implode("\n", $lines);
     }
 
     public function indexNowKey(string $key): Response

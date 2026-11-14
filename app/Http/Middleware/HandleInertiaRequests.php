@@ -20,6 +20,11 @@ final class HandleInertiaRequests extends Middleware
     /** @return array<string, mixed> */
     public function share(Request $request): array
     {
+        // Portal and admin: after load, fetch the other screens' scripts (three at a time) so the next click is instant.
+        // Public pages: no, a visitor on a phone shouldn't download the whole app (Core Web Vitals, Sprint 43). Set on
+        // every request because the Vite instance is shared between requests under Octane.
+        \Illuminate\Support\Facades\Vite::usePrefetchStrategy($request->is('app', 'app/*', 'admin', 'admin/*') ? 'waterfall' : null, ['concurrency' => 3]);
+
         return [
             ...parent::share($request),
             'auth' => [

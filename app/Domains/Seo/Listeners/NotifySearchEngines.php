@@ -17,6 +17,8 @@ final class NotifySearchEngines implements ShouldQueue
     public function handle(PublicUrlsChanged $event): void
     {
         Cache::forget('seo:sitemap:index');
+        Cache::forget('seo:llms');
+        Cache::forget('seo:llms-full');
         foreach (array_keys(app(\App\Domains\Seo\Sitemap\SitemapRegistry::class)->all()) as $key) {
             Cache::forget('seo:sitemap:'.$key);
         }

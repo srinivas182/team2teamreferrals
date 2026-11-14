@@ -29,7 +29,7 @@ final class IndustryHubController
 
         return Inertia::render('Industries', [
             'hubs' => $hubs, 'summary' => $summary,
-            'seo' => (new SeoData(title: 'Industries · '.config('seo.site_name'), description: $summary, path: '/industries',
+            'seo' => (new SeoData(title: 'Industries', description: $summary, path: '/industries',
                 schema: [Schema::organization(), Schema::breadcrumbs([['Home', '/'], ['Industries', '/industries']])]))->toArray(),
         ]);
     }
@@ -76,10 +76,13 @@ final class IndustryHubController
             'states' => DB::table('seats')->join('groups', 'groups.id', '=', 'seats.group_id')->join('states', 'states.code', '=', 'seats.state_code')
                 ->where(['groups.industry_id' => $industry->id, 'groups.status' => 'live', 'groups.is_private' => false])->whereIn('seats.status', \App\Domains\Network\Directory\Directory::FILLED)
                 ->whereNotNull('seats.primary_team_id')->distinct()->orderBy('states.name')->get(['states.code', 'states.name'])->map(fn ($r) => ['code' => strtolower((string) $r->code), 'name' => (string) $r->name])->values(),
+            // Articles that mention this industry (automatic internal links, Sprint 43).
+            'articles' => \App\Domains\Content\InternalLinks::articlesAbout((string) $industry->name),
             // The industry's network map (Sprint 42): filled and open places across its public groups.
             'map' => \App\Domains\Network\Directory\NetworkMap::forIndustry($industry),
-            'seo' => (new SeoData(title: $industry->name.': costs, licensing and referrals · '.config('seo.site_name'), description: $page['content']['summary'],
-                path: '/industries/'.$industry->slug, index: ! $preview, type: 'website', schema: IndustryContent::schema($industry, $page), modifiedAt: $page['updatedOn']))->toArray(),
+            'seo' => (new SeoData(title: $industry->name.': costs, licensing and referrals', description: $page['content']['summary'],
+                path: '/industries/'.$industry->slug, index: ! $preview,
+                image: \App\Domains\Seo\PageImage::path(['eyebrow' => 'Industry guide', 'title' => $industry->name.': costs, licensing and referrals', 'line' => 'Reviewed facts and verified pros, city by city']), type: 'website', schema: IndustryContent::schema($industry, $page), modifiedAt: $page['updatedOn']))->toArray(),
         ]);
     }
 }

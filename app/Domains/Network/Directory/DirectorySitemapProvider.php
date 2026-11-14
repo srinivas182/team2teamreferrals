@@ -27,7 +27,14 @@ final class DirectorySitemapProvider implements SitemapProvider
         }
         $today = now()->toDateString();
         yield new SitemapUrl('/groups', $today, 'daily', 0.8);
+        // Only pages search engines may index: a group or state page needs a public member, as on the page itself.
+        $publicTeams = DB::table('teams')->where('profile_public', true)->pluck('id')->flip();
+        $withMembers = DB::table('seats')->whereIn('group_id', $groups->pluck('id'))->whereIn('status', Directory::FILLED)->whereIn('primary_team_id', $publicTeams->keys())
+            ->distinct()->pluck('group_id')->flip();
         foreach ($groups as $g) {
+            if (! isset($withMembers[$g->id])) {
+                continue;
+            }
             yield new SitemapUrl('/groups/'.$g->slug, substr((string) $g->updated_at, 0, 10) ?: $today, 'daily', 0.7);
         }
         $waitlisted = DB::table('seat_waitlist')->distinct()->pluck('seat_id')->flip();
@@ -39,7 +46,7 @@ final class DirectorySitemapProvider implements SitemapProvider
         $seen = [];
         foreach ($seats as $s) {
             $state = '/industries/'.$industry[$s->group_id].'/'.strtolower((string) $s->state_code);
-            $filled = in_array($s->status, Directory::FILLED, true) && $s->primary_team_id !== null;
+            $filled = in_array($s->status, Directory::FILLED, true) && $s->primary_team_id !== null && isset($publicTeams[(int) $s->primary_team_id]);
             if ($filled && ! isset($seen[$state])) {
                 $seen[$state] = true;
                 yield new SitemapUrl($state, substr((string) $s->updated_at, 0, 10), 'weekly', 0.6);

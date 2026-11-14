@@ -89,7 +89,10 @@ export default function CmsPage({ page, preview, contactToken, seo }: Props) {
                 <header className="max-w-3xl">
                     <h1 className="font-display text-4xl font-bold">{page.title}</h1>
                     {page.summary && <p className="mt-4 text-lg">{page.summary}</p>}
-                    {page.template === 'legal' && <p className="mt-2 text-sm text-muted">Effective {page.updated}</p>}
+                    {/* The date matches the page's structured data (dateModified), so readers and answer engines see the same. */}
+                    <p className="mt-2 text-sm text-muted">
+                        {page.template === 'legal' ? 'Effective' : 'Updated'} <time dateTime={page.updated}>{formatDay(page.updated)}</time>
+                    </p>
                 </header>
                 {page.blocks.map((b, i) =>
                     b.type === 'contact_form' ? contactToken ? <ContactForm key={i} b={b} token={contactToken} /> : null : <CmsBlock key={i} b={b} />,
@@ -97,4 +100,10 @@ export default function CmsPage({ page, preview, contactToken, seo }: Props) {
             </article>
         </PublicLayout>
     );
+}
+
+/** "2027-01-15" → "Jan 15, 2027", the same on the server and in the browser. */
+function formatDay(day: string): string {
+    const d = new Date(`${day}T00:00:00Z`);
+    return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }

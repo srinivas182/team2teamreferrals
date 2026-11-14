@@ -34,7 +34,7 @@ final class FindAProController
             ->filter(fn (Industry $i) => $i->tier->allowsConsumerRequests())->map(fn ($i) => ['slug' => $i->slug, 'name' => $i->name])->values();
 
         return Inertia::render('FindAPro', ['answer' => $answer, 'industries' => $industries,
-            'seo' => (new SeoData(title: 'Find a trusted pro · '.$site, description: $answer, path: '/find-a-pro',
+            'seo' => (new SeoData(title: 'Find a trusted pro', description: $answer, path: '/find-a-pro',
                 schema: [Schema::organization(), Schema::faq([['How do I find a trusted pro near me?', $answer]]), Schema::breadcrumbs([['Home', '/'], ['Find a pro', '/find-a-pro']])]))->toArray()]);
     }
 

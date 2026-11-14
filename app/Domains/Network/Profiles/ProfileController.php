@@ -58,7 +58,10 @@ final class ProfileController
             'sendUrl' => $seats->isNotEmpty() ? '/app/send?group='.$seats->first()->group->slug.'&city='.$seats->first()->territory_id.'&from='.$team->slug : null,
             'started' => encrypt(now()->timestamp),
             'status' => session('status'),
-            'seo' => (new SeoData(title: "{$team->name} · ".$groups->first().' in '.$cities->first(), description: $desc, path: $path,
+            // Indexed only while the team holds a filled seat in a launched public network (a lapsed team's page is thin).
+            'seo' => (new SeoData(title: "{$team->name} · ".$groups->first().' in '.$cities->first(), description: $desc, path: $path, index: PublicProfiles::indexable($team),
+                image: \App\Domains\Seo\PageImage::path(['eyebrow' => (string) $groups->first(), 'title' => $team->name, 'line' => 'Verified member serving '.$cities->take(2)->implode(', ').($cities->count() > 2 ? ' and more' : ''),
+                    'badge' => $record['rating'] !== null ? 'Rated '.$record['rating'].' / 5 by '.$record['ratings'] : 'Verified on Team to Team']),
                 schema: [['@context' => 'https://schema.org', '@type' => 'LocalBusiness', 'name' => $team->name, 'url' => url($path), 'description' => $team->bio ?: $desc,
                     'areaServed' => $cities->all(), 'telephone' => $team->phone, 'sameAs' => $team->website ? [$team->website] : []]
                     + ($record['rating'] !== null ? ['aggregateRating' => ['@type' => 'AggregateRating', 'ratingValue' => $record['rating'], 'ratingCount' => $record['ratings']],

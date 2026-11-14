@@ -157,6 +157,7 @@ const messages: Record<string, string> = {
     'ai-feedback': 'Thanks for the feedback.',
     'ai-credits-bought': 'AI credits added. They’ll appear on your next invoice.',
     'ai-prompt-saved': 'New prompt version saved.',
+    'ai-crawlers-saved': 'Saved. robots.txt now reflects your AI crawler choices.',
     'ai-prompt-live': 'That version is now live.',
     'ai-credits-saved': 'Credit defaults saved.',
     'suggestion-use': 'Done.',

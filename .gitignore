@@ -46,3 +46,4 @@ frankenphp-worker.php
 
 # FrankenPHP binary Octane downloads for local runs
 /frankenphp
+.lighthouseci-mobile/

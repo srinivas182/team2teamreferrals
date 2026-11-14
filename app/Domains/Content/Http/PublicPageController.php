@@ -61,7 +61,7 @@ final class PublicPageController
             Schema::breadcrumbs([['Home', '/'], [(string) $v->title, '/'.$page->slug]]), // [name, address] pairs
             ...Blocks::schema($blocks, (string) $v->title, $url)];
         $data = $preview ? SeoData::private('Preview: '.$v->title) : new SeoData(
-            title: (string) (($seo['title'] ?? '') !== '' ? $seo['title'] : $v->title.' · Team to Team Referrals'),
+            title: (string) (($seo['title'] ?? '') !== '' ? $seo['title'] : $v->title),
             description: (string) (($seo['description'] ?? '') !== '' ? $seo['description'] : $summary),
             path: '/'.$page->slug, index: ! (bool) ($seo['noindex'] ?? false), image: ($seo['image'] ?? '') !== '' ? (string) $seo['image'] : null,
             schema: $schema, modifiedAt: $modified);

@@ -4,6 +4,33 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 43a — SEO and AEO: page checks, Core Web Vitals, crawler switches, internal links, preview images
+Checklist items delivered here (tests: tests/Unit/Seo/PageAuditTest.php, tests/Feature/Seo/SeoAutomationTest.php, plus the CI checks below):
+1. Every kind of public page is checked as crawlers see it (server-rendered HTML): title, description, canonical, robots, one main heading, valid structured data with the fields each type needs (Organization, LocalBusiness, Service, FAQPage, BreadcrumbList, Article, ItemList, AggregateRating; nested ones too). `php artisan t2t:seo:audit` runs in CI on one of each of the 14 page types and fails the build on any problem.
+2. Answer-engine checks in the same run, also failing the build: an answer of at least 20 words before the first section; every FAQ question in the structured data shown on the page; entity facts present; an updated date in the structured data also shown on the page; every page listed in llms.txt or llms-full.txt.
+3. Kept out of search until there is real content: group pages need a public member; team profiles need a filled seat in a launched public network; state pages count only public members. Pages and sitemaps follow the same rules.
+4. Core Web Vitals on phones, checked in CI with real mobile throttling on 6 page types: Largest Contentful Paint under 2.5 s, layout shift under 0.1, blocking time under 300 ms, performance score 90+. Measured here: LCP 1.5–1.6 s, CLS 0–0.017, blocking time 90–230 ms. Changes that got there:
+   - public pages no longer preload all their scripts ahead of the text, and no longer download every other screen's scripts after loading (portal and admin still do)
+   - a lighter font file, not preloaded, with size-matched stand-ins for iPhone, Android and Windows, so text shows at once and doesn't jump
+   - the network map is drawn only when it's about to scroll into view
+   - page weight on phones is now 255–320 KB
+5. AI crawler switches for the super admin (Admin → SEO and AEO): GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, PerplexityBot, Google-Extended and Applebot-Extended, each explained. robots.txt follows straight away; every change is in the audit log. The same page shows the latest page check.
+6. Automatic internal links: the first mention of each published industry in a blog post or help article links to its industry page (never inside headings, code or existing links; at most 5). Posts show "Related" industries and "Read next"; industry pages list the articles about them.
+7. Content index: llms-full.txt lists every public page with the facts and answers; llms.txt keeps the key facts and links to it. Both are rebuilt whenever public pages change.
+8. Leader addition: each group, industry, state, city and profile page has its own preview image (name, place, status) for links shared in messages, on social media and in AI answers. Image addresses are signed, so they can't be forged.
+9. Leader addition: visible "Updated" dates on website pages, matching their structured data.
+- Fixes found by the new checks:
+  - titles named the site twice ("About Team to Team Referrals · Team to Team Referrals | Team to Team Referrals"); the name is now added once, and only when the title still fits
+  - Find a pro and city pages had FAQ structured data with no visible question
+  - the pricing structured data had no provider
+  - the blog index had no opening answer
+  - Find a pro was missing from the sitemap
+  - the request form's questions had no labels for screen readers (also on the member "Send referral" form)
+  - links in running text relied on colour alone
+  - blog and help articles had no text styling at all (headings, lists, spacing)
+- Not in 43a (coming in 43b): Google Search Console submission, nightly link and duplicate checks, the monthly answer-engine visibility check, the full health report, AI traffic tracking and clean removal of pages.
+- 622 PHP tests in total (17 new; 2 ClickHouse tests run in CI); 16 front-end tests (1 new).
+
 ### Sprint 42b — Interactive network map
 Checklist items delivered here, each proven by tests in tests/Feature/Network/NetworkMapTest.php and resources/js/__tests__/networkMap.test.tsx:
 1. One interactive map, used on group pages and industry pages (new "Where the network is" section), on the member dashboard and as an embed. It shows the states with a dot for each filled, waitlisted and open place.

@@ -38,7 +38,7 @@ jobs:
           # New PHP or JavaScript dependencies change what goes into the image, so they rebuild it too.
           if echo "$files" | grep -qE '^(docker/|compose\.yaml$|compose\.prod\.yaml$|composer\.(json|lock)$|package(-lock)?\.json$)'; then docker=true; fi
           # Lighthouse only when public-facing code changes (saves Actions minutes on back-end work).
-          if echo "$files" | grep -qE '^(resources/|public/|routes/web\.php|app/Domains/Seo/|vite\.config|package(-lock)?\.json|lighthouserc\.json)'; then web=true; fi
+          if echo "$files" | grep -qE '^(resources/|public/|routes/|app/|scripts/|vite\.config|package(-lock)?\.json|lighthouserc)'; then web=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "docker=$docker" >> "$GITHUB_OUTPUT"
           echo "web=$web" >> "$GITHUB_OUTPUT"
@@ -170,7 +170,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
@@ -179,11 +179,19 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: npm ci && npm run build
-      - name: Serve the app (production mode, SQLite)
+      - name: Serve the app (production mode, SQLite, one of every public page, gzip as in production)
         run: |
           cp .env.example .env && php artisan key:generate
-          sed -i 's/^APP_ENV=.*/APP_ENV=production/; s/^APP_DEBUG=.*/APP_DEBUG=false/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_DRIVER=.*/SESSION_DRIVER=file/; s/^CACHE_STORE=.*/CACHE_STORE=file/' .env
-          touch database/database.sqlite && php artisan migrate --force && php artisan optimize
-          (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && sleep 4
-      - run: npx --yes @lhci/cli@0.15.1 autorun
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/; s/^APP_DEBUG=.*/APP_DEBUG=false/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_DRIVER=.*/SESSION_DRIVER=file/; s/^CACHE_STORE=.*/CACHE_STORE=file/; s#^APP_URL=.*#APP_URL=http://127.0.0.1:8001#' .env
+          printf 'SEO_INDEXABLE=true\nSEO_CANONICAL_URL=http://127.0.0.1:8001\n' >> .env
+          touch database/database.sqlite && php artisan migrate --force
+          php artisan tinker --execute="require base_path('scripts/ci/seed-public-pages.php');"
+          php artisan optimize
+          (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && (node scripts/ci/gzip-proxy.mjs 8001 8000 &) && sleep 4
+      - name: SEO and answer-engine check of every kind of public page
+        run: php artisan t2t:seo:audit --base=http://127.0.0.1:8001 --per-section=0 --require=home,groups,group,industries,industry,industry-state,city,profile,blog,blog-post,page,reserve,reserve-share,find-a-pro
+      - name: Lighthouse (desktop budgets)
+        run: npx --yes @lhci/cli@0.15.1 autorun
+      - name: Core Web Vitals on mobile (LCP, CLS, blocking time)
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.mobile.json
 
