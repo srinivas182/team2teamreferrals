@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 39c — Industry hubs for the last 20 industries (all 46 drafted)
+- The last 20 industries written in full and installed as drafts with "Review pending", completing all 46: Business brokers, Auto sales, RV and boat sales, Staffing and recruiting, Travel advisors, Wedding and event vendors, Cosmetic and elective medical, Fitness clubs, Franchise sales, Telecom and internet, Business software, Merchant services, Commercial cleaning, Custom home builders, Land, Ranch and farm, Livestock, Equipment, Funeral pre-planning, Timeshare and vacation ownership.
+- Cost figures only where a reliable public source exists: funeral medians for 2023 (National Funeral Directors Association). Elsewhere the cost line is left empty with a note why.
+- Facts checked 14 November 2026 against the FTC Used Car Rule, Franchise Rule, Funeral Rule and timeshare guidance, the FCC broadband label requirement, USDA Packers and Stockyards registration and bonding, state seller-of-travel registration, the Federation of State Medical Boards (DocInfo), HHS-OIG, NASCLA, NAIC and ARELLO.
+- Tier B industries in this batch (elective medical, funeral pre-planning, timeshare) describe introductions without payment; elective medical carries the not-medical-advice notice.
+- 576 PHP tests in total (tests now cover all 46 hubs: each passes every publishing check except the named reviewer); 2 ClickHouse tests run in CI.
+
 ### Sprint 39b — Industry hubs for 20 more industries, care notice, Industries in the menu
 - 20 more industries written in full and installed as drafts with "Review pending" (26 of 46 now): Commercial real estate, Property management, Title and escrow, Home inspection, Medicare agents, Roofing, HVAC, Windows and siding, Pest control, Home security, Pool builders, Water treatment, Home warranty, Financial advisors, Tax and accounting, Estate planning attorneys, Senior living placement, In-home care, Hospice, Landscaping. Each has the answer-first summary, facts sheet, how it works, request wording, state and city openings, 8 questions and answers, 6 questions to ask before hiring, glossary, related industries, official lookups and dated sources.
 - Cost figures only where a reliable public source exists: Medicare Part B 2026 premium and deductible (CMS, Federal Register), assisted living and home health aide 2024 medians (Genworth and CareScout), hospice costs under Original Medicare (Medicare.gov). Elsewhere the cost line is left empty with a note why.

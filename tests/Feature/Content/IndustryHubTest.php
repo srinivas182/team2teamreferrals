@@ -27,8 +27,8 @@ beforeEach(function () {
     };
 });
 
-it('installs the drafted hubs (26 of 46 so far) as drafts with review pending, and none is public', function () {
-    expect(IndustryPack::all())->toHaveCount(26)
+it('installs all 46 drafted hubs as drafts with review pending, and none is public', function () {
+    expect(IndustryPack::all())->toHaveCount(46)->and(Industry::query()->count())->toBe(46)
         ->and(array_diff(array_keys(IndustryPack::all()), Industry::query()->pluck('slug')->all()))->toBe([]); // every slug is a real industry
     foreach (array_keys(IndustryPack::all()) as $slug) {
         $r = IndustryContent::record(($this->industry)($slug));
@@ -149,7 +149,7 @@ it('lets editors write, check, preview and publish from Admin → Website → In
     $this->actingAs($member)->get('/preview/industries/solar')->assertForbidden();
     $this->actingAs($this->editor)->get('/admin/content/industries')->assertOk()
         ->assertInertia(fn ($p) => $p->where('industries', fn ($rows) => collect($rows)->firstWhere('slug', 'solar')['state'] === 'review_pending'
-            && collect($rows)->firstWhere('slug', 'auto-sales')['state'] === 'none'));
+            && collect($rows)->where('state', 'none')->isEmpty()));
     $this->get('/admin/content/industries/solar')->assertInertia(fn ($p) => $p->where('problems', ['Review pending: name the expert who checked the facts.'])
         ->where('samples.city', fn ($s) => str_contains((string) $s, 'Austin, Texas')));
     $preview = $this->get('/preview/industries/solar')->assertOk()->viewData('page')['props'];

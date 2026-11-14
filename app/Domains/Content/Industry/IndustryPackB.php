@@ -13,11 +13,11 @@ final class IndustryPackB
 {
     public const CHECKED = '2026-11-14';
 
-    private const NASCLA = ['name' => 'State contractor licensing agencies (NASCLA directory)', 'url' => 'https://www.nascla.org/state-licensing-information'];
+    public const NASCLA = ['name' => 'State contractor licensing agencies (NASCLA directory)', 'url' => 'https://www.nascla.org/state-licensing-information'];
 
-    private const NAIC = ['name' => 'State insurance departments (NAIC directory)', 'url' => 'https://content.naic.org/state-insurance-departments'];
+    public const NAIC = ['name' => 'State insurance departments (NAIC directory)', 'url' => 'https://content.naic.org/state-insurance-departments'];
 
-    private const ARELLO = ['name' => 'ARELLO license verification (most states)', 'url' => 'https://www.arello.com/'];
+    public const ARELLO = ['name' => 'ARELLO license verification (most states)', 'url' => 'https://www.arello.com/'];
 
     private const ABA = ['name' => 'Check a lawyer’s license and discipline (American Bar Association)', 'url' => 'https://www.americanbar.org/groups/professional_responsibility/resources/resources_for_the_public/consumer_faqs.html'];
 
@@ -25,7 +25,7 @@ final class IndustryPackB
 
     private const REG_X = ['title' => 'Regulation X §1024.14 (Consumer Financial Protection Bureau)', 'url' => 'https://www.consumerfinance.gov/rules-policy/regulations/1024/14/'];
 
-    private const AKS = ['title' => 'Fraud and abuse laws (HHS Office of Inspector General)', 'url' => 'https://www.oig.hhs.gov/compliance/physician-education/fraud-abuse-laws/'];
+    public const AKS = ['title' => 'Fraud and abuse laws (HHS Office of Inspector General)', 'url' => 'https://www.oig.hhs.gov/compliance/physician-education/fraud-abuse-laws/'];
 
     private const CARESCOUT = ['title' => 'Genworth and CareScout Cost of Care Survey 2024, March 2025 (Genworth)', 'url' => 'https://investor.genworth.com/news-events/press-releases/detail/982/'];
 
@@ -36,7 +36,7 @@ final class IndustryPackB
      *
      * @return list<array{q: string, a: string}>
      */
-    private static function network(string $pro, string $what = 'referral'): array
+    public static function network(string $pro, string $what = 'referral'): array
     {
         return [
             ['q' => 'How quickly will the receiving '.$pro.' respond?', 'a' => 'Each network sets deadlines to accept or decline and to make first contact, with reminders before they pass; response speed counts toward the '.$pro.'’s trust score.'],
@@ -45,7 +45,7 @@ final class IndustryPackB
     }
 
     /** @return list<array{q: string, a: string}> the fee questions for a Tier A trade */
-    private static function feesOpen(string $pros, string $pro, string $client): array
+    public static function feesOpen(string $pros, string $pro, string $client): array
     {
         return [
             ['q' => 'Can '.$pros.' pay referral fees?', 'a' => 'Usually yes, between businesses and where state law allows. On {site_name}, a referral fee is a share of what the receiving '.$pro.' earns from the job, or a flat amount, agreed before the '.$client.' is sent.'],

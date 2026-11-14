@@ -17,7 +17,7 @@ final class IndustryPack
     /** @return array<string, array<string, mixed>> industry slug => content (see IndustryContent::PARTS) */
     public static function all(): array
     {
-        return [...self::sample(), ...IndustryPackB::all()];
+        return [...self::sample(), ...IndustryPackB::all(), ...IndustryPackC::all()];
     }
 
     /** @return array<string, array<string, mixed>> the six samples written in Sprint 39a */
