@@ -24,6 +24,7 @@ import {
     CreditCard,
     Handshake,
     ShieldCheck,
+    Plug,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -69,6 +70,7 @@ const nav: Item[] = [
     { label: 'Training', href: '/admin/training', icon: GraduationCap, permission: 'training.manage', ready: false },
     { label: 'AI', href: '/admin/ai', icon: Sparkles, permission: 'settings.manage', ready: true },
     { label: 'SEO and AEO', href: '/admin/seo', icon: Search, permission: 'settings.manage', ready: true },
+    { label: 'Integrations', href: '/admin/integrations', icon: Plug, permission: 'settings.manage', ready: true },
     { label: 'Trust score', href: '/admin/trust', icon: ShieldCheck, permission: 'settings.manage', ready: true },
     { label: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage', ready: false },
     { label: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage', ready: true },

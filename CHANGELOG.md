@@ -4,6 +4,30 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 45a — CRM connectors: Follow Up Boss, BoldTrail (kvCORE), Lofty
+Tests: tests/Feature/Integrations/CrmConnectorsTest.php.
+1. Portal → Integrations (back in the menu). Leaders and assistants connect Follow Up Boss, BoldTrail or Lofty with an API key. The key is checked with the CRM first, stored encrypted and never shown again. They can also test the connection, pause, resume, change the key or disconnect. Members see each connection's status only.
+2. An accepted referral appears in the team's CRM within seconds (queued at once; the test checks it's under a minute). It is tagged "Team to Team Referrals" and the network name, and carries the client's details, the referral answers, the sender and a link back. If a contact with the same email or phone exists, it is updated instead of duplicated (Follow Up Boss through its events endpoint, Lofty and BoldTrail by email). Nothing is sent before the receiving team accepts, and the API sandbox never reaches a CRM.
+3. Options:
+   - send the open accepted referrals when connecting
+   - copy referral updates as notes (on by default)
+   - also add clients the team refers out (tagged "Referred out")
+   - assign new referrals to a chosen Follow Up Boss agent
+4. Stages come back: every 5 minutes each open referral's contact is checked. When it moves to a stage the team mapped, the referral moves here too, with a note saying where it came from:
+   - Open stages move.
+   - A lost stage closes the referral as lost.
+   - A won stage asks the team to record the close, because that needs the date and value.
+   Stages are only matched by default when an open stage has the same name, and the mapping is editable.
+5. Reliability:
+   - Failures retry after 1 min, 5 min, 30 min, 2 h and 6 h.
+   - If a CRM refuses the key, the connection stops and the leader and assistants are told once. Syncs wait as failed and are sent when a working key is added, the connection is resumed, or someone presses "Try failed again".
+   - A sync log shows the last 50 syncs and is kept for 30 days.
+6. Admin → Integrations: switch each CRM on or off, see connections, ones needing attention and the last day's syncs, and enter the platform's Follow Up Boss system registration (name and key; the key is encrypted). Follow Up Boss can't be connected until that's saved.
+7. Owner action: register the platform with Follow Up Boss at apps.followupboss.com/system-registration and enter the system name and key in Admin → Integrations.
+8. To confirm against live accounts:
+   - BoldTrail's API reference isn't public. The paths used (contact create/update, tags, notes, status) are the v2 public API's; "Test connection" with a real token confirms them.
+   - Lofty's personal API key format ("token <key>") is from its quickstart.
+
 ### Sprint 44b — Signed webhooks, API plan, request log
 Tests: tests/Feature/Api/WebhooksTest.php (and the 44a API tests).
 1. Webhooks: each change on a referral (sent, accepted, declined, expired, passed to backup, stage changed, note, call, client confirmed, agreement signed, fee agreed, close confirmed, disputed or reopened) and each verified profile lead is POSTed to the team's https endpoints as JSON. Each team gets its own copy with the same privacy rules as the app (no client contact details for a receiver until it accepts).
