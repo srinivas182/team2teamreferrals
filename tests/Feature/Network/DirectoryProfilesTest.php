@@ -89,10 +89,11 @@ it('hides the response time until there are enough referrals', function () {
 
 it('maps a group publicly without naming backups or private teams', function () {
     $this->houston->forceFill(['profile_public' => false])->save();
-    $map = $this->get('/groups/'.$this->g->slug)->assertOk()->viewData('page')['props']['map'];
-    expect(collect($map)->pluck('state', 'name')->all())->toMatchArray(['Austin, TX' => 'held'])
-        ->and(collect($map)->pluck('name'))->not->toContain('Houston, TX')
-        ->and(json_encode($map))->not->toContain('Hurricane Sun')->not->toContain('Lone Star');
+    $map = $this->get('/groups/'.$this->g->slug)->assertOk()->viewData('page')['props']['map']['points'];
+    expect(collect($map)->where('status', 'held')->pluck('name')->all())->toBe(['Austin, TX'])
+        ->and(collect($map)->where('status', 'held')->pluck('name'))->not->toContain('Houston, TX')
+        ->and(collect($map)->firstWhere('name', 'Austin, TX')['team']['name'])->toBe('Lone Star Solar') // public holders are named, as on the page
+        ->and(json_encode($map))->not->toContain('Hurricane Sun');
 });
 
 it('links each city page to nearby seats and to other industries in the same city', function () {

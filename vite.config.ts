@@ -7,7 +7,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            input: ['resources/css/app.css', 'resources/js/app.tsx', 'resources/js/embed-map.tsx'],
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
             // Self-hosted variable Inter: no third-party font requests, preloaded, with metric-matched fallbacks (no layout shift).
