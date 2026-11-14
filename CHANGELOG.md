@@ -4,6 +4,19 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 42a — Website widgets
+Checklist items delivered here, each proven by tests in tests/Feature/Network/WidgetsTest.php:
+1. Three widgets for members' own websites: a verified badge (seat, territory, verified licenses, rating once there are 3), a reviews widget (rating and latest verified reviews) and a "Refer a client" button that opens the team's referral form.
+2. Live: every widget checks itself each time it loads. It disappears as soon as the profile goes private or the team no longer holds a filled seat in a live group.
+3. Shown only on the team's own websites: the team lists them (up to 10, plus its profile website automatically), and browsers refuse the widget anywhere else. On an unlisted site visitors just see the plain link.
+4. No cookies or sessions on widgets; the loader script is under 3 KB and cached.
+5. Stats for the last 30 days per widget: views and clicks (counted only on the team's own websites, not in the preview) and referrals sent through a widget. Leads that came from a widget are marked "From your website".
+6. Code page under Share your profile: choose the widget, light or dark, and an accent colour, see a live preview, copy the code, and short help for WordPress, Squarespace, Wix and any other site.
+7. Works without scripts: the code contains a plain link to the team's profile, shown if the script can't run.
+- Fix found while testing: rate limits were shared across all pages, so ordinary browsing (profile views, widget loads) could use up the "5 referrals an hour" limit and block a real referral. Each limit now applies to its own page only.
+- Fix: the portal header overflowed sideways on phones (390 px wide); the search box now shrinks.
+- 600 PHP tests in total (5 new; 2 ClickHouse tests run in CI).
+
 ### Sprint 41 — "Find a trusted pro": requests from the public
 Checklist items delivered here, each proven by tests in tests/Feature/Referrals/ConsumerRequestsTest.php:
 1. Request form on city pages and industry-by-state pages (with a city picker there): the industry's own questions, reworded for the person asking ("Do you own the home?"), how soon they need help (the lead temperature), and consent. A short three-step form, mobile first, with a progress bar.

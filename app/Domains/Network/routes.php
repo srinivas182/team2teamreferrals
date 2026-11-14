@@ -302,6 +302,7 @@ Route::middleware(['web'])->group(function (): void {
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
     Route::get('app/share', [App\Domains\Network\Profiles\ShareController::class, 'show'])->name('share');
     Route::post('app/share/public', [App\Domains\Network\Profiles\ShareController::class, 'toggle'])->name('share.public');
+    Route::post('app/share/widget-domains', [App\Domains\Network\Profiles\ShareController::class, 'widgetDomains'])->name('share.widget-domains');
     Route::get('app/share/card.pdf', [App\Domains\Network\Profiles\ShareController::class, 'card'])->name('share.card');
     Route::get('app/invites', [App\Domains\Network\Invites\InviteController::class, 'show'])->name('invites');
     Route::get('app/profile-leads', [App\Domains\Network\Profiles\ShareController::class, 'leads'])->name('profile-leads');
@@ -384,4 +385,11 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
     Route::get('app/requests', [App\Domains\Referrals\Consumer\FindAProController::class, 'board'])->name('consumer.board');
     Route::post('app/requests/{ulid}/take', [App\Domains\Referrals\Consumer\FindAProController::class, 'take'])->where('ulid', '[0-9A-Za-z]{26}')->middleware('throttle:30,1')->name('consumer.take');
+});
+
+// Embeddable widgets (Sprint 42): no sessions or cookies; the frames are allowed only on each team's own websites.
+Route::middleware(['throttle:600,1'])->group(function (): void {
+    Route::get('embed/v1.js', [App\Domains\Network\Profiles\Widgets\EmbedController::class, 'script'])->name('embed.script');
+    Route::get('embed/{slug}/{widget}', [App\Domains\Network\Profiles\Widgets\EmbedController::class, 'frame'])->where(['slug' => '[a-z0-9-]+', 'widget' => 'badge|reviews|button'])->name('embed.frame');
+    Route::get('embed/{slug}/go/{widget}', [App\Domains\Network\Profiles\Widgets\EmbedController::class, 'go'])->where(['slug' => '[a-z0-9-]+', 'widget' => 'badge|reviews|button'])->name('embed.go');
 });

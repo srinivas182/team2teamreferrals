@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property string $ulid
  * @property string $name
+ * @property list<string>|null $widget_domains
  * @property int $leader_id
  * @property ?int $company_id
  * @property ?string $logo_path
@@ -57,7 +58,7 @@ final class Team extends Model
 
     protected function casts(): array
     {
-        return ['social' => 'array', 'profile_public' => 'boolean', 'show_deal_value' => 'boolean'];
+        return ['social' => 'array', 'widget_domains' => 'array', 'profile_public' => 'boolean', 'show_deal_value' => 'boolean'];
     }
 
     /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<User, $this> */

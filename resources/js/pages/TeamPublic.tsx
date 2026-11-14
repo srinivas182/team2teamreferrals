@@ -83,6 +83,8 @@ export default function TeamPublic({
         consent: false,
         website_url: '',
         started,
+        // Set when the visitor came from one of the team's website widgets, so the team sees where referrals start.
+        via: typeof window === 'undefined' ? '' : (new URLSearchParams(window.location.search).get('via') ?? '').replace(/[^a-z]/g, ''),
     });
     return (
         <PublicLayout>

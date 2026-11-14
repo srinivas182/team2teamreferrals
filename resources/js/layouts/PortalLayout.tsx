@@ -177,7 +177,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </Link>
                         <button
                             onClick={() => setPalette(true)}
-                            className="flex h-10 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:max-w-md"
+                            className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:max-w-md"
                             aria-label="Search or jump to (Ctrl K)"
                         >
                             <Search className="size-4" aria-hidden />

@@ -27,6 +27,12 @@ final class ShareController
             // A ready-made signature: plain HTML with inline styles, as email programs need.
             'signature' => '<table style="font-family:Arial,sans-serif;font-size:13px;color:#0E1B3D"><tr><td><strong>'.e($team->name).'</strong>'.($team->phone ? '<br>'.e($team->phone) : '')
                 .'<br><a href="'.e($link).'" style="display:inline-block;margin-top:6px;padding:6px 12px;background:#2451F5;color:#fff;border-radius:6px;text-decoration:none">Refer a client to us</a></td></tr></table>',
+            // Website widgets (Sprint 42): where they may appear, whether they'd show right now, and how they're doing.
+            'widgets' => [
+                'slug' => (string) $team->slug, 'name' => (string) $team->name, 'base' => rtrim(url('/'), '/'), 'domains' => $team->widget_domains ?? [],
+                'site' => $team->website ? Widgets\Widgets::host((string) $team->website) : null,
+                'live' => Widgets\Widgets::facts($team) !== null, 'stats' => Widgets\Widgets::stats($team),
+            ],
             'canEdit' => in_array($team->roleOf($this->user($request)), ['leader', 'assistant'], true),
             'status' => session('status'),
             'seo' => SeoData::private('Share your profile')->toArray(),
@@ -40,6 +46,17 @@ final class ShareController
         $team->forceFill(['profile_public' => $request->boolean('public')])->save();
 
         return back()->with('status', $team->profile_public ? 'profile-shown' : 'profile-hidden');
+    }
+
+    /** The websites where the team's widgets may appear (browsers refuse to show them anywhere else). */
+    public function widgetDomains(Request $request): RedirectResponse
+    {
+        $team = $this->team($request);
+        abort_unless(in_array($team->roleOf($this->user($request)), ['leader', 'assistant'], true), 403);
+        $d = $request->validate(['domains' => ['present', 'array', 'max:20'], 'domains.*' => ['nullable', 'string', 'max:190']]);
+        Widgets\Widgets::setDomains($team, array_values(array_map('strval', array_filter($d['domains']))));
+
+        return back()->with('status', 'widget-domains-saved');
     }
 
     /** A printable card: the QR code, the team name and the profile address. */
@@ -58,7 +75,7 @@ final class ShareController
         return Inertia::render('app/ProfileLeads', [
             'leads' => DB::table('profile_leads')->where('team_id', $team->id)->where('status', '!=', 'unverified')->orderByDesc('id')->limit(200)->get()
                 ->map(fn ($l) => ['id' => (int) $l->id, 'status' => (string) $l->status, 'at' => substr((string) $l->verified_at, 0, 10), 'client' => (string) $l->client_name,
-                    'phone' => $l->client_phone, 'email' => $l->client_email, 'need' => (string) $l->need, 'referrer' => $l->referrer_name.($l->referrer_business ? ' · '.$l->referrer_business : ''), 'referrerEmail' => (string) $l->referrer_email]),
+                    'source' => (string) ($l->source ?? 'profile'), 'phone' => $l->client_phone, 'email' => $l->client_email, 'need' => (string) $l->need, 'referrer' => $l->referrer_name.($l->referrer_business ? ' · '.$l->referrer_business : ''), 'referrerEmail' => (string) $l->referrer_email]),
             'seo' => SeoData::private('Profile leads')->toArray(),
         ]);
     }

@@ -15,6 +15,7 @@ type Lead = {
     need: string;
     referrer: string;
     referrerEmail: string;
+    source: string;
 };
 
 /** Portal → Profile leads: clients referred from your public profile by people outside the network. */
@@ -54,6 +55,9 @@ export default function ProfileLeads({ leads, seo }: { leads: Lead[]; seo: Seo }
                         </div>
                         <p>{l.need}</p>
                         <p className="text-muted">
+                            {l.source !== 'profile' && (
+                                <span className="mr-1 rounded bg-bg px-1.5 py-0.5 text-xs font-medium">From your website</span>
+                            )}
                             From {l.referrer} (<a href={`mailto:${l.referrerEmail}`}>{l.referrerEmail}</a>) · {l.at}
                         </p>
                     </Card>

@@ -83,6 +83,7 @@ final class ProfileController
             'referrer_name' => ['required', 'string', 'max:120'], 'referrer_email' => ['required', 'email:rfc', 'max:190'], 'referrer_business' => ['nullable', 'string', 'max:160'],
             'client_name' => ['required', 'string', 'max:120'], 'client_phone' => ['nullable', 'required_without:client_email', 'string', 'max:32'], 'client_email' => ['nullable', 'email:rfc', 'max:190'],
             'need' => ['required', 'string', 'min:10', 'max:2000'], 'consent' => ['accepted'], 'started' => ['required', 'string'],
+            'via' => ['nullable', 'in:'.implode(',', Widgets\Widgets::TYPES)],
         ], ['consent.accepted' => 'Please confirm the client agreed to be contacted.']);
         \App\Support\FormGuard::check($request, 'need'); // hidden field and timing (shared with the Contact form)
         $phone = $d['client_phone'] ? preg_replace('/\D+/', '', (string) $d['client_phone']) : null;
@@ -93,7 +94,7 @@ final class ProfileController
         }
         $token = Str::random(40);
         DB::table('profile_leads')->insert([
-            'team_id' => $team->id, 'referrer_name' => $d['referrer_name'], 'referrer_email' => strtolower((string) $d['referrer_email']), 'referrer_business' => $d['referrer_business'] ?? null,
+            'team_id' => $team->id, 'source' => $d['via'] ?? 'profile', 'referrer_name' => $d['referrer_name'], 'referrer_email' => strtolower((string) $d['referrer_email']), 'referrer_business' => $d['referrer_business'] ?? null,
             'client_name' => $d['client_name'], 'client_phone' => $phone, 'client_email' => isset($d['client_email']) ? strtolower((string) $d['client_email']) : null, 'need' => $d['need'],
             'consent_text' => 'The referrer confirmed the client agreed to be contacted by '.$team->name.'.', 'verify_token_hash' => hash('sha256', $token),
             'ip_hash' => \App\Support\FormGuard::ipHash($request), 'created_at' => now(), 'updated_at' => now(),
@@ -110,6 +111,9 @@ final class ProfileController
         abort_if($lead === null, 404);
         DB::table('profile_leads')->where('id', $lead->id)->update(['status' => 'new', 'verified_at' => now(), 'verify_token_hash' => null, 'updated_at' => now()]);
         PublicProfiles::count($team, 'referral');
+        if (in_array($lead->source ?? 'profile', Widgets\Widgets::TYPES, true)) {
+            Widgets\Widgets::count($team, (string) $lead->source, 'referral', null); // sent from one of the team's widgets
+        }
         // Invite the referrer through this team's link (the team earns the invite reward if they join and qualify).
         Notification::route('mail', (string) $lead->referrer_email)->notify(new ProfileLeadInvite($team->name, url('/join/'.$team->invite_code)));
         $notifier->send($team->leader, 'profile.lead', ['headline' => "New lead from your profile: {$lead->client_name}", 'body' => "{$lead->referrer_name} sent it through your public profile. Contact them soon."], url('/app/profile-leads'));
