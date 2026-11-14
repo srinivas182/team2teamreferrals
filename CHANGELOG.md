@@ -4,6 +4,29 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 39a — Industry hubs: framework, review, disclosures, and six written samples
+Checklist items delivered here (the other 40 industries' copy follows in 39b and 39c), each proven by tests in tests/Feature/Content/IndustryHubTest.php:
+1–2. Industry hubs at /industries/{slug} and a list at /industries: answer-first summary, introduction and how the network works, in each industry's own words.
+3. 8 to 10 questions and answers per hub (enforced), shown on the page and as matching FAQPage data.
+4. State and city openings per industry (must name {state} / {city}), filled for any place; Sprint 40 renders the place pages.
+5. "Request a pro" wording per industry (the button leads to Contact until the consumer portal in Sprint 41).
+6. Tier B and C notices on every hub, generated from the tier (never typed into copy): "No referral fees" for B; "Directory only", plus an attorney-advertising and not-legal-advice notice for legal industries, for C. Changing an industry's tier takes its hub back to draft for a new review.
+7. Facts sheet per industry: what it covers, typical cost, licensing, referrals and fees, and what the tier means on this network (from the tier). Published as quotable statements in llms.txt ("Industry facts").
+8. Consistent naming and structured data: Service, WebPage (with lastReviewed and reviewedBy), FAQPage, DefinedTermSet (glossary) and breadcrumbs; hubs in the sitemap.
+9. Named reviewer and last-reviewed date on every hub; a hub can't be published, or a live hub saved, without a reviewer and the other checks (summary length, FAQ count, place openings, facts, hiring questions, sources for any cost figure, an official lookup where a license is required, https links only, no fee offers in Tier B).
+10. Cost figures only from cited, dated public sources; left empty where none is reliable (insurance, moving), with a note why. New published page "How we get our cost data".
+11. "Questions to ask before you hire" on every hub.
+12. "How to check a license" with official lookups (ARELLO, NMLS Consumer Access, NAIC state departments and NIPR, NASCLA state licensing, FMCSA Protect Your Move, ABA guidance).
+13. New published page "How we review content".
+14. "Suggest a correction" on every hub (spam-guarded, rate-limited); suggestions land in Admin → Website → Messages tagged Correction with the page, and editors are notified.
+15. Related industries, linking only to hubs that are live.
+16. Glossary per industry.
+17. Industry facts added to llms.txt.
+- Admin → Website → Industries: status of all 46 (published, ready, review pending, not written), an editor with every part, a live checklist of what's missing before publishing, the tier notice and sample state/city openings, preview (staff only, never indexed), publish and unpublish.
+- Six industries written in full as samples, installed as drafts with "Review pending": Real estate (A), Mortgage (B), Insurance (B), Solar (A), Moving (A), Personal injury attorneys (C). Facts checked 14 November 2026 against CFPB, NAR, Consumer Federation of America, EnergySage data via PV Tech, FMCSA, NAIC, NIPR, NASCLA, FindLaw and ABA sources.
+- Content is stored as plain text (markup removed) and every link must be https.
+- 573 PHP tests in total (12 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 38b-2 — Starter blog posts, help articles, legal drafts, default training script
 Checklist items delivered here, each proven by tests in tests/Feature/Content/StarterWritingTest.php and tests/Feature/Network/TrainingVideoTest.php:
 5. Ten starter blog posts, each answering a real question in its first sentences (out-of-area referrals, real estate referral fees, RESPA Section 8 for mortgage lenders, "thing of value", response speed, client consent and texting, referral agreements, choosing a pro in another city, fees outside real estate, client privacy). Every outside fact is paraphrased from a listed source (CFPB Regulation X §1024.14, Cornell LII, NAR, Consumer Federation of America, Harvard Business Review, Cooley, HousingWire) with the date the facts were checked. Installed as drafts in four categories.

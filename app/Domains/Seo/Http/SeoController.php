@@ -107,6 +107,20 @@ final class SeoController
             }
             $lines[] = '';
         }
+        // Industry facts sheets: quotable statements, each industry named the same way everywhere.
+        $hubs = \App\Domains\Content\Industry\IndustryContent::published();
+        if ($hubs->isNotEmpty()) {
+            $lines[] = '## Industry facts';
+            $lines[] = '';
+            foreach ($hubs as $i) {
+                $lines[] = '### '.$i->name.' ('.$base.'/industries/'.$i->slug.')';
+                $lines[] = '';
+                foreach (\App\Domains\Content\Industry\IndustryContent::facts($i) as $fact) {
+                    $lines[] = '- '.$fact;
+                }
+                $lines[] = '';
+            }
+        }
         foreach ($this->sitemaps->all() as $key => $provider) {
             $lines[] = '## '.ucfirst($key);
             $lines[] = '';

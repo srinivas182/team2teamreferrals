@@ -32,6 +32,14 @@ final class ContentSitemapProvider implements SitemapProvider
                 $out[] = ['path' => '/'.$p->slug, 'title' => Tokens::fill((string) $p->title), 'summary' => Tokens::fill((string) $p->answer_summary), 'modified' => (string) $p->published_at];
             }
         }
+        $hubs = Industry\IndustryContent::published();
+        if ($hubs->isNotEmpty()) { // industry hubs and their list
+            $out[] = ['path' => '/industries', 'title' => 'Industries', 'summary' => '', 'modified' => (string) DB::table('industry_content')->where('status', 'published')->max('updated_at')];
+            foreach ($hubs as $i) {
+                $page = Industry\IndustryContent::page($i);
+                $out[] = ['path' => '/industries/'.$i->slug, 'title' => $i->name, 'summary' => (string) $page['content']['summary'], 'modified' => (string) ($page['updatedOn'] ?? '')];
+            }
+        }
         if (DB::table('posts')->where('status', 'published')->exists()) {
             $out[] = ['path' => '/blog', 'title' => 'Blog', 'summary' => '', 'modified' => (string) DB::table('posts')->where('status', 'published')->max('updated_at')];
         }

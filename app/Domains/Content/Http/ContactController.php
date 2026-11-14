@@ -39,7 +39,7 @@ final class ContactController
     {
         return Inertia::render('admin/content/Messages', [
             'messages' => DB::table('contact_messages')->orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END")->orderByDesc('id')->limit(200)
-                ->get(['id', 'name', 'email', 'topic', 'message', 'status', 'created_at'])->map(fn ($m) => [...(array) $m, 'topic' => self::TOPICS[$m->topic] ?? $m->topic])->values(),
+                ->get(['id', 'name', 'email', 'topic', 'page', 'message', 'status', 'created_at'])->map(fn ($m) => [...(array) $m, 'topic' => (self::TOPICS + ['correction' => 'Correction'])[$m->topic] ?? $m->topic])->values(),
             'status' => session('status'), 'seo' => SeoData::private('Messages')->toArray(),
         ]);
     }
