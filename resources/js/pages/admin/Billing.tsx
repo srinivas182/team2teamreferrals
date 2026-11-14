@@ -33,6 +33,7 @@ type Props = {
         inviteRewardMonths: number;
         inviteCap: number;
         ownerPerSeats: number;
+        consumerRequestFee: number;
     };
     isSuperAdmin: boolean;
     status?: string;
@@ -86,6 +87,7 @@ export default function AdminBilling({ stats, failed, invoices, coupons, setting
         invite_cap: String(settings.inviteCap),
         owner_per_seats: String(settings.ownerPerSeats),
     });
+    const requestFee = useForm({ consumer_request_fee: String(settings.consumerRequestFee) });
     const coupon = useForm({ code: '', percent_off: '', amount_off: '', months: '1', max_redemptions: '', expires_on: '' });
     return (
         <AdminLayout title="Billing">
@@ -132,6 +134,28 @@ export default function AdminBilling({ stats, failed, invoices, coupons, setting
                         Calculate sales tax with Stripe Tax
                         <span className="text-xs text-muted">(switch on at launch)</span>
                     </label>
+                    <form
+                        className="flex items-end gap-2"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            requestFee.post('/admin/billing/settings', { preserveScroll: true });
+                        }}
+                    >
+                        <Field label="Fee per accepted website request ($, 0 = included in the seat)" error={requestFee.errors.consumer_request_fee}>
+                            <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                disabled={!isSuperAdmin}
+                                value={requestFee.data.consumer_request_fee}
+                                onChange={(e) => requestFee.setData('consumer_request_fee', e.target.value)}
+                            />
+                        </Field>
+                        <Button type="submit" size="sm" variant="secondary" disabled={!isSuperAdmin}>
+                            Save
+                        </Button>
+                    </form>
+                    <p className="text-xs text-muted">Super admin only, after legal sign-off. Recorded on each accepted request while above 0.</p>
                     <div className="grid grid-cols-2 gap-3">
                         <Field label="Premium membership ($/month)" error={prices.errors.premium_price}>
                             <Input

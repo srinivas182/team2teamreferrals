@@ -28,7 +28,8 @@ final class ReferralAgreements
     {
         $ref->loadMissing(['group.industry', 'seat', 'sender.leader', 'receiver.leader']);
         $industry = $ref->group->industry;
-        if ($industry->tier === Tier::Directory || DB::table('referral_agreements')->where('referral_id', $ref->id)->exists()) {
+        // No referral agreement for website requests: no member sent them, so there is no fee to agree.
+        if ($industry->tier === Tier::Directory || $ref->source === 'consumer' || DB::table('referral_agreements')->where('referral_id', $ref->id)->exists()) {
             return;
         }
         $v = $this->agreements->forSigning($industry, $ref->group_id);

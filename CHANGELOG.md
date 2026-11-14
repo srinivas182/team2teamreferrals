@@ -4,6 +4,21 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 41 — "Find a trusted pro": requests from the public
+Checklist items delivered here, each proven by tests in tests/Feature/Referrals/ConsumerRequestsTest.php:
+1. Request form on city pages and industry-by-state pages (with a city picker there): the industry's own questions, reworded for the person asking ("Do you own the home?"), how soon they need help (the lead temperature), and consent. A short three-step form, mobile first, with a progress bar.
+2. Spam protection (the shared hidden-field and timing guard, rate limits) and a phone check: a 6-digit text code (10 minutes, 5 tries, resend).
+3. Routing: to the seat holder, then the backup if they decline or miss the deadline, then the open request board, where teams in the same network that hold a seat in the same state can take it (the first one gets it; whoever declined doesn't see it again). Members find it under Open requests.
+4. Confirmation page saying who has the request, with the link to follow it (the existing client page); the client is also texted at each step (placed, waiting on the board, taken).
+5. Source tracking: requests become referrals marked as website requests, sent by a platform "Website request" team (no seat, no public profile, in-app notices only); teams' dashboards gain "Website requests received".
+6. Industry rules: the form appears only where the tier allows it (never in directory industries, which show the listing and contact only); each page keeps its tier notice.
+7. Search engines and AI tools: each city page answers "How do I find a trusted [pro] in [city]?" in the open (nothing hidden behind the form), with matching question-and-answer data and a Service with the city it serves.
+8–14 (leaders' additions): "Goes to one verified pro, never sold to several" and "Usually responds in about X hours" (from real data) on the form; contact method and best time; texts at each step with STOP to opt out; duplicate guard (the same person asking the same network within 30 days isn't sent twice); the client rates the pro afterwards through the existing client rating.
+- Charging (your decision): website requests are included in the seat. Website requests never carry a member referral fee, agreement or credits. A per-request fee setting exists in Admin → Billing, set to $0 and changeable by a super admin only (after legal sign-off); above $0, the fee is recorded on each accepted request (adding it to invoices comes when it's switched on).
+- The page stays cached at the edge: the form gets its start token from a small uncached call when it opens.
+- The send form's question inputs are now a shared component, also used by the request form.
+- 595 PHP tests in total (7 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 40b — Team profile upgrades, group map, nearby links
 Checklist items delivered here, each proven by tests in tests/Feature/Network/DirectoryProfilesTest.php:
 7 and 12. Team profiles show ratings from clients and from referring teams: a 5-to-1 breakdown and the reviews behind it, filterable by stars and by who rated, each marked "Verified referral". Clients are never named; a referring team is named only if its own profile is public; any phone number or email in a comment is removed. The profile's structured data now includes a few of these reviews alongside the star rating (only once there are 3 or more ratings).

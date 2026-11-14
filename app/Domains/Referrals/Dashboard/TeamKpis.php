@@ -21,6 +21,7 @@ final class TeamKpis
     /** key => [label, kind, records: referrals|fees|credits, how the number is made] */
     public const KPIS = [
         'received' => ['Referrals received', 'count', 'referrals'],
+        'website' => ['Website requests received', 'count', 'referrals'],
         'accepted' => ['Accepted', 'count', 'referrals'],
         'response' => ['Typical response time', 'minutes', 'referrals'],
         'sent' => ['Referrals sent', 'count', 'referrals'],
@@ -41,6 +42,7 @@ final class TeamKpis
 
         return match ($key) {
             'received' => $refs()->where('r.receiver_team_id', $team->id)->where($in('r.created_at')),
+            'website' => $refs()->where('r.receiver_team_id', $team->id)->where('r.source', 'consumer')->where($in('r.created_at')),
             'accepted', 'response' => $refs()->where('r.receiver_team_id', $team->id)->where($in('r.created_at'))->whereNotNull('r.accepted_at'),
             'sent' => $refs()->where('r.sender_team_id', $team->id)->where($in('r.created_at')),
             'sent_accepted' => $refs()->where('r.sender_team_id', $team->id)->where($in('r.created_at'))->whereNotNull('r.accepted_at'),

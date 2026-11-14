@@ -16,6 +16,7 @@ use App\Domains\Network\Seats\Territory;
 use App\Domains\Network\Training\Training;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use stdClass;
 
 /**
  * The referral engine: route to the right seat, send with the client's consent, accept or decline within the
@@ -134,12 +135,41 @@ final class Referrals
         return ['referral' => $ref, 'duplicate' => false];
     }
 
+    /**
+     * A request from the public ("Find a trusted pro"), placed with a team: the referral is "sent" by the platform's
+     * website team, carries the client's own consent, and follows the same accept, backup and timeline flow.
+     *
+     * @param  array<string, mixed>  $answers
+     */
+    public function placeConsumerRequest(Group $group, Seat $seat, Team $receiver, string $role, Team $house, stdClass $req, array $answers): Referral
+    {
+        $ref = DB::transaction(function () use ($group, $seat, $receiver, $role, $house, $req, $answers) {
+            $ref = Referral::create([
+                'client_token' => \Illuminate\Support\Str::random(40), 'group_id' => $group->id, 'seat_id' => $seat->id, 'sender_team_id' => $house->id, 'sender_user_id' => $house->leader_id,
+                'receiver_team_id' => $receiver->id, 'routed_to' => $role, 'source' => 'consumer', 'client_name' => (string) $req->name, 'client_phone' => (string) $req->phone,
+                'client_email' => $req->email, 'answers' => $answers, 'notes' => null, 'consent_at' => $req->consent_at, 'consent_method' => 'client_confirmed', 'consent_text' => (string) $req->consent_text,
+                'respond_by' => now()->addHours((int) $group->rule('accept_hours')),
+            ]);
+            $ref->forceFill(['client_confirmed_at' => $req->phone_verified_at])->save();
+            $this->event($ref, 'sent', $house, null, ['to' => $receiver->name, 'role' => $role, 'source' => 'consumer']);
+            $ref->forceFill(['temperature' => Nurture::classify($ref)])->save();
+
+            return $ref;
+        });
+        $this->tellReceiver($ref);
+
+        return $ref;
+    }
+
     public function accept(Referral $ref, User $user): void
     {
         $this->mustReceive($ref, $user);
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
         app(Pipeline::class)->start($ref);
+        if ($ref->source === 'consumer') {
+            Consumer\ConsumerRequests::accepted($ref);
+        }
         app(Nurture::class)->onAccepted($ref);
         Credits::onAccepted($ref);
         if ($ref->receiver !== null) {
@@ -279,6 +309,11 @@ final class Referrals
             return;
         }
         $ref->forceFill(['status' => $why === 'expired' ? 'expired' : 'declined', 'decline_reason' => $reason])->save();
+        if ($ref->source === 'consumer') {
+            app(Consumer\ConsumerRequests::class)->toBoard($ref); // nobody in the seat took it: it goes to the open request board
+
+            return;
+        }
         $this->notifier->send($ref->sender->leader, 'network.announcement', ['body' => "Your referral for {$ref->client_name} in {$ref->seat->territory_name} couldn’t be placed: {$reason}. No backup was available. You can send it again later or contact us."], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
     }
 

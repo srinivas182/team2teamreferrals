@@ -2,17 +2,16 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight, ShieldCheck, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CityPicker, type CityOption } from '@/components/CityPicker';
+import { AnswerInput, type Answer, type FormField } from '@/components/referrals/AnswerInput';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Field, Input, Select, Textarea } from '@/components/ui/field';
+import { Field, Select, Textarea } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
-type Answer = string | string[] | boolean;
-type FormField = { key: string; label: string; type: string; required?: boolean; options?: string[] };
 type G = {
     slug: string;
     name: string;
@@ -33,52 +32,6 @@ type Preview = {
     avgAcceptMinutes: number | null;
     matches?: Match[];
 };
-
-function Input2({ f, value, onChange }: { f: FormField; value: Answer | undefined; onChange: (v: Answer) => void }) {
-    if (f.type === 'textarea') return <Textarea rows={3} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />;
-    if (f.type === 'choice')
-        return (
-            <Select value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)}>
-                <option value="">Choose…</option>
-                {(f.options ?? []).map((o) => (
-                    <option key={o}>{o}</option>
-                ))}
-            </Select>
-        );
-    if (f.type === 'multi_choice')
-        return (
-            <div className="flex flex-wrap gap-3">
-                {(f.options ?? []).map((o) => {
-                    const arr = (value as string[]) ?? [];
-                    return (
-                        <label key={o} className="flex items-center gap-1.5 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={arr.includes(o)}
-                                onChange={(e) => onChange(e.target.checked ? [...arr, o] : arr.filter((x) => x !== o))}
-                            />{' '}
-                            {o}
-                        </label>
-                    );
-                })}
-            </div>
-        );
-    if (f.type === 'boolean')
-        return (
-            <Select value={value === undefined ? '' : value ? 'yes' : 'no'} onChange={(e) => onChange(e.target.value === 'yes')}>
-                <option value="">Choose…</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-            </Select>
-        );
-    return (
-        <Input
-            type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
-            value={(value as string) ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-        />
-    );
-}
 
 export default function Send({
     groups,
@@ -202,7 +155,7 @@ export default function Send({
                     </Field>
                     {g?.form.map((f) => (
                         <Field key={f.key} label={`${f.label}${f.required ? '' : ' (optional)'}`} error={e[`answers.${f.key}`]} hint={check(f.key)}>
-                            <Input2
+                            <AnswerInput
                                 f={f}
                                 value={form.data.answers[f.key]}
                                 onChange={(v) => form.setData('answers', { ...form.data.answers, [f.key]: v })}
