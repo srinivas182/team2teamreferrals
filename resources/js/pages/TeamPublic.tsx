@@ -1,5 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import { BadgeCheck, Globe, Phone, Star } from 'lucide-react';
+import { Credentials, Ratings, RecordFacts, type Credential, type Reviews } from '@/components/directory/ProfileRecord';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,10 @@ type Props = {
         badges: { key: string; name: string; group: string | null }[];
         trust?: { score: number | null; status: string } | null;
     };
+    response: { hours: number | null; count: number };
+    lastYear: { received: number; closed: number };
+    reviews: Reviews;
+    credentials: Credential[];
     viewer: 'guest' | 'member' | 'self';
     sendUrl: string | null;
     started: string;
@@ -50,7 +55,23 @@ const done: Record<string, string> = {
 };
 
 /** A team's public "refer to me" profile: who they are, their record, and a way to refer a client. */
-export default function TeamPublic({ team, cities, groups, licenses, serviceScore, record, viewer, sendUrl, started, status, seo }: Props) {
+export default function TeamPublic({
+    team,
+    cities,
+    groups,
+    licenses,
+    serviceScore,
+    record,
+    viewer,
+    sendUrl,
+    started,
+    status,
+    seo,
+    response,
+    lastYear,
+    reviews,
+    credentials,
+}: Props) {
     const form = useForm({
         referrer_name: '',
         referrer_email: '',
@@ -122,6 +143,9 @@ export default function TeamPublic({ team, cities, groups, licenses, serviceScor
                         </a>
                     )}
                 </div>
+                <RecordFacts response={response} lastYear={lastYear} foundedYear={team.foundedYear} />
+                <Credentials items={credentials} />
+                <Ratings reviews={reviews} />
                 {record.thanks.map((t) => (
                     <blockquote key={t.note} className="mt-4 rounded-md bg-bg p-4 text-sm">
                         “{t.note}” <span className="text-muted">· {t.from}</span>

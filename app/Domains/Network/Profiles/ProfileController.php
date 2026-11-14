@@ -52,6 +52,8 @@ final class ProfileController
             'cities' => $cities, 'groups' => $groups,
             'licenses' => DB::table('team_licenses')->join('states', 'states.id', '=', 'team_licenses.state_id')->where(['team_id' => $team->id, 'status' => 'verified'])->pluck('states.code')->unique()->values(),
             'serviceScore' => $score, 'record' => $record,
+            'response' => ProfileRecord::response($team), 'lastYear' => ProfileRecord::lastYear($team), 'reviews' => $reviews = ProfileRecord::reviews($team),
+            'credentials' => ProfileRecord::credentials($team),
             'viewer' => $viewerTeam !== null ? ($viewerTeam->id === $team->id ? 'self' : 'member') : 'guest',
             'sendUrl' => $seats->isNotEmpty() ? '/app/send?group='.$seats->first()->group->slug.'&city='.$seats->first()->territory_id.'&from='.$team->slug : null,
             'started' => encrypt(now()->timestamp),
@@ -59,7 +61,11 @@ final class ProfileController
             'seo' => (new SeoData(title: "{$team->name} · ".$groups->first().' in '.$cities->first(), description: $desc, path: $path,
                 schema: [['@context' => 'https://schema.org', '@type' => 'LocalBusiness', 'name' => $team->name, 'url' => url($path), 'description' => $team->bio ?: $desc,
                     'areaServed' => $cities->all(), 'telephone' => $team->phone, 'sameAs' => $team->website ? [$team->website] : []]
-                    + ($record['rating'] !== null ? ['aggregateRating' => ['@type' => 'AggregateRating', 'ratingValue' => $record['rating'], 'ratingCount' => $record['ratings']]] : []),
+                    + ($record['rating'] !== null ? ['aggregateRating' => ['@type' => 'AggregateRating', 'ratingValue' => $record['rating'], 'ratingCount' => $record['ratings']],
+                        // A few of the reviews behind the stars, each from a verified referral.
+                        'review' => array_map(fn ($r) => array_filter(['@type' => 'Review', 'reviewRating' => ['@type' => 'Rating', 'ratingValue' => $r['stars'], 'bestRating' => 5],
+                            'author' => ['@type' => $r['from'] !== null ? 'Organization' : 'Person', 'name' => $r['from'] ?? ($r['by'] === 'client' ? 'Verified client' : 'Referring team')],
+                            'reviewBody' => $r['comment'], 'datePublished' => $r['date']]), array_slice(array_values(array_filter($reviews['items'], fn ($r) => $r['comment'] !== null)), 0, 5))] : []),
                     Schema::breadcrumbs([['Home', '/'], [$team->name, $path]])]))->toArray(),
         ]);
     }

@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 40b — Team profile upgrades, group map, nearby links
+Checklist items delivered here, each proven by tests in tests/Feature/Network/DirectoryProfilesTest.php:
+7 and 12. Team profiles show ratings from clients and from referring teams: a 5-to-1 breakdown and the reviews behind it, filterable by stars and by who rated, each marked "Verified referral". Clients are never named; a referring team is named only if its own profile is public; any phone number or email in a comment is removed. The profile's structured data now includes a few of these reviews alongside the star rating (only once there are 3 or more ratings).
+10. "Responds in about X hours": the median time from a referral arriving to the team accepting it, over the last 12 months, shown once there are 3 or more referrals.
+11. Referrals received and confirmed closes in the last 12 months.
+13. "What we verified": each verified license with industry, state, number, the date we checked it and its expiry.
+14. Years in business (from the founding year).
+15. City pages link to nearby cities with a filled seat in the same network ("Solar near Houston") and to other industries with a verified team in the same city ("Also verified in Houston"). Industry pages list the states with a verified pro ("Find a verified installer by state").
+17. Group pages show a map of filled, waitlisted and open places, with a text summary; backup teams and teams with a private profile are never named on it.
+- llms.txt: the directory's indexable pages (groups, industry by state, city pages that qualify) are listed, from the same "directory" sitemap.
+- 588 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 13 front-end tests.
+
 ### Sprint 40a — Public directory: groups, industry by state, city pages, claim flow
 Checklist items delivered here, each proven by tests in tests/Feature/Network/DirectoryTest.php:
 1. Group directory at /groups with search and filters (industry, state, city); with a city chosen, each network shows its seat there (holder, open or filled). Filtered views aren't indexed (they aren't separate pages).

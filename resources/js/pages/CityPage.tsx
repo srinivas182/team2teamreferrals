@@ -18,12 +18,14 @@ type Props = {
     answer: string;
     intro: string | null;
     seats: Seat[];
+    nearby: { name: string; slug: string; team: string }[];
+    otherIndustries: { slug: string; name: string; team: string }[];
     disclosure: string | null;
     seo: Seo;
 };
 
 /** One industry in one city: who holds the seat (with their public facts as text), or that it is open to claim. */
-export default function CityPage({ industry, state, city, answer, intro, seats, disclosure, seo }: Props) {
+export default function CityPage({ industry, state, city, answer, intro, seats, nearby, otherIndustries, disclosure, seo }: Props) {
     return (
         <PublicLayout current="/groups">
             <SeoHead seo={seo} />
@@ -84,6 +86,40 @@ export default function CityPage({ industry, state, city, answer, intro, seats, 
                         )}
                     </section>
                 ))}
+                {nearby.length > 0 && (
+                    <section aria-labelledby="nearby" className="mt-8">
+                        <h2 id="nearby" className="font-display text-xl font-bold">
+                            {industry.name} near {city.name}
+                        </h2>
+                        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {nearby.map((n) => (
+                                <li key={n.slug}>
+                                    <Link href={`/industries/${industry.slug}/${state.code.toLowerCase()}/${n.slug}`} className="text-primary">
+                                        {n.name}
+                                    </Link>{' '}
+                                    <span className="text-sm text-muted">· {n.team}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+                {otherIndustries.length > 0 && (
+                    <section aria-labelledby="also" className="mt-8">
+                        <h2 id="also" className="font-display text-xl font-bold">
+                            Also verified in {city.name}
+                        </h2>
+                        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {otherIndustries.map((o) => (
+                                <li key={o.slug}>
+                                    <Link href={`/industries/${o.slug}/${state.code.toLowerCase()}/${city.slug}`} className="text-primary">
+                                        {o.name}
+                                    </Link>{' '}
+                                    <span className="text-sm text-muted">· {o.team}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
             </article>
         </PublicLayout>
     );

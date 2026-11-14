@@ -250,4 +250,67 @@ final class Directory
         return "The verified {$t['pro']} for {$place} on {$site} is {$team['name']}, holding the {$s['group']} seat for {$s['seat']['territory']}"
             .($facts !== [] ? ': '.implode(', ', $facts) : '').'.';
     }
+
+    /**
+     * The group's public map: places with a seat record, marked held (by a team with a public profile), waitlisted or
+     * open. No backup teams or private teams are named.
+     *
+     * @return list<array{name: string, lat: float, lon: float, state: string}>
+     */
+    public static function mapPoints(Group $group): array
+    {
+        $public = DB::table('seats')->join('teams', 'teams.id', '=', 'seats.primary_team_id')->where('seats.group_id', $group->id)
+            ->whereIn('seats.status', self::FILLED)->where('teams.profile_public', true)->pluck('seats.id')->flip();
+
+        return array_values(array_map(fn ($p) => ['name' => $p['name'], 'lat' => $p['lat'], 'lon' => $p['lon'],
+            'state' => isset($public[$p['id']]) ? 'held' : ($p['waitlist'] > 0 ? 'waitlist' : 'open')],
+            array_filter(\App\Domains\Network\Seats\SeatMap::points($group), fn ($p) => $p['state_of'] !== 'held' || isset($public[$p['id']]))));
+    }
+
+    /**
+     * Filled seats near a city in the same group and state, nearest first, linking to their city pages.
+     *
+     * @return list<array{name: string, slug: string, team: string}>
+     */
+    public static function nearby(Group $group, City $city, int $limit = 6): array
+    {
+        $seats = self::groupSeats($group, (string) DB::table('states')->where('id', $city->state_id)->value('code'));
+        $out = [];
+        foreach ($seats as $s) {
+            $c = DirectoryUrls::mainCity($s['type'], $s['territoryId']);
+            if ($c === null || (int) $c->id === $city->id) {
+                continue;
+            }
+            $row = DB::table('cities')->where('id', $c->id)->first(['name', 'slug', 'lat', 'lon']);
+            if ($row === null) {
+                continue;
+            }
+            $d = $city->lat !== null && $row->lat !== null ? (($row->lat - $city->lat) ** 2 + (($row->lon - $city->lon) * cos(deg2rad((float) $city->lat))) ** 2) : INF;
+            $out[] = ['name' => (string) $row->name, 'slug' => (string) $row->slug, 'team' => (string) $s['team']['name'], 'd' => $d];
+        }
+        usort($out, fn ($a, $b) => $a['d'] <=> $b['d']);
+
+        return array_map(fn ($o) => ['name' => $o['name'], 'slug' => $o['slug'], 'team' => $o['team']], array_slice($out, 0, $limit));
+    }
+
+    /**
+     * Other industries with a filled seat covering this city ("also in Houston").
+     *
+     * @return list<array{slug: string, name: string, team: string}>
+     */
+    public static function otherIndustries(City $city, int $exceptIndustryId, int $limit = 8): array
+    {
+        $out = [];
+        foreach (self::groups()->where('industry_id', '!=', $exceptIndustryId)->unique('industry_id') as $g) {
+            $seat = self::seatAt($g, $city);
+            if ($seat !== null && $seat['team'] !== null) {
+                $out[] = ['slug' => $g->industry->slug, 'name' => $g->industry->name, 'team' => (string) $seat['team']['name']];
+            }
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return $out;
+    }
 }

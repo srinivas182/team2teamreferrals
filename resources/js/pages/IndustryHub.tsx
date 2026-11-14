@@ -29,6 +29,7 @@ type Props = {
     content: Content;
     disclosure: string | null;
     related: { slug: string; name: string }[];
+    states: { code: string; name: string }[];
     reviewer: string | null;
     reviewedOn: string | null;
     updatedOn: string | null;
@@ -49,7 +50,19 @@ const paragraphs = (text: string) =>
         ));
 
 /** An industry hub: the answer first, the facts sheet, how referrals work, what to ask, FAQs, glossary and sources. */
-export default function IndustryHub({ industry, content: c, disclosure, related, reviewer, reviewedOn, preview, formStarted, status, seo }: Props) {
+export default function IndustryHub({
+    industry,
+    content: c,
+    disclosure,
+    related,
+    states,
+    reviewer,
+    reviewedOn,
+    preview,
+    formStarted,
+    status,
+    seo,
+}: Props) {
     const form = useForm({ name: '', email: '', message: '', website_url: '', started: formStarted });
     const facts: [string, string][] = [
         ['What it covers', c.facts.covers],
@@ -136,6 +149,26 @@ export default function IndustryHub({ industry, content: c, disclosure, related,
                                     <a href={l.url} rel="noopener noreferrer" target="_blank" className="text-primary">
                                         {l.name} <ExternalLink className="inline size-3" aria-hidden />
                                     </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {states.length > 0 && (
+                    <section aria-labelledby="by-state" className="mt-8">
+                        <h2 id="by-state" className="font-display text-2xl font-bold">
+                            Find a verified {industry.terms.pro} by state
+                        </h2>
+                        <ul className="mt-3 flex flex-wrap gap-2">
+                            {states.map((s) => (
+                                <li key={s.code}>
+                                    <Link
+                                        href={`/industries/${industry.slug}/${s.code}`}
+                                        className="inline-flex rounded-full border border-line px-3 py-1 text-sm"
+                                    >
+                                        {s.name}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>

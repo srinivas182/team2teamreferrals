@@ -72,7 +72,7 @@ final class DirectoryController
                     'training' => (bool) $group->rule('training_required') && app(Modules::class)->enabled('training'), 'fees' => IndustryContent::tierFact($industry)],
                 'pricing' => ['seat_price' => (int) ($group->pricing['seat_price'] ?? 10), 'trial_months' => (int) ($group->pricing['trial_months'] ?? 3)],
                 'hub' => IndustryContent::record($industry)?->status === 'published' ? '/industries/'.$industry->slug : null],
-            'answer' => $answer, 'seats' => $seats, 'open' => Directory::openPlaces($group),
+            'answer' => $answer, 'seats' => $seats, 'open' => Directory::openPlaces($group), 'map' => Directory::mapPoints($group),
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'viewer' => $request->user() instanceof User ? 'member' : 'guest',
             'seo' => (new SeoData(title: "{$group->name}: verified {$t['pros']} by {$unit} · {$site}", description: $answer, path: $path,
@@ -137,6 +137,7 @@ final class DirectoryController
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'terms' => $t, 'hub' => $hub], 'state' => ['code' => $st->code, 'name' => $st->name],
             'city' => ['id' => $city->id, 'name' => $city->name, 'slug' => $city->slug], 'answer' => $answer,
             'intro' => $hub ? IndustryContent::placeSummary($industry, $st->name, $city->name) : null, 'seats' => $seats,
+            'nearby' => Directory::nearby($groups->first(), $city), 'otherIndustries' => Directory::otherIndustries($city, $industry->id),
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'seo' => (new SeoData(title: "{$industry->name} in {$city->name}, {$st->code}: the verified {$t['pro']} · {$site}", description: $answer, path: $path, index: $index, schema: $schema))->toArray(),
         ]);

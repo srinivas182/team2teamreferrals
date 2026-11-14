@@ -72,6 +72,10 @@ final class IndustryHubController
 
         return Inertia::render('IndustryHub', [
             ...$page, 'preview' => $preview, 'formStarted' => FormGuard::token(), 'status' => session('status'),
+            // Where to find a verified pro: states with a filled seat in this industry's public groups.
+            'states' => DB::table('seats')->join('groups', 'groups.id', '=', 'seats.group_id')->join('states', 'states.code', '=', 'seats.state_code')
+                ->where(['groups.industry_id' => $industry->id, 'groups.status' => 'live', 'groups.is_private' => false])->whereIn('seats.status', \App\Domains\Network\Directory\Directory::FILLED)
+                ->whereNotNull('seats.primary_team_id')->distinct()->orderBy('states.name')->get(['states.code', 'states.name'])->map(fn ($r) => ['code' => strtolower((string) $r->code), 'name' => (string) $r->name])->values(),
             'seo' => (new SeoData(title: $industry->name.': costs, licensing and referrals · '.config('seo.site_name'), description: $page['content']['summary'],
                 path: '/industries/'.$industry->slug, index: ! $preview, type: 'website', schema: IndustryContent::schema($industry, $page), modifiedAt: $page['updatedOn']))->toArray(),
         ]);
