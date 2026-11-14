@@ -166,6 +166,6 @@ final class Closing
     /** @param array<string, mixed> $meta */
     private function event(Referral $ref, string $event, ?int $teamId, ?User $actor, array $meta = []): void
     {
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => $event, 'team_id' => $teamId, 'actor_id' => $actor?->id, 'meta' => $meta === [] ? null : json_encode($meta), 'created_at' => now()]);
+        ReferralEvents::record($ref, $event, $teamId, $actor?->id, $meta);
     }
 }

@@ -253,7 +253,7 @@ final class Referrals
         $ref->forceFill(['consent_token_hash' => hash('sha256', $token), 'consent_requested_at' => now()])->save();
         $t = $ref->group->industry->terms();
         app(\App\Support\Sms\SmsSender::class)->send((string) $ref->client_phone, "{$ref->sender->name} would like to connect you with a verified {$t['pro']} in {$ref->seat->territory_name} via Team to Team Referrals. Reply YES or tap to confirm: ".url('/c/'.$token).' Reply STOP to opt out.');
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'consent_requested', 'team_id' => $ref->sender_team_id, 'actor_id' => null, 'meta' => null, 'created_at' => now()]);
+        ReferralEvents::record($ref, 'consent_requested', $ref->sender_team_id, null);
 
         return true;
     }
@@ -265,7 +265,7 @@ final class Referrals
         }
         $ref->loadMissing(['group.industry', 'sender.leader']);
         $ref->forceFill(['client_confirmed_at' => now(), 'consent_method' => 'client_confirmed', 'consent_token_hash' => null])->save();
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => 'client_confirmed', 'team_id' => null, 'actor_id' => null, 'meta' => json_encode(['via' => $via]), 'created_at' => now()]);
+        ReferralEvents::record($ref, 'client_confirmed', null, null, ['via' => $via]);
         if ($ref->client_phone !== null && $ref->client_token !== null) {
             app(\App\Support\Sms\SmsSender::class)->send($ref->client_phone, 'Thanks! See who will contact you and track your introduction: '.url('/r/'.$ref->client_token));
         }
@@ -337,6 +337,6 @@ final class Referrals
     /** @param array<string, mixed> $meta */
     private function event(Referral $ref, string $event, ?Team $team, ?User $actor, array $meta = []): void
     {
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => $event, 'team_id' => $team?->id, 'actor_id' => $actor?->id, 'meta' => $meta === [] ? null : json_encode($meta), 'created_at' => now()]);
+        ReferralEvents::record($ref, $event, $team?->id, $actor?->id, $meta);
     }
 }

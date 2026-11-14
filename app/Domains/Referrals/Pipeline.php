@@ -197,6 +197,6 @@ final class Pipeline
     private function event(Referral $ref, string $event, ?Team $team, ?User $actor, array $meta = []): void
     {
         $meta = array_filter($meta, fn ($v) => $v !== null && $v !== '');
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => $event, 'team_id' => $team?->id, 'actor_id' => $actor?->id, 'meta' => $meta === [] ? null : json_encode($meta), 'created_at' => now()]);
+        ReferralEvents::record($ref, $event, $team?->id, $actor?->id, $meta);
     }
 }

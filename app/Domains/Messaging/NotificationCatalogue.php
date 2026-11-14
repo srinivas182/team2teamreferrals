@@ -85,6 +85,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
+        'api.webhook_disabled' => ['group' => 'Account and security', 'label' => 'Webhook endpoint switched off', 'description' => 'When one of your team’s webhook endpoints is switched off after failing for 3 days.', 'channels' => ['mail', 'database'], 'urgent' => true, 'locked' => true,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'billing.trial_ending' => ['group' => 'Billing', 'label' => 'Trial ending', 'description' => '14, 7 and 1 days before a seat’s free trial ends.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => true,
             'title' => 'Your free trial for {city} ends in {days} days', 'body' => 'Your {industry} seat in {city} moves to the monthly price on {date}. Any month no referral reaches you stays free.', 'sms' => ''],
         'billing.free_month' => ['group' => 'Billing', 'label' => 'Free month credited', 'description' => 'When a month is free because no referral reached your seat.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,

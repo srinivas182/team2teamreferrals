@@ -6,6 +6,7 @@ namespace App\Domains\Network\Profiles;
 
 use App\Domains\Identity\Models\User;
 use App\Domains\Messaging\Notifier;
+use App\Domains\Network\Profiles\Events\LeadVerified;
 use App\Domains\Network\Seats\Models\Seat;
 use App\Domains\Network\Seats\Models\Team;
 use App\Domains\Referrals\Performance\ServiceScore;
@@ -113,6 +114,7 @@ final class ProfileController
         $lead = DB::table('profile_leads')->where(['team_id' => $team->id, 'verify_token_hash' => hash('sha256', $token)])->first();
         abort_if($lead === null, 404);
         DB::table('profile_leads')->where('id', $lead->id)->update(['status' => 'new', 'verified_at' => now(), 'verify_token_hash' => null, 'updated_at' => now()]);
+        LeadVerified::dispatch((int) $lead->id, $team->id);
         PublicProfiles::count($team, 'referral');
         if (in_array($lead->source ?? 'profile', Widgets\Widgets::TYPES, true)) {
             Widgets\Widgets::count($team, (string) $lead->source, 'referral', null); // sent from one of the team's widgets

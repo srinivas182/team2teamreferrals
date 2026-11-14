@@ -66,7 +66,7 @@ final class Disputes
             $open = collect($stages)->firstWhere('key', $from) ?? ($stages[1] ?? $stages[0]);
             $ref->forceFill(['stage' => $open['key'], 'stage_changed_at' => now(), 'closed_at' => null, 'closing_date' => null, 'closing_value_cents' => null, 'earnings_cents' => null, 'close_status' => null, 'close_dispute' => null])->save();
         }
-        DB::table('referral_events')->insert(['referral_id' => $ref->id, 'event' => $confirm ? 'close_upheld' : 'close_reopened', 'team_id' => null, 'actor_id' => $decider->id, 'meta' => json_encode(['note' => $note]), 'created_at' => now()]);
+        ReferralEvents::record($ref, $confirm ? 'close_upheld' : 'close_reopened', null, $decider->id, ['note' => $note]);
         $this->audit($ref->group, $decider, $confirm ? 'close-confirmed' : 'close-reopened', ['referral' => $ref->ulid, 'note' => $note]);
         $this->tellBoth($ref, $confirm ? "Close confirmed by the group owner: {$ref->client_name}" : "Referral reopened by the group owner: {$ref->client_name}", $note);
         ReferralChanged::dispatch($ref, 'closing');

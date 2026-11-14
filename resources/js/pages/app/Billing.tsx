@@ -30,6 +30,7 @@ type Account = {
     type: 'team' | 'company';
     ai: { balance: number; usedToday: number; dailyCap: number; allowance: number; packs: { credits: number; price: number }[] } | null;
     premium: { on: boolean; price: number } | null;
+    apiPlan: { on: boolean; price: number; perMinute: number; endpoints: number } | null;
     credit: number;
     coupon: string | null;
     name: string;
@@ -260,6 +261,23 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                                     onChange={(e) => router.post('/app/billing/team/premium', { on: e.target.checked }, { preserveScroll: true })}
                                 />{' '}
                                 Premium membership (${a.premium.price.toFixed(2)}/month, billed from the day it starts)
+                            </label>
+                        )}
+                        {a.apiPlan && (
+                            <label className="flex items-start gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1"
+                                    checked={a.apiPlan.on}
+                                    onChange={(e) => router.post('/app/billing/team/api-plan', { on: e.target.checked }, { preserveScroll: true })}
+                                />
+                                <span>
+                                    API plan (${a.apiPlan.price.toFixed(2)}/month, billed for the days it’s on): {a.apiPlan.perMinute} API requests a
+                                    minute instead of 60, up to {a.apiPlan.endpoints} webhook endpoints instead of 1, and a 30-day request log.{' '}
+                                    <a href="/app/developers" className="underline">
+                                        Developers (API)
+                                    </a>
+                                </span>
                             </label>
                         )}
                         {a.ai && (

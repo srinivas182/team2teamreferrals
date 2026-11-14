@@ -29,6 +29,7 @@ type Props = {
         platformFeeCollection: boolean;
         stripeTax: boolean;
         premiumPrice: number;
+        apiPlanPrice: number;
         privateNetworkPrice: number;
         inviteRewardMonths: number;
         inviteCap: number;
@@ -82,6 +83,7 @@ function Refund({ inv }: { inv: Props['invoices'][number] }) {
 export default function AdminBilling({ stats, failed, invoices, coupons, settings, isSuperAdmin, status, seo }: Props) {
     const prices = useForm({
         premium_price: String(settings.premiumPrice),
+        api_plan_price: String(settings.apiPlanPrice),
         private_network_price: String(settings.privateNetworkPrice),
         invite_reward_months: String(settings.inviteRewardMonths),
         invite_cap: String(settings.inviteCap),
@@ -156,13 +158,21 @@ export default function AdminBilling({ stats, failed, invoices, coupons, setting
                         </Button>
                     </form>
                     <p className="text-xs text-muted">Super admin only, after legal sign-off. Recorded on each accepted request while above 0.</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                         <Field label="Premium membership ($/month)" error={prices.errors.premium_price}>
                             <Input
                                 type="number"
                                 min="0"
                                 value={prices.data.premium_price}
                                 onChange={(e) => prices.setData('premium_price', e.target.value)}
+                            />
+                        </Field>
+                        <Field label="API plan ($/month)" error={prices.errors.api_plan_price}>
+                            <Input
+                                type="number"
+                                min="0"
+                                value={prices.data.api_plan_price}
+                                onChange={(e) => prices.setData('api_plan_price', e.target.value)}
                             />
                         </Field>
                         <Field label="Private network ($/month)" error={prices.errors.private_network_price}>

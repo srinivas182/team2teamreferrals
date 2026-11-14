@@ -34,7 +34,8 @@ final class Invoicing
         $start = CarbonImmutable::parse($period.'-01')->startOfMonth();
         $end = $start->endOfMonth();
         $byPayer = [];
-        foreach (Seat::query()->with(['group.industry', 'primary'])->whereNotNull('primary_team_id')->get() as $seat) {
+        // API sandbox seats (sample teams and sandbox twins, Sprint 44) are never billed.
+        foreach (Seat::query()->with(['group.industry', 'primary'])->whereNotNull('primary_team_id')->whereHas('group', fn ($q) => $q->where('is_sandbox', false))->get() as $seat) {
             $payer = BillingAccounts::payerFor($seat);
             if ($payer === null) {
                 continue;
@@ -59,6 +60,14 @@ final class Invoicing
             $d = $days($t->premium_since);
             $byPayer['team:'.$t->id][] = ['type' => 'premium', 'days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('premium') * 100 * $d / $start->daysInMonth),
                 'description' => 'Premium membership · '.$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
+        }
+        // API plan add-on (per team), prorated by the days it was on during the month, including a month it was switched off in.
+        foreach (DB::table('teams')->whereNotNull('api_plan_since')->where('api_plan_since', '<=', $end)->where(fn ($q) => $q->whereNull('api_plan_until')->orWhere('api_plan_until', '>=', $start))->get(['id', 'api_plan_since', 'api_plan_until']) as $t) {
+            $from = max($start, CarbonImmutable::parse((string) $t->api_plan_since)->startOfDay());
+            $to = $t->api_plan_until !== null ? min($end->startOfDay(), CarbonImmutable::parse((string) $t->api_plan_until)->startOfDay()) : $end->startOfDay();
+            $d = (int) $from->diffInDays($to) + 1;
+            $byPayer['team:'.$t->id][] = ['type' => 'api_plan', 'days' => $d, 'free_reason' => null, 'amount_cents' => (int) round(PricingRules::price('api_plan') * 100 * $d / $start->daysInMonth),
+                'description' => 'API plan · '.$start->format('M Y').($d < $start->daysInMonth ? " ({$d} days)" : '')];
         }
         foreach (DB::table('groups')->where('is_private', true)->whereNotNull('company_id')->where('created_at', '<=', $end)->get(['company_id', 'name', 'created_at']) as $g) {
             $d = $days($g->created_at);
