@@ -164,6 +164,8 @@ const messages: Record<string, string> = {
     'answer-engines-saved': 'Answer engine settings saved.',
     'question-added': 'Question added. It is asked in the next monthly check.',
     'aeo-check-started': 'This month\u2019s answer-engine check is queued. Results appear as each answer comes back.',
+    'api-token-created': 'Token created. Copy it now: it won\u2019t be shown again.',
+    'api-token-revoked': 'Token revoked. Anything using it stops working straight away.',
     'ai-crawlers-saved': 'Saved. robots.txt now reflects your AI crawler choices.',
     'ai-prompt-live': 'That version is now live.',
     'ai-credits-saved': 'Credit defaults saved.',

@@ -238,7 +238,7 @@ final class Referrals
     /** Whether the client can be asked to confirm by text: industry approved, a mobile on file, not opted out. */
     public static function canTextClient(Referral $ref): bool
     {
-        return $ref->group->industry->client_texting_approved && $ref->client_phone !== null && $ref->consent_requested_at === null
+        return ! $ref->group->is_sandbox && $ref->group->industry->client_texting_approved && $ref->client_phone !== null && $ref->consent_requested_at === null
             && ! DB::table('sms_opt_outs')->where('phone', $ref->client_phone)->whereNotNull('opted_out_at')->exists();
     }
 

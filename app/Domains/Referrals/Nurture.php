@@ -71,7 +71,8 @@ final class Nurture
     public function clientTouchpoints(): void
     {
         $refs = Referral::query()->with('receiver')->where(['temperature' => 'future', 'status' => 'accepted'])->whereNull('closed_at')
-            ->whereNotNull('client_email')->whereNotNull('client_confirmed_at')->whereNull('client_emails_stopped_at')->get();
+            ->whereNotNull('client_email')->whereNotNull('client_confirmed_at')->whereNull('client_emails_stopped_at')
+            ->whereHas('group', fn ($q) => $q->where('is_sandbox', false))->get(); // the API sandbox never emails anyone
         foreach ($refs as $ref) {
             $last = DB::table('nurture_touchpoints')->where(['referral_id' => $ref->id, 'kind' => 'client_touch'])->max('created_at') ?? $ref->accepted_at;
             if ($last === null || now()->parse((string) $last)->gt(now()->subDays(self::CLIENT_TOUCH_DAYS))) {

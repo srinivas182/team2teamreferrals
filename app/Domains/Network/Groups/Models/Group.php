@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $photo_path
  * @property bool $is_launch
  * @property bool $is_private
+ * @property bool $is_sandbox
  * @property ?string $region
  * @property ?int $parent_group_id
  * @property array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string} $rules
@@ -36,7 +37,7 @@ final class Group extends Model
 
     protected function casts(): array
     {
-        return ['training_retake_at' => 'datetime', 'rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean', 'is_private' => 'boolean'];
+        return ['training_retake_at' => 'datetime', 'rules' => 'array', 'pricing' => 'array', 'is_launch' => 'boolean', 'is_private' => 'boolean', 'is_sandbox' => 'boolean'];
     }
 
     /**

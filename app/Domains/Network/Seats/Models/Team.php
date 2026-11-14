@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property list<string>|null $widget_domains
  * @property int $leader_id
  * @property ?int $company_id
+ * @property ?int $sandbox_of_team_id
  * @property ?string $logo_path
  * @property ?string $bio
  * @property ?string $website

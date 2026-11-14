@@ -4,6 +4,15 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 44a — Public REST API v1, developer docs and sandbox
+Tests: tests/Feature/Api/PublicApiTest.php.
+1. REST API at /api/v1 for every team, included with the seat: send, list and follow referrals (accept, decline, move stage, add notes, read the timeline), read and update profile leads, read networks, seats and cities, read and update the public profile. Receivers see the same masked client details as in the app until they accept.
+2. API tokens in the portal (Developers (API)): leaders and assistants create them after confirming their password, pick permissions (9 scopes), live or test mode, and an optional expiry. The token is shown once and stored only as a hash. A token stops working when it is revoked, expires, or its creator leaves the team (the list shows which). Creating and revoking are in the activity log.
+3. Safe retries: send an Idempotency-Key header and a repeated request returns the first answer instead of doing it twice (kept 24 hours; reusing a key for a different request is refused). Sending the same client again within 30 days answers 409 unless "allow_duplicate" is set.
+4. Errors as standard problem details (RFC 9457) with plain messages and field errors. Rate limit 60 requests a minute per token, with limit headers and Retry-After. The API plan add-on in 44b raises it to 600.
+5. Sandbox: a test token works in a private practice network with sample teams, where your team gets its own twin seat. Helpers let a sample team accept, decline, move or send you a referral. Nobody real is contacted (no client emails or texts), and the sandbox network never appears in public pages, sitemaps or reminders.
+6. Docs: OpenAPI 3.1 description at /api/v1/openapi.json, and a public /developers page with getting started, rules, permissions and the full reference (in the sitemap). A test checks that the description matches the real routes exactly.
+
 ### Sprint 43b — SEO and AEO monitoring, default legal pages, super admin review
 Tests: tests/Feature/Seo/SeoMonitoringTest.php, tests/Unit/Seo/SiteChecksTest.php, plus additions to SeoAutomationTest, IndustryHubTest and StarterWritingTest.
 1. Google Search Console: the sitemap is submitted through Google's API every night and within ten minutes of pages changing (at most hourly). It is off until a super admin switches it on and pastes a service account key in Admin → SEO and AEO. The key is stored encrypted and shown masked, and Google's answer is shown. Bing and others still get IndexNow pings.

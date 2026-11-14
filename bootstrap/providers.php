@@ -9,6 +9,7 @@ return [
     App\Domains\Community\CommunityServiceProvider::class,
     App\Domains\Platform\PlatformServiceProvider::class,
     App\Domains\Seo\SeoServiceProvider::class,
+    App\Domains\Api\ApiServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\HorizonServiceProvider::class,
 ];
