@@ -218,7 +218,11 @@ export default function IndustryEdit(p: Props) {
                             </Badge>
                             <span className="text-xs text-muted">Tier {p.industry.tier}</span>
                         </div>
-                        <Field label="Reviewed by (the expert who checked the facts)" error={errors.reviewer}>
+                        <Field
+                            label="Reviewed by (the expert who checked the facts)"
+                            hint="Leave blank if you are a super admin publishing it: you sign as the reviewer."
+                            error={errors.reviewer}
+                        >
                             <Input placeholder="Review pending" value={f.data.reviewer} onChange={(e) => f.setData('reviewer', e.target.value)} />
                         </Field>
                         {p.reviewedOn && <p className="text-xs text-muted">Last reviewed {p.reviewedOn}</p>}

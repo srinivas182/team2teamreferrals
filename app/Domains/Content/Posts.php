@@ -34,6 +34,10 @@ final class Posts
             return $ulid;
         }
         DB::table('posts')->where('id', $post->id)->update($row);
+        // A live post that changes address keeps its old links working (Sprint 43b).
+        if ($post->status === 'published' && $post->slug !== $slug) {
+            Pages::redirect('/blog/'.$post->slug, '/blog/'.$slug, 301, true, $by);
+        }
 
         return (string) $post->ulid;
     }
@@ -46,8 +50,13 @@ final class Posts
 
     public static function publish(stdClass $post, ?string $at, User $by): void
     {
+        // A super admin publishing a post nobody else has signed is its reviewer (the owner's choice, Sprint 43b).
+        if (self::needsReviewer((string) $post->slug, $post->reviewer) && $by->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN)) {
+            $post->reviewer = $by->name;
+            DB::table('posts')->where('id', $post->id)->update(['reviewer' => $post->reviewer]);
+        }
         if (self::needsReviewer((string) $post->slug, $post->reviewer)) {
-            throw ValidationException::withMessages(['reviewer' => 'Review pending: this post makes legal and industry claims. Name the expert who checked the facts before publishing.']);
+            throw ValidationException::withMessages(['reviewer' => 'Review pending: this post makes legal and industry claims. Name the expert who checked the facts, or ask a super admin to review and publish it.']);
         }
         $len = mb_strlen(trim((string) $post->answer_summary));
         if ($len < Pages::SUMMARY_MIN || $len > Pages::SUMMARY_MAX) {
@@ -62,7 +71,17 @@ final class Posts
             return;
         }
         DB::table('posts')->where('id', $post->id)->update(['status' => 'published', 'publish_at' => null, 'published_at' => $post->published_at ?? now(), 'updated_at' => now()]);
+        \App\Domains\Seo\Monitoring\GoneUrls::restore('/blog/'.$post->slug);
         activity('content')->causedBy($by)->event('post-published')->withProperties(['post' => $post->ulid])->log('Post published');
+    }
+
+    /** Take a live post down: its address answers "gone" so search engines drop it. */
+    public static function unpublish(stdClass $post): void
+    {
+        DB::table('posts')->where('id', $post->id)->update(['status' => 'unpublished', 'publish_at' => null, 'updated_at' => now()]);
+        if ($post->status === 'published') {
+            \App\Domains\Seo\Monitoring\GoneUrls::mark('/blog/'.$post->slug, 'post unpublished');
+        }
     }
 
     public static function publishDue(): int

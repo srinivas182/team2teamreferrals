@@ -79,9 +79,9 @@ final class ContentPack
     }
 
     /**
-     * Starter writing, installed as DRAFTS only: the ten blog posts (reviewer shown as "Review pending" until the owner
-     * names one), the help-centre articles, and the Terms and Privacy drafts for the attorney. Anything that already
-     * exists, or that someone has edited, is left alone. Returns [posts, help articles, legal pages] added.
+     * Starter writing: the ten blog posts and the help-centre articles as DRAFTS (a super admin reviews and publishes
+     * them), and the default Terms and Privacy, published. Anything that already exists, or that someone has edited,
+     * is left alone. Returns [posts, help articles, legal pages] added.
      *
      * @return array{0: int, 1: int, 2: int}
      */
@@ -98,12 +98,14 @@ final class ContentPack
         }
         $legal = 0;
         foreach (Pack\LegalDrafts::all() as $slug => $d) {
+            // The default Terms and Privacy are published (the owner's choice, Sprint 43b). A page someone has edited,
+            // or already published, is left alone; the untouched earlier draft is replaced by the defaults.
             $page = DB::table('cms_pages')->where('slug', $slug)->first();
-            $html = $page !== null ? (string) (json_decode((string) DB::table('cms_page_versions')->where('id', $page->draft_version_id)->value('blocks'), true)[0]['html'] ?? 'x') : '';
-            if ($page !== null && ($page->status !== 'draft' || trim(strip_tags($html)) !== '')) {
-                continue; // published, already written, or someone has worked on it: only empty drafts are filled
+            if ($page !== null && ($page->status !== 'draft' || DB::table('cms_page_versions')->where('page_id', $page->id)->count() > 1)) {
+                continue;
             }
-            Pages::save($page, ['title' => $d['title'], 'slug' => $slug, 'template' => 'legal', 'answer_summary' => $d['summary'], 'seo' => [], 'blocks' => [['type' => 'rich_text', 'html' => $d['html']]]], $by);
+            $ulid = Pages::save($page, ['title' => $d['title'], 'slug' => $slug, 'template' => 'legal', 'answer_summary' => $d['summary'], 'seo' => [], 'blocks' => [['type' => 'rich_text', 'html' => $d['html']]]], $by);
+            Pages::publish(DB::table('cms_pages')->where('ulid', $ulid)->firstOrFail(), null, $by);
             $legal++;
         }
 

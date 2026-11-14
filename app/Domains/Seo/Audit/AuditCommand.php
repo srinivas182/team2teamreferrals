@@ -18,7 +18,9 @@ final class AuditCommand extends Command
     protected $signature = 't2t:seo:audit
         {--base= : Site to check (defaults to the canonical address)}
         {--per-section=25 : Pages to check from each sitemap section (0 = all)}
-        {--require=* : Page types that must have been checked, e.g. home,group,city}';
+        {--require=* : Page types that must have been checked, e.g. home,group,city}
+        {--site : Also check internal links and duplicate titles, descriptions and pages}
+        {--trigger=manual : What started the check (nightly, manual or release), for the history}';
 
     protected $description = 'Check public pages for search and answer-engine essentials (titles, canonical, structured data, answer-first, FAQ, llms.txt)';
 
@@ -49,9 +51,16 @@ final class AuditCommand extends Command
         $paths = $this->paths($base, $get);
         $results = [];
         $failed = 0;
+        $site = new SiteChecks;
+        $host = (string) parse_url($base, PHP_URL_HOST);
+        $status = [];
         foreach ($paths as $path) {
             $r = $get($path);
+            $status[$path] = $r->status();
             $problems = $r->successful() ? PageAudit::check($r->body(), $base.$path, $llms) : ['Returned HTTP '.$r->status()];
+            if ($r->successful() && $this->option('site')) {
+                $site->add($path, $r->body(), $host);
+            }
             $results[] = ['path' => $path, 'type' => self::type($path), 'problems' => $problems];
             if ($problems !== []) {
                 $failed++;
@@ -65,14 +74,47 @@ final class AuditCommand extends Command
         }
         $checked = array_unique(array_column($results, 'type'));
         $missing = array_diff(array_filter(explode(',', implode(',', (array) $this->option('require')))), $checked);
-        Cache::forever('seo:audit:last', ['at' => now()->toIso8601String(), 'pages' => count($results), 'failed' => $failed, 'results' => $results]);
+        $broken = [];
+        $dupes = ['titles' => [], 'descriptions' => [], 'near' => []];
+        if ($this->option('site')) {
+            // Links to other pages of ours, each checked once (at most 300 per run).
+            foreach (array_slice($site->linkTargets(), 0, 300, true) as $to => $from) {
+                $code = $get($to)->status();
+                if ($code >= 400) {
+                    $broken[$to] = ['status' => $code, 'from' => $from];
+                }
+            }
+            foreach ($site->linksToFailedPages($status) as $to => $from) {
+                $broken[$to] = ['status' => $status[$to], 'from' => $from];
+            }
+            $dupes = $site->duplicates();
+            foreach ($broken as $to => $b) {
+                $this->line("<fg=red>✗</> Broken link to {$to} (HTTP {$b['status']}) from ".implode(', ', $b['from']));
+            }
+            foreach (['titles' => 'title', 'descriptions' => 'description'] as $k => $label) {
+                foreach ($dupes[$k] as $text => $pages) {
+                    $this->line("<fg=red>✗</> Same {$label} on ".implode(', ', $pages).": {$text}");
+                }
+            }
+            foreach ($dupes['near'] as $n) {
+                $this->line("<fg=yellow>!</> Nearly identical wording ({$n['similarity']}): {$n['a']} and {$n['b']}");
+            }
+        }
+        $summary = ['pages' => count($results), 'failed' => $failed, 'broken_links' => count($broken), 'duplicate_titles' => count($dupes['titles']),
+            'duplicate_descriptions' => count($dupes['descriptions']), 'near_duplicates' => count($dupes['near'])];
+        $record = ['at' => now()->toIso8601String(), ...$summary, 'results' => $results, 'broken' => $broken, 'duplicates' => $dupes];
+        Cache::forever('seo:audit:last', $record);
+        \Illuminate\Support\Facades\DB::table('seo_checks')->insert(['ran_at' => now(), 'trigger' => mb_substr((string) $this->option('trigger'), 0, 10), 'pages' => count($results), 'failed' => $failed,
+            'summary' => json_encode($summary), 'details' => json_encode(['results' => array_values(array_filter($results, fn ($r) => $r['problems'] !== [])), 'broken' => $broken, 'duplicates' => $dupes])]);
+        \Illuminate\Support\Facades\DB::table('seo_checks')->where('ran_at', '<', now()->subDays(90))->delete();
         $this->newLine();
-        $this->info(count($results).' pages checked ('.implode(', ', $checked).'), '.$failed.' with problems.');
+        $this->info(count($results).' pages checked ('.implode(', ', $checked).'), '.$failed.' with problems'
+            .($this->option('site') ? ', '.count($broken).' broken links, '.(count($dupes['titles']) + count($dupes['descriptions'])).' duplicate titles or descriptions, '.count($dupes['near']).' near-duplicate pairs' : '').'.');
         if ($missing !== []) {
             $this->error('Page types not checked (none in the sitemap): '.implode(', ', $missing));
         }
 
-        return $failed === 0 && $missing === [] ? self::SUCCESS : self::FAILURE;
+        return $failed === 0 && $missing === [] && $broken === [] && $dupes['titles'] === [] && $dupes['descriptions'] === [] ? self::SUCCESS : self::FAILURE;
     }
 
     public static function type(string $path): string

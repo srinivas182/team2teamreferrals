@@ -150,7 +150,7 @@ it('lets editors write, check, preview and publish from Admin → Website → In
     $this->actingAs($this->editor)->get('/admin/content/industries')->assertOk()
         ->assertInertia(fn ($p) => $p->where('industries', fn ($rows) => collect($rows)->firstWhere('slug', 'solar')['state'] === 'review_pending'
             && collect($rows)->where('state', 'none')->isEmpty()));
-    $this->get('/admin/content/industries/solar')->assertInertia(fn ($p) => $p->where('problems', ['Review pending: name the expert who checked the facts.'])
+    $this->get('/admin/content/industries/solar')->assertInertia(fn ($p) => $p->where('problems', ['Review pending: name the expert who checked the facts, or ask a super admin to review and publish it.'])
         ->where('samples.city', fn ($s) => str_contains((string) $s, 'Austin, Texas')));
     $preview = $this->get('/preview/industries/solar')->assertOk()->viewData('page')['props'];
     expect($preview['preview'])->toBeTrue()->and($preview['seo']['robots'])->toContain('noindex');
@@ -160,7 +160,7 @@ it('lets editors write, check, preview and publish from Admin → Website → In
     $this->get('/admin/content/industries')->assertInertia(fn ($p) => $p->where('industries', fn ($rows) => collect($rows)->firstWhere('slug', 'solar')['state'] === 'published'));
     $this->post('/admin/content/industries/solar/unpublish')->assertSessionHas('status', 'industry-content-unpublish');
     auth()->logout();
-    $this->get('/industries/solar')->assertNotFound();
+    $this->get('/industries/solar')->assertStatus(410); // taken down: "gone", so search engines drop it (Sprint 43b)
 });
 
 it('publishes the cost-data and review-standards pages on install, and never describes fees as a share of the sale price', function () {
@@ -202,4 +202,21 @@ it('shows Industries in the site menu only once a hub is live', function () {
     expect($links())->toContain('/industries');
     IndustryContent::unpublish(($this->industry)('roofing'), $this->editor);
     expect($links())->not->toContain('/industries');
+});
+
+it('lets a super admin review and publish a hub or starter post, signing it with their name', function () {
+    $admin = User::factory()->create(['first_name' => 'Srini', 'last_name' => 'Rao', 'two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now()]);
+    $admin->assignRole(Permissions::SUPER_ADMIN);
+    $i = ($this->industry)('solar');
+    IndustryContent::save($i, IndustryContent::content($i), null, $admin);
+    // Staff without the super admin role still need a named reviewer.
+    expect(fn () => IndustryContent::publish($i, $this->editor))->toThrow(Illuminate\Validation\ValidationException::class);
+    $this->actingAs($admin)->get('/admin/content/industries/solar')->assertInertia(fn ($p) => $p->where('problems', []));
+    IndustryContent::publish($i, $admin);
+    $this->get('/industries/solar')->assertOk()->assertInertia(fn ($p) => $p->where('reviewer', 'Srini Rao'));
+
+    $post = DB::table('posts')->where('slug', 'how-real-estate-referral-fees-work')->first();
+    expect(fn () => App\Domains\Content\Posts::publish($post, null, $this->editor))->toThrow(Illuminate\Validation\ValidationException::class);
+    App\Domains\Content\Posts::publish(DB::table('posts')->find($post->id), null, $admin);
+    expect(DB::table('posts')->where('id', $post->id)->first())->status->toBe('published')->reviewer->toBe('Srini Rao');
 });

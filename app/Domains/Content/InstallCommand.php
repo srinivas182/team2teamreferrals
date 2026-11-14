@@ -21,7 +21,8 @@ final class InstallCommand extends Command
         $this->info('Content pack: '.ContentPack::install().' pages published.');
         [$posts, $help, $legal] = ContentPack::installDrafts();
         $hubs = Industry\IndustryContent::install();
-        $this->info("Drafts for review: {$posts} blog posts, {$help} help articles, {$legal} legal pages, {$hubs} industry hubs (not published).");
+        $this->info("Drafts for review: {$posts} blog posts, {$help} help articles, {$hubs} industry hubs (not published).");
+        $this->info("Default Terms and Privacy: {$legal} published.");
         if ($this->option('demo') && ! Demo\DemoWorkspace::exists()) {
             $this->call('t2t:demo', array_filter(['--force' => (bool) $this->option('force')]));
         }

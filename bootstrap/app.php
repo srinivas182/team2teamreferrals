@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CanonicalUrl::class);
         $middleware->appendToGroup('web', [HandleInertiaRequests::class, NoIndex::class]);
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(App\Domains\Seo\Http\Middleware\CountAiCrawlers::class); // which pages AI crawlers read (Sprint 43b)
         $middleware->alias([
             'noindex' => NoIndex::class,
             'role' => Spatie\Permission\Middleware\RoleMiddleware::class,
@@ -50,7 +51,17 @@ return Application::configure(basePath: dirname(__DIR__))
         // Branded, noindex error pages. 500s keep Laravel's debug page while debugging.
         $exceptions->respond(function (Response $response, Throwable $e, Request $request): Response {
             $status = $response->getStatusCode();
-            $branded = in_array($status, [403, 404, 419, 503], true) || ($status === 500 && ! config('app.debug'));
+            // An address that moved (a renamed post, page or group) redirects wherever the page that used it lives.
+            if ($status === 404 && $request->isMethod('GET') && ($moved = Illuminate\Support\Facades\DB::table('redirects')->where('from_path', '/'.trim($request->path(), '/'))->first()) !== null) {
+                Illuminate\Support\Facades\DB::table('redirects')->where('id', $moved->id)->increment('hits');
+
+                return redirect((string) $moved->to_path, (int) $moved->code);
+            }
+            // A page removed for good says so (410), so search engines drop it instead of retrying (Sprint 43b).
+            if ($status === 404 && $request->isMethod('GET') && App\Domains\Seo\Monitoring\GoneUrls::isGone($request->getPathInfo())) {
+                $status = 410;
+            }
+            $branded = in_array($status, [403, 404, 410, 419, 503], true) || ($status === 500 && ! config('app.debug'));
             if (! $branded || $request->expectsJson()) {
                 return $response;
             }

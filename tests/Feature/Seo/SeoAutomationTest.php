@@ -162,3 +162,26 @@ it('checks pages from the sitemaps and fails on any problem or missing page type
     $this->actingAs($this->staff)->get('/admin/seo')->assertInertia(fn ($p) => $p->where('audit.failed', 1));
     $this->artisan('t2t:seo:audit', ['--base' => 'https://t2t.test', '--require' => ['city']])->expectsOutputToContain('Page types not checked (none in the sitemap): city')->assertFailed();
 });
+
+it('checks links and duplicates across the site, keeps a history, and fails on broken links or duplicate titles', function () {
+    $page = fn (string $path, string $title, string $links = '') => '<!doctype html><html><head><title>'.$title.'</title><meta name="description" content="A page that tells answer engines who, what, where, cost and how: '.$path.'.">'
+        .'<link rel="canonical" href="https://t2t.test'.$path.'"><meta name="robots" content="index, follow"><script type="application/ld+json">{"@type":"Organization","name":"T","url":"https://t2t.test"}</script></head>'
+        .'<body><main><h1>Solar</h1><p>'.str_repeat('Plain answer words here. ', 6).'</p>'.$links.'</main></body></html>';
+    Http::fake([
+        'https://t2t.test/sitemap.xml' => Http::response('<sitemapindex><sitemap><loc>https://t2t.test/sitemaps/pages.xml</loc></sitemap></sitemapindex>'),
+        'https://t2t.test/sitemaps/pages.xml' => Http::response('<urlset><url><loc>https://t2t.test/</loc></url><url><loc>https://t2t.test/about</loc></url></urlset>'),
+        'https://t2t.test/llms.txt' => Http::response("- https://t2t.test/about\n"),
+        'https://t2t.test/llms-full.txt' => Http::response(''),
+        'https://t2t.test/' => Http::response($page('/', 'Home of solar', '<a href="/about">About</a> <a href="/old-page">old</a> <a href="/pricing">Pricing</a>')),
+        'https://t2t.test/about' => Http::response($page('/about', 'Home of solar')),
+        'https://t2t.test/old-page' => Http::response('', 410),
+        'https://t2t.test/pricing' => Http::response($page('/pricing', 'Pricing')),
+    ]);
+    $this->artisan('t2t:seo:audit', ['--base' => 'https://t2t.test', '--site' => true, '--trigger' => 'nightly'])
+        ->expectsOutputToContain('Broken link to /old-page (HTTP 410) from /')
+        ->expectsOutputToContain('Same title on /, /about')
+        ->assertFailed();
+    $row = DB::table('seo_checks')->latest('id')->first();
+    expect($row->trigger)->toBe('nightly')->and(json_decode((string) $row->summary, true))->toMatchArray(['pages' => 2, 'broken_links' => 1, 'duplicate_titles' => 1]);
+    $this->actingAs($this->staff)->get('/admin/seo')->assertInertia(fn ($p) => $p->where('history.0.broken_links', 1)->where('audit.broken./old-page.status', 410));
+});

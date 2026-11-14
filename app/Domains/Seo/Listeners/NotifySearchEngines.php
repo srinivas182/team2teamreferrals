@@ -23,5 +23,6 @@ final class NotifySearchEngines implements ShouldQueue
             Cache::forget('seo:sitemap:'.$key);
         }
         $this->indexNow->submit($event->paths);
+        app(\App\Domains\Seo\Monitoring\SearchConsole::class)->soon(); // Google, when Search Console is set up
     }
 }

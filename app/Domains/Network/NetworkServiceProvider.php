@@ -34,13 +34,28 @@ final class NetworkServiceProvider extends ServiceProvider
             $paths = Directory\DirectoryUrls::forSeat((int) $s->id);
             \Illuminate\Support\Facades\DB::afterCommit(fn () => $paths !== [] ? event(new \App\Domains\Seo\Events\PublicUrlsChanged($paths)) : null);
         });
+        Seats\Models\Team::deleted(fn (Seats\Models\Team $t) => $t->slug && $t->profile_public ? \App\Domains\Seo\Monitoring\GoneUrls::mark('/t/'.$t->slug, 'team removed') : null);
         Seats\Models\Team::updated(function (Seats\Models\Team $t): void {
+            // A profile taken private answers "gone" so search engines drop it; made public again, it's back.
+            if ($t->wasChanged('profile_public') && $t->slug) {
+                $t->profile_public ? \App\Domains\Seo\Monitoring\GoneUrls::restore('/t/'.$t->slug) : \App\Domains\Seo\Monitoring\GoneUrls::mark('/t/'.$t->slug, 'profile made private');
+            }
             if ($t->wasChanged(['name', 'slug', 'logo_path', 'profile_public', 'bio', 'founded_year'])) {
                 \Illuminate\Support\Facades\DB::afterCommit(fn () => Directory\DirectoryUrls::teamChanged((int) $t->id));
             }
         });
         Groups\Models\Group::saved(function (Groups\Models\Group $g): void {
             Directory\NetworkMap::forget((int) $g->id);
+            // A group closed or made private answers "gone"; reopened, it's back.
+            if ($g->wasChanged(['status', 'is_private'])) {
+                $listed = $g->status === 'live' && ! $g->is_private;
+                $wasListed = $g->getOriginal('status') === 'live' && ! $g->getOriginal('is_private');
+                if ($listed) {
+                    \App\Domains\Seo\Monitoring\GoneUrls::restore('/groups/'.$g->slug);
+                } elseif ($wasListed) {
+                    \App\Domains\Seo\Monitoring\GoneUrls::mark('/groups/'.$g->slug, 'group closed or private');
+                }
+            }
             \Illuminate\Support\Facades\DB::afterCommit(fn () => Directory\DirectoryUrls::groupChanged((string) $g->slug));
         });
         // The network map shows waitlists too: joining or leaving one refreshes it.

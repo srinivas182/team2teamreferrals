@@ -57,7 +57,7 @@ it('gives every team a stable web address and a search-ready public page', funct
 
 it('hides profiles that are switched off or hold no seat', function () {
     $this->team->forceFill(['profile_public' => false])->save();
-    $this->get($this->url)->assertNotFound();
+    $this->get($this->url)->assertStatus(410); // was public: "gone", so search engines drop it (Sprint 43b)
     $noSeat = Team::forLeader(User::factory()->create());
     $this->get('/t/'.$noSeat->fresh()->slug)->assertNotFound();
 });

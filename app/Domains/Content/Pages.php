@@ -122,6 +122,9 @@ final class Pages
     {
         DB::table('cms_pages')->where('id', $page->id)->update(['status' => 'unpublished', 'publish_at' => null, 'updated_at' => now()]);
         Menus::forget();
+        if ($page->status === 'published') {
+            \App\Domains\Seo\Monitoring\GoneUrls::mark('/'.$page->slug, 'page unpublished');
+        }
         activity('content')->causedBy($by)->event('page-unpublished')->withProperties(['page' => $page->ulid])->log('Page unpublished');
     }
 

@@ -15,6 +15,11 @@ const copy: Record<number, { title: string; body: string; action: [string, strin
         body: 'The link may be old, or the page may have moved. Try the group directory, or search for a city.',
         action: ['Browse groups', '/groups'],
     },
+    410: {
+        title: 'This page has been removed',
+        body: 'It is no longer on Team to Team Referrals. Find a verified pro in the group directory instead.',
+        action: ['Browse groups', '/groups'],
+    },
     419: {
         title: 'Your session expired',
         body: 'For your security we sign you out after a period of inactivity. Refresh the page and try again.',

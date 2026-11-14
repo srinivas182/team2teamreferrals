@@ -137,16 +137,25 @@ final class IndustryContent
     {
         $r = self::record($industry) ?? throw ValidationException::withMessages(['content' => 'Write the content before publishing.']);
         $c = self::normalise((array) json_decode((string) $r->content, true));
+        // A super admin publishing a page nobody else has signed is its reviewer (the owner's choice, Sprint 43b).
+        if (trim((string) $r->reviewer) === '' && $by->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN)) {
+            $r->reviewer = $by->name;
+        }
         self::assertPublishable($industry, $c, $r->reviewer);
-        DB::table('industry_content')->where('id', $r->id)->update(['status' => 'published', 'reviewed_on' => now()->toDateString(), 'published_at' => $r->published_at ?? now(), 'updated_at' => now()]);
+        DB::table('industry_content')->where('id', $r->id)->update(['status' => 'published', 'reviewer' => $r->reviewer, 'reviewed_on' => now()->toDateString(), 'published_at' => $r->published_at ?? now(), 'updated_at' => now()]);
         Menus::forget(); // the Industries link appears once a hub is live
+        \App\Domains\Seo\Monitoring\GoneUrls::restore('/industries/'.$industry->slug);
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-published')->withProperties(['reviewer' => $r->reviewer])->log('Industry hub published');
     }
 
     public static function unpublish(Industry $industry, User $by): void
     {
+        $wasLive = DB::table('industry_content')->where(['industry_id' => $industry->id, 'status' => 'published'])->exists();
         DB::table('industry_content')->where('industry_id', $industry->id)->update(['status' => 'draft', 'updated_at' => now()]);
         Menus::forget();
+        if ($wasLive) {
+            \App\Domains\Seo\Monitoring\GoneUrls::mark('/industries/'.$industry->slug, 'industry page unpublished');
+        }
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-unpublished')->log('Industry hub unpublished');
     }
 
@@ -204,7 +213,7 @@ final class IndustryContent
             $p['fees'] = 'This industry doesn’t allow referral fees: the copy can’t offer them.';
         }
         if ($reviewer === null || trim($reviewer) === '') {
-            $p['reviewer'] = 'Review pending: name the expert who checked the facts.';
+            $p['reviewer'] = 'Review pending: name the expert who checked the facts, or ask a super admin to review and publish it.';
         }
 
         return $p;

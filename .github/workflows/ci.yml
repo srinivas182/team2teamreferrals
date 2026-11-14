@@ -188,8 +188,8 @@ jobs:
           php artisan tinker --execute="require base_path('scripts/ci/seed-public-pages.php');"
           php artisan optimize
           (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && (node scripts/ci/gzip-proxy.mjs 8001 8000 &) && sleep 4
-      - name: SEO and answer-engine check of every kind of public page
-        run: php artisan t2t:seo:audit --base=http://127.0.0.1:8001 --per-section=0 --require=home,groups,group,industries,industry,industry-state,city,profile,blog,blog-post,page,reserve,reserve-share,find-a-pro
+      - name: SEO and answer-engine check of every kind of public page, its links and duplicates
+        run: php artisan t2t:seo:audit --base=http://127.0.0.1:8001 --per-section=0 --site --trigger=release --require=home,groups,group,industries,industry,industry-state,city,profile,blog,blog-post,page,reserve,reserve-share,find-a-pro
       - name: Lighthouse (desktop budgets)
         run: npx --yes @lhci/cli@0.15.1 autorun
       - name: Core Web Vitals on mobile (LCP, CLS, blocking time)
