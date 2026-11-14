@@ -4,6 +4,20 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 42b — Interactive network map
+Checklist items delivered here, each proven by tests in tests/Feature/Network/NetworkMapTest.php and resources/js/__tests__/networkMap.test.tsx:
+1. One interactive map, used on group pages and industry pages (new "Where the network is" section), on the member dashboard and as an embed. It shows the states with a dot for each filled, waitlisted and open place.
+2. Choose a dot to see the place: a filled place shows its team with "View team" and "Refer a client"; an open place shows "Claim this city" (or "Join the waitlist") and its city page. Claiming goes to sign-up, or straight to the application when signed in.
+3. Zoom to a state by choosing it on the map or from the "Zoom to a state" list; filter by filled, waitlisted and open.
+4. Seat changes show within a minute: the map's data is cached for at most 30 seconds and cleared straight away when a seat, team, group or waitlist changes; open maps refresh every 30 seconds while on screen.
+5. Dashboards: each of the team's networks, with the team's own seats ringed (shown even if its profile is private, since only the team sees it).
+6. Embeddable: "Put this map on your website" gives copy-paste code. It works on any site (public facts only), sets no cookies, and every link opens on our site.
+7. Same facts as text: counts and a list of every place with its link, rendered without scripts, alongside the existing group and city page text and structured data. Teams with a private profile are never named and their places aren't offered as open.
+8. Accessible: every dot can be reached by keyboard and has a spoken label; the drawing loads only in the browser (about 9 KB, plus the state outlines file, cached), so pages stay fast.
+- State outlines: public/maps/us-states.json, built from US Census boundaries via us-atlas (scripts/build-us-map.mjs).
+- Replaces the simpler group-page map from Sprint 40b.
+- 605 PHP tests in total (5 new; 2 ClickHouse tests run in CI); 15 front-end tests (2 new).
+
 ### Sprint 42a — Website widgets
 Checklist items delivered here, each proven by tests in tests/Feature/Network/WidgetsTest.php:
 1. Three widgets for members' own websites: a verified badge (seat, territory, verified licenses, rating once there are 3), a reviews widget (rating and latest verified reviews) and a "Refer a client" button that opens the team's referral form.

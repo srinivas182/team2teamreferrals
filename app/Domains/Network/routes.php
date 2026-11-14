@@ -393,3 +393,10 @@ Route::middleware(['throttle:600,1'])->group(function (): void {
     Route::get('embed/{slug}/{widget}', [App\Domains\Network\Profiles\Widgets\EmbedController::class, 'frame'])->where(['slug' => '[a-z0-9-]+', 'widget' => 'badge|reviews|button'])->name('embed.frame');
     Route::get('embed/{slug}/go/{widget}', [App\Domains\Network\Profiles\Widgets\EmbedController::class, 'go'])->where(['slug' => '[a-z0-9-]+', 'widget' => 'badge|reviews|button'])->name('embed.go');
 });
+
+// The interactive network map (Sprint 42): data, and a page anyone can embed. No sessions; short edge cache.
+Route::middleware(['throttle:300,1'])->group(function (): void {
+    Route::get('map/group/{slug}.json', [App\Domains\Network\Directory\MapController::class, 'group'])->where('slug', '[a-z0-9-]+')->name('map.group');
+    Route::get('map/industry/{slug}.json', [App\Domains\Network\Directory\MapController::class, 'industry'])->where('slug', '[a-z0-9-]+')->name('map.industry');
+    Route::get('embed/map/{kind}/{slug}', [App\Domains\Network\Directory\MapController::class, 'embed'])->where(['kind' => 'group|industry', 'slug' => '[a-z0-9-]+'])->name('map.embed');
+});

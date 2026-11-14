@@ -1,6 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ShieldAlert } from 'lucide-react';
-import { PublicSeatMap } from '@/components/directory/PublicSeatMap';
+import { EmbedMapCode } from '@/components/map/EmbedMapCode';
+import { NetworkMap } from '@/components/map/NetworkMap';
+import type { MapData } from '@/components/map/types';
 import { OpenPlaces, TeamCard, article, sendHref, type OpenPlace, type PublicTeam } from '@/components/directory/TeamCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -27,7 +29,7 @@ type Props = {
     answer: string;
     seats: Seat[];
     open: OpenPlace[];
-    map: { name: string; lat: number; lon: number; state: 'held' | 'waitlist' | 'open' }[];
+    map: MapData;
     disclosure: string | null;
     viewer: string;
     seo: Seo;
@@ -83,12 +85,13 @@ export default function GroupPublic({ group, answer, seats, open, map, disclosur
                     </ul>
                 </section>
 
-                {map.length > 0 && (
+                {map.points.length > 0 && (
                     <section aria-labelledby="map" className="mt-8">
                         <h2 id="map" className="font-display text-2xl font-bold">
                             Where the network is
                         </h2>
-                        <PublicSeatMap points={map} />
+                        <NetworkMap initial={map} src={`/map/group/${group.slug}.json`} />
+                        <EmbedMapCode path={`group/${group.slug}`} title={group.name} />
                     </section>
                 )}
 

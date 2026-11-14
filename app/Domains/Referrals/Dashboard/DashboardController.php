@@ -32,6 +32,7 @@ final class DashboardController
             'actions' => NextActions::forTeam($team),
             'credits' => Credits::balance($team),
             'views' => $this->views($user, 'team'),
+            'maps' => \App\Domains\Network\Directory\NetworkMap::forTeam($team),
             'status' => session('status'),
             'seo' => SeoData::private('Dashboard')->toArray(),
         ]);

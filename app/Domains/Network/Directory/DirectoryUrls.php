@@ -37,7 +37,7 @@ final class DirectoryUrls
         if ($s === null) {
             return [];
         }
-        $paths = ['/groups', '/groups/'.$s->group];
+        $paths = ['/groups', '/groups/'.$s->group, '/map/group/'.$s->group.'.json', '/map/industry/'.$s->industry.'.json'];
         if ($s->state_code) {
             $state = '/industries/'.$s->industry.'/'.strtolower((string) $s->state_code);
             $paths[] = $state;
@@ -55,13 +55,19 @@ final class DirectoryUrls
 
     public static function seatChanged(int $seatId): void
     {
+        $group = DB::table('seats')->where('id', $seatId)->value('group_id');
+        if ($group !== null) {
+            NetworkMap::forget((int) $group);
+        }
         self::dispatch(self::forSeat($seatId));
     }
 
     public static function teamChanged(int $teamId): void
     {
         $paths = [];
-        foreach (DB::table('seats')->where('primary_team_id', $teamId)->pluck('id') as $id) {
+        foreach (DB::table('seats')->where('primary_team_id', $teamId)->get(['id', 'group_id']) as $seat) {
+            NetworkMap::forget((int) $seat->group_id);
+            $id = $seat->id;
             $paths = [...$paths, ...self::forSeat((int) $id)];
         }
         self::dispatch($paths);

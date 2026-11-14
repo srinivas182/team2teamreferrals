@@ -252,22 +252,6 @@ final class Directory
     }
 
     /**
-     * The group's public map: places with a seat record, marked held (by a team with a public profile), waitlisted or
-     * open. No backup teams or private teams are named.
-     *
-     * @return list<array{name: string, lat: float, lon: float, state: string}>
-     */
-    public static function mapPoints(Group $group): array
-    {
-        $public = DB::table('seats')->join('teams', 'teams.id', '=', 'seats.primary_team_id')->where('seats.group_id', $group->id)
-            ->whereIn('seats.status', self::FILLED)->where('teams.profile_public', true)->pluck('seats.id')->flip();
-
-        return array_values(array_map(fn ($p) => ['name' => $p['name'], 'lat' => $p['lat'], 'lon' => $p['lon'],
-            'state' => isset($public[$p['id']]) ? 'held' : ($p['waitlist'] > 0 ? 'waitlist' : 'open')],
-            array_filter(\App\Domains\Network\Seats\SeatMap::points($group), fn ($p) => $p['state_of'] !== 'held' || isset($public[$p['id']]))));
-    }
-
-    /**
      * Filled seats near a city in the same group and state, nearest first, linking to their city pages.
      *
      * @return list<array{name: string, slug: string, team: string}>

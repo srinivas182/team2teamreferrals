@@ -2,6 +2,8 @@ import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { Download, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { LineChart } from '@/components/charts/LineChart';
+import { NetworkMap } from '@/components/map/NetworkMap';
+import type { MapData, MapPoint } from '@/components/map/types';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -24,6 +26,7 @@ type Props = {
     actions: Action[];
     credits: number;
     views: View[];
+    maps: { group: string; src: string; map: MapData; mine: MapPoint[] }[];
     status?: string;
     seo: Seo;
 };
@@ -63,7 +66,7 @@ function Countdown({ due }: { due: string }) {
 }
 
 /** Portal → Dashboard: your numbers for a period, compared with the one before; every number opens its records. */
-export default function Dashboard({ period, presets, cards, series, actions, credits, views, status, seo }: Props) {
+export default function Dashboard({ period, presets, cards, series, actions, credits, views, maps, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [custom, setCustom] = useState({ from: period.from, to: period.to });
     const save = useForm({ name: '', preset: period.preset, from: period.from, to: period.to, default: false });
@@ -202,6 +205,15 @@ export default function Dashboard({ period, presets, cards, series, actions, cre
                         />
                     </Card>
                 </div>
+                {maps.map((m) => (
+                    <Card key={m.src} className="p-4">
+                        <h2 className="font-semibold">{m.group}: your network</h2>
+                        <p className="text-sm text-muted">
+                            Ringed dots are your seats. Open places are cities a referral partner could claim; invite one to fill them.
+                        </p>
+                        <NetworkMap initial={m.map} src={m.src} extra={m.mine} highlight={m.mine.map((p) => p.key)} list={false} />
+                    </Card>
+                ))}
                 <Card className="flex flex-wrap items-center gap-2 p-3 text-sm">
                     <span className="font-medium">Save this view:</span>
                     <Input

@@ -1,6 +1,9 @@
 import { Link, useForm } from '@inertiajs/react';
 import { BadgeCheck, ExternalLink, ShieldAlert } from 'lucide-react';
 import { article } from '@/components/directory/TeamCard';
+import { EmbedMapCode } from '@/components/map/EmbedMapCode';
+import { NetworkMap } from '@/components/map/NetworkMap';
+import type { MapData } from '@/components/map/types';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -30,6 +33,7 @@ type Props = {
     disclosure: string | null;
     related: { slug: string; name: string }[];
     states: { code: string; name: string }[];
+    map: MapData;
     reviewer: string | null;
     reviewedOn: string | null;
     updatedOn: string | null;
@@ -56,6 +60,7 @@ export default function IndustryHub({
     disclosure,
     related,
     states,
+    map,
     reviewer,
     reviewedOn,
     preview,
@@ -172,6 +177,20 @@ export default function IndustryHub({
                                 </li>
                             ))}
                         </ul>
+                    </section>
+                )}
+
+                {map.points.length > 0 && (
+                    <section aria-labelledby="network-map" className="mt-8">
+                        <h2 id="network-map" className="font-display text-2xl font-bold">
+                            Where the network is
+                        </h2>
+                        <p className="mt-1 text-muted">
+                            {map.counts.held} {map.counts.held === 1 ? 'place has' : 'places have'} a verified {industry.terms.pro}; open places can
+                            be claimed by one team each.
+                        </p>
+                        <NetworkMap initial={map} src={`/map/industry/${industry.slug}.json`} />
+                        <EmbedMapCode path={`industry/${industry.slug}`} title={industry.name} />
                     </section>
                 )}
 
