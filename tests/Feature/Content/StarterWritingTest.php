@@ -75,14 +75,17 @@ it('fills live figures in help articles once published', function () {
         ->and($props['seo']['description'])->not->toMatch('/\{[a-z_]+\}/');
 });
 
-it('drafts Terms and Privacy for the attorney without publishing them, and never overwrites edited pages', function () {
+it('publishes the default Terms and Privacy with the company details filled in, and never overwrites edited pages', function () {
+    app(App\Domains\Platform\Settings\Settings::class)->set('general.company_name', 'T2T Networks LLC');
+    app(App\Domains\Platform\Settings\Settings::class)->set('general.governing_state', 'Florida');
+    Illuminate\Support\Facades\Cache::forget('cms.tokens');
     foreach (['terms', 'privacy'] as $slug) {
         $page = DB::table('cms_pages')->where('slug', $slug)->first();
-        expect($page->status)->toBe('draft')->and($page->template)->toBe('legal');
-        $blocks = json_decode((string) DB::table('cms_page_versions')->where('id', $page->draft_version_id)->value('blocks'), true);
-        expect($blocks[0]['html'])->toContain('Draft for attorney review');
-        $this->get('/'.$slug)->assertNotFound();
+        expect($page->status)->toBe('published')->and($page->template)->toBe('legal');
+        $html = (string) json_encode($this->get('/'.$slug)->assertOk()->viewData('page')['props']['page']['blocks']);
+        expect($html)->toContain('T2T Networks LLC')->not->toContain('Draft for attorney')->not->toMatch('/\[[A-Z][^\]]*\]/')->not->toMatch('/\{[a-z_]+\}/');
     }
+    expect((string) json_encode($this->get('/terms')->viewData('page')['props']['page']['blocks']))->toContain('laws of Florida');
     // A second run changes nothing (safe to run again).
     expect(ContentPack::installDrafts())->toBe([0, 0, 0]);
     $versions = DB::table('cms_page_versions')->count();

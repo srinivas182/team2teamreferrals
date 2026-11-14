@@ -38,8 +38,28 @@ final class Tokens
                 'ai_premium' => (string) AiCredits::setting('per_seat_premium'),
                 'industries' => (string) DB::table('industries')->where('status', 'active')->count(),
                 'cities' => number_format(DB::table('cities')->where('is_enabled', true)->count()),
+                // Company details for the Terms and Privacy pages (Admin → System → General).
+                ...self::company(),
             ];
         });
+    }
+
+    /** @return array{company_legal_name: string, support_email: string, postal_address: string, contact_details: string, governing_state: string} */
+    public static function company(): array
+    {
+        $settings = app(\App\Domains\Platform\Settings\Settings::class);
+        $name = trim((string) $settings->get('general.company_name')) ?: (string) config('seo.site_name', 'Team to Team Referrals');
+
+        $email = trim((string) $settings->get('general.support_email')) ?: (string) config('mail.from.address');
+        $address = trim((string) $settings->get('general.postal_address'));
+
+        return [
+            'company_legal_name' => $name,
+            'support_email' => $email,
+            'postal_address' => $address,
+            'contact_details' => $email.($address !== '' ? ', '.$address : ''),
+            'governing_state' => trim((string) $settings->get('general.governing_state')) ?: 'the state where '.$name.' is registered',
+        ];
     }
 
     /** @return array<string, string> */

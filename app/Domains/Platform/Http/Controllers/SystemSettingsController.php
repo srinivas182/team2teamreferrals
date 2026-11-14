@@ -50,6 +50,8 @@ final class SystemSettingsController
                 'company_name' => $s->get('general.company_name'),
                 'support_email' => $s->get('general.support_email'),
                 'support_phone' => $s->get('general.support_phone'),
+                'postal_address' => $s->get('general.postal_address'),
+                'governing_state' => $s->get('general.governing_state'),
             ],
             'email' => [...$channel('mail'), 'from_address' => $s->get('mail.from_address', (string) config('mail.from.address')), 'from_name' => $s->get('mail.from_name', (string) config('mail.from.name'))],
             'sms' => $channel('sms'),
@@ -76,12 +78,15 @@ final class SystemSettingsController
             'company_name' => ['nullable', 'string', 'max:120'],
             'support_email' => ['nullable', 'email:rfc', 'max:255'],
             'support_phone' => ['nullable', 'string', 'max:30'],
+            'postal_address' => ['nullable', 'string', 'max:255'],
+            'governing_state' => ['nullable', 'string', 'max:60'],
         ]);
         $values = [];
         foreach ($data as $key => $value) {
             $values['general.'.$key] = is_string($value) ? $value : null;
         }
         $this->save('general', $values, [], $request);
+        \Illuminate\Support\Facades\Cache::forget('cms.tokens'); // the Terms and Privacy pages show these details
 
         return back()->with('status', 'settings-saved');
     }

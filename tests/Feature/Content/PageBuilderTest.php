@@ -121,7 +121,7 @@ it('[12] protects app addresses, redirects when an address changes, refuses loop
     $this->get('/old-pricing')->assertStatus(302);
     expect((int) DB::table('redirects')->where('from_path', '/old-pricing')->value('hits'))->toBe(1);
     $this->post("/admin/content/{$p->ulid}/unpublish");
-    $this->get('/solar-referrals')->assertNotFound();
+    $this->get('/solar-referrals')->assertStatus(410); // was live, now taken down: "gone" (Sprint 43b)
     $this->get('/no-such-page')->assertNotFound();
     $this->get('/reserve')->assertOk(); // app pages are never shadowed
 });

@@ -41,7 +41,13 @@ type Check = { ok: boolean | null; message: string; at: string };
 
 type Props = {
     tab: (typeof tabs)[number][0];
-    general: { company_name: string | null; support_email: string | null; support_phone: string | null };
+    general: {
+        company_name: string | null;
+        support_email: string | null;
+        support_phone: string | null;
+        postal_address: string | null;
+        governing_state: string | null;
+    };
     email: Channel & { from_address: string; from_name: string };
     sms: Channel;
     payments: Channel;
@@ -251,6 +257,8 @@ export default function SystemSettings({
         company_name: general.company_name ?? '',
         support_email: general.support_email ?? '',
         support_phone: general.support_phone ?? '',
+        postal_address: general.postal_address ?? '',
+        governing_state: general.governing_state ?? '',
     });
     return (
         <AdminLayout title="System settings">
@@ -297,6 +305,18 @@ export default function SystemSettings({
                             </Field>
                             <Field label="Support phone" error={gen.errors.support_phone}>
                                 <Input type="tel" value={gen.data.support_phone} onChange={(e) => gen.setData('support_phone', e.target.value)} />
+                            </Field>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
+                            <Field label="Postal address" hint="Shown on the Terms and Privacy pages." error={gen.errors.postal_address}>
+                                <Input
+                                    value={gen.data.postal_address}
+                                    onChange={(e) => gen.setData('postal_address', e.target.value)}
+                                    autoComplete="street-address"
+                                />
+                            </Field>
+                            <Field label="Governing law (state)" hint="e.g. Florida" error={gen.errors.governing_state}>
+                                <Input value={gen.data.governing_state} onChange={(e) => gen.setData('governing_state', e.target.value)} />
                             </Field>
                         </div>
                         <Button type="submit" loading={gen.processing}>

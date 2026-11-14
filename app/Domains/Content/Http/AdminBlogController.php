@@ -65,7 +65,7 @@ final class AdminBlogController
         $action = (string) $request->route('action');
         match ($action) {
             'publish' => Posts::publish($p, $request->validate(['at' => ['nullable', 'date']])['at'] ?? null, $this->user($request)),
-            'unpublish' => DB::table('posts')->where('id', $p->id)->update(['status' => 'unpublished', 'publish_at' => null, 'updated_at' => now()]),
+            'unpublish' => Posts::unpublish($p),
             default => abort(404),
         };
 

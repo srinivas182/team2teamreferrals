@@ -31,15 +31,18 @@ final class AdminIndustryContentController
         return Inertia::render('admin/content/Industries', ['industries' => $rows, 'status' => session('status'), 'seo' => SeoData::private('Industry content')->toArray()]);
     }
 
-    public function edit(Industry $industry): Response
+    public function edit(Request $request, Industry $industry): Response
     {
         $r = IndustryContent::record($industry);
         $content = IndustryContent::content($industry);
+        // A super admin can publish an unsigned page: they sign it as the reviewer.
+        $user = $request->user();
+        $signer = trim((string) $r?->reviewer) === '' && $user instanceof User && $user->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ? $user->name : $r?->reviewer;
 
         return Inertia::render('admin/content/IndustryEdit', [
             'industry' => ['slug' => $industry->slug, 'name' => $industry->name, 'tier' => $industry->tier->value, 'licenseRequired' => (bool) $industry->license_required, 'terms' => $industry->terms()],
             'content' => $content, 'reviewer' => $r?->reviewer, 'published' => $r?->status === 'published', 'reviewedOn' => $r?->reviewed_on,
-            'problems' => array_values(IndustryContent::problems($industry, $content, $r?->reviewer)),
+            'problems' => array_values(IndustryContent::problems($industry, $content, $signer)),
             'disclosure' => ($dc = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($dc) : null, 'tierFact' => IndustryContent::tierFact($industry),
             'samples' => ['state' => IndustryContent::placeSummary($industry, 'Texas'), 'city' => IndustryContent::placeSummary($industry, 'Texas', 'Austin')],
             'industries' => Industry::query()->where('id', '!=', $industry->id)->orderBy('name')->get(['slug', 'name'])->map(fn ($i) => ['slug' => $i->slug, 'name' => $i->name])->values(),

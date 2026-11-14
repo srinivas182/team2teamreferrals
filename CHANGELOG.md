@@ -4,6 +4,34 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 43b — SEO and AEO monitoring, default legal pages, super admin review
+Tests: tests/Feature/Seo/SeoMonitoringTest.php, tests/Unit/Seo/SiteChecksTest.php, plus additions to SeoAutomationTest, IndustryHubTest and StarterWritingTest.
+1. Google Search Console: the sitemap is submitted through Google's API every night and within ten minutes of pages changing (at most hourly). It is off until a super admin switches it on and pastes a service account key in Admin → SEO and AEO. The key is stored encrypted and shown masked, and Google's answer is shown. Bing and others still get IndexNow pings.
+2. Nightly checks (03:15): every public page, as in 43a, plus:
+   - internal links that lead nowhere
+   - titles or descriptions used on more than one page
+   - pages with nearly identical wording, as a warning
+   Results are kept for 90 days, and there is a "Run the check now" button. CI runs the same link and duplicate checks on every release.
+3. Monthly answer-engine visibility check (1st of the month): questions per published industry and member city (e.g. "How do I find a trusted installer in Austin, TX?"), plus any you add. Each is asked of ChatGPT (OpenAI), Perplexity, Claude (Anthropic) and Google AI Overviews (via SerpApi). Each answer records whether it cites this site or a member's website or profile, and the report shows the share cited per engine per month, plus the latest answers and their sources. Each engine is switched on separately with its own API key, entered in the admin (stored encrypted), and the model is editable. There is a monthly question cap for cost. Nothing is asked until an engine is on, so the first monthly result appears once keys are added.
+4. AI traffic:
+   - AI crawler visits (GPTBot, ClaudeBot, PerplexityBot and others; Google and Bing for comparison) are counted per page on the server.
+   - People arriving from an AI answer (ChatGPT, Perplexity, Claude, Gemini, Copilot…) are counted per page from the browser, so cached pages count too.
+   - No personal data is stored.
+   Note: crawler visits to pages served straight from the CDN cache are not counted (that would need CDN logs).
+5. Clean page removal: a page that was public and is taken down (profile made private, team removed, post or page unpublished, group closed, industry page unpublished) answers "410 Gone", so search engines drop it quickly. It leaves the list if the page comes back. A renamed live post now keeps its old address working with a permanent redirect, and saved redirects now work for any address.
+6. SEO/AEO health report (Admin → SEO and AEO), in tabs: Health (latest check, history, removed pages), Answer engines, AI traffic, Search Console, AI crawlers.
+7. Owner decision: the default Terms of service and Privacy policy are complete and published. The placeholders are replaced with standard wording:
+   - cancellation and refunds
+   - limitation of liability and indemnity
+   - governing law and disputes
+   - service providers and no selling of personal information
+   - text-message consent (STOP, HELP)
+   - retention
+   - state privacy rights
+   Company name, support email, postal address and governing state come from Admin → System → General (two new fields). Edited pages are never overwritten.
+8. Owner decision: a super admin can review and publish starter blog posts and industry pages: publishing an unsigned one records them as the reviewer. Other staff still need a named reviewer.
+- 631 PHP tests in total (9 new; 2 ClickHouse tests run in CI); 16 front-end tests.
+
 ### Sprint 43a — SEO and AEO: page checks, Core Web Vitals, crawler switches, internal links, preview images
 Checklist items delivered here (tests: tests/Unit/Seo/PageAuditTest.php, tests/Feature/Seo/SeoAutomationTest.php, plus the CI checks below):
 1. Every kind of public page is checked as crawlers see it (server-rendered HTML): title, description, canonical, robots, one main heading, valid structured data with the fields each type needs (Organization, LocalBusiness, Service, FAQPage, BreadcrumbList, Article, ItemList, AggregateRating; nested ones too). `php artisan t2t:seo:audit` runs in CI on one of each of the 14 page types and fails the build on any problem.
