@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ShieldAlert } from 'lucide-react';
+import { PublicSeatMap } from '@/components/directory/PublicSeatMap';
 import { OpenPlaces, TeamCard, article, sendHref, type OpenPlace, type PublicTeam } from '@/components/directory/TeamCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -26,13 +27,14 @@ type Props = {
     answer: string;
     seats: Seat[];
     open: OpenPlace[];
+    map: { name: string; lat: number; lon: number; state: 'held' | 'waitlist' | 'open' }[];
     disclosure: string | null;
     viewer: string;
     seo: Seo;
 };
 
 /** A group's public page: what it is, its rules, the teams holding its seats by state, and open seats to claim. */
-export default function GroupPublic({ group, answer, seats, open, disclosure, viewer, seo }: Props) {
+export default function GroupPublic({ group, answer, seats, open, map, disclosure, viewer, seo }: Props) {
     const byState = seats.reduce<Record<string, Seat[]>>((acc, s) => ({ ...acc, [s.state ?? '']: [...(acc[s.state ?? ''] ?? []), s] }), {});
     return (
         <PublicLayout current="/groups">
@@ -80,6 +82,15 @@ export default function GroupPublic({ group, answer, seats, open, disclosure, vi
                         </li>
                     </ul>
                 </section>
+
+                {map.length > 0 && (
+                    <section aria-labelledby="map" className="mt-8">
+                        <h2 id="map" className="font-display text-2xl font-bold">
+                            Where the network is
+                        </h2>
+                        <PublicSeatMap points={map} />
+                    </section>
+                )}
 
                 <section aria-labelledby="teams" className="mt-8">
                     <h2 id="teams" className="font-display text-2xl font-bold">
