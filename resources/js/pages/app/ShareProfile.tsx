@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { Copy, Download, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { WebsiteWidgets, type WidgetsProps } from '@/components/share/WebsiteWidgets';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,13 +18,14 @@ type Props = {
     public: boolean;
     stats: { view: number; qr: number; link: number; referral: number };
     signature: string;
+    widgets: WidgetsProps;
     canEdit: boolean;
     status?: string;
     seo: Seo;
 };
 
 /** Portal → Share your profile: the link, QR code, counts, email signature and printable card. */
-export default function ShareProfile({ link, profile, qr, public: isPublic, stats, signature, canEdit, status, seo }: Props) {
+export default function ShareProfile({ link, profile, qr, public: isPublic, stats, signature, widgets, canEdit, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [copied, setCopied] = useState<string | null>(null);
     const copy = (what: string, text: string) => void navigator.clipboard.writeText(text).then(() => setCopied(what));
@@ -89,6 +91,9 @@ export default function ShareProfile({ link, profile, qr, public: isPublic, stat
                         <Download className="size-4" /> Printable QR card
                     </a>
                 </Card>
+            </div>
+            <div className="mt-6">
+                <WebsiteWidgets w={widgets} canEdit={canEdit} />
             </div>
         </PortalLayout>
     );

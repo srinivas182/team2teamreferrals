@@ -48,6 +48,10 @@ final class SecurityHeaders
         if (app()->environment('production')) {
             $headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload';
         }
+        // Widget pages set their own policy (shown only on the member's own websites), so they mustn't be denied framing.
+        if ($request->is('embed/*') && $response->headers->has('Content-Security-Policy')) {
+            unset($headers['X-Frame-Options'], $headers['Cross-Origin-Opener-Policy']);
+        }
         foreach ($headers as $name => $value) {
             if (! $response->headers->has($name)) {
                 $response->headers->set($name, $value);

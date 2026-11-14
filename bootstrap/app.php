@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
             'module' => App\Domains\Platform\Http\Middleware\RequireModule::class,
             'edge.cache' => App\Domains\Platform\Http\Middleware\EdgeCacheable::class,
+            'throttle' => App\Http\Middleware\ThrottlePerRoute::class, // one bucket per route and limit
         ]);
         $middleware->trustProxies(at: '*');
         $middleware->prepend(App\Http\Middleware\AssignRequestId::class);

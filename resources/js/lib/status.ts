@@ -134,6 +134,7 @@ const messages: Record<string, string> = {
     'nurture-ready': 'Marked ready. The referring team has been told.',
     'nurture-lost': 'Marked lost.',
     'profile-shown': 'Your profile is public.',
+    'widget-domains-saved': 'Saved. Your widgets can now appear on those websites.',
     'profile-hidden': 'Your profile is hidden.',
     posted: 'Posted.',
     reported: 'Thanks. The network owner will take a look.',
