@@ -2,18 +2,18 @@
 
 Built on the public API v1 and its webhooks (`/developers`).
 
-| Kind | Key | What it does |
-| --- | --- | --- |
-| Trigger (instant) | `referral_received` | A referral is sent to your team |
-| Trigger (instant) | `referral_accepted` | A referral is accepted (by you or by the team you sent it to) |
-| Trigger (instant) | `referral_stage_changed` | A referral moves to another stage |
-| Trigger (instant) | `referral_won` | A referral moves to a won stage |
-| Trigger (instant) | `lead_received` | A verified lead arrives from your profile |
-| Action | `send_referral` | Send a referral (the city is looked up by name and state; consent required) |
-| Action | `add_note` | Post an update on a referral |
-| Action | `move_stage` | Move a referral to a stage (with closing details for won, a reason for lost) |
-| Action | `update_lead` | Set a lead's status |
-| Search | `find_referral` | Find a referral by the client's email |
+| Kind              | Key                      | What it does                                                                 |
+| ----------------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Trigger (instant) | `referral_received`      | A referral is sent to your team                                              |
+| Trigger (instant) | `referral_accepted`      | A referral is accepted (by you or by the team you sent it to)                |
+| Trigger (instant) | `referral_stage_changed` | A referral moves to another stage                                            |
+| Trigger (instant) | `referral_won`           | A referral moves to a won stage                                              |
+| Trigger (instant) | `lead_received`          | A verified lead arrives from your profile                                    |
+| Action            | `send_referral`          | Send a referral (the city is looked up by name and state; consent required)  |
+| Action            | `add_note`               | Post an update on a referral                                                 |
+| Action            | `move_stage`             | Move a referral to a stage (with closing details for won, a reason for lost) |
+| Action            | `update_lead`            | Set a lead's status                                                          |
+| Search            | `find_referral`          | Find a referral by the client's email                                        |
 
 Instant triggers subscribe by creating a webhook endpoint for Zapier's URL (`POST /webhooks`) and remove it when
 the Zap is turned off. Zapier's endpoints don't count toward a team's endpoint allowance (up to 50).

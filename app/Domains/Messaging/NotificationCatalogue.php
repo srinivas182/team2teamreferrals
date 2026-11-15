@@ -85,6 +85,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => 'News from your network', 'body' => '{body}', 'sms' => ''],
+        'growth.tasks' => ['group' => 'Network', 'label' => 'Prospect tasks', 'description' => 'For staff and network owners: prospect tasks that are due, and prospects given to you.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'integrations.attention' => ['group' => 'Account and security', 'label' => 'CRM connections', 'description' => 'When a connected CRM refuses your key, or shows a referral as closed so you can record it.', 'channels' => ['mail', 'database'], 'urgent' => true, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'api.webhook_disabled' => ['group' => 'Account and security', 'label' => 'Webhook endpoint switched off', 'description' => 'When one of your team’s webhook endpoints is switched off after failing for 3 days.', 'channels' => ['mail', 'database'], 'urgent' => true, 'locked' => true,

@@ -269,6 +269,7 @@ final class Seats
         $candidates = array_filter([$seat->backup_team_id, ...$seat->waitlist()->pluck('team_id')->all()], fn ($id) => $id !== null && $id !== $skipTeamId && ! in_array($id, $offered, true));
         $teamId = array_values($candidates)[0] ?? null;
         if ($teamId === null) {
+            $this->event($seat, null, 'open'); // nobody waiting: prospects in the city hear about it (Sprint 46)
             $this->tellOwners($seat->group, 'Seat open', "{$seat->territory_name} is open: nobody is waiting for it.");
 
             return;
@@ -308,6 +309,7 @@ final class Seats
     private function event(Seat $seat, ?Team $team, string $event, array $meta = [], ?User $actor = null): void
     {
         DB::table('seat_events')->insert(['seat_id' => $seat->id, 'team_id' => $team?->id, 'event' => $event, 'meta' => $meta === [] ? null : json_encode($meta), 'actor_id' => $actor?->id, 'created_at' => now()]);
+        Events\SeatEventRecorded::dispatch($seat, $team, $event);
     }
 
     private function tellTeam(Team $team, Seat $seat, string $type, string $headline, string $body, ?string $url = null): void
