@@ -41,6 +41,7 @@ type Check = { ok: boolean | null; message: string; at: string };
 
 type Props = {
     tab: (typeof tabs)[number][0];
+    footerCredit: { enabled: boolean; text: string; url: string | null; canEdit: boolean };
     general: {
         company_name: string | null;
         support_email: string | null;
@@ -235,6 +236,7 @@ function TestSend({ url, label, type, placeholder }: { url: string; label: strin
 export default function SystemSettings({
     tab,
     general,
+    footerCredit,
     email,
     sms,
     payments,
@@ -260,6 +262,7 @@ export default function SystemSettings({
         postal_address: general.postal_address ?? '',
         governing_state: general.governing_state ?? '',
     });
+    const credit = useForm({ enabled: footerCredit.enabled, text: footerCredit.text, url: footerCredit.url ?? '' });
     return (
         <AdminLayout title="System settings">
             <SeoHead seo={seo} />
@@ -322,6 +325,52 @@ export default function SystemSettings({
                         <Button type="submit" loading={gen.processing}>
                             Save
                         </Button>
+                    </form>
+                </Card>
+            )}
+            {tab === 'general' && (
+                <Card className="mt-6 max-w-3xl p-6">
+                    <h2 className="text-lg font-semibold">Footer credit</h2>
+                    <p className="mt-1 text-sm text-muted">
+                        Shown at the bottom of every page (website, portal and admin).{' '}
+                        {footerCredit.canEdit ? '' : 'Only a super admin can change it.'}
+                    </p>
+                    <form
+                        className="mt-5 space-y-4"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            credit.put('/admin/system/footer-credit', { preserveScroll: true });
+                        }}
+                    >
+                        <fieldset disabled={!footerCredit.canEdit} className="space-y-4">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={credit.data.enabled}
+                                    onChange={(e) => credit.setData('enabled', e.target.checked)}
+                                />{' '}
+                                Show the credit
+                            </label>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Text" error={credit.errors.text}>
+                                    <Input value={credit.data.text} maxLength={80} onChange={(e) => credit.setData('text', e.target.value)} />
+                                </Field>
+                                <Field label="Link (optional)" hint="A full https:// address; opens in a new tab." error={credit.errors.url}>
+                                    <Input
+                                        type="url"
+                                        value={credit.data.url}
+                                        placeholder="https://"
+                                        onChange={(e) => credit.setData('url', e.target.value)}
+                                    />
+                                </Field>
+                            </div>
+                            {footerCredit.canEdit && (
+                                <Button type="submit" loading={credit.processing}>
+                                    Save
+                                </Button>
+                            )}
+                        </fieldset>
                     </form>
                 </Card>
             )}

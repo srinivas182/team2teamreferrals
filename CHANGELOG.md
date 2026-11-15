@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Footer credit ("Powered by MCS")
+Tests: tests/Feature/Platform/FooterCreditTest.php.
+1. A "Powered by MCS" credit at the bottom of every page: the website footer, the portal and the admin.
+2. Super admins manage it in Admin → System → General → Footer credit: on/off, the text, and an optional https link (opens in a new tab). Other staff see it but can't change it. Changes are in the audit log.
+3. It's on by default with the text "Powered by MCS" and no link until one is saved.
+
 ### Sprint 46b — Drip campaigns, abandoned sign-up follow-up, attribution
 Tests: tests/Feature/Growth/CampaignsTest.php.
 1. Admin → Growth → Campaigns: multi-step email sequences to prospects.

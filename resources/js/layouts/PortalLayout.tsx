@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { FooterCredit } from '@/components/FooterCredit';
 import { Bell, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -254,6 +255,9 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             <div className="ml-auto flex gap-2">{actions}</div>
                         </div>
                         {children}
+                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-xs text-muted lg:pb-4">
+                            <FooterCredit />
+                        </footer>
                     </main>
                 </div>
                 <nav

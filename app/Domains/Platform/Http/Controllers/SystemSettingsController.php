@@ -53,6 +53,7 @@ final class SystemSettingsController
                 'postal_address' => $s->get('general.postal_address'),
                 'governing_state' => $s->get('general.governing_state'),
             ],
+            'footerCredit' => [...\App\Support\FooterCredit::settings(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'email' => [...$channel('mail'), 'from_address' => $s->get('mail.from_address', (string) config('mail.from.address')), 'from_name' => $s->get('mail.from_name', (string) config('mail.from.name'))],
             'sms' => $channel('sms'),
             'payments' => $channel('payments'),
@@ -87,6 +88,17 @@ final class SystemSettingsController
         }
         $this->save('general', $values, [], $request);
         \Illuminate\Support\Facades\Cache::forget('cms.tokens'); // the Terms and Privacy pages show these details
+
+        return back()->with('status', 'settings-saved');
+    }
+
+    /** The "Powered by" credit in the footer: super admins only. */
+    public function updateFooterCredit(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false, 403, 'Only a super admin can change the footer credit.');
+        $d = $request->validate(['enabled' => ['required', 'boolean'], 'text' => ['required_if:enabled,true', 'nullable', 'string', 'max:80'], 'url' => ['nullable', 'url:https', 'max:255']],
+            ['url.url' => 'Use a full https:// address.']);
+        $this->save('footer', ['footer.credit_enabled' => $d['enabled'] ? '1' : '0', 'footer.credit_text' => isset($d['text']) ? trim((string) $d['text']) : null, 'footer.credit_url' => $d['url'] ?? null], [], $request);
 
         return back()->with('status', 'settings-saved');
     }
