@@ -38,6 +38,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('ai/credits', [App\Domains\Platform\Http\Controllers\AiAdminController::class, 'saveCredits'])->name('ai.credits');
         Route::get('system/{tab?}', [SystemSettingsController::class, 'show'])->whereIn('tab', ['overview', 'general', 'email', 'sms', 'payments', 'storage', 'cdn', 'ai', 'modules'])->name('system');
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
+        Route::put('system/footer-credit', [SystemSettingsController::class, 'updateFooterCredit'])->name('system.footer-credit');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');
         Route::put('system/modules', [SystemSettingsController::class, 'updateModules'])->name('system.modules');
         Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai', 'ai_fallback', 'video', 'analytics'])->name('system.channel');

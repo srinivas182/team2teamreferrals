@@ -42,6 +42,8 @@ final class HandleInertiaRequests extends Middleware
             ],
             'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
+            // "Powered by …" in the footer (super admin, Admin → System → General).
+            'credit' => fn () => \App\Support\FooterCredit::shown(),
             // Header and footer menus set in Admin → Website (cached); the public layout falls back to its defaults.
             'menus' => fn () => $request->is('app', 'app/*', 'admin', 'admin/*') ? [] : \App\Domains\Content\Menus::forPublic(), // public pages only; only links that open
             // Real-time (Mercure): which team channel to listen on; null when broadcasting is off (tests, local).

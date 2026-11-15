@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { FooterCredit } from '@/components/FooterCredit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { CommandPalette } from '@/components/ui/command';
@@ -191,6 +192,9 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                             <div className="ml-auto flex flex-wrap gap-2">{actions}</div>
                         </div>
                         {children}
+                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-xs text-muted lg:pb-4">
+                            <FooterCredit />
+                        </footer>
                     </main>
                 </div>
             </div>

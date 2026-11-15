@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { FooterCredit } from '@/components/FooterCredit';
 import { Menu, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -113,6 +114,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                     <div className="mx-auto flex max-w-content flex-col gap-2 border-t border-line px-5 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-8">
                         <span>© {new Date().getFullYear()} Team to Team Referrals</span>
                         <span>Referral fees are paid broker to broker. We never take a share of your commission.</span>
+                        <FooterCredit />
                     </div>
                 </footer>
             </div>
