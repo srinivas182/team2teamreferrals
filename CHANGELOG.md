@@ -4,6 +4,31 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 46a — Prospect CRM and "seat opened in your city" alerts
+Tests: tests/Feature/Growth/ProspectsTest.php.
+1. Prospects in Admin → Growth (staff with "Manage prospects and campaigns") and on each network owner's page (Owner menu → Prospects: their networks and industry only).
+   - list with search and filters (stage, source, industry, state, owner, lead score), saved views, a stage board, and bulk stage, owner or forget
+   - each prospect has details, stage (lost needs a reason), owner (notified), a timeline of everything, notes, and tasks with a daily reminder for what's due
+2. Prospects arrive by themselves, each recording where they came from and how we may contact them:
+   - account sign-ups, including who invited them
+   - confirmed pre-launch reservations (with network and city)
+   - "Joining a network" messages from the Contact page (the message goes on the timeline)
+   Signing up, applying and joining (holding or backing up a seat) move them forward automatically, never back.
+3. Adding by hand, and importing a CSV: the columns are matched (guessed from the headers), shown in a preview, and the importer must confirm the list wasn't bought. Duplicates update instead of repeating, cities are matched by name and state, and the import is in the audit log.
+4. Lead score: how far they got, plus engagement in the last 90 days (clicks, visits, replies; opens count least). Shown as hot (30+), warm (10+) or cold.
+5. "Forget me": deletes the prospect and all its history, keeping only a hash of the address so they're never added or emailed again.
+6. When a seat opens and nobody is waiting (waitlisted teams are still offered it first, in order), prospects for that network or industry in that city get an email. They get at most one a week, never once unsubscribed, and the email links to the network with campaign tags.
+7. Prospect email follows the bulk-sender rules:
+   - sent from a separate address (Admin → Growth → Email settings, default hello@news.teamtoteamreferrals.com)
+   - one-click unsubscribe (List-Unsubscribe and List-Unsubscribe-Post), plus a link in every email
+   - the company postal address in every email
+   - nothing sent to unsubscribed or forgotten addresses
+   Sending stays off until an admin switches it on, and can't be switched on without the postal address. Until then, timelines show "not sent".
+8. Owner actions:
+   - Set up the sending subdomain with the email provider (SPF, DKIM, DMARC), then switch sending on.
+   - Add the postal address in Admin → System → General.
+9. Not built: email invites to people outside the platform don't exist in the product, so "unaccepted invites" isn't a source. Invite-link sign-ups are recorded with the inviting team instead.
+
 ### Sprint 45b — Zapier app, Google and Microsoft calendar sync, private calendar link
 Tests: tests/Feature/Integrations/CalendarAndZapierTest.php and integrations/zapier/test/app.test.js.
 1. Zapier app (integrations/zapier), built on the public API and webhooks:

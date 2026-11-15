@@ -25,8 +25,9 @@ final class ContactController
         $d = $request->validate(['name' => ['required', 'string', 'max:120'], 'email' => ['required', 'email:rfc', 'max:190'], 'topic' => ['required', 'in:'.implode(',', array_keys(self::TOPICS))],
             'message' => ['required', 'string', 'min:20', 'max:4000'], 'started' => ['required', 'string']]);
         FormGuard::check($request, 'message');
-        DB::table('contact_messages')->insert(['name' => $d['name'], 'email' => strtolower((string) $d['email']), 'topic' => $d['topic'], 'message' => $d['message'],
+        $messageId = DB::table('contact_messages')->insertGetId(['name' => $d['name'], 'email' => strtolower((string) $d['email']), 'topic' => $d['topic'], 'message' => $d['message'],
             'ip_hash' => FormGuard::ipHash($request), 'status' => 'new', 'created_at' => now(), 'updated_at' => now()]);
+        \App\Domains\Content\Events\ContactMessageReceived::dispatch((int) $messageId);
         $staff = User::permission(['support.manage', 'content.manage'])->get()->merge(User::role(Permissions::SUPER_ADMIN)->get())->unique('id');
         foreach ($staff as $u) {
             $notifier->send($u, 'admin.contact', ['headline' => 'New message: '.self::TOPICS[$d['topic']], 'body' => $d['name'].' wrote through the Contact page.'], url('/admin/content/messages'));

@@ -65,7 +65,7 @@ const nav: Item[] = [
     { label: 'Network CRM', href: '/admin/referrals', icon: ArrowLeftRight, permission: 'referrals.view', ready: true },
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: true },
     { label: 'Reports', href: '/admin/reports', icon: DollarSign, permission: 'referrals.view', ready: true },
-    { label: 'Growth', href: '/admin/growth', icon: Rocket, permission: 'growth.manage', ready: false },
+    { label: 'Growth', href: '/admin/growth/prospects', icon: Rocket, permission: 'growth.manage', ready: true },
     { label: 'Website', href: '/admin/content', icon: PanelsTopLeft, permission: 'content.manage', ready: true },
     { label: 'Training', href: '/admin/training', icon: GraduationCap, permission: 'training.manage', ready: false },
     { label: 'AI', href: '/admin/ai', icon: Sparkles, permission: 'settings.manage', ready: true },

@@ -71,6 +71,7 @@ export const ownerNav: NavItem[] = [
     { label: 'Applications', href: '/app/owner/applications', icon: UserPlus },
     { label: 'Members and enforcement', href: '/app/owner/challenges', icon: ShieldAlert },
     { label: 'Reports', href: '/app/owner/reports', icon: Gauge },
+    { label: 'Prospects', href: '/app/owner/prospects', icon: UserPlus },
 ];
 
 export const mobileTabs: NavItem[] = [
