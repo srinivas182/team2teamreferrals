@@ -1,6 +1,8 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import { Plug, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { CalendarSection } from '@/components/integrations/CalendarSection';
+import type { CalendarProps } from '@/components/integrations/CalendarSection';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +50,7 @@ type Props = {
     localStages: LocalStage[];
     logs: Log[];
     canManage: boolean;
+    calendar: CalendarProps;
     status?: string;
     seo: Seo;
 };
@@ -60,7 +63,7 @@ const STATUS: Record<Connection['status'], { tone: 'success' | 'warning' | 'dang
 const logTone = (s: string) => (s === 'ok' ? 'success' : s === 'failed' ? 'danger' : s === 'retrying' ? 'warning' : 'neutral');
 
 /** Portal → Integrations: connect Follow Up Boss, BoldTrail or Lofty; map stages; see what was synced. */
-export default function Integrations({ providers, connections, localStages, logs, canManage, status, seo }: Props) {
+export default function Integrations({ providers, connections, localStages, logs, canManage, calendar, status, seo }: Props) {
     const { auth, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     const connected = new Set(connections.map((c) => c.provider));
     return (
@@ -69,6 +72,7 @@ export default function Integrations({ providers, connections, localStages, logs
             <div className="max-w-4xl space-y-6">
                 {statusMessage(status) && <Alert tone="success">{statusMessage(status)}</Alert>}
                 {errors.integration && <Alert tone="danger">{errors.integration}</Alert>}
+                {errors.calendar && <Alert tone="danger">{errors.calendar}</Alert>}
                 <Card className="space-y-1 p-5 text-sm">
                     <p>
                         Connect your CRM and every referral your team accepts appears there within a minute, tagged “Team to Team Referrals”, with the
@@ -86,6 +90,7 @@ export default function Integrations({ providers, connections, localStages, logs
                     <ConnectionCard key={c.id} c={c} localStages={localStages} canManage={canManage} />
                 ))}
                 {canManage && providers.filter((p) => !connected.has(p.key)).map((p) => <ConnectCard key={p.key} p={p} />)}
+                <CalendarSection calendar={calendar} />
                 {canManage && <SyncLog logs={logs} />}
             </div>
         </PortalLayout>

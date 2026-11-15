@@ -18,6 +18,7 @@ export type Endpoint = {
     last_success_at: string | null;
     created_at: string;
     overLimit: boolean;
+    zapier: boolean;
     lastDay: { succeeded: number; failed: number };
 };
 export type Delivery = {
@@ -96,7 +97,8 @@ export function WebhookEndpoints({ endpoints, eventTypes, plan }: { endpoints: E
         const next = base.includes(e) ? base.filter((x) => x !== e) : [...base, e];
         f.setData('events', next.length === 0 ? ['*'] : next);
     };
-    const full = endpoints.length >= plan.endpointLimit;
+    const own = endpoints.filter((e) => !e.zapier).length;
+    const full = own >= plan.endpointLimit;
     return (
         <Card className="space-y-4 p-5">
             <div>
@@ -116,7 +118,7 @@ export function WebhookEndpoints({ endpoints, eventTypes, plan }: { endpoints: E
                         <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="min-w-0">
                                 <p className="font-medium break-all">
-                                    {e.url} <Badge tone={e.mode === 'live' ? 'success' : 'info'}>{e.mode}</Badge>{' '}
+                                    {e.url} <Badge tone={e.mode === 'live' ? 'success' : 'info'}>{e.mode}</Badge> {e.zapier && <Badge>Zapier</Badge>}{' '}
                                     {!e.active && <Badge tone="danger">off</Badge>}{' '}
                                     {e.overLimit && <Badge tone="warning">paused: over your plan’s endpoint limit</Badge>}
                                 </p>
@@ -177,7 +179,7 @@ export function WebhookEndpoints({ endpoints, eventTypes, plan }: { endpoints: E
             </ul>
             {full ? (
                 <p className="text-sm text-muted">
-                    You have {endpoints.length} of {plan.endpointLimit} endpoints.{' '}
+                    You have {own} of {plan.endpointLimit} endpoints (Zaps don’t count).{' '}
                     {!plan.on && (
                         <a href="/app/billing" className="font-medium text-primary">
                             The API plan allows {plan.endpoints}.

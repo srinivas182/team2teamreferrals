@@ -37,6 +37,7 @@ type Props = {
     eventTypes: Record<string, string>;
     logs: LogRow[];
     newSecret: { id: string; secret: string } | null;
+    zapierInvite: string | null;
     newToken: { id: string; plain: string } | null;
     status?: string;
     seo: Seo;
@@ -54,6 +55,7 @@ export default function Developers({
     eventTypes,
     logs,
     newSecret,
+    zapierInvite,
     newToken,
     status,
     seo,
@@ -187,6 +189,19 @@ export default function Developers({
                     </ul>
                 </Card>
                 <PlanCard plan={plan} />
+                {zapierInvite && (
+                    <Card className="space-y-1 p-5 text-sm">
+                        <h2 className="font-semibold">Zapier</h2>
+                        <p className="text-muted">
+                            Connect Team to Team Referrals to thousands of apps without code: start a Zap when a referral arrives, is accepted,
+                            changes stage or is won, or when a lead comes in; send referrals, add notes and move stages from other apps.{' '}
+                            <a href={zapierInvite} className="font-medium text-primary" target="_blank" rel="noreferrer">
+                                Add our Zapier app
+                            </a>
+                            , then sign in with a live token that has the permissions your Zaps need.
+                        </p>
+                    </Card>
+                )}
                 {canManage && (
                     <>
                         <WebhookEndpoints endpoints={webhooks} eventTypes={eventTypes} plan={plan} />

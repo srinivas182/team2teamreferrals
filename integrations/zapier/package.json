@@ -1,0 +1,13 @@
+{
+  "name": "team-to-team-referrals-zapier",
+  "version": "1.0.0",
+  "description": "Zapier app for Team to Team Referrals: triggers on referrals and leads, actions to send referrals, add notes and move stages.",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "zapier-platform-core": "19.3.0"
+  }
+}

@@ -52,6 +52,14 @@ final class Webhooks
 
     public const SECRET_OVERLAP_HOURS = 24;
 
+    /** Zapier's own endpoints (one per Zap) don't count toward the plan's endpoints, up to this many. */
+    public const ZAPIER_ENDPOINTS = 50;
+
+    public static function isZapier(string $url): bool
+    {
+        return str_starts_with($url, 'https://hooks.zapier.com/');
+    }
+
     /** @var (Closure(string): list<string>)|null */
     private static ?Closure $resolver = null;
 
@@ -72,7 +80,12 @@ final class Webhooks
      */
     public static function create(Team $team, User $user, string $url, string $mode, array $events, ?string $description): array
     {
-        if (WebhookEndpoint::query()->where('team_id', $team->id)->count() >= self::limit($team)) {
+        // Zapier makes one endpoint per Zap (it adds and removes them itself); those have their own allowance.
+        if (self::isZapier($url)) {
+            if (WebhookEndpoint::query()->where('team_id', $team->id)->where('url', 'like', 'https://hooks.zapier.com/%')->count() >= self::ZAPIER_ENDPOINTS) {
+                throw ValidationException::withMessages(['url' => 'Your team has '.self::ZAPIER_ENDPOINTS.' Zaps listening already, the most allowed. Turn some off first.']);
+            }
+        } elseif (WebhookEndpoint::query()->where('team_id', $team->id)->where('url', 'not like', 'https://hooks.zapier.com/%')->count() >= self::limit($team)) {
             throw ValidationException::withMessages(['url' => self::limit($team) === self::BASE_ENDPOINTS
                 ? 'Your team can have 1 webhook endpoint. The API plan allows up to '.self::PLAN_ENDPOINTS.' (Billing).'
                 : 'Your team already has '.self::PLAN_ENDPOINTS.' webhook endpoints, the most allowed. Delete one first.']);
@@ -284,7 +297,11 @@ final class Webhooks
             return collect();
         }
 
-        return WebhookEndpoint::query()->with('team')->where('team_id', $owner->id)->orderBy('id')->limit(self::limit($owner))->get()
+        $limit = self::limit($owner);
+        $own = 0;
+
+        return WebhookEndpoint::query()->with('team')->where('team_id', $owner->id)->orderBy('id')->get()
+            ->filter(fn (WebhookEndpoint $e) => self::isZapier($e->url) || $own++ < $limit)
             ->filter(fn (WebhookEndpoint $e) => $e->is_active && $e->mode === ($team->sandbox_of_team_id !== null ? 'test' : 'live'))->values();
     }
 
