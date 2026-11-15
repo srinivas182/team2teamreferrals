@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
-/** CRM connectors (Sprint 45a): routes, the referral listener and the schedule. */
+/** CRM connectors (Sprint 45a) and calendars (45b): routes, the referral listener and the schedule. */
 final class IntegrationsServiceProvider extends ServiceProvider
 {
     public function boot(): void
@@ -30,6 +30,18 @@ final class IntegrationsServiceProvider extends ServiceProvider
                 Route::delete('{integration}', [Http\IntegrationsController::class, 'disconnect'])->name('disconnect');
             });
         });
+        // Each person's calendar (Sprint 45b).
+        Route::middleware(['web'])->get('calendar/{token}.ics', [Http\CalendarController::class, 'feed'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('calendar.feed');
+        Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->prefix('app/calendar')->name('calendar.')->group(function (): void {
+            Route::get('{provider}/callback', [Http\CalendarController::class, 'callback'])->whereIn('provider', ['google', 'microsoft'])->name('callback');
+            Route::get('{connection}/calendars', [Http\CalendarController::class, 'calendars'])->middleware('throttle:30,1')->name('calendars');
+            Route::post('link', [Http\CalendarController::class, 'createLink'])->name('link');
+            Route::delete('link', [Http\CalendarController::class, 'removeLink'])->name('link.remove');
+            Route::post('{provider}/connect', [Http\CalendarController::class, 'connect'])->whereIn('provider', ['google', 'microsoft'])->name('connect');
+            Route::patch('{connection}', [Http\CalendarController::class, 'update'])->name('update');
+            Route::post('{connection}/sync', [Http\CalendarController::class, 'syncNow'])->middleware('throttle:10,1')->name('sync');
+            Route::delete('{connection}', [Http\CalendarController::class, 'disconnect'])->name('disconnect');
+        });
         Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:settings.manage'])->prefix('admin')->name('admin.')->group(function (): void {
             Route::get('integrations', [Http\AdminIntegrationsController::class, 'index'])->name('integrations');
             Route::post('integrations', [Http\AdminIntegrationsController::class, 'save'])->name('integrations.save');
@@ -38,6 +50,7 @@ final class IntegrationsServiceProvider extends ServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $s): void {
             $s->call(fn () => CrmSync::retryDue())->everyMinute()->name('integrations:retries')->withoutOverlapping()->onOneServer();
             $s->call(fn () => CrmSync::pollStages())->everyFiveMinutes()->name('integrations:stages')->withoutOverlapping()->onOneServer();
+            $s->call(fn () => Calendar\CalendarSync::syncAll())->everyTenMinutes()->name('integrations:calendars')->withoutOverlapping()->onOneServer();
             $s->call(fn () => CrmSync::prune())->dailyAt('04:35')->name('integrations:log-cleanup')->onOneServer();
         });
     }

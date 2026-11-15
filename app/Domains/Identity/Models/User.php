@@ -37,6 +37,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property ?\Illuminate\Support\Carbon $two_factor_confirmed_at
  * @property bool $is_active
  * @property string $timezone
+ * @property ?string $calendar_feed_hash
+ * @property ?string $calendar_feed_token
  * @property ?string $quiet_hours_start
  * @property ?string $quiet_hours_end
  * @property bool $email_digest
@@ -62,7 +64,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
     protected $fillable = ['first_name', 'last_name', 'email', 'phone', 'password', 'timezone'];
 
-    protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
+    protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'calendar_feed_hash', 'calendar_feed_token'];
 
     /**
      * ULIDs are the public identifier; the integer id stays internal.

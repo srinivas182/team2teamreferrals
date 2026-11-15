@@ -4,6 +4,29 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 45b — Zapier app, Google and Microsoft calendar sync, private calendar link
+Tests: tests/Feature/Integrations/CalendarAndZapierTest.php and integrations/zapier/test/app.test.js.
+1. Zapier app (integrations/zapier), built on the public API and webhooks:
+   - Instant triggers: new referral received, referral accepted, stage changed, referral won, new profile lead.
+   - Actions: send a referral (the city is found by name and state; consent required), add an update, move a stage, update a lead's status.
+   - Search: find a referral by the client's email.
+   It passes Zapier's own schema validation, and a test checks every API path it uses exists. The invite link entered in Admin → Integrations shows on members' Developers page. Zapier's endpoints (one per Zap) have their own allowance of 50, so Zaps don't use up a team's webhook endpoints.
+2. API: `GET /referrals?client_email=` finds referrals by the client's email, only where the team can see it (sent, or accepted).
+3. Each person's calendar (Integrations → Your calendar). It covers:
+   - events they're going to (or might)
+   - their team's referral deadlines: respond by (the client shown as "Tom B." until accepted), first contact due and next update due
+   - check-ins for future leads
+   It works through:
+   - Google Calendar or Outlook (Microsoft 365), connected with their sign-in, with a choice of calendar and of what to add. It is kept in step every 10 minutes and on "Sync now": changes update in place, and cancelled or finished items are removed. Expired sign-ins refresh themselves; a removed one tells the person once. Disconnecting removes what was added.
+   - A private calendar link (.ics) for Apple Calendar or any other app. It can be replaced or turned off.
+4. Admin → Integrations:
+   - Google and Microsoft app settings: client ID, secret (encrypted), on/off, and the redirect address to register.
+   - The Zapier invite link.
+5. Owner actions:
+   - Create the Google OAuth app. Google reviews calendar access before it's open to everyone.
+   - Create the Microsoft Entra app.
+   - Push the Zapier app (see integrations/zapier/README.md).
+
 ### Sprint 45a — CRM connectors: Follow Up Boss, BoldTrail (kvCORE), Lofty
 Tests: tests/Feature/Integrations/CrmConnectorsTest.php.
 1. Portal → Integrations (back in the menu). Leaders and assistants connect Follow Up Boss, BoldTrail or Lofty with an API key. The key is checked with the CRM first, stored encrypted and never shown again. They can also test the connection, pause, resume, change the key or disconnect. Members see each connection's status only.

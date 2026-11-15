@@ -23,7 +23,7 @@ final class ReferralsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $d = $request->validate(['direction' => ['nullable', 'in:sent,received'], 'status' => ['nullable', 'in:sent,accepted,declined,expired,withdrawn'],
-            'updated_since' => ['nullable', 'date'], 'limit' => ['nullable', 'integer', 'min:1', 'max:100'], 'cursor' => ['nullable', 'string', 'max:500']]);
+            'updated_since' => ['nullable', 'date'], 'client_email' => ['nullable', 'email', 'max:255'], 'limit' => ['nullable', 'integer', 'min:1', 'max:100'], 'cursor' => ['nullable', 'string', 'max:500']]);
         $team = $this->team($request);
         $q = Referral::query()->with(['group.industry', 'seat', 'sender', 'receiver'])
             ->when(($d['direction'] ?? null) === 'sent', fn ($q) => $q->where('sender_team_id', $team->id))
@@ -31,6 +31,9 @@ final class ReferralsController extends Controller
             ->when(! isset($d['direction']), fn ($q) => $q->where(fn ($q) => $q->where('sender_team_id', $team->id)->orWhere('receiver_team_id', $team->id)))
             ->when(isset($d['status']), fn ($q) => $q->where('status', $d['status']))
             ->when(isset($d['updated_since']), fn ($q) => $q->where('updated_at', '>=', now()->parse((string) $d['updated_since'])))
+            // Finding by email only matches referrals where your team can see the email: ones it sent, or accepted.
+            ->when(isset($d['client_email']), fn ($q) => $q->where('client_email', mb_strtolower((string) $d['client_email']))
+                ->where(fn ($w) => $w->where('sender_team_id', $team->id)->orWhere(fn ($r) => $r->where('receiver_team_id', $team->id)->where('status', 'accepted'))))
             ->orderByDesc('id');
         $page = $q->cursorPaginate($this->limit($request));
 

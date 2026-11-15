@@ -45,6 +45,17 @@ final class IntegrationsController
                     'attempts' => (int) $l->attempts, 'message' => $l->message, 'nextAttempt' => $l->next_attempt_at, 'at' => now()->parse((string) $l->created_at)->toIso8601String(),
                     'referral' => $l->ulid, 'client' => $l->client_name !== null ? Referral::shorten((string) $l->client_name) : null])->values() : [],
             'canManage' => $manage,
+            // Everyone's own calendar.
+            'calendar' => [
+                'link' => \App\Domains\Integrations\Calendar\CalendarFeed::url($user),
+                'kinds' => \App\Domains\Integrations\Calendar\CalendarItems::KINDS,
+                'providers' => collect(\App\Domains\Integrations\Calendar\CalendarSync::PROVIDERS)->keys()->map(fn ($k) => ['key' => $k, 'label' => \App\Domains\Integrations\Calendar\CalendarSync::provider($k)->label(),
+                    'ready' => \App\Domains\Integrations\Calendar\CalendarSync::provider($k)->ready()])->values(),
+                'connections' => \App\Domains\Integrations\Calendar\CalendarConnection::query()->where('user_id', $user->id)->orderBy('id')->get()->map(fn ($c) => [
+                    'id' => $c->ulid, 'provider' => $c->provider, 'label' => \App\Domains\Integrations\Calendar\CalendarSync::provider($c->provider)->label(), 'status' => $c->status,
+                    'email' => $c->account_email, 'calendarId' => $c->calendar_id, 'calendarName' => $c->calendar_name, 'kinds' => $c->kinds, 'lastError' => $c->last_error,
+                    'lastSynced' => $c->last_synced_at?->toIso8601String(), 'items' => DB::table('calendar_items')->where('calendar_connection_id', $c->id)->count()])->values(),
+            ],
             'status' => session('status'),
             'seo' => SeoData::private('Integrations')->toArray(),
         ]);

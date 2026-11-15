@@ -66,6 +66,7 @@ final class DevelopersController
                 ->map(fn ($l) => ['method' => (string) $l->method, 'path' => (string) $l->path, 'status' => (int) $l->status, 'ms' => (int) $l->duration_ms, 'id' => (string) $l->request_id,
                     'at' => now()->parse((string) $l->created_at)->toIso8601String(), 'token' => $l->token !== null ? $l->token.' ('.$l->mode.')' : 'deleted token'])->values() : [],
             'newSecret' => session('new_secret'),
+            'zapierInvite' => app(\App\Domains\Platform\Settings\Settings::class)->get('integrations.zapier.invite_url'),
             'newToken' => session('new_token'),
             'status' => session('status'),
             'seo' => SeoData::private('Developers')->toArray(),
@@ -150,9 +151,11 @@ final class DevelopersController
     {
         $limit = Webhooks::limit($team);
         $out = [];
-        foreach (WebhookEndpoint::query()->where('team_id', $team->id)->orderBy('id')->get() as $i => $e) {
+        $i = 0;
+        foreach (WebhookEndpoint::query()->where('team_id', $team->id)->orderBy('id')->get() as $e) {
+            $zapier = Webhooks::isZapier($e->url);
             $counts = DB::table('webhook_deliveries')->where('webhook_endpoint_id', $e->id)->where('created_at', '>=', now()->subDay())->selectRaw('status, count(*) as n')->groupBy('status')->pluck('n', 'status');
-            $out[] = [...Resources::webhookEndpoint($e), 'overLimit' => $i >= $limit, 'lastDay' => ['succeeded' => (int) ($counts['succeeded'] ?? 0), 'failed' => (int) (($counts['failed'] ?? 0) + ($counts['retrying'] ?? 0))]];
+            $out[] = [...Resources::webhookEndpoint($e), 'zapier' => $zapier, 'overLimit' => ! $zapier && $i++ >= $limit, 'lastDay' => ['succeeded' => (int) ($counts['succeeded'] ?? 0), 'failed' => (int) (($counts['failed'] ?? 0) + ($counts['retrying'] ?? 0))]];
         }
 
         return $out;

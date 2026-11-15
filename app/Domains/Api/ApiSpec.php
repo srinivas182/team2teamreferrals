@@ -45,7 +45,8 @@ final class ApiSpec
                     'get' => $op('listReferrals', 'Referrals', 'Referrals your team sent and received, newest first', 'referrals:read', [
                         'parameters' => [$q('direction', ['type' => 'string', 'enum' => ['sent', 'received']], 'Only sent or only received.'),
                             $q('status', ['type' => 'string', 'enum' => ['sent', 'accepted', 'declined', 'expired', 'withdrawn']], 'Filter by status.'),
-                            $q('updated_since', ['type' => 'string', 'format' => 'date-time'], 'Only referrals changed since this time.'), ...$paging],
+                            $q('updated_since', ['type' => 'string', 'format' => 'date-time'], 'Only referrals changed since this time.'),
+                            $q('client_email', ['type' => 'string', 'format' => 'email'], 'Find by the client’s email (referrals you sent, or accepted).'), ...$paging],
                         'responses' => ['200' => $ok('A page of referrals', $list('Referral')), ...$errors, ...$invalid]]),
                     'post' => $op('createReferral', 'Referrals', 'Send a referral (your client must have agreed to be contacted)', 'referrals:write', [
                         'parameters' => [$idem], 'requestBody' => ['required' => true, ...$json($ref('NewReferral'))],

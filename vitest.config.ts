@@ -4,5 +4,5 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
     plugins: [react()],
     resolve: { alias: { '@': '/resources/js' } },
-    test: { environment: 'jsdom', setupFiles: ['resources/js/__tests__/setup.ts'], include: ['resources/js/**/*.test.tsx'], css: false },
+    test: { environment: 'jsdom', setupFiles: ['resources/js/__tests__/setup.ts'], include: ['resources/js/**/*.test.tsx', 'integrations/zapier/test/**/*.test.js'], css: false },
 });
