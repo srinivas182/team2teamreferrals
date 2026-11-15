@@ -1,4 +1,5 @@
 import { useForm, usePage } from '@inertiajs/react';
+import { GrowthTabs } from '@/components/growth/GrowthTabs';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ export default function GrowthSettings({ sending, fromAddress, fromName, postalA
         <AdminLayout title="Growth: email settings">
             <SeoHead seo={seo} />
             <div className="max-w-2xl space-y-5">
+                <GrowthTabs current="/admin/growth/settings" />
                 {statusMessage(status) && <Alert tone="success">{statusMessage(status)}</Alert>}
                 {errors.sending && <Alert tone="danger">{errors.sending}</Alert>}
                 <Card className="space-y-3 p-5 text-sm">

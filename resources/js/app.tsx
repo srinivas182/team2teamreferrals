@@ -33,3 +33,19 @@ try {
 } catch {
     // never let counting break the page
 }
+
+// Where sign-ups come from (Sprint 46b): the first visit, and any later visit from a campaign or another site, are
+// remembered (first-party, 90 days) and saved with the account at sign-up.
+try {
+    const q = new URLSearchParams(window.location.search);
+    const utm = { source: q.get('utm_source'), medium: q.get('utm_medium'), campaign: q.get('utm_campaign') };
+    const external = document.referrer !== '' && new URL(document.referrer).host !== window.location.host;
+    const seen = document.cookie.split('; ').some((c) => c.startsWith('t2t_v='));
+    if (!/^\/(app|admin)(\/|$)/.test(window.location.pathname) && (!seen || utm.source || external)) {
+        const body = new Blob([JSON.stringify({ path: window.location.pathname, referrer: document.referrer, utm })], { type: 'application/json' });
+        navigator.sendBeacon('/visit', body);
+        document.cookie = `t2t_v=1; max-age=${90 * 86400}; path=/; samesite=lax`;
+    }
+} catch {
+    // never let counting break the page
+}

@@ -2,6 +2,7 @@ import { Link, router, useForm } from '@inertiajs/react';
 import { LayoutGrid, List, Upload, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { GrowthShell, TEMP_TONE } from '@/components/growth/GrowthShell';
+import { GrowthTabs } from '@/components/growth/GrowthTabs';
 import type { GrowthShared } from '@/components/growth/GrowthShell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ type Props = GrowthShared & {
     prospects: { data: Row[]; total: number; links: { url: string | null; label: string; active: boolean }[] } | null;
     board: { stage: string; label: string; count: number; items: Row[] }[] | null;
     counts: { total: number; hot: number; myTasks: number };
+    campaigns: { id: string; name: string }[];
     views: { id: number; name: string; filters: Filters }[];
     importPreview: { token: string; name: string; headers: string[]; guess: string[]; sample: string[][] } | null;
     importResult: { added: number; updated: number; skipped: number; problems: string[] } | null;
@@ -36,7 +38,8 @@ type Props = GrowthShared & {
 
 /** Prospects: people who might join, with filters, a stage board, bulk changes, adding and importing. */
 export default function Prospects(props: Props) {
-    const { filters, prospects, board, counts, views, base, actions, stages, sources, people, industries, importPreview, importResult } = props;
+    const { filters, prospects, board, counts, views, base, actions, stages, sources, people, industries, importPreview, importResult, campaigns } =
+        props;
     const [selected, setSelected] = useState<string[]>([]);
     const [adding, setAdding] = useState(false);
     const go = (next: Filters) =>
@@ -49,6 +52,7 @@ export default function Prospects(props: Props) {
         router.post(actions.bulk, { ids: selected, ...data }, { preserveScroll: true, onSuccess: () => setSelected([]) });
     return (
         <GrowthShell shared={props} title="Prospects">
+            {props.layout === 'admin' && <GrowthTabs current="/admin/growth/prospects" />}
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted">
                     {counts.total} prospects · {counts.hot} hot ·{' '}
@@ -63,11 +67,6 @@ export default function Prospects(props: Props) {
                     <Button size="sm" variant="secondary" onClick={() => setAdding(!adding)}>
                         <UserPlus /> Add
                     </Button>
-                    {props.layout === 'admin' && (
-                        <Button size="sm" variant="ghost" asChild>
-                            <Link href="/admin/growth/settings">Email settings</Link>
-                        </Button>
-                    )}
                 </div>
             </div>
             {adding && <AddProspect base={base} industries={industries} />}
@@ -199,6 +198,28 @@ export default function Prospects(props: Props) {
                             </option>
                         ))}
                     </Select>
+                    {campaigns.length > 0 && (
+                        <Select
+                            className="w-52"
+                            defaultValue=""
+                            aria-label="Add to campaign"
+                            onChange={(e) =>
+                                e.target.value &&
+                                router.post(
+                                    '/admin/growth/campaigns/enroll',
+                                    { campaign: e.target.value, ids: selected },
+                                    { preserveScroll: true, onSuccess: () => setSelected([]) },
+                                )
+                            }
+                        >
+                            <option value="">Add to campaign…</option>
+                            {campaigns.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </Select>
+                    )}
                     <Button
                         size="sm"
                         variant="ghost"

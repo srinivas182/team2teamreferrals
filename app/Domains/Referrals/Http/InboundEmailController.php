@@ -26,6 +26,10 @@ final class InboundEmailController
         $text = (string) ($request->input('StrippedTextReply') ?: $request->input('TextBody') ?: $request->input('text', ''));
         $id = (string) ($request->input('MessageID') ?: $request->input('message_id') ?: hash('sha256', $to.$from.$text));
 
+        // Replies to prospect campaign emails (reply+g<send>@…) go to the prospect's timeline (Sprint 46b).
+        if (preg_match('/reply\+g([0-9a-z]{26})@/i', $to, $m) === 1) {
+            return response()->json(['status' => \App\Domains\Growth\Campaigns::reply(strtolower($m[1]), $from, $text)]);
+        }
         // Forwarded leads go to intake, with the full body: the forwarded part is the lead.
         if (\App\Domains\Referrals\Intake\IntakeAddress::isIntake($to)) {
             $full = (string) ($request->input('TextBody') ?: $request->input('text', ''));

@@ -63,6 +63,7 @@ final class GrowthController
             $p->forceFill(['unsubscribed_at' => now()])->save();
             Prospects::suppress($p->email, 'unsubscribed');
             Prospects::log($p, null, 'email', 'Unsubscribed from prospect email.');
+            \App\Domains\Growth\Campaigns::unsubscribed($p);
         }
 
         return Inertia::render('GrowthUnsubscribe', ['done' => true, 'action' => null, 'seo' => SeoData::private('Unsubscribe')->toArray()]);
