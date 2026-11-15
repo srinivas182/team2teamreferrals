@@ -4,6 +4,29 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 46b — Drip campaigns, abandoned sign-up follow-up, attribution
+Tests: tests/Feature/Growth/CampaignsTest.php.
+1. Admin → Growth → Campaigns: multi-step email sequences to prospects.
+   - each email waits its hours after the previous one, with {first_name} and {city} filled in and an optional button (a page here or an https link)
+   - "Send me a test" goes to your own address and isn't counted; a preview pane shows the real email
+   - campaigns start, pause and are filled by hand (Prospects → select → Add to campaign) or automatically from an audience (stage, source, industry, state, lead score)
+2. Sending rules:
+   - each person gets email inside the campaign's window in their own time zone (their account's, else their city's), weekdays only if set
+   - a daily cap applies
+   - nothing is sent while prospect email is switched off: people wait
+3. Stop rules: a person leaves when they reach the goal (applied or joined, counted as converted), reply, unsubscribe, bounce or mark spam.
+   - Replies arrive through reply+…@ when reply-by-email is set up: they go on the timeline and the prospect's owner is told.
+   - Bounces and complaints come from the email provider through a new webhook (Postmark's format, or a simple generic one), which adds the address to the never-email list.
+4. A/B subject lines: half get each. Once both have 50 sends at least two days old, the one with the higher click rate is used from then on.
+5. Results per campaign and per email (and per subject line): sent, clicked, replied, unsubscribed, bounced, reached the goal, and money paid since.
+   Opens are recorded (and add a little to lead scores) but not shown as a measure, because Apple Mail opens everything.
+   Clicks go through a signed link, so it can't be used as an open redirect.
+6. Ready-made "Finish joining" sequence (on): three emails to anyone who signs up but doesn't apply for a seat, starting an hour later and stopping the moment they apply. The old day-2 and day-7 sign-up reminders are skipped for people it's looking after.
+7. Attribution: public pages remember the first visit (utm tags, else the referring site, else direct) and the latest one from a source, using a small browser beacon, since cached pages can't set cookies. A campaign click is remembered too. Everything is saved with the account at sign-up. Admin → Growth → Sign-up sources shows sign-ups and joins by first or last visit and by campaign.
+8. Owner actions:
+   - Point the email provider's bounce and spam-complaint webhooks at /webhooks/email-events (same secret as inbound email).
+   - Set up reply-by-email (inbound domain) so campaign replies are captured.
+
 ### Sprint 46a — Prospect CRM and "seat opened in your city" alerts
 Tests: tests/Feature/Growth/ProspectsTest.php.
 1. Prospects in Admin → Growth (staff with "Manage prospects and campaigns") and on each network owner's page (Owner menu → Prospects: their networks and industry only).

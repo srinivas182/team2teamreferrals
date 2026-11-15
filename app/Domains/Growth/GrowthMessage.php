@@ -13,7 +13,8 @@ use Symfony\Component\Mime\Email;
 /** The email itself. */
 final class GrowthMessage extends Notification
 {
-    public function __construct(private readonly string $subject, private readonly string $text, private readonly ?string $ctaLabel, private readonly ?string $ctaUrl, private readonly string $unsubscribe) {}
+    public function __construct(private readonly string $subject, private readonly string $text, private readonly ?string $ctaLabel, private readonly ?string $ctaUrl, private readonly string $unsubscribe,
+        private readonly ?string $pixel = null, private readonly ?string $replyTo = null) {}
 
     /** @return list<string> */
     public function via(object $notifiable): array
@@ -32,6 +33,13 @@ final class GrowthMessage extends Notification
         }
         if ($this->ctaLabel !== null && $this->ctaUrl !== null) {
             $mail->action($this->ctaLabel, $this->ctaUrl);
+        }
+
+        if ($this->replyTo !== null) {
+            $mail->replyTo($this->replyTo);
+        }
+        if ($this->pixel !== null) {
+            $mail->line('![]('.$this->pixel.')');
         }
 
         return $mail->salutation(' ')

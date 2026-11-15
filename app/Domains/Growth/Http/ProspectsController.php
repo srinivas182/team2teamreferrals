@@ -49,6 +49,7 @@ final class ProspectsController
                 'items' => (clone $q)->with(['city', 'industry', 'owner'])->where('stage', $stage)->orderByDesc('score')->limit(30)->get()->map($row)->values()])->values() : null,
             'counts' => ['total' => (clone $q)->count(), 'hot' => (clone $q)->where('score', '>=', Prospects::HOT)->count(), 'myTasks' => DB::table('prospect_tasks')->where('assignee_id', $user->id)->whereNull('done_at')->count()],
             'views' => DB::table('prospect_views')->where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'filters'])->map(fn ($v) => ['id' => (int) $v->id, 'name' => (string) $v->name, 'filters' => json_decode((string) $v->filters, true)])->values(),
+            'campaigns' => $group === null ? \App\Domains\Growth\Campaign::query()->where('kind', 'drip')->where('status', '!=', 'draft')->orderBy('name')->get(['ulid', 'name'])->map(fn ($c) => ['id' => $c->ulid, 'name' => $c->name])->values() : [],
             'importPreview' => session('import_preview'),
             'importResult' => session('import_result'),
         ]);

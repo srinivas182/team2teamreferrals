@@ -45,9 +45,11 @@ final class GrowthMailer
     /**
      * Send one email. `{first_name}` and `{city}` in the text are filled in.
      *
+    /**
      * @param  array<string, mixed>  $meta
+     * @param  ?string  $trackAs  a campaign send's id: the link, an open pixel and the reply address carry it
      */
-    public static function send(Prospect $p, string $subject, string $text, ?string $ctaLabel, ?string $ctaUrl, string $kind, array $meta = []): bool
+    public static function send(Prospect $p, string $subject, string $text, ?string $ctaLabel, ?string $ctaUrl, string $kind, array $meta = [], ?string $trackAs = null): bool
     {
         $blocked = self::blocker($p);
         if ($blocked !== null) {
@@ -56,7 +58,9 @@ final class GrowthMailer
             return false;
         }
         $fill = fn (string $s) => strtr($s, ['{first_name}' => $p->first_name ?: 'there', '{city}' => $p->city->name ?? 'your city']);
-        (new AnonymousNotifiable)->route('mail', $p->email)->notify(new GrowthMessage($fill($subject), $fill($text), $ctaLabel, $ctaUrl, self::unsubscribeUrl($p)));
+        $link = $ctaUrl !== null && $trackAs !== null ? Tracking::clickUrl($trackAs, $ctaUrl) : $ctaUrl;
+        (new AnonymousNotifiable)->route('mail', $p->email)->notify(new GrowthMessage($fill($subject), $fill($text), $ctaLabel, $link, self::unsubscribeUrl($p),
+            $trackAs !== null ? Tracking::openUrl($trackAs) : null, $trackAs !== null ? Tracking::replyAddress($trackAs) : null));
         Prospects::log($p, null, 'email', "“{$fill($subject)}”", [...$meta, 'kind' => $kind, 'sent' => true]);
         $p->forceFill(['last_activity_at' => now()])->save();
 

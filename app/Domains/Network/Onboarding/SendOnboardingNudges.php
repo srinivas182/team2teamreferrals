@@ -23,6 +23,9 @@ final class SendOnboardingNudges extends Command
                 ->where('is_active', true)->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', ['staff', 'super_admin']))
                 ->whereNotExists(fn ($q) => $q->from('onboarding_nudges')->whereColumn('onboarding_nudges.user_id', 'users.id')->where('kind', $kind))
                 ->whereNotExists(fn ($q) => $q->from('seat_applications')->join('team_members', 'team_members.team_id', '=', 'seat_applications.team_id')->whereColumn('team_members.user_id', 'users.id'))
+                // Not while the "finish joining" email sequence is looking after them (Sprint 46b): one set of reminders is enough.
+                ->when(\App\Domains\Growth\GrowthMailer::sendingOn(), fn ($q) => $q->whereNotExists(fn ($w) => $w->from('campaign_enrollments as e')->join('prospects as p', 'p.id', '=', 'e.prospect_id')
+                    ->join('campaigns as c', 'c.id', '=', 'e.campaign_id')->where(['c.kind' => 'abandoned', 'c.status' => 'active'])->whereIn('e.status', ['active', 'completed'])->whereColumn('p.user_id', 'users.id')))
                 ->limit(500)->get();
             foreach ($users as $u) {
                 $notifier->send($u, 'onboarding.nudge', [
