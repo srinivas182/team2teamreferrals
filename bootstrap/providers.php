@@ -13,6 +13,7 @@ return [
     App\Domains\Integrations\IntegrationsServiceProvider::class,
     App\Domains\Growth\GrowthServiceProvider::class,
     App\Domains\Partners\PartnersServiceProvider::class,
+    App\Domains\Support\SupportServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\HorizonServiceProvider::class,
 ];

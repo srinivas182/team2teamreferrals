@@ -26,13 +26,13 @@ import {
     Code2,
     Plug,
     Store,
+    LifeBuoy,
 } from 'lucide-react';
 
 /** `module`: hidden when that module is switched off in Admin → Settings → Modules. */
 export type NavItem = { label: string; href: string; icon: typeof Home; badge?: number; module?: string };
 
 /** Portal navigation (information architecture, docs/design/information-architecture.md). */
-// Help (Sprint 48) returns to the menu with the sprint that builds it.
 export const portalNav: NavItem[] = [
     { label: 'Home', href: '/app', icon: Home },
     { label: 'Inbox', href: '/app/inbox', icon: Inbox },
@@ -58,6 +58,7 @@ export const portalNav: NavItem[] = [
     { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
     { label: 'Open requests', href: '/app/requests', icon: Inbox },
     { label: 'Local partners', href: '/app/partners', icon: Store, module: 'partner_directory' },
+    { label: 'Help and support', href: '/app/support', icon: LifeBuoy },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },
