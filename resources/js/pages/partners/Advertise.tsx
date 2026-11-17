@@ -17,11 +17,17 @@ type Category = { slug: string; name: string; licensed: boolean; licenseLabel: s
 export default function PartnersAdvertise({
     categories,
     price,
+    discount,
+    trialDays,
+    cap,
     howItWorks,
     seo,
 }: {
     categories: Category[];
     price: number;
+    discount: number;
+    trialDays: number;
+    cap: number;
     howItWorks: string;
     seo: Seo;
 }) {
@@ -77,12 +83,18 @@ export default function PartnersAdvertise({
             <article className="mx-auto max-w-2xl px-4 py-10">
                 <h1 className="font-display text-4xl font-bold">Advertise to local home buyers and sellers</h1>
                 <p className="mt-4 text-lg">
-                    List your business on the city pages people use to find verified agents and pros. ${price} a month per city, with 10% off a
-                    12-month plan. No per-lead fees, no contracts, and every enquiry is yours alone.
+                    List your business on the city pages people use to find verified agents and pros. ${price} a month per city
+                    {discount > 0 ? `, or ${discount}% less paid yearly` : ''}. No per-lead fees, no contracts, and every enquiry is yours alone.
                 </p>
                 <ul className="mt-4 list-disc space-y-1 pl-5">
                     <li>We review every application by hand and check licenses with the regulator.</li>
-                    <li>You pay nothing until you’re approved.</li>
+                    <li>
+                        You pay nothing until you’re approved{trialDays > 0 ? `, then the first ${trialDays} days are free` : ''}. Cancel any time.
+                    </li>
+                    <li>
+                        At most {cap} businesses per category in each city. If a city is full, you join its waitlist and pay nothing for it until a
+                        spot opens.
+                    </li>
                     <li>Everyone in a city takes the top spot in turn: fair placement, no bidding.</li>
                 </ul>
                 <details className="mt-3 text-sm text-muted">

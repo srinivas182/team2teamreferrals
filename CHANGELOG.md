@@ -4,6 +4,32 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 47b — Partner directory: billing, waitlist, stats and partner account
+Tests: tests/Feature/Partners/PartnerBillingTest.php.
+1. Billing: a flat price per listed city, $49 a month by default, or a year up front at 10% less. The same for everyone in a category, never per lead.
+   - Approval starts a free trial (14 days by default), then the card is charged for the rest of the month and renewed on the 1st (or yearly).
+   - A failed payment keeps the listing up while the card is retried on days 1, 3 and 5. After the last try the listing is paused and its places go to the waitlist. Paying (or adding a card) brings it straight back.
+   - Cancelling stops renewal: the listing stays up to the end of the time paid for (or ends at once during the trial). "Keep my listing" undoes it, and "Start again" works later.
+   - Invoices with PDFs, sales tax when switched on, and a reminder three days before a trial ends without a card.
+2. At most 5 partners per city and category (admin can change it). Others join that city's waitlist, see their place in line and pay nothing for that city. When a place opens (suspended, unpaid, cancelled, city removed, cap raised), the next in line gets it and is emailed.
+3. Partner account (/partner-portal): sign in with a link emailed to the listing's address (no password).
+   - Overview: views, clicks, enquiries and member shares for the last 30 days, by city, with what was paid and the cost per enquiry. 90 days as CSV.
+   - Listing edits wait for staff review while the current listing stays up; a new license number is checked again before the badge returns.
+   - Cities: add (listed or waitlisted) and remove.
+   - Billing: card through Stripe's own form, monthly or yearly, cancel or keep, invoices and "Pay now".
+   - Enquiries: every message received.
+4. Stats: views and clicks are reported by the browser (pages are cached) and counted once per visitor a day. Search engine robots and other bots are left out.
+5. Members: Portal → Local partners shows the advertisers in their own cities, with "Share with my client". This emails the client the partner's page from the member's name, with replies going to the member. The client's address isn't kept, and the email says nobody is paid for the introduction.
+6. Admin:
+   - Admin → Partners → "Changes to review" shows old and new values side by side.
+   - Billing state is shown on each partner.
+   - A "Prices and limits" card sets price, yearly discount, trial days and the cap. Changing it needs the billing permission and is in the audit log.
+   - Admin → Revenue has a new "Partner directory listings" line.
+7. Under the hood:
+   - Invoicing can now issue one invoice to any payer, which partner billing uses.
+   - The card form is shared by member billing and the partner account.
+   - Stripe's script is allowed on the partner account pages only.
+
 ### Sprint 47a — Partner directory: sign-up, review and listings
 Tests: tests/Feature/Partners/PartnersTest.php.
 1. Local businesses that serve home buyers and sellers can advertise: mortgage lenders, title and escrow, home inspectors, insurance agents, movers, real estate attorneys, home stagers and real estate photographers (staff can add more).
@@ -36,7 +62,6 @@ Tests: tests/Feature/Partners/PartnersTest.php.
    - the 5-per-city cap and waitlist
    - views, clicks and enquiry stats with CSV
    - the partner portal and members' "share with my client"
-   - Until then, approved listings show without payment, so approve only businesses you have agreed terms with.
 
 ### Footer credit ("Powered by MCS")
 Tests: tests/Feature/Platform/FooterCreditTest.php.

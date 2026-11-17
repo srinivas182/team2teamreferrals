@@ -23,7 +23,7 @@ final class PartnersSitemapProvider implements SitemapProvider
         }
         $live = DB::table('partner_listings as l')->join('partners as p', 'p.id', '=', 'l.partner_id')->join('partner_categories as k', 'k.id', '=', 'l.category_id')
             ->join('cities as c', 'c.id', '=', 'l.city_id')->join('states as s', 's.id', '=', 'c.state_id')
-            ->where('p.status', 'approved')->where('l.status', 'active')->where('k.is_active', true)->where('c.is_enabled', true);
+            ->where('p.status', 'approved')->whereIn('p.billing_status', Partner::LIVE_BILLING)->where('l.status', 'active')->where('k.is_active', true)->where('c.is_enabled', true);
         $places = (clone $live)->groupBy('k.slug', 's.code', 'c.slug')->selectRaw('k.slug as category, s.code as state, c.slug as city, max(p.updated_at) as updated')->get();
         if ($places->isEmpty()) {
             return;

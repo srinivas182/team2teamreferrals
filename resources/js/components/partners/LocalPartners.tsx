@@ -1,10 +1,15 @@
 import { Link } from '@inertiajs/react';
 import { AdNote, PartnerCard, type PartnerCardData } from '@/components/partners/PartnerCard';
+import { useTrackViews } from '@/components/partners/track';
 
 export type PartnerBlock = { category: { slug: string; name: string }; partners: PartnerCardData[]; total: number; href: string };
 
 /** "Local partners" on a city page: a few advertisers per category in today's rotation, then a link to the rest. */
 export function LocalPartners({ blocks, note, city, cityId }: { blocks: PartnerBlock[]; note: string; city: string; cityId: number }) {
+    useTrackViews(
+        blocks.flatMap((b) => b.partners.map((p) => p.slug)),
+        cityId,
+    );
     if (blocks.length === 0) return null;
     return (
         <section aria-labelledby="local-partners" className="mt-10 border-t border-line pt-8">

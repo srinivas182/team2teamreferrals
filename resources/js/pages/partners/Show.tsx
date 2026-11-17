@@ -3,6 +3,7 @@ import { ExternalLink, Gift, Phone, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
 import { Honeypot, useStartToken } from '@/components/partners/FormExtras';
 import { AdNote, LicenseBadge, type PartnerCardData } from '@/components/partners/PartnerCard';
+import { track, useTrackViews } from '@/components/partners/track';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export default function PartnerShow({ partner, cities, endorsements, answer, how
     useStartToken((t) => form.setData('started', t));
     const [note, setNote] = useState('');
     const e = form.errors as Record<string, string | undefined>;
+    useTrackViews([partner.slug], cityParam);
     return (
         <PublicLayout current="/partners">
             <SeoHead seo={seo} />
@@ -68,7 +70,11 @@ export default function PartnerShow({ partner, cities, endorsements, answer, how
                         )}
                         {partner.phone && (
                             <li>
-                                <a href={`tel:${partner.phone.replace(/[^0-9+]/g, '')}`} className="flex items-center gap-1 text-primary">
+                                <a
+                                    href={`tel:${partner.phone.replace(/[^0-9+]/g, '')}`}
+                                    onClick={() => track('click', [partner.slug], cityParam)}
+                                    className="flex items-center gap-1 text-primary"
+                                >
                                     <Phone className="size-4" aria-hidden /> {partner.phone}
                                 </a>
                             </li>
@@ -79,6 +85,7 @@ export default function PartnerShow({ partner, cities, endorsements, answer, how
                                     href={partner.website}
                                     target="_blank"
                                     rel="sponsored noopener noreferrer"
+                                    onClick={() => track('click', [partner.slug], cityParam)}
                                     className="flex items-center gap-1 text-primary"
                                 >
                                     {partner.website.replace(/^https:\/\//, '')} <ExternalLink className="size-3" aria-hidden />

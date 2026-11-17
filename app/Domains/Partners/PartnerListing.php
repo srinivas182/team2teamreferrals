@@ -16,14 +16,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $category_id
  * @property int $city_id
  * @property string $status
+ * @property ?\Illuminate\Support\Carbon $waitlisted_at
  * @property-read Partner $partner
  * @property-read City $city
  */
 final class PartnerListing extends Model
 {
-    protected $fillable = ['partner_id', 'category_id', 'city_id', 'status'];
+    protected $fillable = ['partner_id', 'category_id', 'city_id', 'status', 'waitlisted_at'];
 
     protected $attributes = ['status' => 'active'];
+
+    protected function casts(): array
+    {
+        return ['waitlisted_at' => 'datetime'];
+    }
 
     /** @return BelongsTo<Partner, $this> */
     public function partner(): BelongsTo

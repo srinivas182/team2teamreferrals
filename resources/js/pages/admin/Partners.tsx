@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { ExternalLink, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -7,12 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Segmented } from '@/components/ui/data';
-import { Input } from '@/components/ui/field';
+import { Field, Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
 import type { Seo } from '@/types/seo';
 
-type St = 'pending' | 'approved' | 'rejected' | 'suspended';
+type St = 'pending' | 'approved' | 'rejected' | 'suspended' | 'changes';
+type Settings = { price: number; annualDiscount: number; trialDays: number; cap: number };
 type Row = {
     id: string;
     slug: string;
@@ -33,12 +34,24 @@ type Row = {
     offer: string | null;
     cities: string[];
     reason: string | null;
+    billing: string;
+    cycle: string;
+    paidUntil: string | null;
+    trialEnds: string | null;
+    cancelAt: string | null;
+    changes: { field: string; from: string | null; to: string | null }[] | null;
     applied: string;
     reviewed: string | null;
     endorsements: number;
     enquiries: number;
 };
-const LABELS: Record<St, string> = { pending: 'Waiting', approved: 'Approved', rejected: 'Not approved', suspended: 'Suspended' };
+const LABELS: Record<St, string> = {
+    pending: 'Waiting',
+    changes: 'Changes to review',
+    approved: 'Approved',
+    rejected: 'Not approved',
+    suspended: 'Suspended',
+};
 
 /** Admin → Partners: review applications (license checked first where the field needs one), then manage live listings. */
 export default function AdminPartners({
@@ -46,6 +59,8 @@ export default function AdminPartners({
     counts,
     rows,
     enabled,
+    settings,
+    canPrice,
     flash,
     seo,
 }: {
@@ -53,6 +68,8 @@ export default function AdminPartners({
     counts: Record<St, number>;
     rows: Row[];
     enabled: boolean;
+    settings: Settings;
+    canPrice: boolean;
     flash?: string;
     seo: Seo;
 }) {
@@ -86,6 +103,7 @@ export default function AdminPartners({
                     {errors.license ?? errors.reason}
                 </Alert>
             )}
+            <PriceSettings settings={settings} canPrice={canPrice} />
             <div className="mb-4">
                 <Segmented
                     label="Show"
@@ -152,6 +170,38 @@ export default function AdminPartners({
                                     </p>
                                 )}
                                 {r.reason && <p className="mt-2 text-sm text-muted">Reason given: {r.reason}</p>}
+                                {status === 'approved' && (
+                                    <p className="mt-1 text-sm text-muted">
+                                        Billing: {r.billing} · {r.cycle}
+                                        {r.trialEnds && r.billing === 'Free trial' ? ` · trial ends ${r.trialEnds}` : ''}
+                                        {r.paidUntil ? ` · paid until ${r.paidUntil}` : ''}
+                                        {r.cancelAt ? ` · ends ${r.cancelAt}` : ''}
+                                    </p>
+                                )}
+                                {r.changes && (
+                                    <div className="mt-3 rounded-md border border-line p-3 text-sm">
+                                        <div className="font-medium">Changes waiting for review</div>
+                                        <ul className="mt-1 space-y-1">
+                                            {r.changes.map((c) => (
+                                                <li key={c.field}>
+                                                    <span className="font-medium">{c.field}:</span>{' '}
+                                                    {c.field === 'Logo' ? (
+                                                        <span className="inline-flex items-center gap-2">
+                                                            {c.from && (
+                                                                <img src={c.from} alt="Current logo" width={32} height={32} className="size-8" />
+                                                            )}{' '}
+                                                            → {c.to && <img src={c.to} alt="New logo" width={32} height={32} className="size-8" />}
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            <s className="text-muted">{c.from ?? '(empty)'}</s> → {c.to ?? '(empty)'}
+                                                        </>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                             {r.licenseLookup && (
                                 <Button variant="secondary" size="sm" asChild>
@@ -172,7 +222,17 @@ export default function AdminPartners({
                                     I checked the license
                                 </label>
                             )}
-                            {(status === 'pending' || status === 'approved') && (
+                            {status === 'changes' && (
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={checked[r.id] ?? false}
+                                        onChange={(e) => setChecked({ ...checked, [r.id]: e.target.checked })}
+                                    />
+                                    I checked any new license number
+                                </label>
+                            )}
+                            {(status === 'pending' || status === 'approved' || status === 'changes') && (
                                 <Input
                                     aria-label="Reason"
                                     placeholder={
@@ -210,6 +270,21 @@ export default function AdminPartners({
                                     Suspend
                                 </Button>
                             )}
+                            {status === 'changes' && (
+                                <>
+                                    <Button size="sm" onClick={() => act(r.id, 'approve-changes', { license_checked: checked[r.id] ?? false })}>
+                                        Approve changes
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="danger"
+                                        disabled={!reasons[r.id]?.trim()}
+                                        onClick={() => act(r.id, 'reject-changes', { reason: reasons[r.id] })}
+                                    >
+                                        Reject changes
+                                    </Button>
+                                </>
+                            )}
                             {status === 'suspended' && (
                                 <Button size="sm" onClick={() => act(r.id, 'reinstate')}>
                                     Reinstate
@@ -220,5 +295,73 @@ export default function AdminPartners({
                 ))}
             </div>
         </AdminLayout>
+    );
+}
+
+/** Price per city, yearly discount, free trial and the per-city cap. Price changes need the billing permission. */
+function PriceSettings({ settings, canPrice }: { settings: Settings; canPrice: boolean }) {
+    const f = useForm({ price: settings.price, annual_discount: settings.annualDiscount, trial_days: settings.trialDays, cap: settings.cap });
+    const e = f.errors as Record<string, string | undefined>;
+    return (
+        <Card className="mb-4 max-w-5xl p-5">
+            <h2 className="font-semibold">Prices and limits</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-4">
+                <Field label="Price per city a month ($)" error={e.price}>
+                    <Input
+                        type="number"
+                        min={1}
+                        step="0.01"
+                        disabled={!canPrice}
+                        value={f.data.price}
+                        onChange={(ev) => f.setData('price', Number(ev.target.value))}
+                    />
+                </Field>
+                <Field label="Yearly discount (%)" error={e.annual_discount}>
+                    <Input
+                        type="number"
+                        min={0}
+                        max={50}
+                        disabled={!canPrice}
+                        value={f.data.annual_discount}
+                        onChange={(ev) => f.setData('annual_discount', Number(ev.target.value))}
+                    />
+                </Field>
+                <Field label="Free trial (days)" error={e.trial_days}>
+                    <Input
+                        type="number"
+                        min={0}
+                        max={90}
+                        disabled={!canPrice}
+                        value={f.data.trial_days}
+                        onChange={(ev) => f.setData('trial_days', Number(ev.target.value))}
+                    />
+                </Field>
+                <Field label="Partners per city and category" error={e.cap}>
+                    <Input
+                        type="number"
+                        min={1}
+                        max={50}
+                        disabled={!canPrice}
+                        value={f.data.cap}
+                        onChange={(ev) => f.setData('cap', Number(ev.target.value))}
+                    />
+                </Field>
+            </div>
+            {canPrice ? (
+                <Button
+                    size="sm"
+                    className="mt-3"
+                    loading={f.processing}
+                    onClick={() => f.post('/admin/partners/settings', { preserveScroll: true })}
+                >
+                    Save
+                </Button>
+            ) : (
+                <p className="mt-2 text-sm text-muted">Changing these needs the billing permission.</p>
+            )}
+            <p className="mt-2 text-xs text-muted">
+                The same price for everyone in a category, never per lead. New prices apply from each partner’s next bill.
+            </p>
+        </Card>
     );
 }

@@ -13,11 +13,12 @@ Paying for referrals of settlement-service business is prohibited by RESPA Secti
 
 ## Decision
 
-- Partners pay a flat monthly fee per city and category, the same for everyone. There are no per-lead, per-click or per-closing fees, and no bidding for position.
+- Partners pay a flat monthly fee per listed city, the same for everyone in a category (or a year up front at a set discount). There are no per-lead, per-click or per-closing fees, and no bidding for position.
+- Each city shows at most a set number of partners per category (5 by default); the rest wait in line and pay nothing for that city.
 - Everyone listed in a city and category takes the top spot in turn, one day each (`Partners::rotate`). The order is the same all day, so cached pages stay consistent.
 - Every list is labelled "Advertisement" with a "How this list works" note. Outbound links carry `rel="sponsored"`.
 - Enquiries go to the chosen partner only and are never resold.
-- Member endorsements are shown but never affect order. Members receive nothing for them.
+- Member endorsements are shown but never affect order. Members receive nothing for them, nor for sharing a partner with a client (the shared email says so).
 - Partners are separate from the referral network. A mortgage lender may also be a network member; the two are unrelated.
 
 ## Consequences

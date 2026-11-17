@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, ExternalLink, Gift, Phone, ThumbsUp } from 'lucide-react';
+import { track } from '@/components/partners/track';
 
 export type PartnerCardData = {
     slug: string;
@@ -76,7 +77,11 @@ export function PartnerCard({ partner, cityId }: { partner: PartnerCardData; cit
                         Send a message
                     </Link>
                     {partner.phone && (
-                        <a href={`tel:${partner.phone.replace(/[^0-9+]/g, '')}`} className="flex items-center gap-1 text-primary">
+                        <a
+                            href={`tel:${partner.phone.replace(/[^0-9+]/g, '')}`}
+                            onClick={() => track('click', [partner.slug], cityId)}
+                            className="flex items-center gap-1 text-primary"
+                        >
                             <Phone className="size-4" aria-hidden /> {partner.phone}
                         </a>
                     )}
@@ -85,6 +90,7 @@ export function PartnerCard({ partner, cityId }: { partner: PartnerCardData; cit
                             href={partner.website}
                             target="_blank"
                             rel="sponsored noopener noreferrer"
+                            onClick={() => track('click', [partner.slug], cityId)}
                             className="flex items-center gap-1 text-primary"
                         >
                             Website <ExternalLink className="size-3" aria-hidden />
