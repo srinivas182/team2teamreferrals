@@ -41,6 +41,10 @@ final class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
+            // First-run guided tours (Sprint 52a): finished ones, and whether tips are off.
+            'tours' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? \App\Domains\Platform\Tours\ToursController::state($u) : null,
+            // A demo account (Sprint 52a): the portal shows a banner, and the reset time.
+            'demo' => fn () => ($u = $request->user()) !== null && str_ends_with((string) $u->email, '@'.\App\Domains\Content\Demo\DemoWorkspace::DOMAIN),
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
             // Whether this person sees Ally (Sprint 48b): by who they are (visitor, member or partner).
             'ally' => fn () => \App\Domains\Support\Ally\AllySettings::on($request->user() !== null ? 'member' : (is_string($request->session()->get('partner_portal')) ? 'partner' : 'visitor')),

@@ -12,6 +12,8 @@ import { Segmented } from '@/components/ui/data';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { statusMessage } from '@/lib/status';
+import { Tour } from '@/components/tour/Tour';
+import { PARTNER_TOUR } from '@/lib/tours';
 import type { Seo } from '@/types/seo';
 
 type Details = {
@@ -71,6 +73,23 @@ const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigi
 export default function PartnerPortal(props: Props) {
     const { partner, billing, status, seo } = props;
     const [tab, setTab] = useState<Tab>('overview');
+    // The partner tour, once per browser (partners have no account settings to remember it in).
+    const [tour, setTour] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return !window.localStorage.getItem('t2t-partner-tour') && !window.location.search.includes('tour=off');
+        } catch {
+            return false;
+        }
+    });
+    const endTour = () => {
+        setTour(false);
+        try {
+            window.localStorage.setItem('t2t-partner-tour', '1');
+        } catch {
+            // private browsing: the tour may show again next time
+        }
+    };
     const base = `/partner-portal/${partner.id}`;
     return (
         <PublicLayout current="/partners">
@@ -86,7 +105,7 @@ export default function PartnerPortal(props: Props) {
                     </div>
                     <div className="flex gap-2">
                         {partner.live && (
-                            <Button variant="secondary" size="sm" asChild>
+                            <Button variant="secondary" size="sm" asChild data-tour="partner-listing">
                                 <a href={`/partner/${partner.slug}`} target="_blank" rel="noreferrer">
                                     See my listing
                                 </a>
@@ -114,7 +133,7 @@ export default function PartnerPortal(props: Props) {
                             : 'Your last payment failed. Update your card under Billing to keep your listing up.'}
                     </Alert>
                 )}
-                <div className="mt-6">
+                <div className="mt-6" data-tour="partner-tabs">
                     <Segmented
                         label="Section"
                         value={tab}
@@ -124,7 +143,7 @@ export default function PartnerPortal(props: Props) {
                             ['listing', 'Listing'],
                             ['cities', 'Cities'],
                             ['billing', 'Billing'],
-                            ['enquiries', `Enquiries (${props.enquiries.length})`],
+                            ['enquiries', props.enquiries.length > 0 ? `Enquiries (${props.enquiries.length})` : 'Enquiries'],
                         ]}
                     />
                 </div>
@@ -136,6 +155,7 @@ export default function PartnerPortal(props: Props) {
                     {tab === 'enquiries' && <Enquiries {...props} />}
                 </div>
             </div>
+            {tour && <Tour steps={PARTNER_TOUR} onEnd={endTour} />}
         </PublicLayout>
     );
 }
@@ -145,13 +165,13 @@ function Overview({ stats, base }: Props & { base: string }) {
     return (
         <div className="space-y-4">
             <h2 className="font-display text-xl font-bold">Last 30 days</h2>
-            <div className="grid gap-3 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {(
                     [
                         ['Views', t.views],
                         ['Clicks', t.clicks],
                         ['Enquiries', t.enquiries],
-                        ['Shared by members', t.shares],
+                        ['Member shares', t.shares],
                         ['Cost per enquiry', stats.costPerEnquiry !== null ? money(stats.costPerEnquiry) : '–'],
                     ] as [string, number | string][]
                 ).map(([label, v]) => (

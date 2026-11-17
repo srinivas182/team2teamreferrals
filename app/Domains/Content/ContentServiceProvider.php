@@ -73,10 +73,22 @@ final class ContentServiceProvider extends ServiceProvider
                 Route::get('blog/category/{category}', [BlogController::class, 'index'])->where('category', '[a-z0-9-]+')->name('blog.category');
                 Route::get('blog/{slug}', [BlogController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('blog.post');
             });
+            // The live demo (Sprint 52a): on a demo install, one-click entry; elsewhere, a link to the demo install.
+            Route::middleware(['web', 'noindex:always', 'throttle:30,1'])->group(function (): void {
+                Route::get('demo', [Demo\Http\DemoController::class, 'show'])->name('demo');
+                Route::post('demo/enter', [Demo\Http\DemoController::class, 'enter'])->middleware('throttle:10,1')->name('demo.enter');
+            });
             // Website pages and redirects: only where no app route matches.
             Route::fallback([PublicPageController::class, 'fallback'])->middleware('web')->name('content.page');
         });
         $this->callAfterResolving(Schedule::class, fn (Schedule $s) => $s->call(fn () => Pages::publishDue() + Posts::publishDue())->name('content-publish')->everyMinute()->onOneServer());
+        // On a demo install, the demo starts fresh every hour (Sprint 52a).
+        $this->callAfterResolving(Schedule::class, fn (Schedule $s) => $s->call(function (): void {
+            if (config('app.demo_install')) {
+                Demo\DemoWorkspace::reset();
+                Demo\DemoWorkspace::create(true);
+            }
+        })->hourly()->name('demo-reset')->withoutOverlapping()->onOneServer());
         $this->callAfterResolving(\App\Domains\Seo\Sitemap\SitemapRegistry::class, fn ($r) => $r->register(new ContentSitemapProvider));
     }
 }

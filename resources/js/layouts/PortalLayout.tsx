@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
+import { TourRunner } from '@/components/tour/Tour';
 import { FooterCredit } from '@/components/FooterCredit';
 import { Bell, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -26,6 +27,7 @@ function NavLink({ item, current }: { item: NavItem; current: boolean }) {
         <Link
             href={item.href}
             prefetch
+            data-tour={`nav-${item.href.split('/')[2] ?? 'home'}`}
             aria-current={current ? 'page' : undefined}
             className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-muted hover:bg-bg hover:text-ink',
@@ -173,6 +175,14 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                     </div>
                 </aside>
                 <div className="min-w-0 pb-24 lg:pb-0">
+                    {(props as { demo?: boolean }).demo && (
+                        <div role="status" className="bg-orange-500 px-4 py-2 text-center text-sm font-medium text-navy-900">
+                            You’re exploring the live demo. Nothing is sent, and everything resets every hour.{' '}
+                            <button type="button" className="underline" onClick={() => router.post('/logout')}>
+                                Leave the demo
+                            </button>
+                        </div>
+                    )}
                     <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur sm:px-6">
                         <Link href="/app" className="lg:hidden" aria-label="Home">
                             <Logo markOnly className="h-8 w-9" />
@@ -181,6 +191,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             onClick={() => setPalette(true)}
                             className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:max-w-md"
                             aria-label="Search or jump to (Ctrl K)"
+                            data-tour="search"
                         >
                             <Search className="size-4" aria-hidden />
                             <span className="truncate">Search referrals, teams, cities…</span>
@@ -192,6 +203,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                                 <PopoverTrigger
                                     className="relative rounded-md p-2 text-muted hover:bg-bg hover:text-ink"
                                     aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+                                    data-tour="notifications"
                                 >
                                     <Bell className="size-5" />
                                     {unread > 0 && (
@@ -261,6 +273,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </footer>
                     </main>
                     <AllyWidget />
+                    <TourRunner />
                 </div>
                 <nav
                     className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom,0px)] lg:hidden"

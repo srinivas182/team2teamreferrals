@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { FooterCredit } from '@/components/FooterCredit';
+import { TourRunner } from '@/components/tour/Tour';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { CommandPalette } from '@/components/ui/command';
@@ -11,6 +12,8 @@ import {
     Settings2,
     Store,
     BookOpen,
+    KanbanSquare,
+    FileBarChart,
     BadgeCheck,
     DollarSign,
     Factory,
@@ -65,9 +68,9 @@ const nav: Item[] = [
     { label: 'Introductions', href: '/admin/pairings', icon: Handshake, permission: 'industries.manage', ready: true },
     { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: true },
     { label: 'Network dashboard', href: '/admin/network', icon: ArrowLeftRight, permission: 'referrals.view', ready: true },
-    { label: 'Network CRM', href: '/admin/referrals', icon: ArrowLeftRight, permission: 'referrals.view', ready: true },
+    { label: 'Network CRM', href: '/admin/referrals', icon: KanbanSquare, permission: 'referrals.view', ready: true },
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: true },
-    { label: 'Reports', href: '/admin/reports', icon: DollarSign, permission: 'referrals.view', ready: true },
+    { label: 'Reports', href: '/admin/reports', icon: FileBarChart, permission: 'referrals.view', ready: true },
     { label: 'Growth', href: '/admin/growth/prospects', icon: Rocket, permission: 'growth.manage', ready: true },
     { label: 'Partners', href: '/admin/partners', icon: Store, permission: 'partners.manage', ready: true },
     { label: 'Website', href: '/admin/content', icon: PanelsTopLeft, permission: 'content.manage', ready: true },
@@ -138,6 +141,7 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                                     key={n.href}
                                     href={n.href}
                                     prefetch
+                                    data-tour={`admin-nav-${n.href.split('/')[2] ?? 'home'}`}
                                     aria-current={current ? 'page' : undefined}
                                     className={cn(
                                         'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white',
@@ -182,6 +186,7 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                             onClick={() => setPalette(true)}
                             className="hidden h-10 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:flex sm:max-w-md"
                             aria-label="Search people and settings (Ctrl K)"
+                            data-tour="admin-search"
                         >
                             <Search className="size-4" aria-hidden />
                             <span className="truncate">Search people, settings…</span>
@@ -203,6 +208,7 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                     </main>
                 </div>
             </div>
+            <TourRunner />
             <CommandPalette
                 open={palette}
                 onOpenChange={setPalette}

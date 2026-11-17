@@ -10,7 +10,8 @@
         "http://127.0.0.1:8001/industries/solar",
         "http://127.0.0.1:8001/industries/solar/tx/austin",
         "http://127.0.0.1:8001/t/lone-star-solar",
-        "http://127.0.0.1:8001/find-a-pro"
+        "http://127.0.0.1:8001/find-a-pro",
+        "http://127.0.0.1:8001/help"
       ],
       "numberOfRuns": 2,
       "settings": {
@@ -23,7 +24,7 @@
         "categories:performance": [
           "error",
           {
-            "minScore": 0.9
+            "minScore": 0.95
           }
         ],
         "categories:accessibility": [

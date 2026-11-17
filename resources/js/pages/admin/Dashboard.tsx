@@ -1,14 +1,27 @@
-import { Link } from '@inertiajs/react';
-import { ScrollText, UserCog } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { ArrowLeftRight, DollarSign, LifeBuoy, ScrollText, Sparkles, Store, UserCog } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Card } from '@/components/ui/card';
 import { Kpi } from '@/components/ui/data';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
+
+/** Where staff most often go next, shown when they may open it. */
+const SHORTCUTS: [string, string, string, typeof UserCog, string][] = [
+    ['Network dashboard', 'Referrals, response times and trends across every network.', '/admin/network', ArrowLeftRight, 'referrals.view'],
+    ['Revenue', 'Seats, partner listings and plans, by month.', '/admin/revenue', DollarSign, 'revenue.view'],
+    ['Support', 'Tickets waiting for a reply, with response-time targets.', '/admin/support', LifeBuoy, 'support.manage'],
+    ['Partners', 'Applications and listing changes to review.', '/admin/partners', Store, 'partners.manage'],
+    ['Ally', 'What the AI assistant answered, and what it couldn’t.', '/admin/ally', Sparkles, 'support.manage'],
+    ['Staff', 'Invite people and choose what each can do.', '/admin/staff', UserCog, 'staff.manage'],
+    ['Audit log', 'Every sign-in, security change and admin action.', '/admin/audit', ScrollText, 'audit.view'],
+];
 
 type Stats = { members: number; staff: number; signInsToday: number; failedToday: number };
 
 export default function Dashboard({ stats, launch, seo }: { stats: Stats; launch: { ready: number; total: number } | null; seo: Seo }) {
+    const can = usePage<SharedProps>().props.auth.user?.permissions ?? [];
     return (
         <AdminLayout title="Admin">
             <SeoHead seo={seo} />
@@ -34,28 +47,19 @@ export default function Dashboard({ stats, launch, seo }: { stats: Stats; launch
                 <Kpi label="Sign-ins today" value={stats.signInsToday.toLocaleString()} />
                 <Kpi label="Failed sign-ins today" value={stats.failedToday.toLocaleString()} hint="Spikes can mean someone is guessing passwords." />
             </div>
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {[
-                    ['Staff', 'Invite people and choose what each can do.', '/admin/staff', UserCog],
-                    ['Audit log', 'Every sign-in, security change and admin action.', '/admin/audit', ScrollText],
-                ].map(([t, d, h, I]) => {
-                    const Icon = I as typeof UserCog;
-                    return (
-                        <Link key={h as string} href={h as string} className="block">
-                            <Card className="flex items-start gap-4 p-5 hover:shadow-md">
-                                <Icon className="mt-0.5 size-5 text-primary" aria-hidden />
-                                <div>
-                                    <h2 className="font-semibold">{t as string}</h2>
-                                    <p className="text-sm text-muted">{d as string}</p>
-                                </div>
-                            </Card>
-                        </Link>
-                    );
-                })}
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {SHORTCUTS.filter(([, , , , p]) => can.includes(p)).map(([t, d, h, Icon]) => (
+                    <Link key={h} href={h} className="block">
+                        <Card className="flex h-full items-start gap-4 p-5 hover:shadow-md">
+                            <Icon className="mt-0.5 size-5 text-primary" aria-hidden />
+                            <div>
+                                <h2 className="font-semibold">{t}</h2>
+                                <p className="text-sm text-muted">{d}</p>
+                            </div>
+                        </Card>
+                    </Link>
+                ))}
             </div>
-            <p className="mt-6 text-sm text-muted">
-                The full network dashboard (referrals, revenue, response-time trends) arrives with the reporting sprints.
-            </p>
         </AdminLayout>
     );
 }

@@ -59,7 +59,8 @@ it('keeps key pages within their query budgets', function (string $url, int $bud
     $this->get($url)->assertOk();
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual($budget);
 })->with([
-    'home' => ['/', 6, null],
+    // The home page's figures are worked out once every five minutes (a fixed set of queries, never per row).
+    'home' => ['/', 12, null],
     // 23: a first visit creates the team, which checks its public web address isn't already taken (once per team).
     'portal home' => ['/app', 23, null],
     'admin staff' => ['/admin/staff', 30, 'super_admin'],

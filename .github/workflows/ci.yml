@@ -168,9 +168,13 @@ jobs:
   performance:
     name: Performance budgets (Lighthouse)
     needs: changes
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
     if: needs.changes.outputs.web == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
@@ -194,4 +198,19 @@ jobs:
         run: npx --yes @lhci/cli@0.15.1 autorun
       - name: Core Web Vitals on mobile (LCP, CLS, blocking time)
         run: npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.mobile.json
+      # Sprint 52a: screenshots of key screens (light, dark, phone) compared with the approved ones, and every
+      # guided-tour step checked against its page. Intended changes: add the PR label "visual-ok", re-run this job,
+      # then commit the images from the report's new/ folder to tests/visual/baseline/.
+      - name: Visual checks of key screens and guided-tour targets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          php artisan tinker --execute="require base_path('scripts/ci/seed-screens.php');"
+          php artisan cache:clear
+          export VISUAL_OK=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" --jq 'any(.[]; .name == "visual-ok")' 2>/dev/null || echo false)
+          node scripts/ci/visual.mjs http://127.0.0.1:8001
+      - name: Visual report (screenshots, differences, new images)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: visual-report, path: visual-report, retention-days: 14, if-no-files-found: ignore }
 

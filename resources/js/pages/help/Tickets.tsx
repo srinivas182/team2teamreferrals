@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ type Row = { id: string; number: string; subject: string; status: string; status
 
 /** Portal → Help and support: your tickets, the help centre and a way to ask something new. */
 export default function MyTickets({ tickets, seo }: { tickets: Row[]; seo: Seo }) {
-    const { auth } = usePage<SharedProps>().props;
+    const { auth, tours } = usePage<SharedProps & { tours?: { done: string[]; off: boolean } | null }>().props;
     return (
         <PortalLayout title="Help and support" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
@@ -23,7 +23,23 @@ export default function MyTickets({ tickets, seo }: { tickets: Row[]; seo: Seo }
                     <Button variant="secondary" asChild>
                         <a href="/help">Browse the help centre</a>
                     </Button>
+                    <Button variant="secondary" onClick={() => router.post('/app/tours/replay')}>
+                        Show me around again
+                    </Button>
+                    {auth.user?.isStaff && (
+                        <Button variant="secondary" onClick={() => router.post('/app/tours/replay', { where: 'admin' })}>
+                            Replay the admin tour
+                        </Button>
+                    )}
                 </div>
+                <label className="flex items-center gap-2 text-sm">
+                    <input
+                        type="checkbox"
+                        checked={!(tours?.off ?? false)}
+                        onChange={(e) => router.post('/app/tours/tips', { on: e.target.checked }, { preserveScroll: true })}
+                    />
+                    Show tips and guided tours
+                </label>
                 {tickets.length === 0 ? (
                     <Card className="p-8 text-center text-muted">You haven’t contacted support yet.</Card>
                 ) : (
