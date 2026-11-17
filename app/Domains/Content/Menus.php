@@ -24,8 +24,8 @@ final class Menus
     public const DEFAULT_HEADER = [['How it works', '/how-it-works'], ['Groups', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro'], ['Pricing', '/pricing'], ['Blog', '/blog']];
 
     public const DEFAULT_FOOTER = [
-        ['Product', [['How it works', '/how-it-works'], ['Pricing', '/pricing'], ['Group directory', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro']]],
-        ['Company', [['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Status', '/status']]],
+        ['Product', [['How it works', '/how-it-works'], ['Pricing', '/pricing'], ['Group directory', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro'], ['Local partners', '/partners']]],
+        ['Company', [['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Advertise with us', '/partners/advertise'], ['Status', '/status']]],
         ['Legal', [['Terms', '/terms'], ['Privacy', '/privacy']]],
     ];
 
@@ -73,7 +73,14 @@ final class Menus
         try {
             $route = \Illuminate\Support\Facades\Route::getRoutes()->match(\Illuminate\Http\Request::create($path, 'GET'));
             if ($route->getName() !== 'content.page') {
-                return true; // an app page
+                // An app page, unless its feature module is switched off.
+                foreach ($route->gatherMiddleware() as $m) {
+                    if (is_string($m) && str_starts_with($m, 'module:') && ! app(\App\Domains\Platform\Modules\Modules::class)->enabled(substr($m, 7))) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         } catch (Throwable) {
             // no app route: a website page or redirect may still answer

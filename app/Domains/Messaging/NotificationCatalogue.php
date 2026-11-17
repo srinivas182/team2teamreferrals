@@ -81,6 +81,8 @@ final class NotificationCatalogue
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'admin.contact' => ['group' => 'Admin', 'label' => 'Messages from the Contact page', 'description' => 'When someone writes through the website.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
+        'admin.partners' => ['group' => 'Admin', 'label' => 'Partner applications', 'description' => 'When a business applies to advertise in the partner directory.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
+            'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.checkin' => ['group' => 'Network', 'label' => 'Check-ins from your network owner', 'description' => 'A friendly note when deadlines slip.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,
             'title' => '{headline}', 'body' => '{body}', 'sms' => ''],
         'network.announcement' => ['group' => 'Network', 'label' => 'Network announcements', 'description' => 'News from your network owner.', 'channels' => ['mail', 'database'], 'urgent' => false, 'locked' => false,

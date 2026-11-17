@@ -4,6 +4,40 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 47a — Partner directory: sign-up, review and listings
+Tests: tests/Feature/Partners/PartnersTest.php.
+1. Local businesses that serve home buyers and sellers can advertise: mortgage lenders, title and escrow, home inspectors, insurance agents, movers, real estate attorneys, home stagers and real estate photographers (staff can add more).
+   - "Advertise with us" (/partners/advertise): category, business details, description, logo, cities served (up to 25), contact details, an optional offer, and the license number where the field needs one (NMLS ID for mortgage lenders).
+   - Logos are checked by their bytes (JPEG, PNG or WebP) and stripped of hidden data such as GPS. The form has the usual spam guard and a rate limit.
+   - Nothing is public until staff approve it; the business is emailed at each step.
+2. Admin → Partners: a review queue (waiting, approved, not approved, suspended).
+   - Licensed categories can't be approved without the license number and a tick to confirm it was checked; a "Check with the regulator" link opens the regulator's record.
+   - Reject and suspend need a reason, which the business sees. Every decision is in the audit log.
+   - Admin → Partners → Categories: names, license rule, regulator lookup address, Schema.org type, the questions shown on city pages, order, on/off. New permission: "Review and manage partner directory listings".
+3. Public pages:
+   - each partner's page (/partner/…), each category in a city (/partners/mortgage-lenders/tx/houston) and a hub (/partners)
+   - a "Local partners" section at the foot of every city page, up to 3 per category with a link to the rest
+   - footer links "Local partners" and "Advertise with us" (hidden when the module is off)
+4. Fair and clearly advertising (with RESPA Section 8 in mind):
+   - everyone listed in a city and category takes the top spot in turn, one day each; there is no bidding
+   - every list is labelled "Advertisement" with a "How this list works" note
+   - outbound links are marked sponsored
+5. Enquiries go to the chosen business only and are never sold or shared. Replies go straight to the person who wrote, and they get a copy saying so.
+6. Verified badge: license number, the date it was checked and a link to the regulator's record.
+7. Members holding a seat can endorse a partner (one per team, with a short note). Endorsements are shown on the partner's page but never change the order.
+8. Offers show on the card and the page until their end date.
+9. SEO and AEO:
+   - LocalBusiness-type structured data with credential, offer and areas served; ItemList, FAQPage and breadcrumbs on category pages
+   - a partners sitemap (also in llms.txt)
+   - pages with nobody listed are not indexed
+10. The "Partner directory" module is now available. Switching it off hides every page, the city page section and the footer links. Menu links to any switched-off module are now hidden.
+11. Not in this part (coming in 47b):
+   - billing (flat monthly price per city, trial, cancel, pulled on failed payment)
+   - the 5-per-city cap and waitlist
+   - views, clicks and enquiry stats with CSV
+   - the partner portal and members' "share with my client"
+   - Until then, approved listings show without payment, so approve only businesses you have agreed terms with.
+
 ### Footer credit ("Powered by MCS")
 Tests: tests/Feature/Platform/FooterCreditTest.php.
 1. A "Powered by MCS" credit at the bottom of every page: the website footer, the portal and the admin.

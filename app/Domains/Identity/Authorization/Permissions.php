@@ -36,6 +36,7 @@ final class Permissions
         ],
         'Growth and content' => [
             'growth.manage' => 'Manage prospects and campaigns',
+            'partners.manage' => 'Review and manage partner directory listings',
             'content.manage' => 'Edit the website, blog and templates',
             'training.manage' => 'Manage training videos and quizzes',
         ],
