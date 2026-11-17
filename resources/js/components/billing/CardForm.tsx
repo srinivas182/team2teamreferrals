@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { CreditCard, Lock } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { xsrf } from '@/lib/xsrf';
 
 // Stripe.js is loaded from Stripe only on billing pages (the security policy allows it there alone).
 type StripeJs = {
@@ -27,13 +28,7 @@ export function loadStripe(key: string): Promise<StripeJs> {
         document.head.appendChild(s);
     });
 }
-export const xsrf = () =>
-    decodeURIComponent(
-        document.cookie
-            .split('; ')
-            .find((c) => c.startsWith('XSRF-TOKEN='))
-            ?.split('=')[1] ?? '',
-    );
+export { xsrf };
 
 /** Add or replace a card with Stripe's own form (card details never reach our servers). */
 export function CardForm({ setupUrl, saveUrl, stripeKey, onDone }: { setupUrl: string; saveUrl: string; stripeKey: string; onDone: () => void }) {
