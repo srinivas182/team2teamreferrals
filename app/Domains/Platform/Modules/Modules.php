@@ -24,7 +24,7 @@ final class Modules
         'ai_insights' => ['label' => 'AI owner insights', 'affects' => 'The AI-written weekly summary for network owners (the figures are sent either way)', 'default' => false],
         'ai_videos' => ['label' => 'AI training videos', 'affects' => 'Creating training videos with an AI presenter; needs Network training on. Published videos keep playing', 'default' => false],
         'consumer_requests' => ['label' => 'Consumer requests', 'affects' => '"Request a pro" forms on city pages and the consumer portal', 'default' => true, 'available' => false],
-        'partner_directory' => ['label' => 'Partner directory', 'affects' => 'Paid partner listings and the directory page', 'default' => true, 'available' => false],
+        'partner_directory' => ['label' => 'Partner directory', 'affects' => 'Local businesses advertising on city pages: the partner pages, "Advertise with us" and the Local partners block', 'default' => true],
     ];
 
     public function __construct(private readonly Settings $settings) {}

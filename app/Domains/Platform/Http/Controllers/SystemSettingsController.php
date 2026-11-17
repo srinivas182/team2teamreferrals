@@ -154,6 +154,7 @@ final class SystemSettingsController
             }
         }
         $this->save('modules', $values, [], $request);
+        \App\Domains\Content\Menus::forget(); // menu links to a switched-off feature come and go with it
 
         return back()->with('status', 'settings-saved');
     }

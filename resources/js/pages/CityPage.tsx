@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ShieldAlert } from 'lucide-react';
 import { RequestForm, type RequestBlock } from '@/components/directory/RequestForm';
+import { LocalPartners, type PartnerBlock } from '@/components/partners/LocalPartners';
 import { TeamCard, article, type PublicTeam } from '@/components/directory/TeamCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,29 @@ type Props = {
     otherIndustries: { slug: string; name: string; team: string }[];
     howTo: string;
     request: RequestBlock | null;
+    partners: PartnerBlock[];
+    partnersNote: string;
     disclosure: string | null;
     seo: Seo;
 };
 
 /** One industry in one city: who holds the seat (with their public facts as text), or that it is open to claim. */
-export default function CityPage({ industry, state, city, answer, intro, seats, nearby, otherIndustries, howTo, request, disclosure, seo }: Props) {
+export default function CityPage({
+    industry,
+    state,
+    city,
+    answer,
+    intro,
+    seats,
+    nearby,
+    otherIndustries,
+    howTo,
+    request,
+    partners,
+    partnersNote,
+    disclosure,
+    seo,
+}: Props) {
     return (
         <PublicLayout current="/groups">
             <SeoHead seo={seo} />
@@ -130,6 +148,7 @@ export default function CityPage({ industry, state, city, answer, intro, seats, 
                         </ul>
                     </section>
                 )}
+                <LocalPartners blocks={partners} note={partnersNote} city={`${city.name}, ${state.code}`} cityId={city.id} />
             </article>
         </PublicLayout>
     );

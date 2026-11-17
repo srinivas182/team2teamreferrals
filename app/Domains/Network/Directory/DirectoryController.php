@@ -160,6 +160,9 @@ final class DirectoryController
             'intro' => $hub ? IndustryContent::placeSummary($industry, $st->name, $city->name) : null, 'seats' => $seats,
             'nearby' => Directory::nearby($groups->first(), $city), 'otherIndustries' => Directory::otherIndustries($city, $industry->id),
             'howTo' => $howTo, 'request' => $request,
+            // Local partners (Sprint 47): paid adverts, in a fair daily rotation, labelled as such.
+            'partners' => \App\Domains\Partners\Partners::cityBlock($city->loadMissing('state')),
+            'partnersNote' => \App\Domains\Partners\Http\PartnersController::HOW_IT_WORKS,
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'seo' => (new SeoData(title: "{$industry->name} in {$city->name}, {$st->code}: the verified {$t['pro']}", description: $answer, path: $path, index: $index, schema: $schema,
                 image: \App\Domains\Seo\PageImage::path(['eyebrow' => $industry->name.' · '.$city->name.', '.$st->code, 'title' => $holder !== null ? (string) $holder['name'] : "{$industry->name} in {$city->name}",

@@ -12,6 +12,7 @@ return [
     App\Domains\Api\ApiServiceProvider::class,
     App\Domains\Integrations\IntegrationsServiceProvider::class,
     App\Domains\Growth\GrowthServiceProvider::class,
+    App\Domains\Partners\PartnersServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\HorizonServiceProvider::class,
 ];
