@@ -1,0 +1,55 @@
+# Approve the current look of key screens (Sprint 52a): runs the visual checks on a branch and commits the
+# screenshots as the new approved images in tests/visual/baseline. Run it from Actions → "Visual baselines" (or
+# `gh workflow run visual-baselines.yml -f branch=<branch>`) after reviewing a PR's visual report.
+name: Visual baselines
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch whose screens to approve
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  PHP_VERSION: '8.4'
+
+jobs:
+  approve:
+    name: Approve visual baselines
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: '${{ inputs.branch }}' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci && npm run build
+      - name: Serve the app as in CI
+        run: |
+          cp .env.example .env && php artisan key:generate
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/; s/^APP_DEBUG=.*/APP_DEBUG=false/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_DRIVER=.*/SESSION_DRIVER=file/; s/^CACHE_STORE=.*/CACHE_STORE=file/; s#^APP_URL=.*#APP_URL=http://127.0.0.1:8001#' .env
+          printf 'SEO_INDEXABLE=true\nSEO_CANONICAL_URL=http://127.0.0.1:8001\n' >> .env
+          touch database/database.sqlite && php artisan migrate --force
+          php artisan tinker --execute="require base_path('scripts/ci/seed-public-pages.php');"
+          php artisan tinker --execute="require base_path('scripts/ci/seed-screens.php');"
+          php artisan optimize
+          (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && (node scripts/ci/gzip-proxy.mjs 8001 8000 &) && sleep 4
+      - name: Take the screenshots
+        env: { CI: 'true', VISUAL_OK: 'true' }
+        run: node scripts/ci/visual.mjs http://127.0.0.1:8001
+      - name: Commit them as the approved images
+        run: |
+          mkdir -p tests/visual/baseline
+          cp visual-report/current/*.png tests/visual/baseline/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/baseline
+          git diff --cached --quiet && echo "Nothing changed." && exit 0
+          git commit -m "Approve visual baselines (${{ github.actor }})"
+          git push
