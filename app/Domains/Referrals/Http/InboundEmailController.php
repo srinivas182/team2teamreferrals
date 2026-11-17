@@ -30,6 +30,11 @@ final class InboundEmailController
         if (preg_match('/reply\+g([0-9a-z]{26})@/i', $to, $m) === 1) {
             return response()->json(['status' => \App\Domains\Growth\Campaigns::reply(strtolower($m[1]), $from, $text)]);
         }
+        // Support: replies to a ticket (reply+t…), and new emails to support@ (Sprint 48a).
+        if (preg_match('/reply\+t[0-9a-z]{26}\./i', $to) === 1 || \App\Domains\Support\Tickets::isSupportAddress($to)) {
+            return response()->json(['status' => \App\Domains\Support\Tickets::inbound($to, $from, (string) ($request->input('Subject') ?: $request->input('subject', '')),
+                trim((string) ($request->input('StrippedTextReply') ?: $request->input('TextBody') ?: $request->input('text', ''))), $id)]);
+        }
         // Forwarded leads go to intake, with the full body: the forwarded part is the lead.
         if (\App\Domains\Referrals\Intake\IntakeAddress::isIntake($to)) {
             $full = (string) ($request->input('TextBody') ?: $request->input('text', ''));

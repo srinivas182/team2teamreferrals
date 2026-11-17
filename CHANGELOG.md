@@ -4,6 +4,45 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 48a — Help centre and support tickets
+Tests: tests/Feature/Support/HelpCentreTest.php, tests/Feature/Support/TicketsTest.php.
+1. Help centre (/help):
+   - articles by topic, each starting with a short answer
+   - search that ranks title matches first
+   - "Was this helpful?" with an optional "what were you looking for?"
+   - related questions, and "Still need help?" leading to support
+   - starts with 5 topics and 6 articles (claiming a seat, referral deadlines, referral fees, seat billing, advertising as a partner, two-step sign-in)
+   - articles are for everyone (public and indexed), signed-in members, or network owners; members-only and owners-only articles never reach search engines
+2. SEO and AEO:
+   - TechArticle, FAQPage and breadcrumbs on every article
+   - HowTo with numbered steps on how-to articles, and FAQPage on topic pages
+   - a help sitemap (also in llms.txt)
+   - search pages are not indexed
+3. Admin → Help centre (content permission):
+   - Markdown editor with preview (HTML is removed, links checked) and a review date (6 months by default)
+   - topics
+   - views and % helpful per article
+   - "Searched for, nothing found" with a "Write it" link
+   - "not helpful" comments
+   - renaming a published article keeps the old address working
+4. Contact support (/support/new): for members (already known), partners signed in to their account, and visitors (name, email, spam guard). Up to 3 images or PDFs, checked by their bytes and stored privately. Suggested articles are shown first when coming from a search.
+5. Following a ticket:
+   - members under Portal → Help and support
+   - everyone else through a private link in their email
+   - reply on the web or by replying to the email (accepted only from the ticket's own address, never twice)
+   - mark as solved, then "How did we do?"
+   - a reply after a ticket closes starts a new one that refers back
+6. Admin → Support (support permission):
+   - inbox views: mine, unassigned, open, waiting on customer, solved, everything; search and a priority filter
+   - most urgent and soonest due first
+   - each ticket has the conversation, internal notes, file downloads, status, priority, topic and assignment (each change noted), and the customer's account, seats, unpaid invoices and earlier tickets
+   - saved replies with {first_name} and {ticket}
+   - figures: open, past response time, average first reply and satisfaction (last 30 days)
+7. Response-time targets by priority (first reply / solved, in hours: urgent 1/8, high 4/24, normal 8/72, low 24/120), editable in Admin → Support → Settings. The assignee (or the team) is alerted once when a ticket passes its target.
+8. Automatic steps: a ticket waiting on the customer for 5 days is solved, with an email; solved tickets close after 7 days. Emails to support@ (the inbound email domain) become tickets.
+9. Footer link "Help centre"; Admin menu "Support" (now live) and "Help centre".
+10. Next (48b): Ally, the AI assistant, answering from these articles and the member's own data, handing off to a ticket.
+
 ### Sprint 47b — Partner directory: billing, waitlist, stats and partner account
 Tests: tests/Feature/Partners/PartnerBillingTest.php.
 1. Billing: a flat price per listed city, $49 a month by default, or a year up front at 10% less. The same for everyone in a category, never per lead.
