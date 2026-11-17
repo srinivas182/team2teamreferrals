@@ -4,6 +4,42 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 52a — Polish: home page, visual checks, tours, live demo, speed
+Tests: tests/Feature/Platform/LaunchPolishTest.php; visual checks in CI (scripts/ci/visual.mjs).
+1. The home page now follows the approved design, with real figures:
+   - an industry finder ("What do you do?") and an example referral, labelled as an example
+   - live figures: seats filled, industries, states, and a typical time to accept once there are enough referrals
+   - the live seat map with an industry switch
+   - every industry by family, and the final call to action
+   - a no-sign-up "send a referral" simulation, clearly marked as one
+   - the line through the example referral is now drawn in full
+2. Visual checks in CI:
+   - 56 screenshots of public pages, the member portal, the admin and the partner account at desktop width, plus key screens in dark mode and on a phone
+   - each is compared with the approved image in tests/visual/baseline
+   - a report (current, difference and new images) is attached to every run
+   - intended changes: add the PR label "visual-ok" and commit the new images
+   - every guided-tour step is checked against its page
+3. A design check of every screen, with fixes:
+   - the admin dashboard's out-of-date note is replaced by shortcuts to the screens staff may open
+   - distinct icons for Network CRM and Reports
+   - "Ask Ally" is a compact button on phones, above the portal's tab bar
+   - partner stats sit two to a row on phones, with shorter labels
+   - partner city pages get the grammar right for one advertiser
+4. Guided tours (built in, no outside service):
+   - a first-run tour of the member portal and of the admin, shown once
+   - steps that aren't on screen are skipped
+   - "Show me around again" and "Show tips and guided tours" under Help and support
+   - partners get a short tour of their account
+5. The live demo is never run on the real site, because it adds sample teams to real networks:
+   - On a separate demo install (DEMO_INSTALL=true), visitors enter at /demo as a team or a network owner, with one click. The demo resets every hour.
+   - Demo accounts can explore and work with referrals, but account, security, billing, team, API and integration changes are refused.
+   - A banner reminds them nothing is sent.
+   - Admin → System → General has a "Live demo" address (super admins only); once set, the home page shows "Try the live demo".
+6. Speed:
+   - Lighthouse performance budget raised to 95 on public pages (the help centre is now measured too)
+   - portal and admin links load the next page ahead when hovered
+   - the home page's figures are worked out once every five minutes in a fixed number of queries
+
 ### Sprint 48b — Ally, the AI assistant
 Tests: tests/Feature/Support/AllyTest.php.
 1. "Ask Ally" (bottom right of every public and member page):

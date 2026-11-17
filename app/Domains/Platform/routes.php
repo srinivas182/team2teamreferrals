@@ -39,6 +39,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::get('system/{tab?}', [SystemSettingsController::class, 'show'])->whereIn('tab', ['overview', 'general', 'email', 'sms', 'payments', 'storage', 'cdn', 'ai', 'modules'])->name('system');
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
         Route::put('system/footer-credit', [SystemSettingsController::class, 'updateFooterCredit'])->name('system.footer-credit');
+        Route::put('system/demo-link', [SystemSettingsController::class, 'updateDemoLink'])->name('system.demo-link');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');
         Route::put('system/modules', [SystemSettingsController::class, 'updateModules'])->name('system.modules');
         Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai', 'ai_fallback', 'video', 'analytics'])->name('system.channel');
@@ -50,3 +51,10 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::post('system/import', [SystemSettingsController::class, 'import'])->name('system.import');
         Route::get('deliveries', DeliveryLogController::class)->name('deliveries');
     });
+
+// First-run guided tours (Sprint 52a).
+Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'throttle:60,1'])->group(function (): void {
+    Route::post('app/tours/replay', [App\Domains\Platform\Tours\ToursController::class, 'replay'])->name('tours.replay');
+    Route::post('app/tours/tips', [App\Domains\Platform\Tours\ToursController::class, 'tips'])->name('tours.tips');
+    Route::post('app/tours/{tour}/done', [App\Domains\Platform\Tours\ToursController::class, 'done'])->where('tour', '[a-z-]+')->name('tours.done');
+});

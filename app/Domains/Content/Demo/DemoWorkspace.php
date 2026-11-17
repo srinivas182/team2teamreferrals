@@ -101,7 +101,8 @@ final class DemoWorkspace
         $person = function (string $first, string $last) use (&$n, $reg): User {
             $n++;
             $u = User::query()->create(['first_name' => $first, 'last_name' => $last, 'email' => 'demo'.$n.'@'.self::DOMAIN, 'password' => bcrypt(self::PASSWORD), 'phone' => null]);
-            $u->forceFill(['email_verified_at' => now()])->save();
+            // A phone in the range reserved for fiction (555-0100 to 555-0199), already verified, so the portal opens straight away.
+            $u->forceFill(['email_verified_at' => now(), 'phone' => '+1435555'.str_pad((string) (100 + $n % 100), 4, '0', STR_PAD_LEFT), 'phone_verified_at' => now()])->save();
             $reg('user', $u->id);
 
             return $u;

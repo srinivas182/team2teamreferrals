@@ -154,7 +154,7 @@ it('shows approved partners on city pages as labelled adverts, with full SEO and
     $city = $this->get('/partners/mortgage-lenders/tx/houston')->assertOk()->viewData('page')['props'];
     expect($city['seo']['robots'])->not->toContain('noindex')
         ->and(collect($city['seo']['schema'])->pluck('@type')->all())->toContain('ItemList', 'FAQPage', 'BreadcrumbList')
-        ->and($city['answer'])->toContain('1 mortgage lender advertise in Houston, TX')
+        ->and($city['answer'])->toContain('1 mortgage lender advertises in Houston, TX')
         ->and(collect($city['faq'])->pluck('q')->all())->toContain('How do I choose a good mortgage lender in Houston?', 'How is this list ordered?');
     // A category with no one listed is shown but not indexed.
     expect($this->get('/partners/movers/tx/houston')->assertOk()->viewData('page')['props']['seo']['robots'])->toContain('noindex');

@@ -25,11 +25,13 @@ export function AllyWidget() {
                         setLoaded(true);
                         setOpen(true);
                     }}
-                    className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-4 pl-1.5 shadow-lg hover:shadow-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none print:hidden"
+                    className="fixed right-3 bottom-24 z-40 flex items-center gap-2 rounded-full border border-line bg-surface p-1.5 shadow-lg hover:shadow-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none sm:right-4 sm:bottom-4 sm:pr-4 print:hidden"
+                    aria-label="Ask Ally, your AI assistant"
                     aria-haspopup="dialog"
+                    data-tour="ally"
                 >
                     <AllyAvatar size={40} />
-                    <span className="text-left leading-tight">
+                    <span className="hidden text-left leading-tight sm:block">
                         <span className="block text-sm font-semibold text-ink">Ask Ally</span>
                         <span className="block text-xs text-muted">Your AI Assistant</span>
                     </span>

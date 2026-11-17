@@ -22,7 +22,7 @@ export default function Home({ checklist, strength, seo }: { checklist: Item[]; 
             <SeoHead seo={seo} />
             <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
                 <div className="space-y-6">
-                    <Card className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
+                    <Card className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center" data-tour="checklist">
                         <svg width="76" height="76" className="shrink-0 -rotate-90" aria-hidden>
                             <circle cx="38" cy="38" r={r} fill="none" stroke="var(--t-border)" strokeWidth="7" />
                             <circle

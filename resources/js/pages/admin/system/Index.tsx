@@ -42,6 +42,7 @@ type Check = { ok: boolean | null; message: string; at: string };
 type Props = {
     tab: (typeof tabs)[number][0];
     footerCredit: { enabled: boolean; text: string; url: string | null; canEdit: boolean };
+    demoLink: { url: string | null; demoInstall: boolean; canEdit: boolean };
     general: {
         company_name: string | null;
         support_email: string | null;
@@ -237,6 +238,7 @@ export default function SystemSettings({
     tab,
     general,
     footerCredit,
+    demoLink,
     email,
     sms,
     payments,
@@ -263,6 +265,7 @@ export default function SystemSettings({
         governing_state: general.governing_state ?? '',
     });
     const credit = useForm({ enabled: footerCredit.enabled, text: footerCredit.text, url: footerCredit.url ?? '' });
+    const demo = useForm({ url: demoLink.url ?? '' });
     return (
         <AdminLayout title="System settings">
             <SeoHead seo={seo} />
@@ -372,6 +375,42 @@ export default function SystemSettings({
                             )}
                         </fieldset>
                     </form>
+                </Card>
+            )}
+            {tab === 'general' && (
+                <Card className="mt-6 max-w-3xl p-6">
+                    <h2 className="text-lg font-semibold">Live demo</h2>
+                    {demoLink.demoInstall ? (
+                        <p className="mt-1 text-sm text-muted">This is the demo install: visitors enter at /demo, and the demo resets every hour.</p>
+                    ) : (
+                        <form
+                            className="mt-3 space-y-3"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                demo.put('/admin/system/demo-link', { preserveScroll: true });
+                            }}
+                        >
+                            <p className="text-sm text-muted">
+                                The address of your separate demo install (set DEMO_INSTALL=true there). The home page then shows “Try the live demo”.
+                                Never run the demo on this site: it adds sample teams to real networks.
+                            </p>
+                            <fieldset disabled={!demoLink.canEdit} className="space-y-3">
+                                <Field label="Demo address" error={demo.errors.url}>
+                                    <Input
+                                        type="url"
+                                        placeholder="https://demo.example.com/demo"
+                                        value={demo.data.url}
+                                        onChange={(e) => demo.setData('url', e.target.value)}
+                                    />
+                                </Field>
+                                {demoLink.canEdit && (
+                                    <Button type="submit" loading={demo.processing}>
+                                        Save
+                                    </Button>
+                                )}
+                            </fieldset>
+                        </form>
+                    )}
                 </Card>
             )}
 

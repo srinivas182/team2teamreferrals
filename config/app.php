@@ -15,6 +15,10 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // A separate demo install (Sprint 52a): visitors can enter with one click, and the demo resets every hour.
+    // Never set this on the real site.
+    'demo_install' => (bool) env('DEMO_INSTALL', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

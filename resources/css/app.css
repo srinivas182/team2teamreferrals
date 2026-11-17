@@ -51,15 +51,31 @@
 /* Signature relay animation (sender cobalt → receiver orange). */
 @keyframes relay {
     from {
-        stroke-dashoffset: 260;
+        stroke-dashoffset: 1;
     }
     to {
         stroke-dashoffset: 0;
     }
 }
 .relay-path {
-    stroke-dasharray: 260;
+    /* With pathLength="1" on the path, the line is drawn in full, however long it is. */
+    stroke-dasharray: 1;
     animation: relay 1.4s var(--ease-standard) 0.4s both;
+}
+
+/* A step appearing in the home page's send demo. */
+@keyframes pop {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.pop {
+    animation: pop 0.35s var(--ease-standard) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

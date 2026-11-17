@@ -95,7 +95,7 @@ final class PartnersController
         $path = '/partners/'.$category->slug.'/'.strtolower($st->code).'/'.$city->slug;
         $n = count($partners);
         $answer = $n > 0
-            ? "{$n} ".Str::plural($category->singular, $n)." advertise in {$city->name}, {$st->code}. They are listed in a daily rotation, and a message you send goes only to the business you choose."
+            ? "{$n} ".Str::plural($category->singular, $n).($n === 1 ? ' advertises' : ' advertise')." in {$city->name}, {$st->code}. ".($n === 1 ? 'It is' : 'They are').' listed in a daily rotation, and a message you send goes only to the business you choose.'
             : "No {$category->name} advertise in {$city->name}, {$st->code} yet.";
         $faq = array_map(fn ($f) => [str_replace('?', " in {$city->name}?", (string) $f['q']), (string) $f['a']], array_slice($category->faq ?? [], 0, 1));
         $faq = [...$faq, ...array_map(fn ($f) => [(string) $f['q'], (string) $f['a']], array_slice($category->faq ?? [], 1)), ['How is this list ordered?', self::HOW_IT_WORKS]];
