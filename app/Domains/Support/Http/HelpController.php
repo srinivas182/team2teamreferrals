@@ -45,10 +45,13 @@ final class HelpController
         $path = '/help/topic/'.$c->slug;
         $public = $articles->where('audience', 'public');
 
+        $n = $articles->count();
+        $answer = trim(($c->description ?? '').' '.$n.' '.($n === 1 ? 'question is' : 'questions are').' answered here, each with a short answer first. If yours isn’t, contact support and a person replies.');
+
         return Inertia::render('help/Category', [
-            'category' => ['slug' => $c->slug, 'name' => $c->name, 'description' => $c->description],
+            'category' => ['slug' => $c->slug, 'name' => $c->name, 'description' => $c->description], 'answer' => $answer,
             'articles' => $articles->map(fn ($a) => ['title' => $a->title, 'href' => '/help/'.$a->slug, 'summary' => $a->summary])->values(),
-            'seo' => (new SeoData(title: $c->name.' · Help centre', description: (string) ($c->description ?? $c->name), path: $path, index: $public->isNotEmpty(),
+            'seo' => (new SeoData(title: $c->name.' · Help centre', description: $answer, path: $path, index: $public->isNotEmpty(),
                 schema: [Schema::organization(), Schema::faq(array_values($public->map(fn ($a) => [(string) $a->title, (string) $a->summary])->all())),
                     Schema::breadcrumbs([['Home', '/'], ['Help centre', '/help'], [(string) $c->name, $path]])]))->toArray(),
         ]);
@@ -64,7 +67,7 @@ final class HelpController
         $site = (string) config('seo.site_name');
         $article = ['@context' => 'https://schema.org', '@type' => 'TechArticle', 'headline' => $a->title, 'description' => $a->summary, 'url' => url($path),
             'datePublished' => substr((string) ($a->published_at ?? $a->created_at), 0, 10), 'dateModified' => substr((string) $a->updated_at, 0, 10),
-            'publisher' => ['@type' => 'Organization', 'name' => $site], 'isAccessibleForFree' => true];
+            'publisher' => ['@type' => 'Organization', 'name' => $site, 'url' => url('/')], 'isAccessibleForFree' => true];
         $schema = [Schema::organization(), $article, Schema::faq([[(string) $a->title, (string) $a->summary]]),
             Schema::breadcrumbs([['Home', '/'], ['Help centre', '/help'], [(string) $c?->name, '/help/topic/'.$c?->slug], [(string) $a->title, $path]])];
         $steps = $a->howto ? Help::steps((string) $a->body_md) : [];

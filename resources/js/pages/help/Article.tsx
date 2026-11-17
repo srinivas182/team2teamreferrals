@@ -52,7 +52,9 @@ export default function HelpArticle({ article, category, related, seo }: Props) 
                 <h1 className="mt-2 font-display text-4xl font-bold">{article.title}</h1>
                 <p className="mt-4 rounded-lg border-l-4 border-primary bg-surface p-4 text-lg">{article.summary}</p>
                 <div className="prose mt-6 max-w-none" dangerouslySetInnerHTML={{ __html: article.html }} />
-                <p className="mt-6 text-sm text-muted">Updated {article.updated}</p>
+                <p className="mt-6 text-sm text-muted">
+                    Updated <time dateTime={article.updated}>{article.updated}</time>
+                </p>
                 <section aria-labelledby="helpful" className="mt-8 rounded-lg border border-line p-4">
                     <h2 id="helpful" className="font-semibold">
                         Was this helpful?

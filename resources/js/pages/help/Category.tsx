@@ -6,12 +6,13 @@ import type { Seo } from '@/types/seo';
 
 type Props = {
     category: { slug: string; name: string; description: string | null };
+    answer: string;
     articles: { title: string; href: string; summary: string }[];
     seo: Seo;
 };
 
 /** One help topic: each question with its short answer. */
-export default function HelpCategory({ category, articles, seo }: Props) {
+export default function HelpCategory({ category, answer, articles, seo }: Props) {
     return (
         <PublicLayout current="/help">
             <SeoHead seo={seo} />
@@ -22,7 +23,7 @@ export default function HelpCategory({ category, articles, seo }: Props) {
                     </Link>
                 </p>
                 <h1 className="mt-2 font-display text-4xl font-bold">{category.name}</h1>
-                {category.description && <p className="mt-3 text-lg">{category.description}</p>}
+                <p className="mt-3 text-lg">{answer}</p>
                 <div className="mt-6">
                     <HelpSearch />
                 </div>
