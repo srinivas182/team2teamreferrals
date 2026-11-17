@@ -4,6 +4,39 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 48b — Ally, the AI assistant
+Tests: tests/Feature/Support/AllyTest.php.
+1. "Ask Ally" (bottom right of every public and member page):
+   - an original avatar, the name Ally and "Your AI Assistant"
+   - suggested questions, sources linked under each answer, thumbs up or down, "Talk to a person", start a new chat
+   - keyboard and screen-reader friendly
+   - the chat window loads only when opened, so pages stay fast
+2. Answers come only from the help centre. For signed-in people they also use the facts of their own account, read-only:
+   - members: team, seats and trials, referrals waiting for them, what they've sent, billing state, open tickets
+   - partners: listing, billing, cities and waitlist, enquiries
+   - never client names or contact details
+   - buttons offer the matching pages (a waiting referral, Billing, the partner account)
+3. When Ally can't answer, or after 2 misses (an answer it couldn't give or one marked unhelpful), it offers a person. The conversation goes to support as a ticket; visitors give a name and email, so it arrives as a contact request. One open ticket per conversation.
+4. Free for members: support questions use no AI credits. Every answer is logged with its cost. Without an AI provider, over the daily spend limit or if AI fails, Ally suggests the best help articles instead.
+5. Safety:
+   - articles, account facts and the question are passed as data, never as instructions
+   - topics to avoid (legal, tax or financial advice by default)
+   - made-up sources are dropped, and HTML in answers is removed
+   - emails, phone and card numbers are removed before anything is saved or sent to the AI provider
+   - limits: visitors 20 questions an hour, members 100 a day
+6. Admin → Ally (support permission):
+   - figures for 30 days: conversations, questions, answered, helpful, passed to a person, AI cost
+   - "couldn't answer or unhelpful" questions with "Write it" (a help article), and the articles Ally uses most
+   - conversation transcripts
+   - who sees Ally (visitors, members, partners) and the limits
+7. Changing Ally's instructions:
+   - tone and topics to avoid are a draft until the test questions pass (80% or more), then published
+   - 7 starter test questions (what a good answer must mention or never say, and whether Ally should answer at all); add your own
+   - changing a test question means the draft is tested again
+   - the instructions are also a versioned prompt in Admin → AI
+8. Help centre search now also finds articles for longer, natural questions (at least half the words matching).
+9. "Ally, the AI assistant" module, on by default.
+
 ### Sprint 48a — Help centre and support tickets
 Tests: tests/Feature/Support/HelpCentreTest.php, tests/Feature/Support/TicketsTest.php.
 1. Help centre (/help):

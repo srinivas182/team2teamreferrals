@@ -62,6 +62,26 @@ final class SupportServiceProvider extends ServiceProvider
             Route::get('{ticket}/files/{message}/{index}', [Http\TicketsController::class, 'file'])->where('ticket', $ulid)->whereNumber(['message', 'index'])->name('file');
         });
 
+        // Ally, the AI assistant (Sprint 48b): JSON for the chat window; never cached.
+        Route::middleware(['web', 'noindex:always', 'module:ally'])->prefix('ally')->name('ally.')->group(function (): void {
+            Route::get('state', [Http\AllyController::class, 'state'])->middleware('throttle:60,1')->name('state');
+            Route::post('ask', [Http\AllyController::class, 'ask'])->middleware('throttle:20,1')->name('ask');
+            Route::post('feedback', [Http\AllyController::class, 'feedback'])->middleware('throttle:60,1')->name('feedback');
+            Route::post('handoff', [Http\AllyController::class, 'handOff'])->middleware('throttle:5,60')->name('handoff');
+            Route::post('reset', [Http\AllyController::class, 'reset'])->middleware('throttle:20,1')->name('reset');
+        });
+        Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:support.manage'])->prefix('admin/ally')->name('admin.ally.')->group(function () use ($ulid): void {
+            Route::get('/', [Http\AdminAllyController::class, 'index'])->name('index');
+            Route::get('conversations/{conversation}', [Http\AdminAllyController::class, 'conversation'])->where('conversation', $ulid)->name('conversation');
+            Route::post('limits', [Http\AdminAllyController::class, 'limits'])->name('limits');
+            Route::post('draft', [Http\AdminAllyController::class, 'draft'])->name('draft');
+            Route::post('test', [Http\AdminAllyController::class, 'test'])->middleware('throttle:10,10')->name('test');
+            Route::post('publish', [Http\AdminAllyController::class, 'publish'])->name('publish');
+            Route::post('evals', [Http\AdminAllyController::class, 'saveEval'])->name('evals.store');
+            Route::put('evals/{eval}', [Http\AdminAllyController::class, 'saveEval'])->whereNumber('eval')->name('evals.update');
+            Route::delete('evals/{eval}', [Http\AdminAllyController::class, 'deleteEval'])->whereNumber('eval')->name('evals.delete');
+        });
+
         // Admin → Support (tickets) and Admin → Help centre (articles).
         Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:support.manage'])->prefix('admin/support')->name('admin.support.')->group(function () use ($ulid): void {
             Route::get('/', [Http\AdminSupportController::class, 'index'])->name('index');

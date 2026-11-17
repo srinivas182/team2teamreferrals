@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { AllyWidget } from '@/components/ally/AllyWidget';
 import { FooterCredit } from '@/components/FooterCredit';
 import { Bell, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -259,6 +260,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             <FooterCredit />
                         </footer>
                     </main>
+                    <AllyWidget />
                 </div>
                 <nav
                     className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom,0px)] lg:hidden"

@@ -60,32 +60,50 @@ final class Help
     }
 
     /**
-     * Articles matching every word of the query, best first: title matches count most, then the summary, then the
-     * body. Each search is logged with its result count, so searches with nothing to show become writing tasks.
+     * Articles for a query, best first: title matches count most, then the summary, then the body. Articles with
+     * every word come first; for longer, natural questions ("how do I… my email is…") articles with at least half the
+     * words count too. Each search is logged with its result count, so searches with nothing to show become writing tasks.
      *
      * @return list<stdClass>
      */
     public static function search(string $q, ?User $user, int $limit = 20, bool $log = true): array
     {
-        $words = array_values(array_filter(array_unique(preg_split('/[^\pL\pN]+/u', mb_strtolower($q)) ?: []), fn ($w) => mb_strlen($w) >= 2 && ! in_array($w, ['how', 'do', 'the', 'and', 'can', 'what', 'is', 'my', 'to', 'of', 'for', 'in', 'an', 'it'], true)));
+        $stop = ['how', 'do', 'does', 'the', 'and', 'can', 'what', 'is', 'my', 'to', 'of', 'for', 'in', 'an', 'it', 'me', 'we', 'our', 'you', 'your', 'are', 'on', 'at', 'with', 'or', 'be', 'when', 'why', 'where', 'there', 'this', 'that'];
+        $words = array_values(array_filter(array_unique(preg_split('/[^\pL\pN]+/u', mb_strtolower($q)) ?: []), fn ($w) => mb_strlen($w) >= 2 && ! in_array($w, $stop, true)));
         if ($words === []) {
             return [];
         }
-        $query = self::visible($user);
-        foreach ($words as $w) {
+        $match = fn ($query, string $w) => $query->where(function ($x) use ($w) {
             $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $w).'%';
-            $query->where(fn ($q) => $q->whereRaw('lower(title) like ?', [$like])->orWhereRaw('lower(summary) like ?', [$like])->orWhereRaw('lower(body_md) like ?', [$like]));
+            $x->whereRaw('lower(title) like ?', [$like])->orWhereRaw('lower(summary) like ?', [$like])->orWhereRaw('lower(body_md) like ?', [$like]);
+        });
+        $cols = ['id', 'ulid', 'slug', 'title', 'summary', 'category_id', 'body_md', 'updated_at'];
+        $all = self::visible($user);
+        foreach ($words as $w) {
+            $match($all, $w);
         }
-        $rows = $query->get(['id', 'ulid', 'slug', 'title', 'summary', 'category_id', 'body_md', 'updated_at']);
+        $rows = $all->get($cols);
+        $need = count($words);
+        if ($rows->isEmpty() && count($words) > 2) {
+            $need = (int) ceil(count($words) / 2);
+            $rows = self::visible($user)->where(function ($any) use ($words, $match) {
+                foreach ($words as $w) {
+                    $any->orWhere(fn ($x) => $match($x, $w));
+                }
+            })->get($cols);
+        }
         $scored = $rows->map(function ($r) use ($words) {
-            $score = 0;
+            [$score, $hits] = [0, 0];
             foreach ($words as $w) {
-                $score += substr_count(mb_strtolower($r->title), $w) * 6 + substr_count(mb_strtolower($r->summary), $w) * 3 + min(5, substr_count(mb_strtolower($r->body_md), $w));
+                $n = substr_count(mb_strtolower($r->title), $w) * 6 + substr_count(mb_strtolower($r->summary), $w) * 3 + min(5, substr_count(mb_strtolower($r->body_md), $w));
+                $score += $n;
+                $hits += $n > 0 ? 1 : 0;
             }
             $r->score = $score;
+            $r->hits = $hits;
 
             return $r;
-        })->sortByDesc('score')->take($limit)->all();
+        })->filter(fn ($r) => $r->hits >= $need)->sortByDesc('score')->take($limit)->all();
         $scored = array_values($scored);
         if ($log) {
             DB::table('help_searches')->insert(['query' => mb_substr(trim($q), 0, 200), 'results' => count($scored), 'created_at' => now()]);

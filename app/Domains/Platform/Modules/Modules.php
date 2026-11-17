@@ -24,6 +24,7 @@ final class Modules
         'ai_insights' => ['label' => 'AI owner insights', 'affects' => 'The AI-written weekly summary for network owners (the figures are sent either way)', 'default' => false],
         'ai_videos' => ['label' => 'AI training videos', 'affects' => 'Creating training videos with an AI presenter; needs Network training on. Published videos keep playing', 'default' => false],
         'consumer_requests' => ['label' => 'Consumer requests', 'affects' => '"Request a pro" forms on city pages and the consumer portal', 'default' => true, 'available' => false],
+        'ally' => ['label' => 'Ally, the AI assistant', 'affects' => 'The chat window on every page. Answers from the help centre (and the member’s own account), hands off to a person. Without an AI provider it suggests help articles', 'default' => true],
         'partner_directory' => ['label' => 'Partner directory', 'affects' => 'Local businesses advertising on city pages: the partner pages, "Advertise with us" and the Local partners block', 'default' => true],
     ];
 

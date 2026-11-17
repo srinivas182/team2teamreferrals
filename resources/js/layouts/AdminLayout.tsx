@@ -78,6 +78,7 @@ const nav: Item[] = [
     { label: 'Trust score', href: '/admin/trust', icon: ShieldCheck, permission: 'settings.manage', ready: true },
     { label: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage', ready: true },
     { label: 'Help centre', href: '/admin/help', icon: BookOpen, permission: 'content.manage', ready: true },
+    { label: 'Ally', href: '/admin/ally', icon: Sparkles, permission: 'support.manage', ready: true },
     { label: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage', ready: true },
     { label: 'Audit log', href: '/admin/audit', icon: ScrollText, permission: 'audit.view', ready: true },
     { label: 'Templates', href: '/admin/templates', icon: PanelsTopLeft, permission: 'content.manage', ready: true },

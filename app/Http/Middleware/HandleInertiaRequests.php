@@ -42,6 +42,8 @@ final class HandleInertiaRequests extends Middleware
             ],
             'flash' => ['status' => fn () => $request->session()->get('status'), 'warnings' => fn () => $request->session()->get('warnings')],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
+            // Whether this person sees Ally (Sprint 48b): by who they are (visitor, member or partner).
+            'ally' => fn () => \App\Domains\Support\Ally\AllySettings::on($request->user() !== null ? 'member' : (is_string($request->session()->get('partner_portal')) ? 'partner' : 'visitor')),
             // "Powered by …" in the footer (super admin, Admin → System → General).
             'credit' => fn () => \App\Support\FooterCredit::shown(),
             // Header and footer menus set in Admin → Website (cached); the public layout falls back to its defaults.

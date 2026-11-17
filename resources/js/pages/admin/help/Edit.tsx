@@ -1,6 +1,5 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { xsrf } from '@/components/billing/CardForm';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
+import { xsrf } from '@/lib/xsrf';
 import type { Seo } from '@/types/seo';
 
 type A = {
