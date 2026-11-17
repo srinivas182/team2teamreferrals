@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 final class RevenueTypes
 {
     public const LABELS = [
-        'seat' => 'Seat subscriptions', 'premium' => 'Premium memberships', 'private_network' => 'Private network plans', 'api_plan' => 'API plans', 'ai_credits' => 'AI credit packs',
+        'seat' => 'Seat subscriptions', 'premium' => 'Premium memberships', 'private_network' => 'Private network plans', 'api_plan' => 'API plans', 'partner_listing' => 'Partner directory listings', 'ai_credits' => 'AI credit packs',
         'platform_fee' => 'Platform fees collected', 'discount' => 'Discounts and coupons', 'account_credit' => 'Account credits used', 'tax' => 'Sales tax (collected, not revenue)', 'other' => 'Other',
     ];
 
@@ -51,7 +51,7 @@ final class RevenueTypes
             }
         }
         $refunds = (int) DB::table('refunds')->whereBetween('created_at', [$from, $to])->sum('amount_cents');
-        $gross = $by['seat'] + $by['premium'] + $by['api_plan'] + $by['private_network'] + $by['ai_credits'] + $by['platform_fee'] + $by['other'];
+        $gross = $by['seat'] + $by['premium'] + $by['api_plan'] + $by['partner_listing'] + $by['private_network'] + $by['ai_credits'] + $by['platform_fee'] + $by['other'];
         $adjust = $by['discount'] + $by['account_credit'];
 
         return ['byType' => $by, 'gross' => $gross, 'adjustments' => $adjust, 'refunds' => $refunds, 'net' => $gross + $adjust - $refunds, 'tax' => $by['tax'], 'invoices' => $invoices->count()];

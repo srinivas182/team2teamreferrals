@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
-import { CreditCard, Lock } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { CreditCard } from 'lucide-react';
+import { useState } from 'react';
+import { CardForm, payInvoice } from '@/components/billing/CardForm';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -40,104 +41,8 @@ type Account = {
     seats: SeatRow[];
 };
 
-// Stripe.js is loaded from Stripe only on this page (the security policy allows it here alone).
-type StripeJs = {
-    handleNextAction: (o: { clientSecret: string }) => Promise<{ error?: { message: string } }>;
-    elements: (o: { clientSecret: string }) => { create: (t: string) => { mount: (el: HTMLElement) => void } };
-    confirmSetup: (o: {
-        elements: unknown;
-        redirect: 'if_required';
-    }) => Promise<{ error?: { message: string }; setupIntent?: { payment_method: string } }>;
-};
-declare global {
-    interface Window {
-        Stripe?: (key: string) => StripeJs;
-    }
-}
-function loadStripe(key: string): Promise<StripeJs> {
-    return new Promise((resolve, reject) => {
-        if (window.Stripe) return resolve(window.Stripe(key));
-        const s = document.createElement('script');
-        s.src = 'https://js.stripe.com/v3';
-        s.onload = () => (window.Stripe ? resolve(window.Stripe(key)) : reject(new Error('Stripe failed to load')));
-        s.onerror = () => reject(new Error('Stripe failed to load'));
-        document.head.appendChild(s);
-    });
-}
-const xsrf = () =>
-    decodeURIComponent(
-        document.cookie
-            .split('; ')
-            .find((c) => c.startsWith('XSRF-TOKEN='))
-            ?.split('=')[1] ?? '',
-    );
-
-function CardForm({ type, stripeKey, onDone }: { type: string; stripeKey: string; onDone: () => void }) {
-    const box = useRef<HTMLDivElement>(null);
-    const [state, setState] = useState<{ stripe: StripeJs; elements: unknown } | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [busy, setBusy] = useState(false);
-    const start = async () => {
-        setError(null);
-        try {
-            const res = await fetch(`/app/billing/${type}/setup-intent`, {
-                method: 'POST',
-                headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() },
-            });
-            if (!res.ok) throw new Error('Could not start. Please try again.');
-            const { clientSecret } = (await res.json()) as { clientSecret: string };
-            const stripe = await loadStripe(stripeKey);
-            const elements = stripe.elements({ clientSecret });
-            elements.create('payment').mount(box.current as HTMLElement);
-            setState({ stripe, elements });
-        } catch (e) {
-            setError((e as Error).message);
-        }
-    };
-    const save = async () => {
-        if (!state) return;
-        setBusy(true);
-        const r = await state.stripe.confirmSetup({ elements: state.elements, redirect: 'if_required' });
-        setBusy(false);
-        if (r.error) return setError(r.error.message);
-        router.post(`/app/billing/${type}/card`, { payment_method: r.setupIntent?.payment_method }, { preserveScroll: true, onSuccess: onDone });
-    };
-    return (
-        <div className="space-y-3">
-            {!state && (
-                <Button variant="secondary" size="sm" onClick={() => void start()}>
-                    <CreditCard /> Add or replace card
-                </Button>
-            )}
-            <div ref={box} />
-            {state && (
-                <Button size="sm" loading={busy} onClick={() => void save()}>
-                    Save card
-                </Button>
-            )}
-            {error && <p className="text-sm text-danger">{error}</p>}
-            <p className="flex items-center gap-1.5 text-xs text-muted">
-                <Lock className="size-3" aria-hidden /> Entered securely with Stripe. Your card details never reach our servers.
-            </p>
-        </div>
-    );
-}
-
-async function payNow(type: string, id: number, stripeKey: string | null, setError: (e: string | null) => void) {
-    setError(null);
-    const res = await fetch(`/app/billing/${type}/invoices/${id}/pay`, {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() },
-    });
-    const json = (await res.json().catch(() => null)) as { clientSecret?: string } | null;
-    // The bank wants the customer to confirm: Stripe shows its own authentication screen.
-    if (json?.clientSecret && stripeKey) {
-        const stripe = await loadStripe(stripeKey);
-        const r = await stripe.handleNextAction({ clientSecret: json.clientSecret });
-        if (r.error) setError(r.error.message);
-    }
-    router.reload();
-}
+const payNow = (type: string, id: number, stripeKey: string | null, setError: (e: string | null) => void) =>
+    payInvoice(`/app/billing/${type}/invoices/${id}/pay`, stripeKey, setError);
 
 const invTone: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
     paid: 'success',
@@ -189,7 +94,12 @@ export default function Billing({ accounts, stripeKey, status, seo }: { accounts
                         </div>
                         {stripeKey &&
                             (open === a.type ? (
-                                <CardForm type={a.type} stripeKey={stripeKey} onDone={() => setOpen(null)} />
+                                <CardForm
+                                    setupUrl={`/app/billing/${a.type}/setup-intent`}
+                                    saveUrl={`/app/billing/${a.type}/card`}
+                                    stripeKey={stripeKey}
+                                    onDone={() => setOpen(null)}
+                                />
                             ) : (
                                 <Button variant="secondary" size="sm" onClick={() => setOpen(a.type)}>
                                     <CreditCard /> {a.card ? 'Replace card' : 'Add a card'}

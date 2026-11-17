@@ -56,6 +56,9 @@ final class BillingAccounts
     /** @return list<User> who hears about this payer's billing */
     public static function contacts(string $type, int $id): array
     {
+        if ($type === 'partner') {
+            return []; // partners are emailed directly (PartnerBilling)
+        }
         $u = $type === 'company' ? Company::query()->find($id)?->admin : Team::query()->find($id)?->leader;
 
         return $u !== null ? [$u] : [];
@@ -119,9 +122,15 @@ final class BillingAccounts
     {
         $account = self::account($type, $id);
         if ($account->stripe_customer_id === null) {
-            $owner = $type === 'company' ? Company::query()->findOrFail($id) : Team::query()->findOrFail($id);
-            $contact = self::contacts($type, $id)[0] ?? null;
-            $c = $this->stripe->api('POST', 'customers', ['name' => $owner->name, 'email' => $contact?->email, 'metadata[owner_type]' => $type, 'metadata[owner_id]' => $id], "customer-{$type}-{$id}");
+            if ($type === 'partner') {
+                // Partner directory advertisers (Sprint 47b): no member account, just the business and its email.
+                $partner = \App\Domains\Partners\Partner::query()->findOrFail($id);
+                [$name, $email] = [$partner->business_name, $partner->email];
+            } else {
+                $owner = $type === 'company' ? Company::query()->findOrFail($id) : Team::query()->findOrFail($id);
+                [$name, $email] = [$owner->name, (self::contacts($type, $id)[0] ?? null)?->email];
+            }
+            $c = $this->stripe->api('POST', 'customers', ['name' => $name, 'email' => $email, 'metadata[owner_type]' => $type, 'metadata[owner_id]' => $id], "customer-{$type}-{$id}");
             DB::table('billing_customers')->where('id', $account->id)->update(['stripe_customer_id' => $c['id'], 'updated_at' => now()]);
             $account->stripe_customer_id = (string) $c['id'];
         }

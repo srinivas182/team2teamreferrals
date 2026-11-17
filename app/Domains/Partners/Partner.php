@@ -36,6 +36,14 @@ use Illuminate\Support\Facades\Storage;
  * @property ?int $reviewed_by
  * @property ?\Illuminate\Support\Carbon $reviewed_at
  * @property ?string $ip_hash
+ * @property string $billing_cycle
+ * @property string $billing_status
+ * @property ?\Illuminate\Support\Carbon $trial_ends_at
+ * @property ?\Illuminate\Support\Carbon $trial_reminded_at
+ * @property ?\Illuminate\Support\Carbon $paid_until
+ * @property ?\Illuminate\Support\Carbon $cancel_at
+ * @property ?array<string, mixed> $pending_changes
+ * @property ?\Illuminate\Support\Carbon $changes_submitted_at
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  * @property-read PartnerCategory $category
@@ -50,11 +58,33 @@ final class Partner extends Model
     protected $fillable = ['slug', 'category_id', 'user_id', 'business_name', 'contact_name', 'email', 'phone', 'website', 'description', 'logo_path', 'license_number', 'license_state',
         'offer_title', 'offer_details', 'offer_expires_on', 'ip_hash'];
 
-    protected $attributes = ['status' => 'pending'];
+    /** Billing states in which an approved partner is shown (past_due: a payment is being retried). */
+    public const LIVE_BILLING = ['trial', 'active', 'past_due'];
+
+    public const BILLING = ['trial' => 'Free trial', 'active' => 'Active', 'past_due' => 'Payment retrying', 'paused' => 'Paused: payment failed', 'cancelled' => 'Cancelled'];
+
+    protected $attributes = ['status' => 'pending', 'billing_cycle' => 'monthly', 'billing_status' => 'trial'];
 
     protected function casts(): array
     {
-        return ['license_verified_at' => 'datetime', 'reviewed_at' => 'datetime', 'offer_expires_on' => 'date'];
+        return ['license_verified_at' => 'datetime', 'reviewed_at' => 'datetime', 'offer_expires_on' => 'date', 'trial_ends_at' => 'datetime', 'trial_reminded_at' => 'datetime',
+            'paid_until' => 'date', 'cancel_at' => 'date', 'pending_changes' => 'array', 'changes_submitted_at' => 'datetime'];
+    }
+
+    /**
+     * Shown to the public: approved, in an active category, and paid up (or in trial, or while a payment retries).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Partner>  $q
+     */
+    public function scopeLive(\Illuminate\Database\Eloquent\Builder $q): void
+    {
+        $q->where('partners.status', 'approved')->whereIn('partners.billing_status', self::LIVE_BILLING)
+            ->whereIn('partners.category_id', PartnerCategory::query()->where('is_active', true)->select('id'));
+    }
+
+    public function isLive(): bool
+    {
+        return $this->status === 'approved' && in_array($this->billing_status, self::LIVE_BILLING, true) && $this->category->is_active;
     }
 
     /** @return list<string> */

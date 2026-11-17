@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Faq } from '@/components/partners/FormExtras';
 import { AdNote, PartnerCard, type PartnerCardData } from '@/components/partners/PartnerCard';
+import { useTrackViews } from '@/components/partners/track';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
@@ -19,6 +20,10 @@ type Props = {
 
 /** Everyone in one category advertising in one city, in today's rotation. */
 export default function PartnersCity({ category, city, state, partners, answer, howItWorks, faq, others, seo }: Props) {
+    useTrackViews(
+        partners.map((p) => p.slug),
+        city.id,
+    );
     return (
         <PublicLayout current="/partners">
             <SeoHead seo={seo} />

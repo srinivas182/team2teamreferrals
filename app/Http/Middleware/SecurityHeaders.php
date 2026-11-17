@@ -21,8 +21,8 @@ final class SecurityHeaders
         $response = $next($request);
 
         $dev = app()->environment('local') ? ' http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173' : '';
-        // Stripe's secure card form loads only on the billing pages, keeping the rest of the site's policy tight.
-        $stripe = $request->is('app/billing*', 'app/company/billing*');
+        // Stripe's secure card form loads only on the billing pages (and the partner account), keeping the rest of the site's policy tight.
+        $stripe = $request->is('app/billing*', 'app/company/billing*', 'partner-portal*');
         $csp = implode('; ', array_filter([
             "default-src 'self'",
             "script-src 'self' 'nonce-{$nonce}'".($stripe ? ' https://js.stripe.com' : '').$dev,

@@ -11,7 +11,7 @@ use App\Domains\Partners\Partner;
 use App\Domains\Partners\PartnerCategory;
 use App\Domains\Partners\PartnerListing;
 use App\Domains\Partners\Partners;
-use App\Domains\Platform\Settings\Settings;
+use App\Domains\Partners\PartnerStats;
 use App\Domains\Seo\Schema;
 use App\Domains\Seo\SeoData;
 use App\Support\FormGuard;
@@ -33,12 +33,12 @@ final class PartnersController
 
     public function index(): Response
     {
-        $counts = DB::table('partner_listings as l')->join('partners as p', 'p.id', '=', 'l.partner_id')->where('p.status', 'approved')->where('l.status', 'active')
+        $counts = DB::table('partner_listings as l')->join('partners as p', 'p.id', '=', 'l.partner_id')->where('p.status', 'approved')->whereIn('p.billing_status', Partner::LIVE_BILLING)->where('l.status', 'active')
             ->groupBy('l.category_id')->selectRaw('l.category_id, count(distinct p.id) as partners, count(distinct l.city_id) as cities')->get()->keyBy('category_id');
         $categories = PartnerCategory::query()->active()->get()->map(fn (PartnerCategory $c) => ['slug' => $c->slug, 'name' => $c->name,
             'partners' => (int) ($counts[$c->id]->partners ?? 0), 'cities' => (int) ($counts[$c->id]->cities ?? 0)])->values();
         $places = DB::table('partner_listings as l')->join('partners as p', 'p.id', '=', 'l.partner_id')->join('cities as c', 'c.id', '=', 'l.city_id')->join('states as s', 's.id', '=', 'c.state_id')
-            ->join('partner_categories as k', 'k.id', '=', 'l.category_id')->where('p.status', 'approved')->where('l.status', 'active')->where('k.is_active', true)
+            ->join('partner_categories as k', 'k.id', '=', 'l.category_id')->where('p.status', 'approved')->whereIn('p.billing_status', Partner::LIVE_BILLING)->where('l.status', 'active')->where('k.is_active', true)
             ->groupBy('k.slug', 'k.name', 'c.name', 'c.slug', 's.code')->selectRaw('k.slug as category, k.name as category_name, c.name as city, c.slug as city_slug, s.code as state, count(*) as n')
             ->orderByDesc('n')->limit(60)->get()
             ->map(fn ($r) => ['label' => $r->category_name.' in '.$r->city.', '.$r->state, 'href' => '/partners/'.$r->category.'/'.strtolower((string) $r->state).'/'.$r->city_slug, 'count' => (int) $r->n])->values();
@@ -53,11 +53,12 @@ final class PartnersController
         ]);
     }
 
-    public function advertise(Settings $settings): Response
+    public function advertise(): Response
     {
         return Inertia::render('partners/Advertise', [
             'categories' => PartnerCategory::query()->active()->get()->map(fn (PartnerCategory $c) => ['slug' => $c->slug, 'name' => $c->name, 'licensed' => $c->licensed, 'licenseLabel' => $c->license_label])->values(),
-            'price' => (int) $settings->get('partners.price_monthly', '49'),
+            'price' => \App\Domains\Partners\PartnerBilling::settings()['price'], 'discount' => \App\Domains\Partners\PartnerBilling::settings()['annualDiscount'],
+            'trialDays' => \App\Domains\Partners\PartnerBilling::settings()['trialDays'], 'cap' => Partners::cap(),
             'howItWorks' => self::HOW_IT_WORKS,
             'status' => session('status'),
             'seo' => (new SeoData(title: 'Advertise your business to local home buyers and sellers', description: 'List your mortgage, title, inspection, insurance or moving business on city pages for a flat monthly fee. No per-lead fees; every enquiry is yours alone.',
@@ -99,7 +100,7 @@ final class PartnersController
         $faq = array_map(fn ($f) => [str_replace('?', " in {$city->name}?", (string) $f['q']), (string) $f['a']], array_slice($category->faq ?? [], 0, 1));
         $faq = [...$faq, ...array_map(fn ($f) => [(string) $f['q'], (string) $f['a']], array_slice($category->faq ?? [], 1)), ['How is this list ordered?', self::HOW_IT_WORKS]];
         $others = PartnerCategory::query()->active()->where('id', '!=', $category->id)->whereIn('id', PartnerListing::query()->where(['city_id' => $city->id, 'status' => 'active'])
-            ->whereHas('partner', fn ($q) => $q->where('status', 'approved'))->select('category_id'))->get()
+            ->whereHas('partner', fn ($q) => $q->live())->select('category_id'))->get()
             ->map(fn (PartnerCategory $c) => ['name' => $c->name, 'href' => '/partners/'.$c->slug.'/'.strtolower($st->code).'/'.$city->slug])->values();
 
         return Inertia::render('partners/City', [
@@ -175,11 +176,27 @@ final class PartnersController
         return back()->with('status', 'partner-endorsement-withdrawn');
     }
 
+    /**
+     * Views and clicks, sent by the browser (pages are cached, so they can't be counted on the server). Bots and
+     * repeat visits are left out; unknown or hidden partners are ignored.
+     */
+    public function seen(Request $request): \Illuminate\Http\Response
+    {
+        $d = $request->validate(['k' => ['required', 'in:view,click'], 's' => ['required', 'array', 'max:30'], 's.*' => ['string', 'max:120'], 'c' => ['nullable', 'integer']]);
+        $partners = Partner::query()->with('category')->whereIn('slug', (array) $d['s'])->live()->get();
+        $cityId = isset($d['c']) ? (int) $d['c'] : null;
+        foreach ($partners as $p) {
+            $listed = $cityId !== null && PartnerListing::query()->where(['partner_id' => $p->id, 'city_id' => $cityId, 'status' => 'active'])->exists();
+            PartnerStats::record($request, $p, $listed ? $cityId : null, $d['k'] === 'view' ? 'views' : 'clicks');
+        }
+
+        return response()->noContent();
+    }
+
     /** Only approved partners have public pages; anything else is not found (so it is never indexed). */
     private function find(string $slug): Partner
     {
-        return Partner::query()->with('category')->where(['slug' => $slug, 'status' => 'approved'])
-            ->whereIn('category_id', PartnerCategory::query()->where('is_active', true)->select('id'))->firstOrFail();
+        return Partner::query()->with('category')->where('slug', $slug)->live()->firstOrFail();
     }
 
     private function article(string $word): string

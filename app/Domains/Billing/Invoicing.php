@@ -88,31 +88,45 @@ final class Invoicing
         $made = 0;
         foreach ($byPayer as $key => $lines) {
             [$type, $id] = explode(':', $key);
-            if (DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => (int) $id, 'period' => $period])->exists()) {
-                continue;
-            }
-            $lines = PricingRules::apply($type, (int) $id, $lines);
-            $total = (int) max(0, array_sum(array_column($lines, 'amount_cents')));
-            if ($total > 0 && PricingRules::stripeTaxOn() && ($tax = $this->salesTax($type, (int) $id, $total, $period)) > 0) {
-                $lines[] = ['days' => 0, 'free_reason' => null, 'amount_cents' => $tax, 'description' => 'Sales tax', 'tax' => true, 'type' => 'tax'];
-                $total += $tax;
-            }
-            $invoiceId = DB::table('invoices')->insertGetId([
-                'number' => 'T2T-'.str_replace('-', '', $period).'-'.str_pad((string) (DB::table('invoices')->count() + 1), 6, '0', STR_PAD_LEFT),
-                'owner_type' => $type, 'owner_id' => (int) $id, 'period' => $period, 'lines' => json_encode($lines), 'total_cents' => $total,
-                'status' => $total === 0 ? 'zero' : 'open', 'created_at' => now(), 'updated_at' => now(),
-            ]);
-            PricingRules::commit($type, (int) $id, $lines);
-            DB::table('ai_credit_ledger')->whereIn('id', array_filter(array_column($lines, 'ai_purchase_id')))->update(['invoice_id' => $invoiceId]);
-            DB::table('referral_fees')->whereIn('id', array_filter(array_column($lines, 'platform_fee_id')))->update(['platform_invoice_id' => $invoiceId, 'platform_fee_status' => 'invoiced']);
-            $this->pdf($invoiceId);
-            if ($total > 0) {
-                $this->charge($invoiceId);
-            }
-            $made++;
+            $made += $this->issue($type, (int) $id, $period, $lines) !== null ? 1 : 0;
         }
 
         return $made;
+    }
+
+    /**
+     * Issue one invoice to a payer for a period (adjustments, sales tax, PDF) and charge it. Returns null when that
+     * payer already has an invoice for the period, so a run can safely repeat.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     */
+    public function issue(string $type, int $id, string $period, array $lines): ?int
+    {
+        if (DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id, 'period' => $period])->exists()) {
+            return null;
+        }
+        $lines = PricingRules::apply($type, $id, $lines);
+        $total = (int) max(0, array_sum(array_column($lines, 'amount_cents')));
+        if ($total > 0 && PricingRules::stripeTaxOn() && ($tax = $this->salesTax($type, $id, $total, $period)) > 0) {
+            $lines[] = ['days' => 0, 'free_reason' => null, 'amount_cents' => $tax, 'description' => 'Sales tax', 'tax' => true, 'type' => 'tax'];
+            $total += $tax;
+        }
+        $invoiceId = DB::table('invoices')->insertGetId([
+            'number' => 'T2T-'.str_replace('-', '', $period).'-'.str_pad((string) (DB::table('invoices')->count() + 1), 6, '0', STR_PAD_LEFT),
+            'owner_type' => $type, 'owner_id' => $id, 'period' => $period, 'lines' => json_encode($lines), 'total_cents' => $total,
+            'status' => $total === 0 ? 'zero' : 'open', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        PricingRules::commit($type, $id, $lines);
+        DB::table('ai_credit_ledger')->whereIn('id', array_filter(array_column($lines, 'ai_purchase_id')))->update(['invoice_id' => $invoiceId]);
+        DB::table('referral_fees')->whereIn('id', array_filter(array_column($lines, 'platform_fee_id')))->update(['platform_invoice_id' => $invoiceId, 'platform_fee_status' => 'invoiced']);
+        $this->pdf($invoiceId);
+        if ($total > 0) {
+            $this->charge($invoiceId);
+        } elseif ($type === 'partner') {
+            \App\Domains\Partners\PartnerBilling::paid($lines); // fully covered by credits or a coupon
+        }
+
+        return $invoiceId;
     }
 
     /**
@@ -206,6 +220,9 @@ final class Invoicing
             DB::table('seats')->where('id', $l['seat_id'])->update(['annual_paid_until' => $coming->addYear()->subDay()->toDateString()]);
         }
         DB::table('referral_fees')->where('platform_invoice_id', $invoiceId)->update(['platform_fee_status' => 'paid']);
+        if ($inv->owner_type === 'partner') {
+            \App\Domains\Partners\PartnerBilling::paid($lines); // partner directory listings run to the date paid for
+        }
         foreach ($this->seatsOf($inv) as $seat) {
             // Paying reactivates instantly; a seat whose trial has ended becomes a paid, active seat.
             if (in_array($seat->status, ['grace', 'inactive'], true)) {
@@ -281,6 +298,9 @@ final class Invoicing
                 DB::table('billing_customers')->where(['owner_type' => $inv->owner_type, 'owner_id' => $inv->owner_id])->update(['needs_new_card' => true]);
             }
         }
+        if ($inv->owner_type === 'partner') {
+            \App\Domains\Partners\PartnerBilling::failed((int) $inv->owner_id, (string) $inv->number, $reason, $retry);
+        }
         foreach (BillingAccounts::contacts((string) $inv->owner_type, (int) $inv->owner_id) as $u) {
             $this->notifier->send($u, 'seat.payment', ['group' => 'Billing', 'headline' => "Payment failed for invoice {$inv->number}", 'body' => "{$reason} ".($retry ? 'We’ll try again on '.$retry->toFormattedDateString().', or pay now from the Billing page.' : 'Please update your card and pay from the Billing page.')], url('/app/billing'));
         }
@@ -291,6 +311,9 @@ final class Invoicing
     private function needsAction(stdClass $inv, int $attempt): string
     {
         DB::table('invoices')->where('id', $inv->id)->update(['status' => 'action_required', 'attempts' => $attempt, 'updated_at' => now()]);
+        if ($inv->owner_type === 'partner') {
+            \App\Domains\Partners\PartnerBilling::needsAction((int) $inv->owner_id, (string) $inv->number);
+        }
         foreach (BillingAccounts::contacts((string) $inv->owner_type, (int) $inv->owner_id) as $u) {
             $this->notifier->send($u, 'seat.payment', ['group' => 'Billing', 'headline' => "Your bank needs you to confirm invoice {$inv->number}", 'body' => 'Open the Billing page and press “Pay now” to confirm the payment with your bank.'], url('/app/billing'));
         }
@@ -312,7 +335,11 @@ final class Invoicing
         if ($inv === null) {
             return;
         }
-        $owner = $inv->owner_type === 'company' ? DB::table('companies')->where('id', $inv->owner_id)->value('name') : DB::table('teams')->where('id', $inv->owner_id)->value('name');
+        $owner = match ($inv->owner_type) {
+            'company' => DB::table('companies')->where('id', $inv->owner_id)->value('name'),
+            'partner' => DB::table('partners')->where('id', $inv->owner_id)->value('business_name'),
+            default => DB::table('teams')->where('id', $inv->owner_id)->value('name'),
+        };
         $path = 'invoices/'.$inv->number.'.pdf';
         Storage::disk('private')->put($path, \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', ['inv' => $inv, 'owner' => (string) $owner, 'lines' => (array) json_decode((string) $inv->lines, true)])->output());
         DB::table('invoices')->where('id', $invoiceId)->update(['pdf_path' => $path]);

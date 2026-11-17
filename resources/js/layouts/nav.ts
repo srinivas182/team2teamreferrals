@@ -25,6 +25,7 @@ import {
     CalendarDays,
     Code2,
     Plug,
+    Store,
 } from 'lucide-react';
 
 /** `module`: hidden when that module is switched off in Admin → Settings → Modules. */
@@ -56,6 +57,7 @@ export const portalNav: NavItem[] = [
     { label: 'Invites', href: '/app/invites', icon: UserPlus },
     { label: 'Profile leads', href: '/app/profile-leads', icon: Inbox },
     { label: 'Open requests', href: '/app/requests', icon: Inbox },
+    { label: 'Local partners', href: '/app/partners', icon: Store, module: 'partner_directory' },
     { label: 'Performance', href: '/app/performance', icon: Gauge },
     { label: 'Training', href: '/app/training', icon: GraduationCap, module: 'training' },
     { label: 'Notifications', href: '/app/notifications', icon: Bell },
