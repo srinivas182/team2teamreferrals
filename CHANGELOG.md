@@ -4,6 +4,24 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 52b — Launch kit: usability tests, press kit, product tour, launch emails
+Tests: tests/Feature/Platform/LaunchKitTest.php.
+1. Usability tests (Admin → Usability tests):
+   - invite a tester by email; they get a short script of real tasks in their industry's words (join and apply, send, accept and update a referral, check fees, invite a teammate, find a help answer)
+   - tasks an industry's rules don't allow are left out (no fees task in restricted industries; no referral tasks in directory-only ones)
+   - a test bar walks the tester through each task, with "I've done it", "I'm stuck" and "Give up"
+   - it records where testers get stuck: 90 seconds on a page without progress, clicks that do nothing, form errors (field names only), asking for help, giving up; never what anyone types
+   - each problem lands on a fix list once, counted per tester and family; severity rises when three testers hit it, and a fixed problem that comes back opens again
+   - coverage per industry family against a target of three testers, and each tester's timeline
+2. Press kit at /press:
+   - live figures, the company boilerplate, key facts and the press contact (new "Press contact email" in Admin → System → General)
+   - logos as SVG and PNG, with a ZIP of all of them
+   - high-resolution screenshots and a one-minute product tour with a caption track, a transcript and a copy with captions burnt in for social media
+   - in the sitemap, llms.txt and the footer, with VideoObject structured data; files are rebuilt with scripts/press/press-kit.mjs
+3. Founding-member launch emails: three emails (launch day, day 3, day 7) as a draft Growth campaign, "Launch: founding members", for pre-launch reservations; nothing is sent until it's reviewed and switched on.
+4. The live demo's team now always has a referral waiting and two moving through the pipeline.
+5. The directory's opening sentence gets the grammar right for one network, industry or seat.
+
 ### Sprint 52a — Polish: home page, visual checks, tours, live demo, speed
 Tests: tests/Feature/Platform/LaunchPolishTest.php; visual checks in CI (scripts/ci/visual.mjs).
 1. The home page now follows the approved design, with real figures:

@@ -49,6 +49,7 @@ type Props = {
         support_phone: string | null;
         postal_address: string | null;
         governing_state: string | null;
+        press_email: string | null;
     };
     email: Channel & { from_address: string; from_name: string };
     sms: Channel;
@@ -263,6 +264,7 @@ export default function SystemSettings({
         support_phone: general.support_phone ?? '',
         postal_address: general.postal_address ?? '',
         governing_state: general.governing_state ?? '',
+        press_email: general.press_email ?? '',
     });
     const credit = useForm({ enabled: footerCredit.enabled, text: footerCredit.text, url: footerCredit.url ?? '' });
     const demo = useForm({ url: demoLink.url ?? '' });
@@ -325,6 +327,13 @@ export default function SystemSettings({
                                 <Input value={gen.data.governing_state} onChange={(e) => gen.setData('governing_state', e.target.value)} />
                             </Field>
                         </div>
+                        <Field
+                            label="Press contact email"
+                            hint="Shown on the press kit page. Leave blank to use the support email."
+                            error={gen.errors.press_email}
+                        >
+                            <Input type="email" value={gen.data.press_email} onChange={(e) => gen.setData('press_email', e.target.value)} />
+                        </Field>
                         <Button type="submit" loading={gen.processing}>
                             Save
                         </Button>

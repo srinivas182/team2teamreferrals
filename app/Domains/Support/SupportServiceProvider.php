@@ -82,6 +82,23 @@ final class SupportServiceProvider extends ServiceProvider
             Route::delete('evals/{eval}', [Http\AdminAllyController::class, 'deleteEval'])->whereNumber('eval')->name('evals.delete');
         });
 
+        // Usability tests (Sprint 52b): the tester's welcome page from the emailed link, then the test bar's state and events.
+        Route::middleware(['web', 'noindex:always'])->prefix('usability')->name('usability.')->group(function () use ($ulid): void {
+            Route::get('s/{session}', [Usability\Http\UsabilityController::class, 'welcome'])->where('session', $ulid)->middleware(['signed', 'throttle:30,1'])->name('welcome');
+            Route::post('s/{session}/begin', [Usability\Http\UsabilityController::class, 'begin'])->where('session', $ulid)->middleware(['signed', 'throttle:10,1'])->name('begin');
+            Route::get('thanks', [Usability\Http\UsabilityController::class, 'thanks'])->name('thanks');
+            Route::get('state', [Usability\Http\UsabilityController::class, 'state'])->middleware('throttle:120,1')->name('state');
+            Route::post('stop', [Usability\Http\UsabilityController::class, 'stop'])->middleware('throttle:10,1')->name('stop');
+            Route::post('events', [Usability\Http\UsabilityController::class, 'events'])->withoutMiddleware(ValidateCsrfToken::class)->middleware('throttle:120,1')->name('events');
+        });
+        Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:support.manage'])->prefix('admin/usability')->name('admin.usability.')->group(function () use ($ulid): void {
+            Route::get('/', [Usability\Http\AdminUsabilityController::class, 'index'])->name('index');
+            Route::post('invite', [Usability\Http\AdminUsabilityController::class, 'invite'])->middleware('throttle:30,10')->name('invite');
+            Route::get('{session}', [Usability\Http\AdminUsabilityController::class, 'show'])->where('session', $ulid)->name('show');
+            Route::post('{session}/resend', [Usability\Http\AdminUsabilityController::class, 'resend'])->where('session', $ulid)->middleware('throttle:10,10')->name('resend');
+            Route::put('issues/{issue}', [Usability\Http\AdminUsabilityController::class, 'updateIssue'])->whereNumber('issue')->name('issues.update');
+        });
+
         // Admin → Support (tickets) and Admin → Help centre (articles).
         Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:support.manage'])->prefix('admin/support')->name('admin.support.')->group(function () use ($ulid): void {
             Route::get('/', [Http\AdminSupportController::class, 'index'])->name('index');

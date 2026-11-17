@@ -52,6 +52,7 @@ final class SystemSettingsController
                 'support_phone' => $s->get('general.support_phone'),
                 'postal_address' => $s->get('general.postal_address'),
                 'governing_state' => $s->get('general.governing_state'),
+                'press_email' => $s->get('general.press_email'),
             ],
             'demoLink' => ['url' => app(Settings::class)->get('demo.url'), 'demoInstall' => (bool) config('app.demo_install'), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'footerCredit' => [...\App\Support\FooterCredit::settings(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
@@ -82,6 +83,7 @@ final class SystemSettingsController
             'support_phone' => ['nullable', 'string', 'max:30'],
             'postal_address' => ['nullable', 'string', 'max:255'],
             'governing_state' => ['nullable', 'string', 'max:60'],
+            'press_email' => ['nullable', 'email:rfc', 'max:255'],
         ]);
         $values = [];
         foreach ($data as $key => $value) {
@@ -89,6 +91,7 @@ final class SystemSettingsController
         }
         $this->save('general', $values, [], $request);
         \Illuminate\Support\Facades\Cache::forget('cms.tokens'); // the Terms and Privacy pages show these details
+        \App\Domains\Seo\Events\PublicUrlsChanged::dispatch(['/press']); // and the press kit
 
         return back()->with('status', 'settings-saved');
     }

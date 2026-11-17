@@ -97,7 +97,7 @@ it('follows up an abandoned sign-up and tracks them through to joining (the 46 "
     expect(Campaigns::stats($this->finish->fresh()))->toMatchArray(['enrolled' => 1, 'converted' => 1, 'sent' => 2, 'clicked' => 1]);
     $this->actingAs($this->staff)->get('/admin/growth/sources?days=30')->assertOk()->assertInertia(fn ($pg) => $pg->component('growth/Sources')
         ->where('rows.0', ['source' => 'google', 'medium' => 'cpc', 'campaign' => 'solar-austin', 'signups' => 1, 'joined' => 1]));
-    $this->actingAs($this->staff)->get('/admin/growth/campaigns')->assertInertia(fn ($pg) => $pg->component('growth/Campaigns')->where('campaigns.0.stats.converted', 1));
+    $this->actingAs($this->staff)->get('/admin/growth/campaigns')->assertInertia(fn ($pg) => $pg->component('growth/Campaigns')->where('campaigns', fn ($c) => collect($c)->firstWhere('name', $this->finish->name)['stats']['converted'] === 1));
 });
 
 it('sends nothing while prospect email is off: people just wait', function () {

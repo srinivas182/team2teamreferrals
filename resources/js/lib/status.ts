@@ -288,6 +288,8 @@ const messages: Record<string, string> = {
     'ally-tested': 'Test questions run.',
     'ally-published': 'Published: Ally uses the new instructions now.',
     'ally-eval-saved': 'Test questions saved.',
+    'usability-invited': 'Invitation sent. The link works for 14 days.',
+    'usability-issue-saved': 'Saved.',
     'partner-settings-saved': 'Saved. Prices apply from each partner’s next bill.',
     'correction-sent': 'Thanks, our editors will check it.',
     'industry-content-saved': 'Saved.',

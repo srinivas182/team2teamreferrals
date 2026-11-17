@@ -42,6 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', App\Domains\Content\Demo\DemoGuard::class);
         // Outermost in the web group so it sees (and can drop) the session cookies on edge-cacheable pages.
         $middleware->prependToGroup('web', App\Domains\Platform\Http\Middleware\EdgeCache::class);
+        // The usability-test cookie is signed by us and read by the page, so the test bar shows on cached pages too (Sprint 52b).
+        $middleware->encryptCookies(except: [App\Domains\Support\Usability\Usability::COOKIE]);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/app');
     })

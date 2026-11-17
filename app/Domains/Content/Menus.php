@@ -25,7 +25,7 @@ final class Menus
 
     public const DEFAULT_FOOTER = [
         ['Product', [['How it works', '/how-it-works'], ['Pricing', '/pricing'], ['Group directory', '/groups'], ['Industries', '/industries'], ['Find a pro', '/find-a-pro'], ['Local partners', '/partners']]],
-        ['Company', [['About', '/about'], ['Blog', '/blog'], ['Help centre', '/help'], ['Contact', '/contact'], ['Advertise with us', '/partners/advertise'], ['Status', '/status']]],
+        ['Company', [['About', '/about'], ['Blog', '/blog'], ['Press kit', '/press'], ['Help centre', '/help'], ['Contact', '/contact'], ['Advertise with us', '/partners/advertise'], ['Status', '/status']]],
         ['Legal', [['Terms', '/terms'], ['Privacy', '/privacy']]],
     ];
 

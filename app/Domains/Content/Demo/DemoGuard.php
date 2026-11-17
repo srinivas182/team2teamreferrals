@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class DemoGuard
 {
     private const ALLOWED = ['logout', 'app/send*', 'app/referrals*', 'app/pipeline*', 'app/feed*', 'app/events*', 'app/notifications*', 'app/tours*', 'ally/*',
-        'app/nurture*', 'app/introduce*', 'app/group/*/prospects*', 'app/group/*/messages*', 'help/*', 'partners/seen', 'visit'];
+        'app/nurture*', 'app/introduce*', 'app/group/*/prospects*', 'app/group/*/messages*', 'help/*', 'partners/seen', 'visit', 'usability/*'];
 
     public function handle(Request $request, Closure $next): Response
     {
