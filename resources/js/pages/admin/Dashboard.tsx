@@ -44,8 +44,17 @@ export default function Dashboard({ stats, launch, seo }: { stats: Stats; launch
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Kpi label="Members" value={stats.members.toLocaleString()} />
                 <Kpi label="Staff and super admins" value={stats.staff.toLocaleString()} />
-                <Kpi label="Sign-ins today" value={stats.signInsToday.toLocaleString()} />
-                <Kpi label="Failed sign-ins today" value={stats.failedToday.toLocaleString()} hint="Spikes can mean someone is guessing passwords." />
+                {/* data-vr-live: counts that change while the visual checks sign in, so those checks hide them */}
+                <div data-vr-live>
+                    <Kpi label="Sign-ins today" value={stats.signInsToday.toLocaleString()} />
+                </div>
+                <div data-vr-live>
+                    <Kpi
+                        label="Failed sign-ins today"
+                        value={stats.failedToday.toLocaleString()}
+                        hint="Spikes can mean someone is guessing passwords."
+                    />
+                </div>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {SHORTCUTS.filter(([, , , , p]) => can.includes(p)).map(([t, d, h, Icon]) => (
