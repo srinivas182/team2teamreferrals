@@ -75,7 +75,8 @@ const ADMIN = [
 const EXTRA = ['home', 'help', 'partner', 'partner-account', 'app-home', 'app-pipeline', 'admin-home'];
 
 const STABLE_CSS = `*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}
-time,[data-vr-mask],[data-vr-live] .tabular{visibility:hidden!important}`;
+time,[data-vr-mask],[data-vr-live] .tabular{visibility:hidden!important}
+[data-pwa-banners]{display:none!important}`;
 
 /** RFC 6238 time-based code from a base32 secret (for the admin's two-step sign-in). */
 function totp(secret) {

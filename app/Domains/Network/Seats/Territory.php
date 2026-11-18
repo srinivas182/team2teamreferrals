@@ -7,20 +7,22 @@ namespace App\Domains\Network\Seats;
 use App\Domains\Network\Locations\Models\City;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use stdClass;
 
 /** A team always picks its city; the seat is that city, its county, its metro area or its state, by the industry's territory unit. */
 final class Territory
 {
     /** @return array{territory_type: string, territory_id: int, territory_name: string, state_code: string} */
-    public static function fromCity(string $unit, City $city): array
+    public static function fromCity(string $unit, City $city, ?stdClass $state = null, ?stdClass $county = null): array
     {
-        $state = DB::table('states')->where('id', $city->state_id)->first(['id', 'code', 'name', 'is_enabled']);
+        // Callers working through many cities pass the state and county they've already loaded.
+        $state ??= DB::table('states')->where('id', $city->state_id)->first(['id', 'code', 'name', 'is_enabled']);
         // Switched-off places (Admin → Locations) never get seats, whichever way someone tries: apply, invite, reserve.
         if (! $city->is_enabled || ! (bool) ($state->is_enabled ?? false)) {
             throw ValidationException::withMessages(['city_id' => 'We’re not taking seats in this location yet.']);
         }
         $code = (string) ($state->code ?? '');
-        $county = $city->county_id ? DB::table('counties')->where('id', $city->county_id)->first(['id', 'name']) : null;
+        $county ??= $city->county_id ? DB::table('counties')->where('id', $city->county_id)->first(['id', 'name']) : null;
 
         return match ($unit) {
             'city' => ['territory_type' => 'city', 'territory_id' => $city->id, 'territory_name' => "{$city->name}, {$code}", 'state_code' => $code],

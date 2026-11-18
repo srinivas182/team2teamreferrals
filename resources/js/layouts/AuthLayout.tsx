@@ -1,13 +1,16 @@
 import { UsabilityMount } from '@/components/usability/UsabilityMount';
 import { Link } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { forgetKeptPages } from '@/lib/pwa';
 import { Logo } from '@/components/brand/Logo';
 import { TempBadge } from '@/components/ui/badge';
 import { Toaster } from '@/components/ui/toaster';
 
 /** Split layout for sign-in and sign-up: form on the left, the product's promise on the right. */
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle?: ReactNode; children: ReactNode; footer?: ReactNode }) {
+    // On the sign-in pages nobody is signed in: member pages kept for offline use go (Sprint 53b).
+    useEffect(() => forgetKeptPages(), []);
     return (
         <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] lg:grid-cols-2">
             <div className="flex min-w-0 flex-col px-6 py-8 sm:px-12">

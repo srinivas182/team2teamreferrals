@@ -219,4 +219,6 @@ jobs:
         with: { name: visual-report, path: visual-report, retention-days: 14, if-no-files-found: ignore }
       - name: Keyboard-only journeys (skip link, visible focus, sign-in, dialogs)
         run: node scripts/ci/keyboard.mjs http://127.0.0.1:8001
+      - name: Installable app (manifest, offline, updates, sign-out, iPhone install steps)
+        run: node scripts/ci/pwa.mjs http://127.0.0.1:8001
 

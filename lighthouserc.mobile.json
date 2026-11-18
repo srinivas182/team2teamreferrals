@@ -3,11 +3,16 @@
     "collect": {
       "url": [
         "http://127.0.0.1:8001/",
+        "http://127.0.0.1:8001/groups",
         "http://127.0.0.1:8001/groups/solar-installers-network",
         "http://127.0.0.1:8001/industries/solar",
         "http://127.0.0.1:8001/industries/solar/tx/austin",
         "http://127.0.0.1:8001/t/lone-star-solar",
-        "http://127.0.0.1:8001/blog"
+        "http://127.0.0.1:8001/blog",
+        "http://127.0.0.1:8001/help",
+        "http://127.0.0.1:8001/partners",
+        "http://127.0.0.1:8001/press",
+        "http://127.0.0.1:8001/how-it-works"
       ],
       "numberOfRuns": 3,
       "settings": {

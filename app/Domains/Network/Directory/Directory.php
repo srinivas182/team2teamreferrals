@@ -139,11 +139,12 @@ final class Directory
         $seats = DB::table('seats')->where('group_id', $group->id)->whereIn('status', self::FILLED)->whereNotNull('primary_team_id')
             ->when($state, fn ($w) => $w->where('state_code', $state))->orderBy('territory_name')->get();
         $teams = self::teams($seats->pluck('primary_team_id')->map(fn ($id) => (int) $id)->unique()->values()->all(), (int) $group->industry_id);
+        $cities = DirectoryUrls::mainCities($seats->map(fn ($s) => [(string) $s->territory_type, (int) $s->territory_id]));
         $out = [];
         foreach ($seats as $s) {
             if (isset($teams[(int) $s->primary_team_id])) {
                 $out[] = ['territory' => (string) $s->territory_name, 'state' => $s->state_code, 'territoryId' => (int) $s->territory_id, 'type' => (string) $s->territory_type,
-                    'cityId' => (int) (DirectoryUrls::mainCity((string) $s->territory_type, (int) $s->territory_id)->id ?? 0), 'team' => $teams[(int) $s->primary_team_id]];
+                    'cityId' => (int) ($cities[$s->territory_type.':'.$s->territory_id]->id ?? 0), 'team' => $teams[(int) $s->primary_team_id]];
             }
         }
 
@@ -161,11 +162,14 @@ final class Directory
             ->get(['territory_type', 'territory_id'])->map(fn ($s) => $s->territory_type.':'.$s->territory_id)->flip();
         $cities = City::query()->where('cities.is_enabled', true)->join('states', 'states.id', '=', 'cities.state_id')->where('states.is_enabled', true)
             ->when($state, fn ($w) => $w->where('states.code', $state))->orderByDesc('cities.population')->limit($limit * 6)->select('cities.*')->get();
+        // States and counties for every candidate in two queries, rather than two per city (Sprint 53b).
+        $states = DB::table('states')->whereIn('id', $cities->pluck('state_id')->unique()->all())->get(['id', 'code', 'name', 'is_enabled'])->keyBy('id');
+        $counties = DB::table('counties')->whereIn('id', $cities->pluck('county_id')->filter()->unique()->all())->get(['id', 'name'])->keyBy('id');
         $out = [];
         $seen = [];
         foreach ($cities as $c) {
             try {
-                $t = Territory::fromCity($group->industry->territory_unit, $c);
+                $t = Territory::fromCity($group->industry->territory_unit, $c, $states[$c->state_id] ?? null, $c->county_id ? ($counties[$c->county_id] ?? null) : null);
             } catch (ValidationException) {
                 continue;
             }
@@ -174,15 +178,28 @@ final class Directory
                 continue;
             }
             $seen[$key] = true;
-            $seatId = DB::table('seats')->where(['group_id' => $group->id, 'territory_type' => $t['territory_type'], 'territory_id' => $t['territory_id']])->value('id');
-            $out[] = ['city' => (string) $c->name, 'cityId' => (int) $c->id, 'state' => $t['state_code'], 'territory' => $t['territory_name'],
-                'waitlist' => $seatId ? DB::table('seat_waitlist')->where('seat_id', $seatId)->count() : 0];
+            $out[] = ['city' => (string) $c->name, 'cityId' => (int) $c->id, 'state' => $t['state_code'], 'territory' => $t['territory_name'], 'key' => $key];
             if (count($out) >= $limit) {
                 break;
             }
         }
+        // Waiting lists for the open places, in one query.
+        $waiting = $out === [] ? collect() : DB::table('seats')->leftJoin('seat_waitlist', 'seat_waitlist.seat_id', '=', 'seats.id')->where('seats.group_id', $group->id)
+            ->where(function ($w) use ($out): void {
+                foreach ($out as $o) {
+                    [$type, $id] = explode(':', $o['key']);
+                    $w->orWhere(fn ($x) => $x->where('seats.territory_type', $type)->where('seats.territory_id', (int) $id));
+                }
+            })->groupBy('seats.territory_type', 'seats.territory_id')
+            ->selectRaw('seats.territory_type, seats.territory_id, count(seat_waitlist.id) as n')->get()
+            ->mapWithKeys(fn ($r) => [$r->territory_type.':'.$r->territory_id => (int) $r->n]);
 
-        return $out;
+        return array_map(function (array $o) use ($waiting): array {
+            $o['waitlist'] = (int) ($waiting[$o['key']] ?? 0);
+            unset($o['key']);
+
+            return $o;
+        }, $out);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use Closure;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 
 /**
@@ -13,6 +14,21 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
  */
 final class ThrottlePerRoute extends ThrottleRequests
 {
+    /**
+     * Load generators on staging (LOAD_TEST_IPS) aren't limited, so a load test measures the servers rather than the
+     * per-visitor limits. Never applies in production.
+     */
+    public function handle($request, Closure $next, $maxAttempts = 60, $decayMinutes = 1, $prefix = '')
+    {
+        $ips = array_filter(array_map('trim', explode(',', (string) config('app.load_test_ips'))));
+        if ($ips !== [] && ! app()->environment('production') && in_array($request->ip(), $ips, true)) {
+            return $next($request);
+        }
+
+        // Pass on exactly what was given: Laravel tells a named limiter ("throttle:api") apart by the number of arguments.
+        return parent::handle($request, $next, ...array_slice(func_get_args(), 2));
+    }
+
     /** @param \Illuminate\Http\Request $request */
     protected function resolveRequestSignature($request)
     {

@@ -13,7 +13,8 @@ export async function enablePush(vapidPublicKey: string): Promise<'enabled' | 'd
     try {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') return 'denied';
-        const reg = await navigator.serviceWorker.register('/sw.js');
+        // Reuse the app's service worker (registered with its build version) rather than starting a second copy.
+        const reg = (await navigator.serviceWorker.getRegistration('/')) ?? (await navigator.serviceWorker.register('/sw.js'));
         const sub =
             (await reg.pushManager.getSubscription()) ??
             (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) }));

@@ -32,7 +32,8 @@ return [
     */
 
     'deprecations' => [
-        'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),
+        // Never empty: `LOG_DEPRECATIONS_CHANNEL=null` reads as nothing, and Laravel then looks for a channel that doesn't exist.
+        'channel' => env('LOG_DEPRECATIONS_CHANNEL') ?: 'null',
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
     ],
 
