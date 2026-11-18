@@ -211,6 +211,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Lighthouse just ran a real browser over the partner's public pages, which counted as views: start the screenshots from zero.
+          php artisan tinker --execute="DB::table('partner_stats')->delete();"
           php artisan cache:clear
           export VISUAL_OK=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" --jq 'any(.[]; .name == "visual-ok")' 2>/dev/null || echo false)
           node scripts/ci/visual.mjs http://127.0.0.1:8001
