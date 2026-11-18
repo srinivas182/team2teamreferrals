@@ -29,25 +29,28 @@
 
 ## Portal navigation by role
 
-Desktop uses a left sidebar; mobile uses a bottom tab bar with the four most-used items and "More". The command palette reaches everything for every role.
+Simplified before launch: five everyday places, then everything else grouped under "More", closed until opened
+(`resources/js/layouts/nav.ts`). Desktop uses a left sidebar; phones use a bottom tab bar (Home, Inbox, Send, Pipeline,
+More), where "More" opens a sheet with the same groups. Notifications are the bell at the top. Search (Ctrl K) reaches
+every page for every role.
 
-### Team leader (and team members, filtered by permission)
+### Team leader and team members
 
-| Sidebar | Mobile tab | Contains |
+| Sidebar | Phone | Contains |
 | --- | --- | --- |
-| Home | Home | KPIs, action bar (awaiting decision with countdowns, overdue updates, closing reports to confirm), earnings snapshot |
-| Inbox | Inbox | Referrals awaiting accept/reject, open request board |
-| Pipeline | Pipeline | CRM kanban and list for received leads, nurture view |
-| Sent | Sent | My referrals with timelines and fee status |
-| Send referral (primary button) | centre "+" button | Send flow from anywhere |
-| Earnings | More | Fees expected/received/overdue, credits, year-end export |
-| Groups | More | My groups, seats, backup and waitlist positions, browse and apply, network map |
-| Community | More | Group feed, directory, leaderboards, events |
-| Team | More | Members, permissions |
-| Profile and licenses | More | Public profile, QR code, widgets, licenses, W-9 |
-| Billing | More | Card, subscriptions, invoices |
-| Integrations | More | CRM connectors, Zapier, calendar, intake email address |
-| Help | More | Help centre, support chat, tickets |
+| Send referral (primary button) | centre "+" | Send flow from anywhere |
+| Home | Home | Checklist, KPIs, what needs you today |
+| Inbox | Inbox | **One inbox**: referrals sent to the team, plus new leads from the public profile, drafts from forwarded emails, voice notes and photos, and open requests the team can take (filters: All, Referrals, Profile leads, Drafts, Open requests). The badge counts unread referral messages, new leads and drafts. |
+| Pipeline | Pipeline | CRM kanban and list for received leads |
+| Sent | More → Everyday | My referrals with timelines and fee status |
+| Earnings | More → Everyday | Fees expected, received and overdue; year-end export |
+| More → Network | More → Network | Groups, Directory, Feed, Events, Leaderboards, Badges, Local partners, Training (each hidden when its module is off) |
+| More → Grow your business | More → Grow your business | Dashboard, Performance, Share profile, Invites, Nurture, Credits |
+| More → Team and account | More → Team and account | Team, Profile and licenses, Notifications; **leaders only**: Company, Billing, Integrations, Developers (API) |
+| More → Help | More → Help | Help centre, support, tickets |
+
+Open requests, Profile leads and Drafts keep their own pages (linked from the inbox and search) but are no longer
+separate menu items.
 
 ### Group owner (adds a "My group" section)
 

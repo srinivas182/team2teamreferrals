@@ -84,6 +84,8 @@ final class GrowthServiceProvider extends ServiceProvider
         // Staff: everyone.
         Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:growth.manage'])->prefix('admin/growth')->name('admin.growth.')->group(function () use ($prospectRoutes): void {
             Route::get('/', fn () => redirect('/admin/growth/prospects'))->name('home');
+            // The activation funnel: sign-up to first accepted referral, and the teams stuck on a step.
+            Route::get('activation', Http\ActivationController::class)->name('activation');
             Route::get('settings', [Http\GrowthController::class, 'settings'])->name('settings');
             Route::get('campaigns', [Http\CampaignsController::class, 'index'])->name('campaigns');
             Route::post('campaigns', [Http\CampaignsController::class, 'store'])->name('campaigns.store');

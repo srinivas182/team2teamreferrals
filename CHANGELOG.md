@@ -4,6 +4,18 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Simplification — an easier member area before launch
+Tests: tests/Feature/Platform/SimplifyTest.php. Design: docs/design/information-architecture.md.
+1. A simpler menu: five everyday places (Home, Inbox, Pipeline, Sent, Earnings) and the Send button, with everything else grouped under "More" (Network, Grow your business, Team and account, Help), closed until opened. It was 30 items in one list.
+2. A menu that fits the role: Company, Billing, Integrations and the API show for team leaders only.
+3. On phones, the fifth tab is now "More", a sheet with the same groups (notifications stay on the bell at the top).
+4. One inbox: referrals, new leads from the public profile, drafts from forwarded emails, voice notes and photos, and open requests, with filters by kind. The badge counts what's waiting on you and updates as soon as a lead or draft is dealt with.
+5. Activation in Admin → Growth:
+   - the funnel from sign-up to first accepted referral (verified, seat, first sent, first accepted), with typical times
+   - teams stuck for a week or more, by network and period
+   - staff, demo and load-test accounts aren't counted
+6. The first-run tour explains the one inbox.
+
 ### Sprint 53b — Installable app, load test and speed pass
 Tests: tests/Feature/Platform/{InstallableAppTest,LoadTestingTest}.php; scripts/ci/pwa.mjs in CI. Reports: docs/performance/load-test-2026-11.md, loadtest/README.md.
 1. Installable app:

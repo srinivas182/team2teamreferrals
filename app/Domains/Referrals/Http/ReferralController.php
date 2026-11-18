@@ -83,6 +83,7 @@ final class ReferralController
         $dr = DB::table('referral_drafts')->where(['ulid' => $draft, 'user_id' => $this->user($request)->id, 'status' => 'pending'])->first();
         abort_if($dr === null, 404);
         DB::table('referral_drafts')->where('id', $dr->id)->update(['status' => 'discarded', 'updated_at' => now()]);
+        $this->forgetWaiting($request);
         DB::table('intake_messages')->where('id', $dr->intake_id)->update(['body' => null, 'subject' => null, 'media_path' => null, 'purged_at' => now()]);
 
         return back()->with('status', 'draft-discarded');
@@ -124,6 +125,7 @@ final class ReferralController
         // Sent from a draft: mark it sent, and delete the original email, audio or photo now rather than in 14 days.
         if (! empty($d['draft']) && ($dr = DB::table('referral_drafts')->where(['ulid' => (string) $d['draft'], 'user_id' => $user->id, 'status' => 'pending'])->first()) !== null) {
             DB::table('referral_drafts')->where('id', $dr->id)->update(['status' => 'sent', 'referral_id' => $r['referral']->id, 'updated_at' => now()]);
+            $this->forgetWaiting($request);
             if ($dr->intake_id && ($media = DB::table('intake_messages')->where('id', $dr->intake_id)->value('media_path'))) {
                 \Illuminate\Support\Facades\Storage::disk('local')->delete((string) $media);
             }
@@ -138,9 +140,27 @@ final class ReferralController
         return redirect()->to('/app/referrals/'.$r['referral']->ulid)->with('status', 'referral-sent');
     }
 
+    /** One inbox: referrals sent to the team, plus leads, drafts and open requests waiting for someone. */
     public function inbox(Request $request): Response
     {
-        return $this->list($request, 'receiver_team_id', 'app/referrals/Inbox', 'Inbox');
+        $user = $this->user($request);
+        $team = Team::of($user);
+        $others = $team !== null ? app(\App\Domains\Referrals\InboxSources::class)->items($team, $user) : [];
+
+        return $this->list($request, 'receiver_team_id', 'app/referrals/Inbox', 'Inbox', [
+            'others' => $others,
+            'kinds' => collect(\App\Domains\Referrals\InboxSources::KINDS)->map(fn ($label, $kind) => ['kind' => $kind, 'label' => $label,
+                'count' => count(array_filter($others, fn ($o) => $o['kind'] === $kind))])->values()->all(),
+        ]);
+    }
+
+    /** The inbox badge counts leads and drafts; refresh it once one is dealt with. */
+    private function forgetWaiting(Request $request): void
+    {
+        $user = $this->user($request);
+        if (($team = Team::of($user)) !== null) {
+            \App\Domains\Referrals\InboxSources::forget($team, $user);
+        }
     }
 
     public function sent(Request $request): Response
@@ -600,7 +620,8 @@ final class ReferralController
         return redirect()->to('/app/inbox')->with('status', 'referral-declined');
     }
 
-    private function list(Request $request, string $col, string $page, string $title): Response
+    /** @param  array<string, mixed>  $extra */
+    private function list(Request $request, string $col, string $page, string $title, array $extra = []): Response
     {
         $team = Team::of($this->user($request));
 
@@ -612,6 +633,7 @@ final class ReferralController
                     'sender' => $r->sender->name, 'receiver' => $r->receiver?->name, 'respondBy' => $r->respond_by->toIso8601String(), 'when' => $r->created_at->toIso8601String()]),
             'status' => session('status'),
             'seo' => SeoData::private($title)->toArray(),
+            ...$extra,
         ]);
     }
 
