@@ -25,8 +25,9 @@ final class HealthChecks
             'database' => $this->time(fn () => DB::select('select 1')),
             'cache' => $this->time(function () {
                 $k = 'health:'.Str::random(8);
-                Cache::put($k, 1, 10);
-                $ok = Cache::pull($k) === 1;
+                // A string, not a number: the Redis store hands numbers back as strings (Sprint 54a found this).
+                Cache::put($k, 'ok', 10);
+                $ok = Cache::pull($k) === 'ok';
                 if (! $ok) {
                     throw new RuntimeException('cache round trip failed');
                 }

@@ -140,3 +140,19 @@ it('never redirects health checks to the canonical address (they come from insid
     $this->get('http://127.0.0.1:8000/health')->assertOk();
     $this->get('http://127.0.0.1:8000/about')->assertRedirect('https://teamtoteamreferrals.com/about');
 });
+
+it('reads the cache and the scheduler heartbeat correctly from Redis, which returns numbers as strings', function () {
+    try {
+        Illuminate\Support\Facades\Redis::connection()->ping();
+    } catch (Throwable) {
+        $this->markTestSkipped('No Redis here.');
+    }
+    config(['cache.default' => 'redis']);
+    Cache::store('redis')->flush();
+    HealthCommand::beat();
+    [$code, $out] = health();
+    expect($out['checks']['cache']['ok'])->toBeTrue()
+        ->and($out['checks']['scheduler']['ok'])->toBeTrue()
+        ->and($code)->toBe(0);
+    Cache::store('redis')->flush();
+});

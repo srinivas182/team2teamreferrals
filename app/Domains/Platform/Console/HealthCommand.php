@@ -107,10 +107,11 @@ final class HealthCommand extends Command
     private function scheduler(): array
     {
         $at = Cache::get(self::HEARTBEAT);
-        if (! is_int($at)) {
+        // Redis gives numbers back as strings.
+        if (! is_numeric($at)) {
             return ['ok' => false, 'detail' => 'No heartbeat yet.'];
         }
-        $age = now()->getTimestamp() - $at;
+        $age = now()->getTimestamp() - (int) $at;
 
         return ['ok' => $age <= self::HEARTBEAT_MAX_AGE, 'detail' => "last ran {$age} s ago"];
     }
