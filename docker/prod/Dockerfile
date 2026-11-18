@@ -28,9 +28,11 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 COPY --from=assets /app/bootstrap/ssr ./bootstrap/ssr
+# Octane's FrankenPHP worker script goes in public/ at build time: at run time the app user can't write there.
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && rm -rf node_modules tests prototype storybook-static .git \
     && ln -sfn ../storage/app/public public/storage \
+    && cp vendor/laravel/octane/src/Commands/stubs/frankenphp-worker.php public/frankenphp-worker.php \
     && useradd --uid 10001 --create-home t2t \
     && mkdir -p storage/app/public storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R t2t:t2t storage bootstrap/cache /data /config
