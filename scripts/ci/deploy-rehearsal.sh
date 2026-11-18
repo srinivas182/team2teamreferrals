@@ -21,7 +21,7 @@ cp -r "$REPO/deploy/bin" "$REPO/deploy/caddy" "$REPO/deploy/compose.yaml" "$SRV/
 cd "$SRV"
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
-fail() { printf '\n\033[31mREHEARSAL FAILED: %s\033[0m\n' "$*"; docker compose -f compose.yaml -f compose.override.yaml logs --tail 80 web horizon ssr caddy 2>/dev/null || true; exit 1; }
+fail() { printf '\n\033[31mREHEARSAL FAILED: %s\033[0m\n' "$*"; T2T_TAG=$(release 2>/dev/null || echo r1) docker compose -f compose.yaml -f compose.override.yaml logs --tail 80 web horizon ssr caddy 2>&1 || true; exit 1; }
 dcx() { T2T_TAG=${TAG:-r1} docker compose -f compose.yaml -f compose.override.yaml "$@"; }
 sql() { dcx exec -T mysql mysql -ut2t -psecret -N -B t2t -e "$1" 2>/dev/null; }
 release() { grep '^T2T_TAG=' .release | cut -d= -f2; }
@@ -136,7 +136,8 @@ PHP
 step "1. First deploy"
 bin/deploy.sh r1 || fail "the first deploy failed"
 [ "$(release)" = r1 ] || fail "the release file doesn't say r1"
-curl -fsSk --resolve localhost:443:127.0.0.1 https://localhost/ | grep -q 'Team to Team' || fail "the home page didn't load through Caddy"
+home=$(curl -sk -m 20 --resolve localhost:443:127.0.0.1 -o "$SRV/home.html" -w '%{http_code} %{redirect_url}' https://localhost/)
+grep -q 'Team to Team' "$SRV/home.html" || fail "the home page didn't load through Caddy ($home): $(head -c 300 "$SRV/home.html")"
 curl -fsSk --resolve localhost:443:127.0.0.1 https://www.localhost/ -o /dev/null -w '%{http_code}' --resolve www.localhost:443:127.0.0.1 | grep -q 301 || fail "www didn't redirect"
 TAG=r1 dcx exec -T web php artisan t2t:health --skip=scanner --skip=scheduler || fail "t2t:health failed after the first deploy"
 
@@ -196,6 +197,8 @@ TAG=r2 dcx exec -T horizon php -r 'exit(0);' || fail "horizon isn't running afte
 [ "$(docker inspect -f '{{.Config.Image}}' "$(docker ps -q --filter label=com.docker.compose.service=horizon)")" = "$IMAGE:r2" ] || fail "horizon isn't back on r2"
 
 step "5. Backups and the restore drill"
+# A file in the server's storage volume, as a profile photo would be, so the file backup has something to copy.
+docker run --rm -v t2t_storage:/data alpine:3.20 sh -c 'mkdir -p /data/public && echo rehearsal > /data/public/rehearsal.txt && chown -R 10001:10001 /data/public'
 bin/backup.sh || fail "the backup failed"
 objects=$(docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Rclone \
 	-e RCLONE_CONFIG_BK_ENDPOINT=http://s3:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
@@ -203,7 +206,7 @@ objects=$(docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e R
 echo "$objects"
 grep -q '^db/daily/.*\.sql\.gz\.enc$' <<<"$objects" || fail "no database backup in the bucket"
 grep -q '^db/pre-deploy/' <<<"$objects" || fail "no pre-deploy backups in the bucket"
-grep -q '^files/storage/' <<<"$objects" || fail "no file backup in the bucket"
+grep -q '^files/storage/public/rehearsal.txt$' <<<"$objects" || fail "the file backup is missing the storage file"
 bin/restore-drill.sh || fail "the restore drill failed"
 TAG=r2 dcx exec -T web php artisan t2t:health --json --skip=scanner | tee /dev/stderr | grep -q '"backup"' || fail "t2t:health doesn't report the backup"
 

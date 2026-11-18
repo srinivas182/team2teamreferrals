@@ -156,3 +156,10 @@ it('reads the cache and the scheduler heartbeat correctly from Redis, which retu
         ->and($code)->toBe(0);
     Cache::store('redis')->flush();
 });
+
+it('trusts the proxy in front for the scheme before deciding on a canonical redirect (no https redirect loop behind Caddy)', function () {
+    config(['seo.force_canonical' => true, 'seo.canonical_url' => 'https://teamtoteamreferrals.com']);
+    // As Caddy passes it on: plain HTTP to Octane, with the visitor's scheme in X-Forwarded-Proto.
+    $this->withHeaders(['X-Forwarded-Proto' => 'https', 'X-Forwarded-Port' => '443'])->get('http://teamtoteamreferrals.com/')->assertOk();
+    $this->withHeaders(['X-Forwarded-Proto' => 'http'])->get('http://teamtoteamreferrals.com/')->assertRedirect('https://teamtoteamreferrals.com/');
+});
