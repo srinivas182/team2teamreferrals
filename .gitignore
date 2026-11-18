@@ -48,3 +48,7 @@ frankenphp-worker.php
 /frankenphp
 .lighthouseci-mobile/
 /visual-report
+
+# The deploy kit's Caddy config (Sprint 54a); tls.caddy is written by deploy.sh on the server.
+!deploy/caddy
+deploy/caddy/tls.caddy
