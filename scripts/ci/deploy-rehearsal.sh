@@ -28,7 +28,7 @@ release() { grep '^T2T_TAG=' .release | cut -d= -f2; }
 web_image() { docker inspect -f '{{.Config.Image}}' "$(docker ps -q --filter label=com.docker.compose.service=web | head -n 1)"; }
 
 cat >compose.override.yaml <<'EOF'
-# Rehearsal only: a local MySQL (strict like DigitalOcean's), MinIO standing in for Spaces, no ClamAV (too slow to
+# Rehearsal only: a local MySQL (strict like DigitalOcean's), an S3 server standing in for Spaces, no ClamAV (too slow to
 # start in CI; it's checked on the real servers).
 services:
   mysql:
@@ -36,11 +36,11 @@ services:
     command: ["--sql-require-primary-key=ON"]
     environment: { MYSQL_DATABASE: t2t, MYSQL_USER: t2t, MYSQL_PASSWORD: secret, MYSQL_ROOT_PASSWORD: root }
     healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"], interval: 3s, retries: 40 }
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    command: ["server", "/data"]
-    environment: { MINIO_ROOT_USER: rehearsal, MINIO_ROOT_PASSWORD: rehearsal-secret }
-    healthcheck: { test: ["CMD", "mc", "ready", "local"], interval: 3s, retries: 40 }
+  s3:
+    # rclone's own S3 server stands in for Spaces (MinIO no longer publishes images).
+    image: rclone/rclone:1.69
+    command: ["serve", "s3", "/data", "--addr", ":9000", "--auth-key", "rehearsal,rehearsal-secret"]
+    healthcheck: { test: ["CMD-SHELL", "nc -z 127.0.0.1 9000"], interval: 3s, retries: 40 }
   clamav:
     image: alpine:3.20
     command: ["sleep", "infinity"]
@@ -72,8 +72,8 @@ MEILISEARCH_KEY=$(openssl rand -hex 20)
 MAIL_MAILER=log
 SEO_INDEXABLE=false
 BACKUP_BUCKET=t2t-backups
-BACKUP_S3_ENDPOINT=http://minio:9000
-BACKUP_S3_PROVIDER=Minio
+BACKUP_S3_ENDPOINT=http://s3:9000
+BACKUP_S3_PROVIDER=Rclone
 BACKUP_S3_KEY=rehearsal
 BACKUP_S3_SECRET=rehearsal-secret
 BACKUP_PASSPHRASE=$(openssl rand -hex 20)
@@ -82,9 +82,9 @@ EOF
 
 # The "managed" database and object storage exist before the first deploy, as on DigitalOcean.
 step "Database and object storage"
-TAG=r1 dcx up -d --wait mysql minio
-docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Minio \
-	-e RCLONE_CONFIG_BK_ENDPOINT=http://minio:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
+TAG=r1 dcx up -d --wait mysql s3
+docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Rclone \
+	-e RCLONE_CONFIG_BK_ENDPOINT=http://s3:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
 	rclone/rclone:1.69 mkdir bk:t2t-backups
 
 # Requests during a deploy: every one must succeed.
@@ -195,8 +195,8 @@ TAG=r2 dcx exec -T horizon php -r 'exit(0);' || fail "horizon isn't running afte
 
 step "5. Backups and the restore drill"
 bin/backup.sh || fail "the backup failed"
-objects=$(docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Minio \
-	-e RCLONE_CONFIG_BK_ENDPOINT=http://minio:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
+objects=$(docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Rclone \
+	-e RCLONE_CONFIG_BK_ENDPOINT=http://s3:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
 	rclone/rclone:1.69 lsf -R bk:t2t-backups)
 echo "$objects"
 grep -q '^db/daily/.*\.sql\.gz\.enc$' <<<"$objects" || fail "no database backup in the bucket"
