@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,8 @@ export function ReferralList({
     status,
     seo,
     empty,
+    before,
+    showList = true,
 }: {
     title: string;
     items: Item[];
@@ -53,6 +55,9 @@ export function ReferralList({
     status?: string;
     seo: Seo;
     empty: string;
+    /** Shown above the list (the inbox's filters and other things waiting). */
+    before?: ReactNode;
+    showList?: boolean;
 }) {
     const { auth } = usePage<SharedProps>().props;
     const now = useNow();
@@ -64,32 +69,35 @@ export function ReferralList({
                     {statusMessage(status)}
                 </Alert>
             )}
-            <Card className="max-w-4xl">
-                {items.length === 0 && <p className="p-8 text-center text-muted">{empty}</p>}
-                <ul className="divide-y divide-line">
-                    {items.map((r) => (
-                        <li key={r.id}>
-                            <Link
-                                href={`/app/referrals/${r.id}`}
-                                className={`flex flex-wrap items-center gap-3 p-4 hover:bg-bg ${mode === 'in' && r.status === 'sent' && new Date(r.respondBy).getTime() - now < 7.2e6 ? 'border-l-4 border-warning' : ''}`}
-                            >
-                                <div className="min-w-0 flex-1">
-                                    <div className="font-medium">
-                                        {r.client} · {r.territory}
+            {before}
+            {showList && (
+                <Card className="max-w-4xl">
+                    {items.length === 0 && <p className="p-8 text-center text-muted">{empty}</p>}
+                    <ul className="divide-y divide-line">
+                        {items.map((r) => (
+                            <li key={r.id}>
+                                <Link
+                                    href={`/app/referrals/${r.id}`}
+                                    className={`flex flex-wrap items-center gap-3 p-4 hover:bg-bg ${mode === 'in' && r.status === 'sent' && new Date(r.respondBy).getTime() - now < 7.2e6 ? 'border-l-4 border-warning' : ''}`}
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <div className="font-medium">
+                                            {r.client} · {r.territory}
+                                        </div>
+                                        <div className="text-sm text-muted">
+                                            {mode === 'in' ? `From ${r.sender}` : `To ${r.receiver ?? '—'}`} · {r.group}
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-muted">
-                                        {mode === 'in' ? `From ${r.sender}` : `To ${r.receiver ?? '—'}`} · {r.group}
-                                    </div>
-                                </div>
-                                {r.status === 'sent' && <span className="text-sm text-warning tabular">{left(r.respondBy, now)}</span>}
-                                <Badge tone={tone(r.status)}>
-                                    {r.status === 'sent' ? (mode === 'in' ? 'Waiting for you' : 'Waiting') : r.status}
-                                </Badge>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </Card>
+                                    {r.status === 'sent' && <span className="text-sm text-warning tabular">{left(r.respondBy, now)}</span>}
+                                    <Badge tone={tone(r.status)}>
+                                        {r.status === 'sent' ? (mode === 'in' ? 'Waiting for you' : 'Waiting') : r.status}
+                                    </Badge>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </Card>
+            )}
         </PortalLayout>
     );
 }

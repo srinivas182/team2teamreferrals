@@ -62,7 +62,9 @@ it('keeps key pages within their query budgets', function (string $url, int $bud
     // The home page's figures are worked out once every five minutes (a fixed set of queries, never per row).
     'home' => ['/', 12, null],
     // 23: a first visit creates the team, which checks its public web address isn't already taken (once per team).
-    'portal home' => ['/app', 24, null], // +1 (Sprint 53b): "has this member sent a referral?", checked once per session every ten minutes
+    // +1 (Sprint 53b): "has this member sent a referral?", checked once per session every ten minutes.
+    // +1 (simplification): leads and drafts waiting, for the one inbox's badge (one query, remembered for a minute).
+    'portal home' => ['/app', 25, null],
     'admin staff' => ['/admin/staff', 30, 'super_admin'],
     'admin audit' => ['/admin/audit', 30, 'super_admin'],
 ]);

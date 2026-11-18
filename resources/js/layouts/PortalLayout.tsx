@@ -4,7 +4,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
 import { TourRunner } from '@/components/tour/Tour';
 import { FooterCredit } from '@/components/FooterCredit';
-import { Bell, Plus, Search } from 'lucide-react';
+import { Bell, ChevronDown, Menu, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
@@ -17,7 +17,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTeamLive } from '@/lib/realtime';
 import { useShortcuts } from '@/lib/shortcuts';
-import { mobileTabs, ownerNav, portalNav, type NavItem } from './nav';
+import { mobileTabs, moreNav, ownerNav, portalNav, primaryNav, type NavGroup, type NavItem } from './nav';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { SharedProps } from '@/types/auth';
 
 type Props = { title: string; actions?: ReactNode; children: ReactNode; user?: { name: string; team: string }; isGroupOwner?: boolean };
@@ -43,6 +44,43 @@ function NavLink({ item, current }: { item: NavItem; current: boolean }) {
     );
 }
 
+// Which "More" groups are open, kept while moving between pages (the layout is rebuilt on every page). Changed only by
+// clicks, so server rendering always starts with just the current page's group open.
+const openGroups = new Set<string>();
+
+/** A "More" group in the sidebar: a button that opens or closes its links. Opens itself when you're on one of its pages. */
+function NavSection({ group, items, url }: { group: NavGroup; items: NavItem[]; url: string }) {
+    const here = items.some((n) => isCurrent(url, n.href));
+    const [open, setOpen] = useState(() => here || openGroups.has(group.key));
+    if (items.length === 0) return null;
+    const id = `nav-group-${group.key}`;
+    return (
+        <div>
+            <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={id}
+                data-tour={`nav-group-${group.key}`}
+                onClick={() => {
+                    const next = !open;
+                    setOpen(next);
+                    if (next) openGroups.add(group.key);
+                    else openGroups.delete(group.key);
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-muted hover:bg-bg hover:text-ink"
+            >
+                <span className="flex-1">{group.label}</span>
+                <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} aria-hidden />
+            </button>
+            <div id={id} hidden={!open} className="space-y-0.5 pb-1 pl-2">
+                {items.map((n) => (
+                    <NavLink key={n.href} item={n} current={isCurrent(url, n.href)} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
 /** Signed-in member area: sidebar on desktop, bottom tabs on phones, command palette on Ctrl/⌘ K. */
 // Main actions in the command palette (switched-off modules left out).
 const paletteActions: { label: string; href: string; icon: typeof Plus; module?: string; shortcut?: string }[] = [
@@ -63,10 +101,14 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
     const [palette, setPalette] = useState(false);
     const [help, setHelp] = useState(false);
     useTeamLive();
-    const counts = (props as unknown as { referralUnread?: { inbox: number; sent: number } }).referralUnread ?? { inbox: 0, sent: 0 };
+    const counts = (props as unknown as { referralUnread?: { inbox: number; sent: number; waiting?: number } }).referralUnread ?? {
+        inbox: 0,
+        sent: 0,
+    };
     const withBadge = (n: NavItem): NavItem => ({
         ...n,
-        badge: n.href === '/app/inbox' ? counts.inbox || undefined : n.href === '/app/sent' ? counts.sent || undefined : n.badge,
+        badge:
+            n.href === '/app/inbox' ? counts.inbox + (counts.waiting ?? 0) || undefined : n.href === '/app/sent' ? counts.sent || undefined : n.badge,
     });
 
     useEffect(() => {
@@ -84,7 +126,9 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
 
     const { modules } = usePage<{ modules?: Record<string, boolean> }>().props;
 
-    const shown = (n: NavItem) => !n.module || modules?.[n.module] !== false;
+    const role = (props as { teamRole?: string | null }).teamRole ?? null;
+    const shown = (n: NavItem) => (!n.module || modules?.[n.module] !== false) && (!n.leaders || role === 'leader');
+    const [more, setMore] = useState(false);
 
     const shortcuts = useMemo(
         () => [
@@ -120,7 +164,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                 .filter((a) => !a.module || modules?.[a.module] !== false)
                 .map((a) => ({ group: 'Actions', label: a.label, icon: a.icon, shortcut: a.shortcut, onSelect: () => router.visit(a.href) })),
             ...[...portalNav, ...(isGroupOwner ? ownerNav : [])]
-                .filter((n) => !n.module || modules?.[n.module] !== false)
+                .filter((n) => (!n.module || modules?.[n.module] !== false) && (!n.leaders || role === 'leader'))
                 .map((n) => ({
                     group: 'Go to',
                     label: n.label,
@@ -128,7 +172,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                     onSelect: () => router.visit(n.href),
                 })),
         ],
-        [isGroupOwner, modules],
+        [isGroupOwner, modules, role],
     );
 
     return (
@@ -156,8 +200,12 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </Link>
                     </div>
                     <nav className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Portal">
-                        {portalNav.filter(shown).map((n) => (
+                        {primaryNav.filter(shown).map((n) => (
                             <NavLink key={n.href} item={withBadge(n)} current={isCurrent(url, n.href)} />
+                        ))}
+                        <div className="px-3 pt-5 pb-1 text-xs font-semibold text-subtle">More</div>
+                        {moreNav.map((g) => (
+                            <NavSection key={g.key} group={g} items={g.items.filter(shown)} url={url} />
                         ))}
                         {isGroupOwner && (
                             <>
@@ -302,7 +350,42 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             {t.label}
                         </Link>
                     ))}
+                    <button
+                        type="button"
+                        onClick={() => setMore(true)}
+                        aria-haspopup="dialog"
+                        className="flex flex-col items-center gap-1 py-2 text-xs font-medium text-muted"
+                        data-tour="nav-more"
+                    >
+                        <Menu className="size-5" aria-hidden />
+                        More
+                    </button>
                 </nav>
+                <Dialog open={more} onOpenChange={setMore}>
+                    <DialogContent title="More">
+                        <nav aria-label="More" className="space-y-4" onClick={(e) => (e.target as HTMLElement).closest('a') && setMore(false)}>
+                            {[
+                                { key: 'everyday', label: 'Everyday', items: primaryNav.filter((n) => !mobileTabs.some((t) => t.href === n.href)) },
+                                ...moreNav,
+                                ...(isGroupOwner ? [{ key: 'owner', label: 'My group', items: ownerNav }] : []),
+                            ].map((g) => {
+                                const items = g.items.filter(shown);
+                                return items.length === 0 ? null : (
+                                    <section key={g.key} aria-labelledby={`more-${g.key}`}>
+                                        <h2 id={`more-${g.key}`} className="px-3 pb-1 text-xs font-semibold text-subtle">
+                                            {g.label}
+                                        </h2>
+                                        <div className="grid grid-cols-2 gap-0.5">
+                                            {items.map((n) => (
+                                                <NavLink key={n.href} item={withBadge(n)} current={isCurrent(url, n.href)} />
+                                            ))}
+                                        </div>
+                                    </section>
+                                );
+                            })}
+                        </nav>
+                    </DialogContent>
+                </Dialog>
             </div>
             <CommandPalette open={palette} onOpenChange={setPalette} items={commands} remote />
             <ShortcutHelp open={help} onOpenChange={setHelp} shortcuts={shortcuts} />

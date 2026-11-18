@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 const TABS = [
     { href: '/admin/growth/prospects', label: 'Prospects' },
     { href: '/admin/growth/campaigns', label: 'Campaigns' },
+    { href: '/admin/growth/activation', label: 'Activation' },
     { href: '/admin/growth/sources', label: 'Sign-up sources' },
     { href: '/admin/growth/settings', label: 'Email settings' },
 ];

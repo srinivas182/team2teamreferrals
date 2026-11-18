@@ -85,6 +85,7 @@ final class ShareController
         $team = $this->team($request);
         DB::table('profile_leads')->where(['id' => $lead, 'team_id' => $team->id])->where('status', '!=', 'unverified')
             ->update(['status' => (string) $request->validate(['status' => ['required', 'in:new,contacted,closed']])['status'], 'updated_at' => now()]);
+        \App\Domains\Referrals\InboxSources::forget($team, $this->user($request)); // the inbox badge counts new leads
 
         return back();
     }

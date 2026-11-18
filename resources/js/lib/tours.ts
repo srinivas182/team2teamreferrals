@@ -21,7 +21,11 @@ export const TOURS: TourDef[] = [
                 title: 'Find anything',
                 body: 'Search referrals, teams and cities, or jump to any page. Press Ctrl K (⌘ K on a Mac) from anywhere.',
             },
-            { target: 'nav-inbox', title: 'Referrals sent to you', body: 'New referrals land in your Inbox, with the time you have to answer.' },
+            {
+                target: 'nav-inbox',
+                title: 'Everything that comes in',
+                body: 'Referrals sent to you, leads from your profile, drafts and open requests all land in your Inbox, with the time you have to answer.',
+            },
             {
                 target: 'notifications',
                 title: 'Updates',
