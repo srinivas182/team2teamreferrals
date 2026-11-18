@@ -194,6 +194,8 @@ jobs:
           printf 'SEO_INDEXABLE=true\nSEO_CANONICAL_URL=http://127.0.0.1:8001\nSESSION_SECURE_COOKIE=false\n' >> .env  # plain http locally
           touch database/database.sqlite && php artisan migrate --force
           php artisan tinker --execute="require base_path('scripts/ci/seed-public-pages.php');"
+          # People, a partner and a referral for the signed-in checks; the partner's public pages are in the Lighthouse runs too.
+          php artisan tinker --execute="require base_path('scripts/ci/seed-screens.php');"
           php artisan optimize
           (php artisan inertia:start-ssr &) && (php artisan serve --port=8000 &) && (node scripts/ci/gzip-proxy.mjs 8001 8000 &) && sleep 4
       - name: SEO and answer-engine check of every kind of public page, its links and duplicates
@@ -209,7 +211,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          php artisan tinker --execute="require base_path('scripts/ci/seed-screens.php');"
           php artisan cache:clear
           export VISUAL_OK=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" --jq 'any(.[]; .name == "visual-ok")' 2>/dev/null || echo false)
           node scripts/ci/visual.mjs http://127.0.0.1:8001
