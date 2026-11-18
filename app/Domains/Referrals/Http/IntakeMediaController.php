@@ -59,7 +59,7 @@ final class IntakeMediaController
     public function photo(Request $request, IntakeMedia $media, Extractor $extractor): RedirectResponse
     {
         $user = $this->user($request);
-        $request->validate(['photo' => ['required', 'file', 'max:8192']]);
+        $request->validate(['photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:8192']]);
         $file = $request->file('photo');
         abort_if(! $file instanceof \Illuminate\Http\UploadedFile, 422);
         $bytes = (string) $file->get();

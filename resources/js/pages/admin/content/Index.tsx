@@ -59,7 +59,10 @@ export default function ContentIndex({
                     <Button variant="secondary" onClick={() => router.post('/admin/content/core', {}, { preserveScroll: true })}>
                         Create core pages
                     </Button>
-                    <Link href="/admin/content/new" className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-white">
+                    <Link
+                        href="/admin/content/new"
+                        className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-on-primary"
+                    >
                         New page
                     </Link>
                 </div>

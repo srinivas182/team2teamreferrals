@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'), // HTTPS-only cookies in production unless set otherwise (Sprint 53a)
 
     /*
     |--------------------------------------------------------------------------

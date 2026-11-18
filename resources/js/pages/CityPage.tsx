@@ -122,7 +122,10 @@ export default function CityPage({
                         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                             {nearby.map((n) => (
                                 <li key={n.slug}>
-                                    <Link href={`/industries/${industry.slug}/${state.code.toLowerCase()}/${n.slug}`} className="text-primary">
+                                    <Link
+                                        href={`/industries/${industry.slug}/${state.code.toLowerCase()}/${n.slug}`}
+                                        className="text-primary underline underline-offset-2"
+                                    >
                                         {n.name}
                                     </Link>{' '}
                                     <span className="text-sm text-muted">· {n.team}</span>

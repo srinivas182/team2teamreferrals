@@ -53,6 +53,7 @@ final class SystemSettingsController
                 'postal_address' => $s->get('general.postal_address'),
                 'governing_state' => $s->get('general.governing_state'),
                 'press_email' => $s->get('general.press_email'),
+                'security_email' => $s->get('general.security_email'),
             ],
             'demoLink' => ['url' => app(Settings::class)->get('demo.url'), 'demoInstall' => (bool) config('app.demo_install'), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'footerCredit' => [...\App\Support\FooterCredit::settings(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
@@ -84,6 +85,7 @@ final class SystemSettingsController
             'postal_address' => ['nullable', 'string', 'max:255'],
             'governing_state' => ['nullable', 'string', 'max:60'],
             'press_email' => ['nullable', 'email:rfc', 'max:255'],
+            'security_email' => ['nullable', 'email:rfc', 'max:255'],
         ]);
         $values = [];
         foreach ($data as $key => $value) {

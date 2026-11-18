@@ -95,12 +95,15 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/seats/offers/{offer}', [App\Domains\Network\Seats\Http\SeatController::class, 'offer'])->whereNumber('offer')->name('seats.offer');
     Route::post('app/seats/offers/{offer}/accept', [App\Domains\Network\Seats\Http\SeatController::class, 'accept'])->whereNumber('offer')->name('seats.offer.accept');
     Route::post('app/seats/offers/{offer}/decline', [App\Domains\Network\Seats\Http\SeatController::class, 'decline'])->whereNumber('offer')->name('seats.offer.decline');
+    // The admin copies also need staff and the permission at the route (the controller checks again: owner, or staff with it).
     foreach (['admin/groups' => 'admin', 'app/group' => 'owner'] as $prefix => $who) {
-        Route::get("{$prefix}/{group}/applications", [App\Domains\Network\Seats\Http\SeatController::class, 'applications'])->name("seats.applications.{$who}");
-        Route::post("{$prefix}/{group}/applications/{application}/approve", [App\Domains\Network\Seats\Http\SeatController::class, 'approve'])->whereNumber('application')->name("seats.approve.{$who}");
-        Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
-        Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
-        Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
+        Route::middleware($who === 'admin' ? [EnsureStaff::class, 'can:groups.manage'] : [])->group(function () use ($prefix, $who): void {
+            Route::get("{$prefix}/{group}/applications", [App\Domains\Network\Seats\Http\SeatController::class, 'applications'])->name("seats.applications.{$who}");
+            Route::post("{$prefix}/{group}/applications/{application}/approve", [App\Domains\Network\Seats\Http\SeatController::class, 'approve'])->whereNumber('application')->name("seats.approve.{$who}");
+            Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
+            Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
+            Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
+        });
     }
 });
 
@@ -323,11 +326,13 @@ Route::middleware(['web', 'noindex:always', 'signed', 'throttle:20,10'])->group(
 // AI training videos: platform admins (industry default) and group owners (their network). Off with the "AI training videos" switch.
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', 'module:ai_videos'])->group(function (): void {
     foreach (['admin/training/{industry}/videos' => 'admin.training.videos', 'app/group/{group}/training-video' => 'group.training-video'] as $base => $name) {
-        Route::get($base, [App\Domains\Network\Training\Video\VideoStudioController::class, 'page'])->name($name);
-        Route::post($base.'/scripts', [App\Domains\Network\Training\Video\VideoStudioController::class, 'store'])->name($name.'.store');
-        Route::post($base.'/draft', [App\Domains\Network\Training\Video\VideoStudioController::class, 'draft'])->middleware('throttle:10,10')->name($name.'.draft');
-        Route::post($base.'/scripts/{script}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'update'])->where('script', '[0-9A-Za-z]{26}')->name($name.'.update');
-        Route::post($base.'/scripts/{script}/{action}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'act'])->where('script', '[0-9A-Za-z]{26}')->whereIn('action', ['submit', 'approve', 'render', 'publish', 'rollback'])->middleware('throttle:30,10')->name($name.'.act');
+        Route::middleware(str_starts_with($base, 'admin/') ? [EnsureStaff::class, 'can:industries.manage'] : [])->group(function () use ($base, $name): void {
+            Route::get($base, [App\Domains\Network\Training\Video\VideoStudioController::class, 'page'])->name($name);
+            Route::post($base.'/scripts', [App\Domains\Network\Training\Video\VideoStudioController::class, 'store'])->name($name.'.store');
+            Route::post($base.'/draft', [App\Domains\Network\Training\Video\VideoStudioController::class, 'draft'])->middleware('throttle:10,10')->name($name.'.draft');
+            Route::post($base.'/scripts/{script}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'update'])->where('script', '[0-9A-Za-z]{26}')->name($name.'.update');
+            Route::post($base.'/scripts/{script}/{action}', [App\Domains\Network\Training\Video\VideoStudioController::class, 'act'])->where('script', '[0-9A-Za-z]{26}')->whereIn('action', ['submit', 'approve', 'render', 'publish', 'rollback'])->middleware('throttle:30,10')->name($name.'.act');
+        });
     }
 });
 Route::post('webhooks/heygen', [App\Domains\Network\Training\Video\VideoStudioController::class, 'webhook'])->middleware('throttle:120,1')->name('webhooks.heygen');
@@ -350,13 +355,15 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
 // Reports: Admin → Reports (the whole network) and Owner → Reports (that network only).
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function () {
     foreach (['admin/reports' => 'admin.reports', 'app/group/{group}/reports' => 'group.reports'] as $base => $name) {
-        Route::get($base, [App\Domains\Platform\Reports\ReportsController::class, 'index'])->name($name);
-        Route::post($base.'/preview', [App\Domains\Platform\Reports\ReportsController::class, 'preview'])->middleware('throttle:30,1')->name($name.'.preview');
-        Route::post($base, [App\Domains\Platform\Reports\ReportsController::class, 'save'])->name($name.'.save');
-        Route::get($base.'/{report}/export.csv', [App\Domains\Platform\Reports\ReportsController::class, 'export'])->where('report', '[0-9A-Za-z]{26}')->middleware('throttle:20,10')->name($name.'.export');
-        Route::post($base.'/{report}/delete', [App\Domains\Platform\Reports\ReportsController::class, 'destroy'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.delete');
-        Route::post($base.'/{report}/schedules', [App\Domains\Platform\Reports\ReportsController::class, 'schedule'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.schedule');
-        Route::post($base.'/schedules/{schedule}/{action}', [App\Domains\Platform\Reports\ReportsController::class, 'scheduleAction'])->whereNumber('schedule')->whereIn('action', ['pause', 'resume', 'delete'])->name($name.'.schedule.action');
+        Route::middleware(str_starts_with($base, 'admin/') ? [EnsureStaff::class, 'can:referrals.view'] : [])->group(function () use ($base, $name): void {
+            Route::get($base, [App\Domains\Platform\Reports\ReportsController::class, 'index'])->name($name);
+            Route::post($base.'/preview', [App\Domains\Platform\Reports\ReportsController::class, 'preview'])->middleware('throttle:30,1')->name($name.'.preview');
+            Route::post($base, [App\Domains\Platform\Reports\ReportsController::class, 'save'])->name($name.'.save');
+            Route::get($base.'/{report}/export.csv', [App\Domains\Platform\Reports\ReportsController::class, 'export'])->where('report', '[0-9A-Za-z]{26}')->middleware('throttle:20,10')->name($name.'.export');
+            Route::post($base.'/{report}/delete', [App\Domains\Platform\Reports\ReportsController::class, 'destroy'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.delete');
+            Route::post($base.'/{report}/schedules', [App\Domains\Platform\Reports\ReportsController::class, 'schedule'])->where('report', '[0-9A-Za-z]{26}')->name($name.'.schedule');
+            Route::post($base.'/schedules/{schedule}/{action}', [App\Domains\Platform\Reports\ReportsController::class, 'scheduleAction'])->whereNumber('schedule')->whereIn('action', ['pause', 'resume', 'delete'])->name($name.'.schedule.action');
+        });
     }
     Route::get('reports/file/{file}', [App\Domains\Platform\Reports\ReportsController::class, 'file'])->name('reports.file');
 });

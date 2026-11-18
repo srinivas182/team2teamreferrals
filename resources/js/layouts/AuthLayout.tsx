@@ -9,8 +9,8 @@ import { Toaster } from '@/components/ui/toaster';
 /** Split layout for sign-in and sign-up: form on the left, the product's promise on the right. */
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle?: ReactNode; children: ReactNode; footer?: ReactNode }) {
     return (
-        <div className="grid min-h-screen lg:grid-cols-2">
-            <div className="flex flex-col px-6 py-8 sm:px-12">
+        <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] lg:grid-cols-2">
+            <div className="flex min-w-0 flex-col px-6 py-8 sm:px-12">
                 <Link href="/" aria-label="Team to Team Referrals home" className="w-fit">
                     <Logo className="h-9 w-[150px]" />
                 </Link>

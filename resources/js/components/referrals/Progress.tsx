@@ -47,7 +47,11 @@ export function Progress({ id, p, clientTerm }: { id: string; p: PipelineInfo; c
                         key={s.key}
                         className={cn(
                             'rounded-full px-2.5 py-1 text-xs',
-                            i < idx && s.kind === 'open' ? 'bg-primary/15 text-primary' : i === idx ? 'bg-primary text-white' : 'bg-bg text-muted',
+                            i < idx && s.kind === 'open'
+                                ? 'bg-primary/15 text-primary'
+                                : i === idx
+                                  ? 'bg-primary text-on-primary'
+                                  : 'bg-bg text-muted',
                         )}
                     >
                         {i < idx && s.kind === 'open' && <Check className="mr-0.5 inline size-3" aria-hidden />}

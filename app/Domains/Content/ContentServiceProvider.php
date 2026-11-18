@@ -75,6 +75,8 @@ final class ContentServiceProvider extends ServiceProvider
             });
             // The press kit (Sprint 52b): logos, screenshots, the product tour, facts and contacts.
             Route::middleware(['web', 'edge.cache'])->get('press', [Http\PressController::class, 'show'])->name('press');
+            // The accessibility statement (Sprint 53a).
+            Route::middleware(['web', 'edge.cache'])->get('accessibility', Http\AccessibilityController::class)->name('accessibility');
             Route::middleware('throttle:30,1')->get('press/logos.zip', [Http\PressController::class, 'logosZip'])->name('press.logos');
             // The live demo (Sprint 52a): on a demo install, one-click entry; elsewhere, a link to the demo install.
             Route::middleware(['web', 'noindex:always', 'throttle:30,1'])->group(function (): void {

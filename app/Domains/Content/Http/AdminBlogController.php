@@ -102,7 +102,7 @@ final class AdminBlogController
 
     public function upload(Request $request, MediaLibrary $library): RedirectResponse
     {
-        $d = $request->validate(['file' => ['required', 'file', 'max:10240'], 'alt' => ['required', 'string', 'max:160']]);
+        $d = $request->validate(['file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'], 'alt' => ['required', 'string', 'max:160']]);
         $file = $request->file('file');
         abort_unless($file instanceof \Illuminate\Http\UploadedFile, 422);
         $library->store($file, (string) $d['alt'], $this->user($request));

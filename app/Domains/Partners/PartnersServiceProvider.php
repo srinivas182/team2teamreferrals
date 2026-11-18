@@ -44,7 +44,7 @@ final class PartnersServiceProvider extends ServiceProvider
             Route::get('/', [Http\PartnerPortalController::class, 'home'])->name('home');
             Route::post('link', [Http\PartnerPortalController::class, 'link'])->middleware('throttle:5,10')->name('link');
             Route::get('enter', [Http\PartnerPortalController::class, 'enter'])->middleware(['signed', 'throttle:20,10'])->name('enter');
-            Route::post('logout', [Http\PartnerPortalController::class, 'logout'])->name('logout');
+            Route::post('logout', [Http\PartnerPortalController::class, 'logout'])->middleware('throttle:30,1')->name('logout');
             Route::middleware('throttle:60,1')->group(function () use ($p): void {
                 Route::get('{partner}', [Http\PartnerPortalController::class, 'show'])->where('partner', $p)->name('show');
                 Route::post('{partner}/details', [Http\PartnerPortalController::class, 'details'])->where('partner', $p)->name('details');

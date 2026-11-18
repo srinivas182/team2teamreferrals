@@ -12,7 +12,10 @@ export function CmsBlock({ b }: { b: Block }) {
                     <h2 className="font-display text-3xl font-bold sm:text-4xl">{s(b.heading)}</h2>
                     {s(b.subheading) && <p className="mx-auto mt-3 max-w-2xl text-lg text-muted">{s(b.subheading)}</p>}
                     {s(b.cta_label) && s(b.cta_url) && (
-                        <a href={s(b.cta_url)} className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-6 font-semibold text-white">
+                        <a
+                            href={s(b.cta_url)}
+                            className="mt-6 inline-flex h-11 items-center rounded-md bg-primary px-6 font-semibold text-on-primary"
+                        >
                             {s(b.cta_label)}
                         </a>
                     )}
@@ -101,7 +104,7 @@ export function CmsBlock({ b }: { b: Block }) {
                                 {p.cta_label && p.cta_url && (
                                     <a
                                         href={p.cta_url}
-                                        className="mt-4 inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-white"
+                                        className="mt-4 inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-on-primary"
                                     >
                                         {p.cta_label}
                                     </a>
@@ -117,7 +120,7 @@ export function CmsBlock({ b }: { b: Block }) {
                     <h2 className="font-display text-2xl font-bold">{s(b.heading)}</h2>
                     {s(b.text) && <p className="mt-2 text-muted">{s(b.text)}</p>}
                     {s(b.label) && s(b.url) && (
-                        <a href={s(b.url)} className="mt-4 inline-flex h-11 items-center rounded-md bg-primary px-6 font-semibold text-white">
+                        <a href={s(b.url)} className="mt-4 inline-flex h-11 items-center rounded-md bg-primary px-6 font-semibold text-on-primary">
                             {s(b.label)}
                         </a>
                     )}

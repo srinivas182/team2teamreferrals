@@ -55,7 +55,8 @@ final class LicenseController
     public function destroy(Request $request, int $license): RedirectResponse
     {
         $team = $this->team($request, true);
-        DB::table('team_licenses')->where(['id' => $license, 'team_id' => $team->id])->where('status', '!=', 'verified')->delete();
+        $deleted = DB::table('team_licenses')->where(['id' => $license, 'team_id' => $team->id])->where('status', '!=', 'verified')->delete();
+        abort_if($deleted === 0, 404); // not your team's, or already verified
         Licenses::rerank($team);
 
         return back()->with('status', 'license-removed');

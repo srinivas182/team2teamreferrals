@@ -124,7 +124,7 @@ function IndustryPicker({ industries }: { industries: Industry[] }) {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder="What do you do? Solar, mortgage, roofing…"
-                    className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-subtle"
+                    className="h-11 min-w-0 flex-1 rounded-sm bg-transparent text-base outline-none placeholder:text-subtle focus-visible:ring-2 focus-visible:ring-primary"
                     autoComplete="off"
                 />
                 <Button type="submit" className="w-full sm:w-auto">
@@ -379,7 +379,7 @@ export default function Home({ industries, stats, map, joinHref, demoUrl, faq = 
                                 list={false}
                             />
                         </Card>
-                        <Button className="mt-6" variant="secondary" asChild>
+                        <Button className="mt-6 h-auto min-h-11 py-2 text-center whitespace-normal" variant="secondary" asChild>
                             <Link href={`/groups/${mapSlug}`}>
                                 See open cities <ArrowRight />
                             </Link>
@@ -426,25 +426,25 @@ export default function Home({ industries, stats, map, joinHref, demoUrl, faq = 
 
             <section className="pb-20">
                 <div className="mx-auto grid max-w-content gap-6 px-5 sm:px-8 lg:grid-cols-2">
-                    <Card className="p-8">
+                    <Card className="min-w-0 p-6 sm:p-8">
                         <ShieldCheck className="size-7 text-success" aria-hidden />
                         <h2 className="mt-4 font-display text-2xl font-bold display">Pay for a network that works for you</h2>
                         <p className="mt-3 text-muted">
                             Every seat starts with a free trial. In networks with the value guarantee, any month in which no referral reaches you is
                             free, automatically.
                         </p>
-                        <Button className="mt-6" variant="secondary" asChild>
+                        <Button className="mt-6 h-auto min-h-11 py-2 text-center whitespace-normal" variant="secondary" asChild>
                             <Link href="/groups">See the networks and their prices</Link>
                         </Button>
                     </Card>
-                    <Card className="p-8">
+                    <Card className="min-w-0 p-6 sm:p-8">
                         <Timer className="size-7 text-primary" aria-hidden />
                         <h2 className="mt-4 font-display text-2xl font-bold display">Seats are earned, not owned</h2>
                         <p className="mt-3 text-muted">
                             Members see their response times, conversions and ratings every month. Fast, reliable pros keep their city; the waitlist
                             is ready when someone doesn’t.
                         </p>
-                        <Button className="mt-6" variant="secondary" asChild>
+                        <Button className="mt-6 h-auto min-h-11 py-2 text-center whitespace-normal" variant="secondary" asChild>
                             <Link href="/how-it-works">How it works</Link>
                         </Button>
                     </Card>

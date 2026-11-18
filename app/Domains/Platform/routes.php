@@ -20,7 +20,7 @@ Route::get('health', [App\Domains\Platform\Http\Controllers\StatusController::cl
 Route::middleware(['web'])->get('status', [App\Domains\Platform\Http\Controllers\StatusController::class, 'page'])->name('status');
 
 // Command palette search: permission-aware, as you type.
-Route::middleware(['web', 'auth', 'verified', 'throttle:90,1'])->get('app/search', App\Domains\Platform\Http\Controllers\SearchController::class)->name('search');
+Route::middleware(['web', 'auth', EnsureAccountIsActive::class, 'verified', 'throttle:90,1'])->get('app/search', App\Domains\Platform\Http\Controllers\SearchController::class)->name('search');
 
 // Private files: signed, expiring links for signed-in users only.
 Route::middleware(['web', 'auth', 'signed'])->get('files/{path}', PrivateFileController::class)->where('path', '.*')->name('files.private');

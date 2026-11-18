@@ -56,7 +56,7 @@ final class PerformanceController
     public function removeTimeOff(Request $request, int $id): RedirectResponse
     {
         $team = $this->editable($request);
-        DB::table('team_time_off')->where(['id' => $id, 'team_id' => $team->id])->delete();
+        abort_if(DB::table('team_time_off')->where(['id' => $id, 'team_id' => $team->id])->delete() === 0, 404);
 
         return back()->with('status', 'time-off-removed');
     }

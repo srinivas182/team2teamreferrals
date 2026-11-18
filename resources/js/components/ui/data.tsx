@@ -46,7 +46,7 @@ export function Countdown({ minutesLeft, total, overdue = false }: { minutesLeft
     const used = total ? 1 - minutesLeft / total : 0;
     const tone =
         late || used >= 0.9
-            ? 'bg-[#FDECEE] text-danger dark:bg-danger/20 dark:text-[#FDA4AF]'
+            ? 'bg-[#FDECEE] text-[#B91C35] dark:bg-danger/20 dark:text-[#FDA4AF]'
             : used >= 0.5
               ? 'bg-[#FEF9E7] text-warning dark:bg-warning/20 dark:text-[#FCD34D]'
               : 'bg-navy-100 text-navy-700 dark:bg-navy-800 dark:text-navy-200';

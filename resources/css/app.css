@@ -181,3 +181,28 @@
         border-radius: 0.5rem;
     }
 }
+
+/*
+ * Status colours used as text need lighter shades on dark backgrounds to keep 4.5:1 contrast (WCAG 2.1 AA, Sprint 53a).
+ * Unlayered, so they win over the generated utilities; backgrounds and borders keep the brand shades.
+ */
+.text-success {
+    @variant dark {
+        color: #6ee7a0;
+    }
+}
+.text-danger {
+    @variant dark {
+        color: #fda4af;
+    }
+}
+.text-info {
+    @variant dark {
+        color: #93c5fd;
+    }
+}
+.text-warning {
+    @variant dark {
+        color: #fcd34d;
+    }
+}

@@ -87,7 +87,7 @@ export default function Leaderboards({ groups, group, monthly, allTime, seo }: P
                                     aria-selected={view === k}
                                     disabled={k === 'month' && !monthly}
                                     onClick={() => setView(k)}
-                                    className={`h-9 rounded-full px-3 text-sm ${view === k ? 'bg-primary text-white' : 'bg-bg'} disabled:opacity-50`}
+                                    className={`h-9 rounded-full px-3 text-sm ${view === k ? 'bg-primary text-on-primary' : 'bg-bg'} disabled:opacity-50`}
                                 >
                                     {l}
                                 </button>

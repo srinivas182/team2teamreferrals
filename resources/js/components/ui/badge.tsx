@@ -6,8 +6,8 @@ const tones = {
     neutral: 'bg-navy-100 text-navy-700 dark:bg-navy-800 dark:text-navy-200',
     success: 'bg-[#ECFDF3] text-success dark:bg-success/20 dark:text-[#6EE7A0]',
     warning: 'bg-[#FEF9E7] text-warning dark:bg-warning/20 dark:text-[#FCD34D]',
-    danger: 'bg-[#FDECEE] text-danger dark:bg-danger/20 dark:text-[#FDA4AF]',
-    info: 'bg-[#EDF4FF] text-info dark:bg-info/20 dark:text-[#93C5FD]',
+    danger: 'bg-[#FDECEE] text-[#B91C35] dark:bg-danger/20 dark:text-[#FDA4AF]',
+    info: 'bg-[#EDF4FF] text-[#1A62C2] dark:bg-info/20 dark:text-[#93C5FD]',
     sender: 'bg-cobalt-50 text-cobalt-700 dark:bg-cobalt-500/20 dark:text-cobalt-200',
     receiver: 'bg-orange-50 text-orange-700 dark:bg-orange-500/20 dark:text-orange-200',
 } as const;
@@ -24,7 +24,7 @@ export function Badge({ tone = 'neutral', className, children }: { tone?: BadgeT
 
 export type Temperature = 'hot' | 'warm' | 'future';
 const temps = {
-    hot: { label: 'Hot', Icon: Flame, cls: 'bg-[#FDECEE] text-hot dark:bg-hot/20 dark:text-[#FDA4AF]' },
+    hot: { label: 'Hot', Icon: Flame, cls: 'bg-[#FDECEE] text-[#B91C35] dark:bg-hot/20 dark:text-[#FDA4AF]' },
     warm: { label: 'Warm', Icon: Sun, cls: 'bg-[#FEF3E2] text-warm dark:bg-warm/25 dark:text-[#FCD34D]' },
     future: { label: 'Future', Icon: Sprout, cls: 'bg-[#F3EEFF] text-future dark:bg-future/25 dark:text-[#C4B5FD]' },
 };

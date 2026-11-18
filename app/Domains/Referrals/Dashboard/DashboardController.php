@@ -104,7 +104,7 @@ final class DashboardController
 
     public function deleteView(Request $request, int $view): RedirectResponse
     {
-        DB::table('dashboard_views')->where(['id' => $view, 'user_id' => $this->user($request)->id])->delete();
+        abort_if(DB::table('dashboard_views')->where(['id' => $view, 'user_id' => $this->user($request)->id])->delete() === 0, 404);
 
         return back()->with('status', 'view-deleted');
     }

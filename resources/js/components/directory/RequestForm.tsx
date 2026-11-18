@@ -81,7 +81,7 @@ export function RequestForm({ block, pro, place }: { block: RequestBlock; pro: s
                     <li
                         key={s}
                         aria-current={i === step ? 'step' : undefined}
-                        className={`flex-1 rounded-full px-2 py-1 text-center ${i <= step ? 'bg-primary text-white' : 'bg-bg text-muted'}`}
+                        className={`flex-1 rounded-full px-2 py-1 text-center ${i <= step ? 'bg-primary text-on-primary' : 'bg-bg text-muted'}`}
                     >
                         {i + 1}. {s}
                     </li>

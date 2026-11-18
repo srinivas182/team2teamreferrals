@@ -246,7 +246,7 @@ function FeeDefault({ slug, fee, dueDays }: { slug: string; fee: { type: string;
                 />
                 days
                 <button
-                    className="h-9 rounded-md bg-primary px-3 font-medium text-white"
+                    className="h-9 rounded-md bg-primary px-3 font-medium text-on-primary"
                     onClick={() =>
                         router.post(
                             `/app/group/${slug}/fee`,
