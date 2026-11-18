@@ -49,7 +49,7 @@ it('lists live public groups with filters, and shows a city’s seat in each net
     $draft = Group::where('status', 'draft')->firstOrFail();
     $this->get('/groups')->assertOk()->assertInertia(fn ($p) => $p->component('Directory')
         ->where('groups', fn ($g) => collect($g)->pluck('slug')->sort()->values()->all() === collect([$this->solar->slug, $this->mortgage->slug])->sort()->values()->all())
-        ->where('answer', fn ($a) => str_contains((string) $a, '1 seats are filled') || str_contains((string) $a, 'seats are filled today')));
+        ->where('answer', fn ($a) => str_contains((string) $a, '1 seat is filled today') || str_contains((string) $a, 'seats are filled today')));
     $this->get('/groups?industry=solar')->assertInertia(fn ($p) => $p->where('groups', fn ($g) => count($g) === 1)->where('seo.robots', fn ($r) => str_contains((string) $r, 'noindex')));
     $this->get('/groups?q=mortgage')->assertInertia(fn ($p) => $p->where('groups.0.slug', $this->mortgage->slug)->where('groups', fn ($g) => count($g) === 1));
     $this->get('/groups?city='.$this->houston->id)->assertInertia(fn ($p) => $p->where('groups', function ($g) {

@@ -31,6 +31,7 @@ import {
     Handshake,
     ShieldCheck,
     Plug,
+    ClipboardCheck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -82,6 +83,7 @@ const nav: Item[] = [
     { label: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage', ready: true },
     { label: 'Help centre', href: '/admin/help', icon: BookOpen, permission: 'content.manage', ready: true },
     { label: 'Ally', href: '/admin/ally', icon: Sparkles, permission: 'support.manage', ready: true },
+    { label: 'Usability tests', href: '/admin/usability', icon: ClipboardCheck, permission: 'support.manage', ready: true },
     { label: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage', ready: true },
     { label: 'Audit log', href: '/admin/audit', icon: ScrollText, permission: 'audit.view', ready: true },
     { label: 'Templates', href: '/admin/templates', icon: PanelsTopLeft, permission: 'content.manage', ready: true },

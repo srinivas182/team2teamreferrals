@@ -74,7 +74,7 @@ const ADMIN = [
 const EXTRA = ['home', 'help', 'partner', 'partner-account', 'app-home', 'app-pipeline', 'admin-home'];
 
 const STABLE_CSS = `*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}
-time,[data-vr-mask]{visibility:hidden!important}`;
+time,[data-vr-mask],[data-vr-live] .tabular{visibility:hidden!important}`;
 
 /** RFC 6238 time-based code from a base32 secret (for the admin's two-step sign-in). */
 function totp(secret) {
@@ -86,8 +86,10 @@ function totp(secret) {
     counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000 / 30)));
     const h = createHmac('sha1', key).update(counter).digest();
     const o = h[h.length - 1] & 0xf;
-    return String(((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000)).padStart(6, '0');
+    return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, '0');
 }
+
+let lastCode = '';
 
 async function signIn(page, email, secret) {
     await page.goto(`${BASE}/login`);
@@ -97,11 +99,17 @@ async function signIn(page, email, secret) {
     const posted = (path) => page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === path);
     await Promise.all([posted('/login'), page.getByRole('button', { name: 'Log in' }).click()]);
     await page.waitForLoadState('networkidle');
-    if (secret && page.url().includes('two-factor')) {
-        await page.getByLabel('Authentication code').fill(totp(secret));
+    // A code can only be used once, so a second sign-in in the same 30 seconds waits for the next code.
+    for (let attempt = 0; secret && page.url().includes('two-factor') && attempt < 2; attempt++) {
+        if (attempt > 0 || totp(secret) === lastCode) await page.waitForTimeout(30_000 - (Date.now() % 30_000) + 1_000);
+        lastCode = totp(secret);
+        await page.getByLabel('Authentication code').fill(lastCode);
         await Promise.all([posted('/two-factor-challenge'), page.getByRole('button', { name: 'Continue' }).click()]);
+        // The next page loads after the answer; a refused code leaves the challenge on screen.
+        await page.waitForURL((u) => !u.pathname.includes('two-factor'), { timeout: 10_000 }).catch(() => undefined);
         await page.waitForLoadState('networkidle');
     }
+    if (/\/(login|two-factor)/.test(new URL(page.url()).pathname)) throw new Error(`Could not sign in as ${email}`);
 }
 
 async function shoot(page, name, path, results) {
@@ -150,7 +158,11 @@ async function checkTours(page, problems) {
     for (const t of tours) {
         await page.goto(`${BASE}${t.path}?tour=off`, { waitUntil: 'networkidle' });
         for (const target of t.targets) {
-            const visible = await page.locator(`[data-tour="${target}"]`).first().isVisible().catch(() => false);
+            const visible = await page
+                .locator(`[data-tour="${target}"]`)
+                .first()
+                .isVisible()
+                .catch(() => false);
             if (!visible) problems.push(`Tour ${t.id}: nothing visible for step "${target}" on ${t.path}`);
         }
     }
@@ -176,7 +188,12 @@ const run = async () => {
         for (const [n, p] of only(MEMBER)) await shoot(page, prefix + n, p, results);
         await ctx.clearCookies();
         // The partner account: signed in with the emailed link, made here the same way.
-        const link = execSync(`php artisan tinker --execute="echo URL::temporarySignedRoute('partners.portal.enter', now()->addHour(), ['t' => encrypt('partner@example.com')]);"`, { cwd: ROOT }).toString().trim();
+        const link = execSync(
+            `php artisan tinker --execute="echo URL::temporarySignedRoute('partners.portal.enter', now()->addHour(), ['t' => encrypt('partner@example.com')]);"`,
+            { cwd: ROOT },
+        )
+            .toString()
+            .trim();
         await page.goto(link, { waitUntil: 'networkidle' });
         const account = new URL(page.url()).pathname;
         if (prefix === '' || EXTRA.includes('partner-account')) await shoot(page, prefix + 'partner-account', account, results);

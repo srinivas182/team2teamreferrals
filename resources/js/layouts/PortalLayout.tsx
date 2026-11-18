@@ -1,3 +1,4 @@
+import { UsabilityMount } from '@/components/usability/UsabilityMount';
 import { Link, router, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
 import { TourRunner } from '@/components/tour/Tour';
@@ -273,6 +274,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </footer>
                     </main>
                     <AllyWidget />
+                    <UsabilityMount />
                     <TourRunner />
                 </div>
                 <nav

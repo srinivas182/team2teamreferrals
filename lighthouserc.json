@@ -11,7 +11,8 @@
         "http://127.0.0.1:8001/industries/solar/tx/austin",
         "http://127.0.0.1:8001/t/lone-star-solar",
         "http://127.0.0.1:8001/find-a-pro",
-        "http://127.0.0.1:8001/help"
+        "http://127.0.0.1:8001/help",
+                "http://127.0.0.1:8001/press"
       ],
       "numberOfRuns": 2,
       "settings": {

@@ -34,6 +34,7 @@ final class SchemaRules
         'Place' => ['name'],
         'DefinedTermSet' => ['name', 'hasDefinedTerm'],
         'AggregateRating' => ['ratingValue', 'ratingCount|reviewCount'],
+        'VideoObject' => ['name', 'description', 'thumbnailUrl', 'uploadDate'],
     ];
 
     /**

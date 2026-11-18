@@ -1,3 +1,4 @@
+import { UsabilityMount } from '@/components/usability/UsabilityMount';
 import { Link } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -39,6 +40,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
                 </div>
             </aside>
             <Toaster />
+            <UsabilityMount />
         </div>
     );
 }

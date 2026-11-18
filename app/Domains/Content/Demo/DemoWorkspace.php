@@ -205,6 +205,33 @@ final class DemoWorkspace
                     app(Pipeline::class)->move($fresh(), $to->leader, $stages[1], 'Spoke with the client; next step booked.');
                 }
             }
+            // The team visitors enter as (the first team of the first network) always has fresh work: one referral
+            // waiting for an answer and two moving through the pipeline.
+            if ($slug === array_key_first($teams) && count($list) > 1) {
+                $me = $list[0];
+                $city = City::query()->findOrFail((int) DB::table('seats')->where(['group_id' => $g->id, 'primary_team_id' => $me->id])->value('territory_id'));
+                foreach ([0, 1, 2] as $step) {
+                    $at($now->subDays(3 - $step)->setTime(9, 15));
+                    $c++;
+                    $from = $list[1 + $step % (count($list) - 1)];
+                    $ref = app(Referrals::class)->send($from->leader, $g, $city, [...$form, 'client_name' => self::client($c), 'client_phone' => '+1435555'.str_pad((string) (100 + $c % 100), 4, '0', STR_PAD_LEFT),
+                        'client_email' => 'client'.$c.'@'.self::DOMAIN], true, null, true)['referral'] ?? null;
+                    if (! $ref instanceof Referral) {
+                        continue;
+                    }
+                    $reg('referral', $ref->id);
+                    $refCount++;
+                    if ($step === 2) {
+                        continue; // waiting for an answer
+                    }
+                    $at($now->subDays(3 - $step)->setTime(11, 0));
+                    app(Referrals::class)->accept(Referral::query()->findOrFail($ref->id), $me->leader);
+                    $stages = array_values(array_filter(array_column(app(Pipeline::class)->stages(Referral::query()->findOrFail($ref->id)), 'key'), fn ($s) => ! in_array($s, ['won', 'lost'], true)));
+                    if (isset($stages[$step + 1])) {
+                        app(Pipeline::class)->move(Referral::query()->findOrFail($ref->id), $me->leader, $stages[$step + 1], $step === 0 ? 'Site visit booked for Thursday.' : 'Called the client; sending options tomorrow.');
+                    }
+                }
+            }
             // Community: a welcome announcement, posts and an upcoming event.
             $at($now->subDays(30));
             $reg('post', app(Feed::class)->post($g, $owner, 'announcement', 'Welcome to the '.$g->name.'! Keep updates flowing: every update helps the referring team.'));

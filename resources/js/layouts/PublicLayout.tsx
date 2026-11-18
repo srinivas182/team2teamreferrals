@@ -1,3 +1,4 @@
+import { UsabilityMount } from '@/components/usability/UsabilityMount';
 import { Link, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
 import { FooterCredit } from '@/components/FooterCredit';
@@ -90,6 +91,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                 </header>
                 <main id="main">{children}</main>
                 <AllyWidget />
+                <UsabilityMount />
                 <footer className="mt-24 border-t border-line bg-surface">
                     <div className="mx-auto grid max-w-content gap-10 px-5 py-14 sm:grid-cols-2 sm:px-8 lg:grid-cols-5">
                         <div className="lg:col-span-2">

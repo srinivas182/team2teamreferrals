@@ -15,6 +15,7 @@ use App\Domains\Seo\SeoData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use stdClass;
@@ -34,8 +35,10 @@ final class DirectoryController
         $rows = Directory::listing($f);
         $site = (string) config('seo.site_name');
         $filled = DB::table('seats')->whereIn('status', Directory::FILLED)->whereNotNull('primary_team_id')->count();
-        $answer = "The {$site} directory lists ".count(Directory::groups()).' referral networks across '.Directory::groups()->pluck('industry_id')->unique()->count()
-            ." industries. Each network gives one verified team per city or area a seat; {$filled} seats are filled today. Pick a network to see its teams and open seats.";
+        $networks = Directory::groups();
+        $industries = $networks->pluck('industry_id')->unique()->count();
+        $answer = "The {$site} directory lists ".$networks->count().' referral '.Str::plural('network', $networks->count()).' across '.$industries.' '.Str::plural('industry', $industries)
+            .'. Each network gives one verified team per city or area a seat; '.$filled.' '.($filled === 1 ? 'seat is' : 'seats are').' filled today. Pick a network to see its teams and open seats.';
         $city = ! empty($f['city']) ? City::query()->find((int) $f['city']) : null;
         $filtered = array_filter($f, fn ($v) => $v !== null && $v !== '') !== [];
 
