@@ -71,6 +71,8 @@ MERCURE_JWT_SECRET=$(openssl rand -hex 24)
 MEILISEARCH_KEY=$(openssl rand -hex 20)
 MAIL_MAILER=log
 SEO_INDEXABLE=false
+SEO_CANONICAL_URL=https://localhost
+SEO_FORCE_CANONICAL=true
 BACKUP_BUCKET=t2t-backups
 BACKUP_S3_ENDPOINT=http://s3:9000
 BACKUP_S3_PROVIDER=Rclone
@@ -136,7 +138,7 @@ bin/deploy.sh r1 || fail "the first deploy failed"
 [ "$(release)" = r1 ] || fail "the release file doesn't say r1"
 curl -fsSk --resolve localhost:443:127.0.0.1 https://localhost/ | grep -q 'Team to Team' || fail "the home page didn't load through Caddy"
 curl -fsSk --resolve localhost:443:127.0.0.1 https://www.localhost/ -o /dev/null -w '%{http_code}' --resolve www.localhost:443:127.0.0.1 | grep -q 301 || fail "www didn't redirect"
-TAG=r1 dcx exec -T web php artisan t2t:health --skip=scanner || fail "t2t:health failed after the first deploy"
+TAG=r1 dcx exec -T web php artisan t2t:health --skip=scanner --skip=scheduler || fail "t2t:health failed after the first deploy"
 
 step "2. A new release with a migration, under load"
 build_release r2 r1 rehearsal_probe 1

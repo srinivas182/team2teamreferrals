@@ -133,3 +133,10 @@ it('can show the first admin their set-password link in the terminal, before ema
     Artisan::call('t2t:super-admin', ['email' => 'owner@example.com']);
     expect(Artisan::output())->not->toContain('Set your password here');
 });
+
+it('never redirects health checks to the canonical address (they come from inside the server over plain HTTP)', function () {
+    config(['seo.force_canonical' => true, 'seo.canonical_url' => 'https://teamtoteamreferrals.com']);
+    $this->get('http://127.0.0.1:8000/up')->assertOk();
+    $this->get('http://127.0.0.1:8000/health')->assertOk();
+    $this->get('http://127.0.0.1:8000/about')->assertRedirect('https://teamtoteamreferrals.com/about');
+});

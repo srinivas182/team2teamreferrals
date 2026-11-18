@@ -39,7 +39,7 @@ if [ "$FIRST" = true ]; then say "Deploying ${TAG:0:12} (first deploy)."; else s
 mkdir -p secrets/db
 touch secrets/db/ca.crt
 if [ -s secrets/certs/origin.pem ] && [ -s secrets/certs/origin.key ]; then
-	echo 'tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key' >caddy/tls.caddy
+	echo 'tls /certs/origin.pem /certs/origin.key' >caddy/tls.caddy
 elif [ "$(envval T2T_TLS)" = internal ]; then
 	echo 'tls internal' >caddy/tls.caddy
 else

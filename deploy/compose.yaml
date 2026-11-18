@@ -42,7 +42,7 @@ services:
       T2T_DOMAIN: ${T2T_DOMAIN:?set T2T_DOMAIN}
     volumes:
       - ./caddy:/etc/caddy:ro
-      - ./secrets/certs:/etc/caddy/certs:ro
+      - ./secrets/certs:/certs:ro
       - caddy-data:/data
       - caddy-config:/config
     restart: unless-stopped

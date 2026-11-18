@@ -25,17 +25,16 @@
 
 	handle {
 		reverse_proxy {
-			# Every running web container (two for a moment during a deploy); only healthy ones get traffic,
-			# and a request that can't reach one is retried on another for up to 15 seconds.
+			# Every running web container (two for a moment during a deploy). One that refuses a connection (still
+			# starting, or stopping) is skipped for a few seconds and the request is retried on another, for up to
+			# 15 seconds; deploy.sh only stops the old one once the new one passes its health check.
 			dynamic a web 8000 {
 				refresh 1s
 			}
 			lb_policy round_robin
 			lb_try_duration 15s
 			lb_try_interval 250ms
-			health_uri /up
-			health_interval 2s
-			health_timeout 3s
+			fail_duration 5s
 			header_up X-Forwarded-Proto {scheme}
 		}
 	}
