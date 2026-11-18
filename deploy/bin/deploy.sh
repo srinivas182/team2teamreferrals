@@ -67,7 +67,12 @@ rollback() {
 	trap - ERR
 	set +e
 	say "FAILED at '$STAGE': $why. Rolling back."
-	[ -n "$new_web" ] && docker rm -f "$new_web" >/dev/null 2>&1
+	if [ -n "$new_web" ]; then
+		say "The new web container's last log lines and health checks:"
+		docker logs --tail 60 "$new_web" 2>&1 | sed 's/^/    /'
+		docker inspect -f '{{if .State.Health}}{{range .State.Health.Log}}    exit {{.ExitCode}}: {{.Output}}{{end}}{{end}}' "$new_web" 2>/dev/null
+		docker rm -f "$new_web" >/dev/null 2>&1
+	fi
 	# A migration that failed part-way has still recorded the ones before it in this deploy's batch.
 	if [ "$STAGE" = migrations ] && [ -n "$BATCH_BEFORE" ]; then
 		BATCH_AFTER=$(max_batch)
