@@ -101,7 +101,7 @@ export function WebsiteWidgets({ w, canEdit }: { w: WidgetsProps; canEdit: boole
                             onChange={(e) => setAccent(e.target.value)}
                             className="h-10 w-12 rounded border border-line"
                         />
-                        <Input value={accent} onChange={(e) => setAccent(e.target.value)} maxLength={7} />
+                        <Input value={accent} onChange={(e) => setAccent(e.target.value)} maxLength={7} aria-label="Accent colour as a hex code" />
                     </div>
                 </Field>
             </div>

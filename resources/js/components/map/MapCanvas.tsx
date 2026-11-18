@@ -241,7 +241,7 @@ export default function MapCanvas({
                     ) : (
                         <div className="mt-2 flex flex-wrap items-center gap-3">
                             {pick.p.claim && (
-                                <a href={href(pick.p.claim)} {...target} className="rounded-md bg-primary px-3 py-1.5 font-semibold text-white">
+                                <a href={href(pick.p.claim)} {...target} className="rounded-md bg-primary px-3 py-1.5 font-semibold text-on-primary">
                                     {pick.p.status === 'waitlist' ? 'Join the waitlist' : 'Claim this city'}
                                 </a>
                             )}

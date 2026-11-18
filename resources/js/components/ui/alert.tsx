@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 
 const tones = {
     success: ['bg-[#ECFDF3] text-success dark:bg-success/15 dark:text-[#6EE7A0]', CheckCircle2],
-    info: ['bg-[#EDF4FF] text-info dark:bg-info/15 dark:text-[#93C5FD]', Info],
-    danger: ['bg-[#FDECEE] text-danger dark:bg-danger/15 dark:text-[#FDA4AF]', TriangleAlert],
+    info: ['bg-[#EDF4FF] text-[#1A62C2] dark:bg-info/15 dark:text-[#93C5FD]', Info],
+    danger: ['bg-[#FDECEE] text-[#B91C35] dark:bg-danger/15 dark:text-[#FDA4AF]', TriangleAlert],
 } as const;
 
 /** Inline status message, announced politely to screen readers. */

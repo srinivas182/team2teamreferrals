@@ -384,7 +384,7 @@ export default function Agreement({
                                                     key={k}
                                                     className={cn(
                                                         t === '+' && 'bg-[#ECFDF3] text-success dark:bg-success/20',
-                                                        t === '-' && 'bg-[#FDECEE] text-danger line-through dark:bg-danger/20',
+                                                        t === '-' && 'bg-[#FDECEE] text-[#B91C35] line-through dark:bg-danger/20',
                                                     )}
                                                 >
                                                     {s}

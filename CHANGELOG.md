@@ -4,6 +4,25 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 53a — Hardening: security review and accessibility
+Tests: tests/Feature/Security/{AccessControlTest,HardeningTest}.php; accessibility and keyboard checks in CI. Report: docs/security/review-2026-11.md.
+1. Security review (OWASP Top 10), with every finding fixed or recorded as an accepted risk; none high or critical remain:
+   - an automatic check that every member route needs a signed-in active account and every admin route needs staff and a permission
+   - a data-isolation sweep: an outsider and the owner of another network try every member route with other people's ids (over 400 requests); nothing is shown or changed
+   - the admin copies of shared screens (applications, seat map, invitations, training videos, reports) now also require staff and a permission at the route
+   - requests with someone else's id now answer "not found" instead of a misleading success; two crashes on the network owner's prospect screens fixed
+   - per-IP limits on sign-in links, "This wasn't me" and partner sign-out; every request that changes something without signing in is rate limited, and CSRF exemptions are a reviewed list
+   - HTTPS-only session cookies by default in production
+   - /.well-known/security.txt with a new "Security contact email" setting
+   - image uploads check the declared type as well as the content
+2. Dependencies: every minor and patch update from Dependabot #115 and #108; patched minimatch and glob; dependency advisories now fail CI.
+3. Accessibility (WCAG 2.1 AA):
+   - axe-core checks on all 56 key screens (light, dark, phone) in CI; keyboard-only checks of the core journeys, visible focus and reflow at 320 pixels
+   - contrast fixes: small grey text, red and blue badges, dark-mode status text, text on blue buttons in dark mode
+   - buttons named by their visible words; a labelled colour field; underlined links in text; focus returns to "Ask Ally" when it closes
+   - no sideways scrolling at 320 pixels on the home and sign-in pages
+   - an accessibility statement at /accessibility, in the footer and sitemap
+
 ### Sprint 52b — Launch kit: usability tests, press kit, product tour, launch emails
 Tests: tests/Feature/Platform/LaunchKitTest.php.
 1. Usability tests (Admin → Usability tests):

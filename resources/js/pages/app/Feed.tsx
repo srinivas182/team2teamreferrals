@@ -242,7 +242,7 @@ export default function Feed({ groups, group, posts: first, digest = 'weekly', s
                                         role="tab"
                                         aria-selected={form.data.kind === k}
                                         onClick={() => form.setData('kind', k)}
-                                        className={`inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm ${form.data.kind === k ? 'bg-primary text-white' : 'bg-bg'}`}
+                                        className={`inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm ${form.data.kind === k ? 'bg-primary text-on-primary' : 'bg-bg'}`}
                                     >
                                         {Icon && <Icon className="size-4" aria-hidden />} {label}
                                     </button>
@@ -280,7 +280,7 @@ export default function Feed({ groups, group, posts: first, digest = 'weekly', s
                         </Card>
                         {fresh && (
                             <button
-                                className="sticky top-2 z-10 mx-auto block rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow"
+                                className="sticky top-2 z-10 mx-auto block rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow"
                                 onClick={() => (setFresh(false), router.reload({ only: ['posts'] }))}
                             >
                                 New posts: tap to see them

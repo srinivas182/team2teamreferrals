@@ -95,17 +95,20 @@ export default function Press({ answer, boilerplate, facts, figures, contact, lo
                             Product tour
                         </h2>
                         <p className="mt-2 text-muted">A one-minute tour, with captions. It uses sample data, not real members.</p>
-                        <video
-                            controls
-                            preload="none"
-                            poster={video.poster}
-                            className="mt-4 aspect-video w-full rounded-lg border border-line bg-navy-900"
-                            width={1280}
-                            height={720}
-                        >
-                            <source src={video.src} type="video/mp4" />
-                            <track kind="captions" src={video.captions} srcLang="en" label="English" default />
-                        </video>
+                        {/* The ring sits on a wrapper: the browser's own player controls hold the focus inside the video. */}
+                        <div className="mt-4 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
+                            <video
+                                controls
+                                preload="none"
+                                poster={video.poster}
+                                className="aspect-video w-full rounded-lg border border-line bg-navy-900 outline-none"
+                                width={1280}
+                                height={720}
+                            >
+                                <source src={video.src} type="video/mp4" />
+                                <track kind="captions" src={video.captions} srcLang="en" label="English" default />
+                            </video>
+                        </div>
                         <p className="mt-2 text-sm">
                             <a href={video.src} download className="inline-flex items-center gap-1 text-primary">
                                 <Download className="size-4" aria-hidden /> Download the video (MP4)

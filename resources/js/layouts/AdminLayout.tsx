@@ -187,7 +187,6 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                         <button
                             onClick={() => setPalette(true)}
                             className="hidden h-10 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:flex sm:max-w-md"
-                            aria-label="Search people and settings (Ctrl K)"
                             data-tour="admin-search"
                         >
                             <Search className="size-4" aria-hidden />

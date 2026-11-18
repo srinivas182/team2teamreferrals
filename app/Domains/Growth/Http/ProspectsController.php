@@ -157,7 +157,7 @@ final class ProspectsController
         return back()->with('status', 'prospect-task-added');
     }
 
-    public function toggleTask(Request $request, int $task): RedirectResponse
+    public function toggleTask(Request $request): RedirectResponse
     {
         $task = (int) $request->route('task');
         $group = $this->group($request);
@@ -261,10 +261,11 @@ final class ProspectsController
         return back()->with('status', 'prospect-view-saved');
     }
 
-    public function deleteView(Request $request, int $view): RedirectResponse
+    // Ids are read from the route by name: on the network owner's copy ({group} first) they aren't the first parameter.
+    public function deleteView(Request $request): RedirectResponse
     {
         $view = (int) $request->route('view');
-        DB::table('prospect_views')->where(['id' => $view, 'user_id' => $this->user($request)->id])->delete();
+        abort_if(DB::table('prospect_views')->where(['id' => $view, 'user_id' => $this->user($request)->id])->delete() === 0, 404);
 
         return back();
     }

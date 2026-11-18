@@ -43,7 +43,7 @@ export default function Posts({
                 <div className="flex justify-end">
                     <Link
                         href="/admin/content/posts/new"
-                        className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-white"
+                        className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-semibold text-on-primary"
                     >
                         New post
                     </Link>

@@ -42,7 +42,8 @@ final class TestimonialController
 
     public function withdraw(Request $request, int $testimonial): RedirectResponse
     {
-        DB::table('testimonials')->where(['id' => $testimonial, 'user_id' => $this->user($request)->id])->update(['status' => 'withdrawn', 'withdrawn_at' => now(), 'updated_at' => now()]);
+        $n = DB::table('testimonials')->where(['id' => $testimonial, 'user_id' => $this->user($request)->id])->update(['status' => 'withdrawn', 'withdrawn_at' => now(), 'updated_at' => now()]);
+        abort_if($n === 0, 404);
 
         return back()->with('status', 'testimonial-withdrawn');
     }

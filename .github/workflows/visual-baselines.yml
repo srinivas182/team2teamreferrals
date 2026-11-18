@@ -34,7 +34,7 @@ jobs:
         run: |
           cp .env.example .env && php artisan key:generate
           sed -i 's/^APP_ENV=.*/APP_ENV=production/; s/^APP_DEBUG=.*/APP_DEBUG=false/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_DRIVER=.*/SESSION_DRIVER=file/; s/^CACHE_STORE=.*/CACHE_STORE=file/; s#^APP_URL=.*#APP_URL=http://127.0.0.1:8001#' .env
-          printf 'SEO_INDEXABLE=true\nSEO_CANONICAL_URL=http://127.0.0.1:8001\n' >> .env
+          printf 'SEO_INDEXABLE=true\nSEO_CANONICAL_URL=http://127.0.0.1:8001\nSESSION_SECURE_COOKIE=false\n' >> .env
           touch database/database.sqlite && php artisan migrate --force
           php artisan tinker --execute="require base_path('scripts/ci/seed-public-pages.php');"
           php artisan tinker --execute="require base_path('scripts/ci/seed-screens.php');"

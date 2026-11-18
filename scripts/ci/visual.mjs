@@ -3,7 +3,8 @@
  * at desktop width in light mode, plus a few in dark mode and on a phone. Each screenshot is compared with the
  * approved one in tests/visual/baseline; differences above a small threshold fail the check (add the PR label
  * "visual-ok" when a change is intended, then commit the new images from the report). It also checks that every
- * guided-tour step points at something that's on the page.
+ * guided-tour step points at something that's on the page, and runs an accessibility check (axe-core, WCAG 2.1 A and AA)
+ * on every screen: any serious or critical problem fails the check (Sprint 53a).
  *
  * Usage: node scripts/ci/visual.mjs [baseUrl]  (default http://127.0.0.1:8001)
  * Needs scripts/ci/seed-public-pages.php and scripts/ci/seed-screens.php.
@@ -112,7 +113,21 @@ async function signIn(page, email, secret) {
     if (/\/(login|two-factor)/.test(new URL(page.url()).pathname)) throw new Error(`Could not sign in as ${email}`);
 }
 
-async function shoot(page, name, path, results) {
+const AXE = join(ROOT, 'node_modules/axe-core/axe.min.js');
+
+/** WCAG 2.1 A and AA problems on the page that are serious or critical. */
+async function accessibility(page, name, problems) {
+    await page.addScriptTag({ path: AXE });
+    const found = await page.evaluate(async () => {
+        const r = await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] });
+        return r.violations
+            .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+            .map((v) => `${v.id} (${v.impact}, ${v.nodes.length}×): ${v.help} — ${v.nodes[0].target.join(' ')}`);
+    });
+    for (const f of found) problems.push(`Accessibility on ${name}: ${f}`);
+}
+
+async function shoot(page, name, path, results, problems) {
     const res = await page.goto(`${BASE}${path}${path.includes('?') ? '&' : '?'}tour=off`, { waitUntil: 'networkidle' });
     if (!res || res.status() >= 400) {
         results.push({ name, status: 'error', detail: `HTTP ${res?.status() ?? 'no response'} for ${path}` });
@@ -121,6 +136,7 @@ async function shoot(page, name, path, results) {
     await page.addStyleTag({ content: STABLE_CSS });
     await page.evaluate(() => document.fonts.ready);
     const shot = await page.screenshot({ fullPage: false });
+    await accessibility(page, name, problems);
     writeFileSync(join(OUT, 'current', `${name}.png`), shot);
     const base = join(BASELINE, `${name}.png`);
     if (!existsSync(base)) {
@@ -181,11 +197,18 @@ const run = async () => {
     ];
     for (const [prefix, options] of variants) {
         const only = (list) => (prefix === '' ? list : list.filter(([n]) => EXTRA.includes(n)));
-        const ctx = await browser.newContext({ ...options, reducedMotion: 'reduce', locale: 'en-US', timezoneId: 'America/Chicago' });
+        // bypassCSP only lets the check inject axe-core; the pages are otherwise exactly as served.
+        const ctx = await browser.newContext({
+            ...options,
+            reducedMotion: 'reduce',
+            locale: 'en-US',
+            timezoneId: 'America/Chicago',
+            bypassCSP: true,
+        });
         const page = await ctx.newPage();
-        for (const [n, p] of only(PUBLIC)) await shoot(page, prefix + n, p, results);
+        for (const [n, p] of only(PUBLIC)) await shoot(page, prefix + n, p, results, problems);
         await signIn(page, 'member@example.com');
-        for (const [n, p] of only(MEMBER)) await shoot(page, prefix + n, p, results);
+        for (const [n, p] of only(MEMBER)) await shoot(page, prefix + n, p, results, problems);
         await ctx.clearCookies();
         // The partner account: signed in with the emailed link, made here the same way.
         const link = execSync(
@@ -196,10 +219,10 @@ const run = async () => {
             .trim();
         await page.goto(link, { waitUntil: 'networkidle' });
         const account = new URL(page.url()).pathname;
-        if (prefix === '' || EXTRA.includes('partner-account')) await shoot(page, prefix + 'partner-account', account, results);
+        if (prefix === '' || EXTRA.includes('partner-account')) await shoot(page, prefix + 'partner-account', account, results, problems);
         await ctx.clearCookies();
         await signIn(page, 'admin@example.com', 'JBSWY3DPEHPK3PXP');
-        for (const [n, p] of only(ADMIN)) await shoot(page, prefix + n, p, results);
+        for (const [n, p] of only(ADMIN)) await shoot(page, prefix + n, p, results, problems);
         if (prefix === '') await checkTours(page, problems);
         await ctx.close();
     }

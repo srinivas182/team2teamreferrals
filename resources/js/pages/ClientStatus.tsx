@@ -117,7 +117,7 @@ export default function ClientStatus({
                             {receiver.phone && (
                                 <a
                                     href={`tel:${receiver.phone}`}
-                                    className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-white"
+                                    className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-on-primary"
                                 >
                                     Call {receiver.leader || receiver.name}
                                 </a>

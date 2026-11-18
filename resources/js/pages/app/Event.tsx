@@ -67,7 +67,7 @@ export default function Event({ event: e, mine, checkedIn, attendees, going, met
                             href={e.videoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white"
+                            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-on-primary"
                         >
                             <Video className="size-4" aria-hidden /> Join now
                         </a>

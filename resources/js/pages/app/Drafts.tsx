@@ -73,7 +73,7 @@ export default function Drafts({
                             Photograph a business card or a handwritten note. Location data is removed and the photo is deleted once it’s read. 2 AI
                             credits.
                         </p>
-                        <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-primary px-3 text-sm font-semibold text-white">
+                        <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-primary px-3 text-sm font-semibold text-on-primary">
                             Take or choose a photo
                             <input
                                 type="file"

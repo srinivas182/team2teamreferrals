@@ -15,13 +15,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'noindex:always'])->group(function (): void {
     Route::middleware('guest')->group(function (): void {
-        Route::post('login/magic', [MagicLinkController::class, 'store'])->name('login.magic');
+        Route::post('login/magic', [MagicLinkController::class, 'store'])->middleware('throttle:10,1')->name('login.magic');
         Route::get('login/magic/{token}', [MagicLinkController::class, 'consume'])->middleware('signed')->name('login.magic.consume');
     });
 
     // "This wasn't me" from new-device emails: works signed in or not.
-    Route::get('account/{user}/secure', [SecureAccountController::class, 'show'])->middleware('signed')->name('account.secure');
-    Route::post('account/{user}/secure', [SecureAccountController::class, 'store'])->middleware('signed')->name('account.secure.store');
+    Route::get('account/{user}/secure', [SecureAccountController::class, 'show'])->middleware(['signed', 'throttle:20,1'])->name('account.secure');
+    Route::post('account/{user}/secure', [SecureAccountController::class, 'store'])->middleware(['signed', 'throttle:10,1'])->name('account.secure.store');
 
     Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): void {
         Route::get('verify-phone', [PhoneVerificationController::class, 'show'])->name('verification.phone');

@@ -46,6 +46,15 @@ final class SeoServiceProvider extends ServiceProvider
             Route::get('sitemap.xml', [SeoController::class, 'sitemapIndex'])->name('seo.sitemap');
             Route::get('sitemaps/{key}.xml', [SeoController::class, 'sitemap'])->where('key', '[a-z0-9-]+')->name('seo.sitemap.part');
             Route::get('llms.txt', [SeoController::class, 'llms'])->name('seo.llms');
+            // RFC 9116: where to report a security problem (Sprint 53a). The address is the security contact, else support.
+            Route::get('.well-known/security.txt', function () {
+                $s = app(\App\Domains\Platform\Settings\Settings::class);
+                $email = trim((string) $s->get('general.security_email')) ?: \App\Domains\Content\Tokens::company()['support_email'];
+                $base = rtrim((string) config('seo.canonical_url', config('app.url')), '/');
+                $body = "Contact: mailto:{$email}\nExpires: ".now()->addYear()->startOfDay()->toIso8601ZuluString()."\nPreferred-Languages: en\nCanonical: {$base}/.well-known/security.txt\n";
+
+                return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8', 'Cache-Control' => 'public, max-age=86400']);
+            })->middleware('throttle:60,1')->name('security.txt');
             Route::get('og/{payload}.{signature}.png', fn (string $payload, string $signature) => PageImage::serve($payload, $signature))
                 ->where(['payload' => '[A-Za-z0-9_-]{8,1200}', 'signature' => '[a-f0-9]{16}'])->middleware('throttle:120,1')->name('seo.page-image');
             // A person arrived from an AI assistant's answer (sent by the browser, so cached pages count too).

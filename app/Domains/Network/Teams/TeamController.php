@@ -111,6 +111,7 @@ final class TeamController
         if ($member->id === $user->id) {
             throw ValidationException::withMessages(['member' => 'The leader can’t remove themselves. Hand over leadership first (coming with companies).']);
         }
+        abort_unless($team->members()->whereKey($member->id)->exists(), 404); // only people on your own team
         $team->members()->detach($member->id);
         activity('team')->causedBy($user)->performedOn($team)->event('team-member-removed')->withProperties(['member' => $member->ulid])->log("Removed {$member->name} from {$team->name}");
 
@@ -120,7 +121,8 @@ final class TeamController
     public function revokeInvite(Request $request, int $invite): RedirectResponse
     {
         [$team] = $this->teamFor($request, ['leader']);
-        DB::table('team_invites')->where(['id' => $invite, 'team_id' => $team->id])->update(['status' => 'revoked', 'updated_at' => now()]);
+        $n = DB::table('team_invites')->where(['id' => $invite, 'team_id' => $team->id])->update(['status' => 'revoked', 'updated_at' => now()]);
+        abort_if($n === 0, 404); // not an invitation from your team
 
         return back()->with('status', 'team-invite-revoked');
     }
