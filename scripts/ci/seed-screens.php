@@ -24,6 +24,15 @@ $member = $team->leader;
 $member->forceFill(['email' => 'member@example.com', 'first_name' => 'Mia', 'last_name' => 'Member', 'password' => $password, 'email_verified_at' => now(),
     'phone' => '+14355550150', 'phone_verified_at' => now(), 'tours_done' => json_encode(['member-home'])])->save();
 
+// One referral sent by the member to the team that holds Houston (the installable-app checks offer to install after a first referral).
+$solar = App\Domains\Network\Groups\Models\Group::query()->where('slug', 'solar-installers-network')->firstOrFail();
+$answers = collect(app(App\Domains\Network\Industries\Templates\IndustryTemplates::class)->resolve('form', $solar->industry, $solar->id)['body'])
+    ->mapWithKeys(fn ($f) => [$f['key'] => match ($f['type']) {
+        'choice' => $f['options'][0], 'multi_choice' => [$f['options'][0]], 'boolean' => true, 'number' => '5', 'date' => now()->addMonth()->toDateString(), default => 'Interested; prefers a call in the evening.'
+    }])->all();
+app(App\Domains\Referrals\Referrals::class)->send($member, $solar, App\Domains\Network\Locations\Models\City::query()->where('slug', 'houston')->firstOrFail(),
+    [...$answers, 'client_name' => 'Casey Client', 'client_phone' => '+14355550160', 'client_email' => 'casey@example.com'], true, null, true);
+
 // A super admin with two-step sign-in (the checks compute the code from the secret).
 $admin = User::factory()->create(['email' => 'admin@example.com', 'first_name' => 'Ada', 'last_name' => 'Admin', 'password' => $password, 'phone' => '+14355550151', 'phone_verified_at' => now()]);
 $admin->forceFill(['two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_recovery_codes' => encrypt(json_encode(['visual-aaaa', 'visual-bbbb'])), 'two_factor_confirmed_at' => now(),

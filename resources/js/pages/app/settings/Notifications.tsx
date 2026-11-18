@@ -1,6 +1,6 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import { BellRing, Lock, Moon, Newspaper, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { enablePush, pushSupported } from '@/lib/push';
+import { ios, standalone } from '@/lib/pwa';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
@@ -41,6 +42,12 @@ export default function NotificationSettings({
     status,
     seo,
 }: Props) {
+    // iPhone and iPad allow push only from the home-screen app (checked in the browser, never during server rendering).
+    const iosNeedsInstall = useSyncExternalStore(
+        () => () => undefined,
+        () => ios() && !standalone(),
+        () => false,
+    );
     const { auth } = usePage<SharedProps>().props;
     const form = useForm({
         matrix,
@@ -224,6 +231,12 @@ export default function NotificationSettings({
                                     : 'Get instant alerts on this browser or phone, even when Team to Team isn’t open.'}
                             </p>
                             {push && <p className="mt-1 text-sm text-muted">{push}</p>}
+                            {iosNeedsInstall && (
+                                <p className="mt-2 text-sm">
+                                    On iPhone and iPad, notifications work once Team to Team is on your home screen: in Safari, tap Share, then “Add
+                                    to Home Screen”. Open it from there and come back to this page.
+                                </p>
+                            )}
                         </div>
                         {pushDevices > 0 && (
                             <Button variant="ghost" onClick={() => router.delete('/app/push-subscriptions', { preserveScroll: true })}>
@@ -232,7 +245,7 @@ export default function NotificationSettings({
                         )}
                         <Button
                             variant="secondary"
-                            disabled={!pushSupported()}
+                            disabled={!pushSupported() || iosNeedsInstall}
                             onClick={async () => {
                                 const r = await enablePush(vapidPublicKey);
                                 setPush(

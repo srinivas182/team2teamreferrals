@@ -177,7 +177,10 @@ function Overview({ stats, base }: Props & { base: string }) {
                 ).map(([label, v]) => (
                     <Card key={label} className="p-4">
                         <div className="text-sm text-muted">{label}</div>
-                        <div className="mt-1 font-display text-2xl font-bold">{v}</div>
+                        {/* data-vr-mask: live counts, hidden in the visual checks (other automated checks visit the listing first) */}
+                        <div className="mt-1 font-display text-2xl font-bold" data-vr-mask>
+                            {v}
+                        </div>
                     </Card>
                 ))}
             </div>

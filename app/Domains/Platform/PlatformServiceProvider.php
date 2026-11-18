@@ -64,7 +64,7 @@ final class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([Analytics\AnalyticsCommand::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
+            $this->commands([Analytics\AnalyticsCommand::class, Console\LoadTestSeed::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
         }
         // Every minute: ship new records to the analytics store (never two runs at once).
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {

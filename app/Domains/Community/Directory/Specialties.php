@@ -36,6 +36,6 @@ final class Specialties
     /** @return list<string> */
     public static function forFamily(?string $family): array
     {
-        return [...(self::BY_FAMILY[$family] ?? []), 'Other'];
+        return [...($family !== null ? (self::BY_FAMILY[$family] ?? []) : []), 'Other'];
     }
 }

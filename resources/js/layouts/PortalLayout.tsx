@@ -1,4 +1,5 @@
 import { UsabilityMount } from '@/components/usability/UsabilityMount';
+import { AppBanners } from '@/components/pwa/AppBanners';
 import { Link, router, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
 import { TourRunner } from '@/components/tour/Tour';
@@ -263,6 +264,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         </div>
                     </header>
                     <main id="main" className="px-4 py-6 sm:px-6 lg:px-8">
+                        <AppBanners />
                         <div className="mb-6 flex flex-wrap items-center gap-3">
                             <h1 className="font-display text-2xl font-bold display sm:text-[28px]">{title}</h1>
                             <div className="ml-auto flex gap-2">{actions}</div>

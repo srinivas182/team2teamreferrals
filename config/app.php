@@ -17,6 +17,9 @@ return [
 
     // A separate demo install (Sprint 52a): visitors can enter with one click, and the demo resets every hour.
     // Never set this on the real site.
+    // Load generators allowed past per-visitor rate limits during load tests on staging (comma-separated IPs; never in production).
+    'load_test_ips' => env('LOAD_TEST_IPS', ''),
+
     'demo_install' => (bool) env('DEMO_INSTALL', false),
 
     /*

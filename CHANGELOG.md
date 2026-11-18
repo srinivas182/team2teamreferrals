@@ -4,6 +4,24 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 53b — Installable app, load test and speed pass
+Tests: tests/Feature/Platform/{InstallableAppTest,LoadTestingTest}.php; scripts/ci/pwa.mjs in CI. Reports: docs/performance/load-test-2026-11.md, loadtest/README.md.
+1. Installable app:
+   - a full manifest (name, shortcuts to Send, Inbox and Pipeline, screenshots, maskable icon) and full-screen mode with splash screens on iPhone and iPad
+   - an install offer after a member's first referral (the browser's own prompt, or simple steps on iPhone and iPad), with "Not now" for 30 days
+   - offline: member pages opened recently still open, including moving between them in the app; others show a friendly offline page; public pages, the admin and billing are never kept; signing out, or reaching a sign-in page, deletes everything kept
+   - "A new version is ready — Refresh now" instead of changing under people's feet
+   - iPhone push: the notification settings explain that notifications need the home-screen app, and the installed app offers to turn them on
+2. Load test:
+   - realistic k6 journeys (visitors and members together, with think time), a command that makes load-test members, and a way to let load generators past rate limits on staging only
+   - the test found and fixed:
+     - a network page that ran one query per filled seat
+     - open places that ran up to about 150 queries
+     - industry hubs not cached at the CDN (now cached and refreshed when published)
+     - a logging setting that broke deprecation logging on PHP 8.4+
+   - results and the capacity plan for 50,000 people at once, plus the distributed run for staging
+3. Speed: Lighthouse now checks 23 public pages on desktop and 11 on mobile; all meet the budgets (desktop performance 96–100).
+
 ### Sprint 53a — Hardening: security review and accessibility
 Tests: tests/Feature/Security/{AccessControlTest,HardeningTest}.php; accessibility and keyboard checks in CI. Report: docs/security/review-2026-11.md.
 1. Security review (OWASP Top 10), with every finding fixed or recorded as an accepted risk; none high or critical remain:

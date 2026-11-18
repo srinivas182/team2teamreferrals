@@ -145,6 +145,8 @@ final class IndustryContent
         DB::table('industry_content')->where('id', $r->id)->update(['status' => 'published', 'reviewer' => $r->reviewer, 'reviewed_on' => now()->toDateString(), 'published_at' => $r->published_at ?? now(), 'updated_at' => now()]);
         Menus::forget(); // the Industries link appears once a hub is live
         \App\Domains\Seo\Monitoring\GoneUrls::restore('/industries/'.$industry->slug);
+        // The hub is cached at the edge (Sprint 53b): refresh it and the list now rather than in five minutes.
+        \App\Domains\Seo\Events\PublicUrlsChanged::dispatch(['/industries/'.$industry->slug, '/industries']);
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-published')->withProperties(['reviewer' => $r->reviewer])->log('Industry hub published');
     }
 
@@ -155,6 +157,7 @@ final class IndustryContent
         Menus::forget();
         if ($wasLive) {
             \App\Domains\Seo\Monitoring\GoneUrls::mark('/industries/'.$industry->slug, 'industry page unpublished');
+            \App\Domains\Seo\Events\PublicUrlsChanged::dispatch(['/industries/'.$industry->slug, '/industries']);
         }
         activity('content')->causedBy($by)->performedOn($industry)->event('industry-content-unpublished')->log('Industry hub unpublished');
     }

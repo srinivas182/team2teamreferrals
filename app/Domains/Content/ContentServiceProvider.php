@@ -65,7 +65,7 @@ final class ContentServiceProvider extends ServiceProvider
             Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified', EnsureStaff::class, 'can:content.manage'])
                 ->get('preview/industries/{slug}', [Http\IndustryHubController::class, 'preview'])->where('slug', '[a-z0-9-]+')->name('industries.preview');
             // Industry hubs: the page carries a correction form, so only the list is cached at the edge.
-            Route::middleware('web')->get('industries/{slug}', [Http\IndustryHubController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('industries.show');
+            Route::middleware(['web', 'edge.cache'])->get('industries/{slug}', [Http\IndustryHubController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('industries.show');
             Route::middleware(['web', 'throttle:5,60'])->post('industries/{slug}/correction', [Http\IndustryHubController::class, 'correction'])->where('slug', '[a-z0-9-]+')->name('industries.correction');
             Route::middleware(['web', 'edge.cache'])->group(function (): void {
                 Route::get('industries', [Http\IndustryHubController::class, 'index'])->name('industries');

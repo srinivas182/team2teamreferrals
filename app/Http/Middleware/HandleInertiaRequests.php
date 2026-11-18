@@ -45,6 +45,18 @@ final class HandleInertiaRequests extends Middleware
             'tours' => fn () => ($u = $request->user()) instanceof \App\Domains\Identity\Models\User ? \App\Domains\Platform\Tours\ToursController::state($u) : null,
             // A demo account (Sprint 52a): the portal shows a banner, and the reset time.
             'demo' => fn () => ($u = $request->user()) !== null && str_ends_with((string) $u->email, '@'.\App\Domains\Content\Demo\DemoWorkspace::DOMAIN),
+            // The installable app (Sprint 53b): offer to install only after a member's first referral. Checked at most
+            // every ten minutes per session, so it costs nothing on most requests.
+            'pwa' => fn () => $request->user() === null ? null : ['sent' => (function () use ($request): bool {
+                $known = $request->session()->get('pwa.sent');
+                if (is_array($known) && ($known['v'] === true || $known['at'] > now()->getTimestamp() - 600)) {
+                    return (bool) $known['v'];
+                }
+                $sent = \Illuminate\Support\Facades\DB::table('referrals')->where('sender_user_id', $request->user()->getAuthIdentifier())->exists();
+                $request->session()->put('pwa.sent', ['v' => $sent, 'at' => now()->getTimestamp()]);
+
+                return $sent;
+            })()],
             'modules' => fn () => app(\App\Domains\Platform\Modules\Modules::class)->map(),
             // Whether this person sees Ally (Sprint 48b): by who they are (visitor, member or partner).
             'ally' => fn () => \App\Domains\Support\Ally\AllySettings::on($request->user() !== null ? 'member' : (is_string($request->session()->get('partner_portal')) ? 'partner' : 'visitor')),

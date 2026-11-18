@@ -29,6 +29,48 @@ final class DirectoryUrls
         return $city instanceof stdClass ? $city : null;
     }
 
+    /**
+     * mainCity() for many territories at once (Sprint 53b): one query per kind of territory instead of one per seat,
+     * so a network page costs the same with 10 seats or 1,000. Keys are "type:id".
+     *
+     * @param  iterable<array{0: string, 1: int}>  $territories
+     * @return array<string, stdClass>
+     */
+    public static function mainCities(iterable $territories): array
+    {
+        $ids = [];
+        foreach ($territories as [$type, $id]) {
+            $ids[$type][(int) $id] = true;
+        }
+        $out = [];
+        $cols = ['cities.id', 'cities.slug', 'cities.state_id', 'cities.county_id'];
+        if (isset($ids['city'])) {
+            foreach (DB::table('cities')->whereIn('id', array_keys($ids['city']))->get($cols) as $c) {
+                $out['city:'.$c->id] = $c;
+            }
+        }
+        // The largest enabled city in each county or metro: rows come largest first, so the first one per key wins.
+        if (isset($ids['county'])) {
+            foreach (DB::table('cities')->where('is_enabled', true)->whereIn('county_id', array_keys($ids['county']))->orderByDesc('population')->get($cols) as $c) {
+                $out['county:'.$c->county_id] ??= $c;
+            }
+        }
+        if (isset($ids['metro'])) {
+            foreach (DB::table('cities')->join('county_metro', 'county_metro.county_id', '=', 'cities.county_id')->where('cities.is_enabled', true)
+                ->whereIn('county_metro.metro_id', array_keys($ids['metro']))->orderByDesc('cities.population')->get([...$cols, 'county_metro.metro_id']) as $c) {
+                $out['metro:'.$c->metro_id] ??= (object) ['id' => $c->id, 'slug' => $c->slug, 'state_id' => $c->state_id, 'county_id' => $c->county_id];
+            }
+        }
+        // A state has thousands of cities, so its largest is looked up on its own (at most one per state).
+        foreach (array_keys($ids['state'] ?? []) as $id) {
+            if (($c = self::mainCity('state', $id)) !== null) {
+                $out['state:'.$id] = $c;
+            }
+        }
+
+        return $out;
+    }
+
     /** @return list<string> */
     public static function forSeat(int $seatId): array
     {
