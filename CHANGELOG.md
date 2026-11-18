@@ -4,6 +4,30 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 54a — Go-live: hosting, deploys, backups and monitoring
+Tests: tests/Feature/Platform/GoLiveTest.php; the deploy rehearsal in CI (scripts/ci/deploy-rehearsal.sh). Docs: docs/operations/ (DigitalOcean set-up, deploys, runbooks, disaster recovery); ADR 0008.
+1. A deploy kit for DigitalOcean (deploy/): one Droplet runs the production images behind Caddy and Cloudflare, with Managed MySQL and Spaces. A one-command server set-up: updates, Docker, swap, firewall, SSH lock-down, a deploy user and timers.
+2. Deploys from GitHub Actions on every merge to main, to staging first when there is one:
+   - images built once per commit
+   - a database backup before every deploy
+   - no downtime: the new web container takes over only once healthy
+   - automatic rollback, including exactly that deploy's migrations
+   - rolling back by hand is a re-run with an earlier commit
+3. Backups to a bucket in another region:
+   - encrypted database dumps nightly (35 days), monthly (13 months) and before each deploy (14 days)
+   - a nightly mirror of files, keeping changed and deleted files for 90 days
+   - a monthly automatic restore drill that proves they restore and records how long it took
+4. Monitoring:
+   - `t2t:health` checks the whole deployment (workers, scheduler, SSR, virus scanning, migrations, disk, backups)
+   - a five-minute watch restarts a stuck web container and alerts by email and webhook after two failures, then again when it recovers
+   - DigitalOcean uptime and resource alerts
+5. `t2t:super-admin --show-link` creates the first admin before email is set up.
+6. CI rehearses the deploy kit for real whenever it changes:
+   - a first install on MySQL that requires primary keys
+   - a deploy under load with no failed requests
+   - three kinds of failed release, all rolled back cleanly
+   - backups and the restore drill
+
 ### Simplification — an easier member area before launch
 Tests: tests/Feature/Platform/SimplifyTest.php. Design: docs/design/information-architecture.md.
 1. A simpler menu: five everyday places (Home, Inbox, Pipeline, Sent, Earnings) and the Send button, with everything else grouped under "More" (Network, Grow your business, Team and account, Help), closed until opened. It was 30 items in one list.

@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 /** Bootstraps the first super admin. They receive an email to set a password, then must turn on two-step sign-in. */
 final class MakeSuperAdmin extends Command
 {
-    protected $signature = 't2t:super-admin {email} {--first=Platform} {--last=Admin}';
+    protected $signature = 't2t:super-admin {email} {--first=Platform} {--last=Admin} {--show-link : Also print the set-password link (for the first admin, before email is set up)}';
 
     protected $description = 'Create or promote a super admin and email them a link to set their password';
 
@@ -33,6 +33,11 @@ final class MakeSuperAdmin extends Command
         $user->notify(new StaffInvitationNotification($token, invitedBy: 'Team to Team', superAdmin: true));
         activity('admin')->performedOn($user)->event('super-admin-granted')->log('Super admin role granted from the command line');
         $this->info("{$email} is a super admin. A set-password email has been sent.");
+        if ($this->option('show-link')) {
+            // Go-live (Sprint 54a): the first admin is made before any email provider exists. Shown only here, in the
+            // terminal of whoever runs the command on the server.
+            $this->line('Set your password here: '.url(route('password.reset', ['token' => $token, 'email' => $email], false)));
+        }
 
         return self::SUCCESS;
     }

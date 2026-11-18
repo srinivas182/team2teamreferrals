@@ -64,10 +64,12 @@ final class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([Analytics\AnalyticsCommand::class, Console\LoadTestSeed::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
+            $this->commands([Analytics\AnalyticsCommand::class, Console\LoadTestSeed::class, Console\HealthCommand::class, Console\OpsRecordCommand::class, Console\OpsAlertCommand::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
         }
         // Every minute: ship new records to the analytics store (never two runs at once).
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {
+            // Heartbeat for t2t:health: proves the scheduler itself is running (Sprint 54a).
+            $s->call(fn () => Console\HealthCommand::beat())->everyMinute()->name('health:scheduler-beat');
             $s->command('t2t:analytics ship')->everyMinute()->withoutOverlapping()->onOneServer();
             $s->command('t2t:trust')->dailyAt('02:30')->onOneServer(); // nightly trust scores
             $s->command('t2t:reports')->everyFifteenMinutes()->withoutOverlapping()->onOneServer(); // scheduled reports

@@ -30,8 +30,9 @@ COPY --from=assets /app/public/build ./public/build
 COPY --from=assets /app/bootstrap/ssr ./bootstrap/ssr
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && rm -rf node_modules tests prototype storybook-static .git \
+    && ln -sfn ../storage/app/public public/storage \
     && useradd --uid 10001 --create-home t2t \
-    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && mkdir -p storage/app/public storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R t2t:t2t storage bootstrap/cache /data /config
 USER t2t
 ENV APP_ENV=production LOG_STACK=json OCTANE_SERVER=frankenphp

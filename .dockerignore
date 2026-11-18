@@ -1,0 +1,24 @@
+# Kept out of the production image build (Sprint 54a): local dependencies and builds are rebuilt inside the image,
+# and local secrets never go in.
+.git
+node_modules
+vendor
+.env
+.env.*
+!.env.example
+public/build
+public/hot
+public/storage
+bootstrap/ssr
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+storage/app/public/*
+storage/*.key
+prototype/node_modules
+storybook-static
+playwright-report
+test-results
