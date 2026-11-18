@@ -1,0 +1,86 @@
+# One server's deploy (Sprint 54a), called by deploy.yml for staging and production. Copies the deploy kit and the
+# secrets to /srv/t2t, then runs bin/deploy.sh there, which switches with no downtime and rolls back by itself.
+#
+# Environment secrets (Settings → Environments → <staging|production>):
+#   SSH_PRIVATE_KEY, SSH_KNOWN_HOSTS  printed by deploy/bin/server-setup.sh
+#   ENV_FILE                          the server's .env (deploy/env.example)
+#   DB_CA_CERT                        Managed MySQL's CA certificate (Databases → t2t-db → Download CA certificate)
+#   ORIGIN_CERT, ORIGIN_KEY           Cloudflare origin certificate (optional before Cloudflare is set up)
+name: Deploy to a server
+
+on:
+  workflow_call:
+    inputs:
+      environment: { type: string, required: true }
+      host: { type: string, required: true }
+      url: { type: string, required: false, default: '' }
+      image: { type: string, required: true }
+      tag: { type: string, required: true }
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.tag }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url || null }}
+    env:
+      HOST: deploy@${{ inputs.host }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: "${{ inputs.tag }}", sparse-checkout: deploy }
+      - name: SSH access
+        env:
+          KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          [ -n "$KEY" ] && [ -n "$KNOWN" ] || { echo "::error::Add the SSH_PRIVATE_KEY and SSH_KNOWN_HOSTS secrets to the ${{ inputs.environment }} environment."; exit 1; }
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          printf 'Host *\n  ServerAliveInterval 30\n  ConnectTimeout 20\n' > ~/.ssh/config
+          ssh "$HOST" true
+      - name: Copy the deploy kit
+        run: |
+          rsync -rlptz --delete --chmod=Du=rwx,Dg=rx,Fu=rwx,Fg=rx deploy/bin/ "$HOST:/srv/t2t/bin/"
+          rsync -rlptz deploy/compose.yaml "$HOST:/srv/t2t/compose.yaml"
+          ssh "$HOST" 'mkdir -p /srv/t2t/caddy'
+          rsync -rlptz deploy/caddy/Caddyfile "$HOST:/srv/t2t/caddy/Caddyfile"
+      - name: Secrets and settings
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          DB_CA_CERT: ${{ secrets.DB_CA_CERT }}
+          ORIGIN_CERT: ${{ secrets.ORIGIN_CERT }}
+          ORIGIN_KEY: ${{ secrets.ORIGIN_KEY }}
+        run: |
+          [ -n "$ENV_FILE" ] || { echo "::error::Add the ENV_FILE secret to the ${{ inputs.environment }} environment (see deploy/env.example)."; exit 1; }
+          left=$(grep -E '^[A-Z0-9_]+=.*<(your|\(setup\)|Spaces|the |private host|where )' <<<"$ENV_FILE" | cut -d= -f1 | tr '\n' ' ' || true)
+          [ -z "$left" ] || { echo "::error::ENV_FILE still has <placeholders> for: $left"; exit 1; }
+          put() { ssh "$HOST" "umask 077; mkdir -p \"\$(dirname $1)\" && cat > $1.new && mv $1.new $1"; }
+          printf '%s\n' "$ENV_FILE" | put /srv/t2t/.env
+          if [ -n "$DB_CA_CERT" ]; then printf '%s\n' "$DB_CA_CERT" | put /srv/t2t/secrets/db/ca.crt; fi
+          if [ -n "$ORIGIN_CERT" ] && [ -n "$ORIGIN_KEY" ]; then
+            printf '%s\n' "$ORIGIN_CERT" | put /srv/t2t/secrets/certs/origin.pem
+            printf '%s\n' "$ORIGIN_KEY" | put /srv/t2t/secrets/certs/origin.key
+          fi
+      - name: Deploy (switches with no downtime; rolls back by itself on failure)
+        run: |
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | ssh "$HOST" 'docker login ghcr.io -u "${{ github.actor }}" --password-stdin >/dev/null'
+          set +e
+          ssh "$HOST" "T2T_IMAGE=${{ inputs.image }} /srv/t2t/bin/deploy.sh ${{ inputs.tag }}"
+          status=$?
+          ssh "$HOST" 'docker logout ghcr.io >/dev/null' || true
+          exit $status
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### ${{ inputs.environment }}: ${{ job.status == 'success' && 'deployed' || 'not deployed' }}"
+            echo "Release \`${{ inputs.tag }}\`. Server log: \`/srv/t2t/logs/\` (deploy-*.log)."
+            [ "${{ job.status }}" = success ] || echo "If the deploy started, the previous release was put back automatically. See docs/operations/runbooks.md."
+          } >> "$GITHUB_STEP_SUMMARY"

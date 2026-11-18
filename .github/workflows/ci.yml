@@ -26,6 +26,7 @@ jobs:
       code: ${{ steps.diff.outputs.code }}
       docker: ${{ steps.diff.outputs.docker }}
       web: ${{ steps.diff.outputs.web }}
+      deploy: ${{ steps.diff.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
@@ -33,15 +34,18 @@ jobs:
         run: |
           files=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
           echo "$files"
-          code=false; docker=false; web=false
+          code=false; docker=false; web=false; deploy=false
           if echo "$files" | grep -qvE '^(docs/|brand/|design/|prototype/|tools/brand/|.*\.md$)'; then code=true; fi
           # New PHP or JavaScript dependencies change what goes into the image, so they rebuild it too.
-          if echo "$files" | grep -qE '^(docker/|compose\.yaml$|compose\.prod\.yaml$|composer\.(json|lock)$|package(-lock)?\.json$)'; then docker=true; fi
+          if echo "$files" | grep -qE '^(docker/|\.dockerignore$|compose\.yaml$|compose\.prod\.yaml$|composer\.(json|lock)$|package(-lock)?\.json$)'; then docker=true; fi
           # Lighthouse only when public-facing code changes (saves Actions minutes on back-end work).
           if echo "$files" | grep -qE '^(resources/|public/|routes/|app/|scripts/|tests/visual/|vite\.config|package(-lock)?\.json|lighthouserc)'; then web=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "docker=$docker" >> "$GITHUB_OUTPUT"
+          # The deploy rehearsal only when the deploy kit, the production image or the ops commands change.
+          if echo "$files" | grep -qE '^(deploy/|docker/prod/|\.dockerignore$|\.github/workflows/deploy|scripts/ci/deploy-rehearsal|app/Domains/Platform/Console/(Health|Ops)|app/Domains/Platform/Health/)'; then deploy=true; fi
           echo "web=$web" >> "$GITHUB_OUTPUT"
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
 
   quick:
     name: Quick checks (style, static analysis, types)
@@ -168,6 +172,35 @@ jobs:
       - name: Production image (Octane on FrankenPHP)
         uses: docker/build-push-action@v6
         with: { context: ., file: docker/prod/Dockerfile, target: app, push: false, cache-from: type=gha, cache-to: 'type=gha,mode=max' }
+
+
+  rehearsal:
+    name: Deploy rehearsal
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true' && github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      registry:
+        image: registry:2
+        ports: ["5000:5000"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Shell scripts (shellcheck)
+        run: shellcheck -x -P deploy/bin deploy/bin/*.sh scripts/ci/deploy-rehearsal.sh
+      - uses: docker/setup-buildx-action@v3
+        with: { driver-opts: network=host }
+      - name: Release r1 (app)
+        uses: docker/build-push-action@v6
+        with: { context: ., file: docker/prod/Dockerfile, target: app, push: true, tags: 'localhost:5000/t2t:r1', cache-from: type=gha, cache-to: 'type=gha,mode=max' }
+      - name: Release r1 (SSR)
+        uses: docker/build-push-action@v6
+        with: { context: ., file: docker/prod/Dockerfile, target: ssr, push: true, tags: 'localhost:5000/t2t-ssr:r1', cache-from: type=gha }
+      - name: Rehearse first deploy, zero-downtime deploys, automatic rollbacks, backups and the restore drill
+        run: scripts/ci/deploy-rehearsal.sh
+      - name: Server logs
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP"/srv-t2t/logs/*.log || true
 
   performance:
     name: Performance budgets (Lighthouse)

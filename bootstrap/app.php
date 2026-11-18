@@ -20,7 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend(CanonicalUrl::class);
+        // After TrustProxies (not prepended), so behind Caddy and Cloudflare it sees the visitor's https scheme and
+        // doesn't redirect https to https for ever (Sprint 54a's deploy rehearsal found this).
+        $middleware->append(CanonicalUrl::class);
         $middleware->appendToGroup('web', [HandleInertiaRequests::class, NoIndex::class]);
         $middleware->append(SecurityHeaders::class);
         $middleware->append(App\Domains\Seo\Http\Middleware\CountAiCrawlers::class); // which pages AI crawlers read (Sprint 43b)

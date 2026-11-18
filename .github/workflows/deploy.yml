@@ -1,0 +1,113 @@
+# Deploys (Sprint 54a). Every merge to main builds the images once and deploys them: to staging first (when a staging
+# server is set up), then to production. Production can be made to wait for a click: Settings → Environments →
+# production → Required reviewers.
+#
+# Run it by hand (Actions → Deploy → Run workflow) to deploy to one server, or to roll back: put the commit of an
+# earlier release in "release".
+#
+# Nothing runs until the repository variable DEPLOY_ENABLED is "true" and STAGING_HOST and/or PRODUCTION_HOST are
+# set (Settings → Secrets and variables → Actions → Variables). See docs/operations/digitalocean-setup.md.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to deploy
+        type: choice
+        options: [production, staging]
+        default: production
+      release:
+        description: Commit to deploy (leave empty for the latest on main; an earlier one rolls back)
+        required: false
+        default: ''
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    name: Build images
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      image: ${{ steps.tag.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: "${{ inputs.release || github.sha }}" }
+      - id: tag
+        run: |
+          echo "tag=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      # A rollback to an earlier release reuses its images: nothing to build.
+      - id: exists
+        run: |
+          if docker manifest inspect "${{ steps.tag.outputs.image }}:${{ steps.tag.outputs.tag }}" >/dev/null 2>&1 \
+            && docker manifest inspect "${{ steps.tag.outputs.image }}-ssr:${{ steps.tag.outputs.tag }}" >/dev/null 2>&1; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/setup-buildx-action@v3
+        if: steps.exists.outputs.built != 'true'
+      - name: App image (web, queues, scheduler)
+        if: steps.exists.outputs.built != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/prod/Dockerfile
+          target: app
+          push: true
+          tags: ${{ steps.tag.outputs.image }}:${{ steps.tag.outputs.tag }}
+          labels: org.opencontainers.image.revision=${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: SSR image
+        if: steps.exists.outputs.built != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/prod/Dockerfile
+          target: ssr
+          push: true
+          tags: ${{ steps.tag.outputs.image }}-ssr:${{ steps.tag.outputs.tag }}
+          labels: org.opencontainers.image.revision=${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+
+  staging:
+    name: Staging
+    needs: images
+    if: vars.STAGING_HOST != '' && (github.event_name == 'push' || inputs.target == 'staging')
+    uses: ./.github/workflows/deploy-server.yml
+    with:
+      environment: staging
+      host: ${{ vars.STAGING_HOST }}
+      url: ${{ vars.STAGING_URL }}
+      image: ${{ needs.images.outputs.image }}
+      tag: ${{ needs.images.outputs.tag }}
+    secrets: inherit
+
+  production:
+    name: Production
+    needs: [images, staging]
+    # After staging passes, or straight away when there's no staging server; never after a failed staging deploy.
+    if: >-
+      always() && needs.images.result == 'success' && needs.staging.result != 'failure' && needs.staging.result != 'cancelled'
+      && vars.PRODUCTION_HOST != '' && (github.event_name == 'push' || inputs.target == 'production')
+    uses: ./.github/workflows/deploy-server.yml
+    with:
+      environment: production
+      host: ${{ vars.PRODUCTION_HOST }}
+      url: ${{ vars.PRODUCTION_URL }}
+      image: ${{ needs.images.outputs.image }}
+      tag: ${{ needs.images.outputs.tag }}
+    secrets: inherit

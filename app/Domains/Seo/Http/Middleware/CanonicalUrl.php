@@ -17,7 +17,8 @@ final class CanonicalUrl
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('seo.force_canonical') || ! $request->isMethod('GET')) {
+        // Health checks come from inside the server (Docker, Caddy) by IP over plain HTTP: never redirect them (Sprint 54a).
+        if (! config('seo.force_canonical') || ! $request->isMethod('GET') || $request->is('up', 'health')) {
             return $next($request);
         }
         $canonical = parse_url((string) config('seo.canonical_url'));

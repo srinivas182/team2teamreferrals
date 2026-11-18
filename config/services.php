@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Go-live (Sprint 54a): where the server's health watch sends alerts by email (t2t:ops:alert).
+    'ops' => [
+        'alert_email' => env('ALERT_EMAIL'),
+    ],
+
 ];

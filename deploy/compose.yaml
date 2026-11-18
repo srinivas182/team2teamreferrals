@@ -1,0 +1,115 @@
+# The production (and staging) stack on one server (Sprint 54a). The deploy workflow copies this folder to
+# /srv/t2t on the server and runs bin/deploy.sh; nothing here is built on the server, the images come from GHCR.
+#
+# The database is DigitalOcean Managed MySQL (outside this file), reached over TLS with the CA in secrets/db/ca.crt.
+# Files people upload privately go to Spaces (set in Admin → System → Providers); public images, reports and
+# temporary files stay in the `storage` volume, which bin/backup.sh copies to the backup bucket every night.
+#
+# Images: T2T_IMAGE (e.g. ghcr.io/owner/repo) and T2T_TAG (the git commit) come from the .release file deploy writes.
+name: t2t
+
+x-app: &app
+  image: ${T2T_IMAGE:?set T2T_IMAGE}:${T2T_TAG:?set T2T_TAG}
+  env_file: .env
+  environment:
+    # Empty T2T_DB_CA (a local database without TLS) turns certificate checking off; leave it unset in production.
+    MYSQL_ATTR_SSL_CA: ${T2T_DB_CA-/run/t2t/db/ca.crt}
+    BROADCAST_CONNECTION: mercure
+    # Publish to the hub inside the web container directly, not out through Cloudflare and back.
+    MERCURE_URL: http://web:8000/.well-known/mercure
+    CLAMAV_HOST: clamav
+    REDIS_HOST: redis
+    CACHE_STORE: redis
+    SESSION_DRIVER: redis
+    QUEUE_CONNECTION: redis
+    INERTIA_SSR_URL: http://ssr:13714
+    SCOUT_DRIVER: meilisearch
+    MEILISEARCH_HOST: http://meilisearch:7700
+  volumes:
+    - storage:/app/storage/app
+    - ./secrets/db:/run/t2t/db:ro
+  depends_on:
+    redis: { condition: service_healthy }
+  restart: unless-stopped
+  logging: &logs { driver: json-file, options: { max-size: 20m, max-file: "5" } }
+
+services:
+  # TLS and the front door: Cloudflare → Caddy → the web containers. Holds no state but its certificates.
+  caddy:
+    image: caddy:2.10-alpine
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      T2T_DOMAIN: ${T2T_DOMAIN:?set T2T_DOMAIN}
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - ./secrets/certs:/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+    logging: *logs
+
+  # Octane on FrankenPHP. During a deploy a second copy starts on the new image; Caddy sends traffic to whichever
+  # is healthy, and the old one is stopped once the new one passes, so members see no downtime.
+  web:
+    <<: *app
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
+
+  # Queues. Given time to finish the job in hand before a restart.
+  horizon:
+    <<: *app
+    command: ["php", "artisan", "horizon"]
+    stop_grace_period: 90s
+    healthcheck: { disable: true }
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck: { disable: true }
+
+  ssr:
+    image: ${T2T_IMAGE}-ssr:${T2T_TAG}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:13714/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging: *logs
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [redis:/data]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 10 }
+    restart: unless-stopped
+    logging: *logs
+
+  # Search. Rebuilt from the database if lost (see docs/operations/disaster-recovery.md), so not backed up.
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    environment: { MEILI_ENV: production, MEILI_MASTER_KEY: "${MEILISEARCH_KEY:?set MEILISEARCH_KEY}", MEILI_NO_ANALYTICS: "true" }
+    volumes: [meili:/meili_data]
+    restart: unless-stopped
+    logging: *logs
+
+  # Virus scanning for uploads (streamed over the network).
+  clamav:
+    image: clamav/clamav:1.4
+    volumes: [clamav:/var/lib/clamav]
+    healthcheck: { test: ["CMD", "clamdcheck.sh"], interval: 60s, retries: 3, start_period: 180s }
+    restart: unless-stopped
+    logging: *logs
+
+volumes:
+  storage:
+  redis:
+  meili:
+  clamav:
+  caddy-data:
+  caddy-config:
