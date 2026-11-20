@@ -12,7 +12,8 @@
 #     the script stops and asks first if they are installed (ALLOW_PODMAN_REMOVAL=1 to go ahead)
 #   - Docker publishes nothing to the internet: it binds to 127.0.0.1 by default, and the app listens on
 #     127.0.0.1:8088 only. Its own MySQL runs inside Docker; cPanel's MySQL isn't touched.
-#   - with CSF: turns on CSF's Docker support, and re-applies Docker's rules whenever CSF restarts
+#   - with CSF: Docker stays out of the firewall ("iptables": false); a CSF hook lets Docker's private networks
+#     reach the internet after every CSF start (nothing is opened to the outside)
 #   - creates the "t2tdeploy" user that GitHub Actions signs in as, with an SSH key just for that
 #   - Apache: adds an include for this one domain only (switch-domain); other sites' configuration is untouched
 #   - does NOT change SSH settings, the firewall's open ports, cPanel updates or any other account
@@ -139,39 +140,44 @@ if ! rpm -q docker-ce >/dev/null 2>&1; then
 	dnf -y install --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 mkdir -p /etc/docker
-cat >/etc/docker/daemon.json <<'EOF'
+# With CSF, Docker stays out of the firewall (CSF kept wiping Docker's rules on the first real server; the CSF hook
+# below adds what Docker needs). Without CSF, Docker manages its own rules as usual.
+if [ -f /etc/csf/csf.conf ]; then FW='"iptables": false, "ip6tables": false,'; else FW=''; fi
+cat >/etc/docker/daemon.json <<EOF
 {
-  "ip": "127.0.0.1",
+  "ip": "127.0.0.1", $FW
   "log-driver": "json-file",
   "log-opts": { "max-size": "20m", "max-file": "5" },
   "live-restore": true
 }
 EOF
+printf 'net.ipv4.ip_forward = 1\n' >/etc/sysctl.d/90-t2t-docker.conf
+sysctl -q -p /etc/sysctl.d/90-t2t-docker.conf
 systemctl enable docker
 systemctl restart docker
 docker version --format 'Docker {{.Server.Version}} is running.'
 
 if [ -f /etc/csf/csf.conf ]; then
 	step "CSF firewall: Docker support"
-	sed -i -E 's/^DOCKER = "0"/DOCKER = "1"/' /etc/csf/csf.conf
-	# CSF's Docker support covers only the default network (docker0, 172.17.x); the app runs on its own network
-	# (br-*, 172.18.x), so widen it, and after every CSF start let Docker's networks out and put Docker's rules back.
-	# Both firewall backends: cPanel servers often have CSF on iptables-legacy and Docker on nftables.
-	sed -i -E 's|^DOCKER_NETWORK4 = .*|DOCKER_NETWORK4 = "172.16.0.0/12"|' /etc/csf/csf.conf
+	# Docker doesn't manage the firewall here ("iptables": false above): CSF kept wiping Docker's rules (found on the
+	# first real server). CSF's hook adds what Docker needs after every start: its private networks (172.16.0.0/12)
+	# may reach the internet; nothing is opened to the outside. Both backends: CSF is often on iptables-legacy.
 	if [ -f /etc/csf/csfpost.sh ] && grep -q 't2t-docker' /etc/csf/csfpost.sh; then
-		sed -i '/t2t-docker/,/^systemctl is-active --quiet docker && systemctl restart docker$/d' /etc/csf/csfpost.sh
+		# Replace an earlier version of this hook (everything from its marker to the end of the file).
+		sed -i '/t2t-docker/,$d' /etc/csf/csfpost.sh
 	fi
 	[ -s /etc/csf/csfpost.sh ] || echo '#!/bin/bash' >/etc/csf/csfpost.sh
 	chmod 700 /etc/csf/csfpost.sh
 	cat >>/etc/csf/csfpost.sh <<'EOF'
-# t2t-docker (Team to Team Referrals): after CSF starts, let Docker's private networks (br-*) reach the internet
-# and put Docker's own rules back.
+# t2t-docker (Team to Team Referrals): Docker doesn't manage the firewall here ("iptables": false), so after CSF
+# starts: let Docker's private networks (172.16.0.0/12) reach the internet. Nothing is opened to the outside.
 for IPT in iptables-legacy iptables; do
 	command -v $IPT >/dev/null || continue
-	$IPT -I FORWARD -i br+ -j ACCEPT
-	$IPT -I FORWARD -o br+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	$IPT -I FORWARD -s 172.16.0.0/12 -j ACCEPT
+	$IPT -I FORWARD -d 172.16.0.0/12 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	$IPT -t nat -C POSTROUTING -s 172.16.0.0/12 ! -d 172.16.0.0/12 -j MASQUERADE 2>/dev/null ||
+		$IPT -t nat -A POSTROUTING -s 172.16.0.0/12 ! -d 172.16.0.0/12 -j MASQUERADE
 done
-systemctl is-active --quiet docker && systemctl restart docker
 EOF
 	csf -r >/dev/null 2>&1 || true
 fi
