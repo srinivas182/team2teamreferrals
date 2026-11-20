@@ -76,6 +76,8 @@ final class PlatformServiceProvider extends ServiceProvider
             $s->command('t2t:reports')->everyFifteenMinutes()->withoutOverlapping()->onOneServer(); // scheduled reports
         });
         $this->app->make(ApplyProviderSettings::class)();
+        // Queue workers boot once and run for hours: apply the saved providers before each job too.
+        \Illuminate\Support\Facades\Queue::before(fn () => ApplyProviderSettings::refresh($this->app));
         Event::listen(\App\Domains\Seo\Events\PublicUrlsChanged::class, Cdn\PurgeCdn::class);
         $this->loadRoutesFrom(__DIR__.'/routes.php');
 

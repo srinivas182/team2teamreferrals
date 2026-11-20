@@ -144,3 +144,22 @@ it('resets for launch: clears members, teams, referrals and the demo; keeps the 
         ->and($real->fresh()->status)->toBe('live');
     expect(Illuminate\Support\Facades\DB::table('activity_log')->where('event', 'launch-reset')->exists())->toBeTrue();
 });
+
+it('uses an email provider saved in Admin on the next request and the next queued job, without a restart', function () {
+    // Long-running processes (Octane workers, queue workers) booted before Brevo was saved.
+    expect(config('mail.default'))->not->toBe('brevo');
+    $mailer = app('mail.manager')->mailer();
+    $this->actingAs(kitAdmin())->put('/admin/system/email', ['driver' => 'brevo', 'from_address' => 'hello@example.com', 'from_name' => 'T2T', 'fields' => ['login' => '9a1b2c001@smtp-brevo.com', 'smtp_key' => 'xsmtpsib-secret']])
+        ->assertSessionHasNoErrors();
+    config(['mail.default' => 'array']); // as the worker's boot-time config would still say
+
+    // Octane: before each request.
+    (new App\Domains\Platform\Providers\ReapplyProviderSettings)->handle(new Laravel\Octane\Events\RequestReceived(app(), app(), Illuminate\Http\Request::create('/')));
+    expect(config('mail.default'))->toBe('brevo')->and(config('mail.from.address'))->toBe('hello@example.com')
+        ->and(app('mail.manager')->mailer())->not->toBe($mailer); // rebuilt with the new settings
+
+    // Queue workers: before each job.
+    config(['mail.default' => 'array']);
+    event(new Illuminate\Queue\Events\JobProcessing('redis', Mockery::mock(Illuminate\Contracts\Queue\Job::class)->shouldIgnoreMissing()));
+    expect(config('mail.default'))->toBe('brevo');
+});

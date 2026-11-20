@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Provider settings take effect straight away
+1. An email or storage provider saved in Admin → System is now used from the next request and the next queued job. Before, the app's long-running processes kept the settings they started with until the next restart or deploy (found on the cPanel server: Brevo was saved, but the test email still went to the log).
+
+Test: tests/Feature/Platform/GoLiveKitTest.php.
+
 ### Faster pull-request checks
 1. Lighthouse (page speed) runs on a pull request only when what public visitors see changes: public pages, shared components, styles, the build, or the SEO and page code. Admin, member-portal, server and deploy work skips it.
 2. On pull requests it checks one page of each kind (9 on desktop, 5 on mobile), and desktop and mobile run side by side. The speed targets are unchanged.
