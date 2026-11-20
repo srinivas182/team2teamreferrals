@@ -8,7 +8,8 @@
 #   bash server-setup-cpanel.sh undo-domain <cPanel user> <domain>    puts the domain back to its cPanel website
 #
 # What it changes, and what it leaves alone:
-#   - installs Docker CE beside Podman (cPanel's ea-podman keeps working; only Podman's "docker" shim is replaced)
+#   - installs Docker CE. On EL8 this replaces Podman and cPanel's ea-podman (they share a package Docker replaces):
+#     the script stops and asks first if they are installed (ALLOW_PODMAN_REMOVAL=1 to go ahead)
 #   - Docker publishes nothing to the internet: it binds to 127.0.0.1 by default, and the app listens on
 #     127.0.0.1:8088 only. Its own MySQL runs inside Docker; cPanel's MySQL isn't touched.
 #   - with CSF: turns on CSF's Docker support, and re-applies Docker's rules whenever CSF restarts
@@ -119,21 +120,23 @@ dnf -y -q install rsync python3 openssl curl util-linux >/dev/null
 step "Docker"
 # Docker itself, not Podman's look-alike "docker" command (which answers "docker version" with Podman's version).
 if ! rpm -q docker-ce >/dev/null 2>&1; then
-	# Podman stays: cPanel's ea-podman (containers that cPanel accounts can run) needs it. Only its "docker" shim
-	# goes, because Docker's own docker command replaces it. Podman then uses the runc that comes with Docker.
 	if [ -n "$(podman ps -aq 2>/dev/null)" ] || compgen -G '/home/*/ea-podman.d/*' >/dev/null; then
-		echo "Note: Podman containers exist on this server; they are kept and keep working."
+		echo "Podman containers exist on this server; installing Docker would remove Podman. Stopping; ask for help."
+		exit 1
 	fi
 	dnf -y -q install dnf-plugins-core crun
 	dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 	dnf -y -q remove podman-docker || true
-	# Protected: if installing Docker would remove Podman or ea-podman, dnf stops instead and nothing changes.
-	dnf -y install --allowerasing --setopt=protected_packages=podman,ea-podman,podman-plugins \
-		docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-	if rpm -q ea-podman >/dev/null 2>&1 && ! rpm -q podman >/dev/null 2>&1; then
-		echo "Podman went missing; stopping. Reinstall it with: dnf install podman"
-		exit 1
+	# Docker's containerd.io replaces the runc package that Podman (and cPanel's ea-podman) need, so dnf removes them.
+	# Show what would change and stop if they would go, unless ALLOW_PODMAN_REMOVAL=1 (nothing on the server uses them).
+	if rpm -q podman >/dev/null 2>&1 && [ "${ALLOW_PODMAN_REMOVAL:-}" != 1 ]; then
+		if dnf install --assumeno --allowerasing docker-ce docker-ce-cli containerd.io 2>&1 | grep -qE '^ *(podman|ea-podman) '; then
+			echo "Installing Docker would remove Podman and cPanel's ea-podman. If no account uses ea-podman containers"
+			echo "(ls -d /home/*/ea-podman.d shows nothing), run again with ALLOW_PODMAN_REMOVAL=1 in front."
+			exit 1
+		fi
 	fi
+	dnf -y install --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 mkdir -p /etc/docker
 cat >/etc/docker/daemon.json <<'EOF'
@@ -210,7 +213,8 @@ systemctl enable --now t2t-watch.timer t2t-backup.timer t2t-restore-drill.timer 
 step "Done. Collecting what to put in GitHub"
 IP=$(tr -d '[:space:]' </var/cpanel/mainip 2>/dev/null || true)
 [ -n "$IP" ] || IP=$(hostname -I | awk '{print $1}')
-SSHPORT=$(sshd -T 2>/dev/null | awk '/^port / {print $2; exit}')
+# awk reads everything (no early exit): stopping sshd's output early fails the pipeline.
+SSHPORT=$(sshd -T 2>/dev/null | awk '/^port / && !p {print $2; p=1}' || true)
 SSHPORT=${SSHPORT:-22}
 HOSTKEY=$(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)
 if [ "$SSHPORT" = 22 ]; then KNOWN="$IP $HOSTKEY"; else KNOWN="[$IP]:$SSHPORT $HOSTKEY"; fi
