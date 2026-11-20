@@ -8,7 +8,7 @@
 #   bash server-setup-cpanel.sh undo-domain <cPanel user> <domain>    puts the domain back to its cPanel website
 #
 # What it changes, and what it leaves alone:
-#   - installs Docker CE (replacing the Podman "docker" shim if present, only when no Podman containers exist)
+#   - installs Docker CE beside Podman (cPanel's ea-podman keeps working; only Podman's "docker" shim is replaced)
 #   - Docker publishes nothing to the internet: it binds to 127.0.0.1 by default, and the app listens on
 #     127.0.0.1:8088 only. Its own MySQL runs inside Docker; cPanel's MySQL isn't touched.
 #   - with CSF: turns on CSF's Docker support, and re-applies Docker's rules whenever CSF restarts
@@ -116,16 +116,21 @@ dnf -y -q install rsync python3 openssl curl util-linux >/dev/null
 
 step "Docker"
 if ! docker version --format '{{.Server.Version}}' 2>/dev/null | grep -qE '^[0-9]'; then
-	if command -v podman >/dev/null && [ -n "$(podman ps -aq 2>/dev/null)" ]; then
-		echo "Podman containers exist on this server (podman ps -a). Not replacing Podman; ask for help."
-		exit 1
+	# Podman stays: cPanel's ea-podman (containers that cPanel accounts can run) needs it. Only its "docker" shim
+	# goes, because Docker's own docker command replaces it. Podman then uses the runc that comes with Docker.
+	if [ -n "$(podman ps -aq 2>/dev/null)" ] || compgen -G '/home/*/ea-podman.d/*' >/dev/null; then
+		echo "Note: Podman containers exist on this server; they are kept and keep working."
 	fi
-	rpm -q ea-podman >/dev/null 2>&1 && { echo "cPanel's ea-podman is installed (used by some cPanel features). Not replacing it; ask for help."; exit 1; }
-	dnf -y -q install dnf-plugins-core
+	dnf -y -q install dnf-plugins-core crun
 	dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 	dnf -y -q remove podman-docker || true
-	# --allowerasing replaces Podman's runc with Docker's containerd; nothing else on a cPanel server uses them.
-	dnf -y install --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+	# Protected: if installing Docker would remove Podman or ea-podman, dnf stops instead and nothing changes.
+	dnf -y install --allowerasing --setopt=protected_packages=podman,ea-podman,podman-plugins \
+		docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+	if rpm -q ea-podman >/dev/null 2>&1 && ! rpm -q podman >/dev/null 2>&1; then
+		echo "Podman went missing; stopping. Reinstall it with: dnf install podman"
+		exit 1
+	fi
 fi
 mkdir -p /etc/docker
 cat >/etc/docker/daemon.json <<'EOF'
