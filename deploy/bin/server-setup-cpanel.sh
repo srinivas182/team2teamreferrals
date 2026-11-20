@@ -12,7 +12,8 @@
 #     the script stops and asks first if they are installed (ALLOW_PODMAN_REMOVAL=1 to go ahead)
 #   - Docker publishes nothing to the internet: it binds to 127.0.0.1 by default, and the app listens on
 #     127.0.0.1:8088 only. Its own MySQL runs inside Docker; cPanel's MySQL isn't touched.
-#   - with CSF: turns on CSF's Docker support, and re-applies Docker's rules whenever CSF restarts
+#   - with CSF: Docker stays out of the firewall ("iptables": false); a CSF hook lets Docker's private networks
+#     reach the internet after every CSF start (nothing is opened to the outside)
 #   - creates the "t2tdeploy" user that GitHub Actions signs in as, with an SSH key just for that
 #   - Apache: adds an include for this one domain only (switch-domain); other sites' configuration is untouched
 #   - does NOT change SSH settings, the firewall's open ports, cPanel updates or any other account
@@ -139,32 +140,55 @@ if ! rpm -q docker-ce >/dev/null 2>&1; then
 	dnf -y install --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 mkdir -p /etc/docker
-cat >/etc/docker/daemon.json <<'EOF'
+# With CSF, Docker stays out of the firewall (CSF kept wiping Docker's rules on the first real server; the CSF hook
+# below adds what Docker needs). Without CSF, Docker manages its own rules as usual.
+if [ -f /etc/csf/csf.conf ]; then FW='"iptables": false, "ip6tables": false,'; else FW=''; fi
+cat >/etc/docker/daemon.json <<EOF
 {
-  "ip": "127.0.0.1",
+  "ip": "127.0.0.1", $FW
   "log-driver": "json-file",
   "log-opts": { "max-size": "20m", "max-file": "5" },
   "live-restore": true
 }
 EOF
+printf 'net.ipv4.ip_forward = 1\n' >/etc/sysctl.d/90-t2t-docker.conf
+sysctl -q -p /etc/sysctl.d/90-t2t-docker.conf
 systemctl enable docker
 systemctl restart docker
 docker version --format 'Docker {{.Server.Version}} is running.'
 
 if [ -f /etc/csf/csf.conf ]; then
 	step "CSF firewall: Docker support"
-	sed -i -E 's/^DOCKER = "0"/DOCKER = "1"/' /etc/csf/csf.conf
-	# CSF flushes Docker's network rules when it restarts; Docker puts them back (containers keep running).
-	touch /etc/csf/csfpost.sh
+	# Docker doesn't manage the firewall here ("iptables": false above): CSF kept wiping Docker's rules (found on the
+	# first real server). CSF's hook adds what Docker needs after every start: its private networks (172.16.0.0/12)
+	# may reach the internet; nothing is opened to the outside. Both backends: CSF is often on iptables-legacy.
+	if [ -f /etc/csf/csfpost.sh ] && grep -q 't2t-docker' /etc/csf/csfpost.sh; then
+		# Replace an earlier version of this hook (everything from its marker to the end of the file).
+		sed -i '/t2t-docker/,$d' /etc/csf/csfpost.sh
+	fi
+	[ -s /etc/csf/csfpost.sh ] || echo '#!/bin/bash' >/etc/csf/csfpost.sh
 	chmod 700 /etc/csf/csfpost.sh
-	grep -q 't2t-docker' /etc/csf/csfpost.sh || cat >>/etc/csf/csfpost.sh <<'EOF'
-# t2t-docker: re-apply Docker's network rules after CSF restarts (Team to Team Referrals).
-systemctl is-active --quiet docker && systemctl restart docker
+	cat >>/etc/csf/csfpost.sh <<'EOF'
+# t2t-docker (Team to Team Referrals): Docker doesn't manage the firewall here ("iptables": false), so after CSF
+# starts: let Docker's private networks (172.16.0.0/12) reach the internet. Nothing is opened to the outside.
+for IPT in iptables-legacy iptables; do
+	command -v $IPT >/dev/null || continue
+	$IPT -I FORWARD -s 172.16.0.0/12 -j ACCEPT
+	$IPT -I FORWARD -d 172.16.0.0/12 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	$IPT -t nat -C POSTROUTING -s 172.16.0.0/12 ! -d 172.16.0.0/12 -j MASQUERADE 2>/dev/null ||
+		$IPT -t nat -A POSTROUTING -s 172.16.0.0/12 ! -d 172.16.0.0/12 -j MASQUERADE
+done
 EOF
 	csf -r >/dev/null 2>&1 || true
 fi
-docker run --rm alpine:3.20 sh -c 'wget -q -O /dev/null https://www.google.com && echo "Containers can reach the internet."' ||
+# Tested on a private network like the app's (not only Docker's default one).
+docker network create t2t-nettest >/dev/null 2>&1 || true
+if docker run --rm --network t2t-nettest alpine:3.20 wget -q -O /dev/null https://www.google.com; then
+	echo "Containers can reach the internet."
+else
 	echo "Warning: containers can't reach the internet (the firewall?). The app needs this to send email and use its providers."
+fi
+docker network rm t2t-nettest >/dev/null 2>&1 || true
 
 step "Deploy user and folders"
 id "$DEPLOY_USER" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$DEPLOY_USER"
