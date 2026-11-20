@@ -1,0 +1,18 @@
+# Behind another web server (Sprint 54a, the cPanel set-up): Apache owns ports 80 and 443 and the certificate
+# (AutoSSL), and forwards the domain to Caddy on the server's own address only (127.0.0.1:8088). Caddy keeps doing
+# what Apache can't: switching between web containers with no downtime during a deploy. www → the main domain is
+# handled by the app's canonical redirect.
+{
+	auto_https off
+	servers {
+		# Apache, on the same server, reaches Caddy through Docker's private network; read right to left so a
+		# visitor can't put a fake address in front of the one Apache adds.
+		trusted_proxies static private_ranges
+		trusted_proxies_strict
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+:80 {
+	import /etc/caddy/app.caddy
+}

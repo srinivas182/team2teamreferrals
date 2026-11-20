@@ -111,8 +111,14 @@ dc "$TAG" pull --quiet web ssr
 
 STAGE=services
 dc "$TAG" up -d --no-deps redis meilisearch clamav caddy
-dc "$TAG" exec -T caddy caddy reload --config /etc/caddy/Caddyfile --force >/dev/null 2>&1 || true
+caddyfile=$(envval T2T_CADDYFILE)
+dc "$TAG" exec -T caddy caddy reload --config "/etc/caddy/${caddyfile:-Caddyfile}" --adapter caddyfile --force >/dev/null 2>&1 || true
 dc "$TAG" up -d --wait --no-deps redis
+# A database in Docker (the cPanel set-up) starts before anything needs it; DigitalOcean's is managed, outside.
+if dc "$TAG" config --services | grep -qx mysql; then
+	say "Starting the database."
+	dc "$TAG" up -d --wait --no-deps mysql
+fi
 
 STAGE=backup
 if [ "$FIRST" = false ] && [ -n "$(envval BACKUP_BUCKET)" ] && [ "${T2T_SKIP_BACKUP:-}" != 1 ]; then
@@ -178,11 +184,21 @@ skip=(--skip=scheduler)
 [ "$FIRST" = true ] && skip+=(--skip=scanner)
 for s in $(envval T2T_HEALTH_SKIP | tr ',' ' '); do skip+=("--skip=$s"); done
 domain=$(envval T2T_DOMAIN)
+# A request through Caddy: over TLS when Caddy is the front door; behind Apache, straight to Caddy's local port as
+# Apache would send it.
+bind=$(envval T2T_HTTP_BIND)
+through_caddy() {
+	if [ -n "$bind" ] && [ "$bind" != 80 ]; then
+		curl -fsS -m 10 -H "Host: $domain" -H 'X-Forwarded-Proto: https' "http://$bind/up" >/dev/null
+	else
+		curl -fsSk -m 10 --resolve "$domain:443:127.0.0.1" "https://$domain/up" >/dev/null
+	fi
+}
 ok=false
 for _ in $(seq 1 15); do
 	if [ "${T2T_REHEARSAL_FAIL_VERIFY:-}" != 1 ] \
 		&& docker exec "$(containers_of web | tail -n 1)" php artisan t2t:health "${skip[@]}" >/dev/null 2>&1 \
-		&& curl -fsSk -m 10 --resolve "$domain:443:127.0.0.1" "https://$domain/up" >/dev/null; then
+		&& through_caddy; then
 		ok=true
 		break
 	fi

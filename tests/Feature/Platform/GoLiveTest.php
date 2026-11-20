@@ -163,3 +163,21 @@ it('trusts the proxy in front for the scheme before deciding on a canonical redi
     $this->withHeaders(['X-Forwarded-Proto' => 'https', 'X-Forwarded-Port' => '443'])->get('http://teamtoteamreferrals.com/')->assertOk();
     $this->withHeaders(['X-Forwarded-Proto' => 'http'])->get('http://teamtoteamreferrals.com/')->assertRedirect('https://teamtoteamreferrals.com/');
 });
+
+it('ships a cPanel set-up whose settings cover what its compose file and scripts need', function () {
+    $env = (string) file_get_contents(base_path('deploy/env.cpanel.example'));
+    $compose = (string) file_get_contents(base_path('deploy/compose.cpanel.yaml'));
+    preg_match_all('/\$\{([A-Z0-9_]+):\?/', $compose, $m);
+    foreach ([...$m[1], 'T2T_COMPOSE_EXTRA', 'T2T_CADDYFILE', 'T2T_HTTP_BIND', 'T2T_DOMAIN', 'MEILISEARCH_KEY'] as $key) {
+        expect($env)->toMatch('/^'.$key.'=/m');
+    }
+    expect($env)->toContain('T2T_COMPOSE_EXTRA=compose.cpanel.yaml')->toContain('T2T_HTTP_BIND=127.0.0.1:8088')->toContain('SEO_INDEXABLE=false');
+    // Behind Apache, Caddy listens on the server's own address only and trusts only private addresses.
+    $proxy = (string) file_get_contents(base_path('deploy/caddy/Caddyfile.proxy'));
+    expect($proxy)->toContain('auto_https off')->toContain('trusted_proxies_strict')->toContain('import /etc/caddy/app.caddy');
+    expect((string) file_get_contents(base_path('deploy/caddy/app.caddy')))->toContain('header_up X-Forwarded-For {client_ip}');
+    $setup = base_path('deploy/bin/server-setup-cpanel.sh');
+    expect(is_executable($setup))->toBeTrue()
+        ->and((string) file_get_contents($setup))->toContain('"ip": "127.0.0.1"')->toContain('undo-domain');
+    expect(file_exists(base_path('docs/operations/cpanel-setup.md')))->toBeTrue();
+});

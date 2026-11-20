@@ -1,0 +1,37 @@
+# What every site serves (Sprint 54a): imported by Caddyfile (Caddy is the front door, with TLS) and by
+# Caddyfile.proxy (another web server, such as cPanel's Apache, is in front and handles TLS).
+encode zstd gzip
+
+# Real-time updates (Mercure, server-sent events): never buffered.
+handle /.well-known/mercure* {
+	reverse_proxy {
+		dynamic a web 8000 {
+			refresh 1s
+		}
+		flush_interval -1
+		header_up X-Forwarded-For {client_ip}
+	}
+}
+
+handle {
+	reverse_proxy {
+		# Every running web container (two for a moment during a deploy). One that refuses a connection (still
+		# starting, or stopping) is skipped for a few seconds and the request is retried on another, for up to
+		# 15 seconds; deploy.sh only stops the old one once the new one passes its health check.
+		dynamic a web 8000 {
+			refresh 1s
+		}
+		lb_policy round_robin
+		lb_try_duration 15s
+		lb_try_interval 250ms
+		fail_duration 5s
+		# The app gets exactly one address: the visitor's, as worked out from the trusted proxies in front
+		# (otherwise it would see the proxy's address, and every visitor would share one rate limit).
+		header_up X-Forwarded-For {client_ip}
+	}
+}
+
+log {
+	output stdout
+	format json
+}

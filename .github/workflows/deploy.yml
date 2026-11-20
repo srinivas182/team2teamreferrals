@@ -91,6 +91,8 @@ jobs:
     with:
       environment: staging
       host: ${{ vars.STAGING_HOST }}
+      ssh_port: ${{ vars.STAGING_SSH_PORT || '22' }}
+      ssh_user: ${{ vars.STAGING_SSH_USER || 'deploy' }}
       url: ${{ vars.STAGING_URL }}
       image: ${{ needs.images.outputs.image }}
       tag: ${{ needs.images.outputs.tag }}
@@ -107,6 +109,8 @@ jobs:
     with:
       environment: production
       host: ${{ vars.PRODUCTION_HOST }}
+      ssh_port: ${{ vars.PRODUCTION_SSH_PORT || '22' }}
+      ssh_user: ${{ vars.PRODUCTION_SSH_USER || 'deploy' }}
       url: ${{ vars.PRODUCTION_URL }}
       image: ${{ needs.images.outputs.image }}
       tag: ${{ needs.images.outputs.tag }}

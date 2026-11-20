@@ -23,11 +23,13 @@ say() { printf '%s  %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 current_tag() { if [ -f .release ]; then grep -E '^T2T_TAG=' .release | cut -d= -f2 || true; fi; }
 current_image() { if [ -f .release ]; then grep -E '^T2T_IMAGE=' .release | cut -d= -f2 || true; fi; }
 
-# docker compose for a given release tag; picks up compose.override.yaml when present (staging or the CI rehearsal).
+# docker compose for a given release tag. Adds the files named in T2T_COMPOSE_EXTRA (e.g. compose.cpanel.yaml),
+# then compose.override.yaml when present (the CI rehearsal).
 dc() {
-	local tag=$1
+	local tag=$1 f
 	shift
 	local files=(-f compose.yaml)
+	for f in $(envval T2T_COMPOSE_EXTRA | tr ',' ' '); do files+=(-f "$f"); done
 	[ -f compose.override.yaml ] && files+=(-f compose.override.yaml)
 	T2T_IMAGE=$IMAGE T2T_TAG=$tag docker compose "${files[@]}" "$@"
 }

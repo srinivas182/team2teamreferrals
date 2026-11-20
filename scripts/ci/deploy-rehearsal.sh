@@ -17,34 +17,25 @@ IMAGE=localhost:5000/t2t
 SRV=${RUNNER_TEMP:-/tmp}/srv-t2t
 export T2T_IMAGE=$IMAGE T2T_HEALTH_TIMEOUT=90
 rm -rf "$SRV" && mkdir -p "$SRV"
-cp -r "$REPO/deploy/bin" "$REPO/deploy/caddy" "$REPO/deploy/compose.yaml" "$SRV/"
+cp -r "$REPO/deploy/bin" "$REPO/deploy/caddy" "$REPO/deploy/compose.yaml" "$REPO/deploy/compose.cpanel.yaml" "$SRV/"
 cd "$SRV"
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31mREHEARSAL FAILED: %s\033[0m\n' "$*"; T2T_TAG=$(release 2>/dev/null || echo r1) docker compose -f compose.yaml -f compose.override.yaml logs --tail 80 web horizon ssr caddy 2>&1 || true; exit 1; }
-dcx() { T2T_TAG=${TAG:-r1} docker compose -f compose.yaml -f compose.override.yaml "$@"; }
+dcx() { T2T_TAG=${TAG:-r1} docker compose -f compose.yaml -f compose.cpanel.yaml -f compose.override.yaml "$@"; }
 sql() { dcx exec -T mysql mysql -ut2t -psecret -N -B t2t -e "$1" 2>/dev/null; }
 release() { grep '^T2T_TAG=' .release | cut -d= -f2; }
 web_image() { docker inspect -f '{{.Config.Image}}' "$(docker ps -q --filter label=com.docker.compose.service=web | head -n 1)"; }
 
 cat >compose.override.yaml <<'EOF'
-# Rehearsal only: a local MySQL (strict like DigitalOcean's), an S3 server standing in for Spaces, no ClamAV (too slow to
-# start in CI; it's checked on the real servers).
+# Rehearsal only: an S3 server standing in for Spaces. MySQL (strict like DigitalOcean's) and the absent virus
+# scanner come from compose.cpanel.yaml, so the cPanel set-up is rehearsed too.
 services:
-  mysql:
-    image: mysql:8.4
-    command: ["--sql-require-primary-key=ON"]
-    environment: { MYSQL_DATABASE: t2t, MYSQL_USER: t2t, MYSQL_PASSWORD: secret, MYSQL_ROOT_PASSWORD: root }
-    healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"], interval: 3s, retries: 40 }
   s3:
     # rclone's own S3 server stands in for Spaces (MinIO no longer publishes images).
     image: rclone/rclone:1.69
     command: ["serve", "s3", "/data", "--addr", ":9000", "--auth-key", "rehearsal,rehearsal-secret"]
     healthcheck: { test: ["CMD-SHELL", "nc -z 127.0.0.1 9000"], interval: 3s, retries: 40 }
-  clamav:
-    image: alpine:3.20
-    command: ["sleep", "infinity"]
-    healthcheck: { disable: true }
 EOF
 
 cat >.env <<EOF
@@ -57,6 +48,9 @@ T2T_DOMAIN=localhost
 T2T_TLS=internal
 T2T_DB_CA=
 T2T_HEALTH_SKIP=scanner
+T2T_COMPOSE_EXTRA=compose.cpanel.yaml
+T2T_CLAMAV_HOST=
+T2T_MYSQL_ROOT_PASSWORD=root
 LOG_CHANNEL=stack
 LOG_STACK=json
 DB_CONNECTION=mysql
@@ -82,9 +76,9 @@ BACKUP_PASSPHRASE=$(openssl rand -hex 20)
 ALERT_EMAIL=ops@example.com
 EOF
 
-# The "managed" database and object storage exist before the first deploy, as on DigitalOcean.
-step "Database and object storage"
-TAG=r1 dcx up -d --wait mysql s3
+# Object storage exists before the first deploy, as on DigitalOcean; the first deploy starts the database itself.
+step "Object storage"
+TAG=r1 dcx up -d --wait s3
 docker run --rm --network t2t_default -e RCLONE_CONFIG_BK_TYPE=s3 -e RCLONE_CONFIG_BK_PROVIDER=Rclone \
 	-e RCLONE_CONFIG_BK_ENDPOINT=http://s3:9000 -e RCLONE_CONFIG_BK_ACCESS_KEY_ID=rehearsal -e RCLONE_CONFIG_BK_SECRET_ACCESS_KEY=rehearsal-secret \
 	rclone/rclone:1.69 mkdir bk:t2t-backups
@@ -215,5 +209,23 @@ bin/watch.sh || fail "the health watch failed"
 bin/deploy.sh r1 || fail "deploying r1 again failed"
 { [ "$(release)" = r1 ] && [ "$(web_image)" = "$IMAGE:r1" ]; } || fail "r1 isn't live after the manual rollback"
 curl -fsSk --resolve localhost:443:127.0.0.1 https://localhost/up >/dev/null || fail "the site isn't up after the manual rollback"
+
+step "7. Behind another web server (the cPanel set-up): Caddy on 127.0.0.1:8088 only, without TLS"
+printf 'T2T_CADDYFILE=Caddyfile.proxy\nT2T_HTTP_BIND=127.0.0.1:8088\nT2T_HTTPS_BIND=127.0.0.1:8443\n' >>.env
+bin/deploy.sh r2 || fail "the deploy behind a proxy failed"
+[ "$(release)" = r2 ] || fail "r2 isn't live behind the proxy"
+# As Apache forwards it: the visitor's https in X-Forwarded-Proto, the visitor's address appended to X-Forwarded-For.
+page=$(curl -s -m 20 -o "$SRV/proxied.html" -w '%{http_code}' -H 'Host: localhost' -H 'X-Forwarded-Proto: https' \
+	-H 'X-Forwarded-For: 6.6.6.6, 203.0.113.7' http://127.0.0.1:8088/)
+{ [ "$page" = 200 ] && grep -q 'Team to Team' "$SRV/proxied.html"; } || fail "the home page didn't load behind the proxy ($page)"
+# Plain http from the proxy goes to https (the app's canonical redirect), not round in circles.
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Host: localhost' http://127.0.0.1:8088/about)" = "301 https://localhost/about" ] ||
+	fail "plain http behind the proxy didn't redirect to https once"
+# Nothing listens on the public ports any more.
+if curl -s -m 3 -o /dev/null http://127.0.0.1:80/ || curl -sk -m 3 -o /dev/null https://127.0.0.1:443/; then fail "ports 80/443 are still published"; fi
+# Caddy works out the visitor's address from the right of X-Forwarded-For, not the proxy's or a forged one.
+seen=$(TAG=r2 dcx logs --since 3m caddy 2>/dev/null | grep -o '"client_ip":"[^"]*"' | sort | uniq -c)
+grep -q '"client_ip":"203.0.113.7"' <<<"$seen" || fail "Caddy didn't see the visitor's address 203.0.113.7 behind the proxy: $seen"
+if grep -q '"client_ip":"6.6.6.6"' <<<"$seen"; then fail "Caddy believed a forged address behind the proxy"; fi
 
 printf '\n\033[32mRehearsal passed.\033[0m\n'
