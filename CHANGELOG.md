@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Faster pull-request checks
+1. Lighthouse (page speed) runs on a pull request only when what public visitors see changes: public pages, shared components, styles, the build, or the SEO and page code. Admin, member-portal, server and deploy work skips it.
+2. On pull requests it checks one page of each kind (9 on desktop, 5 on mobile), and desktop and mobile run side by side. The speed targets are unchanged.
+3. Every public page (the old full set) is checked once a week on main (`.github/workflows/lighthouse-weekly.yml`, Sunday night UTC), and can be run by hand from Actions.
+4. Screenshots, keyboard, installable-app and SEO checks run in their own job, as before.
+
 ### Go-live kit
 1. **Brevo** is an email provider option (Admin → System → Email): paste the SMTP login and SMTP key from Brevo.
 2. **Text messages on/off** (Admin → System → Text messages). Texts only go out when texting is on and Twilio is filled in. While it's off, nothing is texted and sign-up, sign-in and the getting-started checklist skip the "verify your mobile" code. Turning it on needs Twilio's details first; the change is audit-logged.
