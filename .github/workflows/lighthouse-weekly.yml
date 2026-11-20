@@ -1,0 +1,51 @@
+# The full Lighthouse set (every public page in lighthouserc.full.json and lighthouserc.mobile.full.json), once a week
+# on main. Pull requests check one page of each kind (ci.yml); this catches anything slower that got through.
+# A failed run emails whoever last changed this schedule; it can also be started by hand (Actions → Run workflow).
+name: Lighthouse weekly
+
+on:
+  schedule:
+    - cron: '23 21 * * 0' # Sundays 21:23 UTC (Monday 02:53 in India), outside busy hours
+  workflow_dispatch:
+
+concurrency:
+  group: lighthouse-weekly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.4'
+
+jobs:
+  lighthouse:
+    name: Lighthouse full set (${{ matrix.kind }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { kind: desktop, config: lighthouserc.full.json }
+          - { kind: mobile, config: lighthouserc.mobile.full.json }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '${{ env.PHP_VERSION }}', coverage: none, tools: composer:v2 }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - uses: actions/cache@v6
+        with:
+          path: vendor
+          key: vendor-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci && npm run build
+      - name: Serve the app (production mode, SQLite, one of every public page, gzip as in production)
+        run: scripts/ci/serve-app.sh
+      - name: Lighthouse budgets, every public page
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=${{ matrix.config }}
+      - name: Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: 'lighthouse-${{ matrix.kind }}', path: .lighthouseci, retention-days: 30, if-no-files-found: ignore }
