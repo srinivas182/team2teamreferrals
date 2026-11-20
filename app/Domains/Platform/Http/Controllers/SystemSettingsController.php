@@ -56,6 +56,7 @@ final class SystemSettingsController
                 'security_email' => $s->get('general.security_email'),
             ],
             'demoLink' => ['url' => app(Settings::class)->get('demo.url'), 'demoInstall' => (bool) config('app.demo_install'), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
+            'staffTwoFactor' => ['required' => \App\Domains\Identity\StaffTwoFactor::required(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'footerCredit' => [...\App\Support\FooterCredit::settings(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'email' => [...$channel('mail'), 'from_address' => $s->get('mail.from_address', (string) config('mail.from.address')), 'from_name' => $s->get('mail.from_name', (string) config('mail.from.name'))],
             'sms' => $channel('sms'),
@@ -105,6 +106,16 @@ final class SystemSettingsController
         $d = $request->validate(['enabled' => ['required', 'boolean'], 'text' => ['required_if:enabled,true', 'nullable', 'string', 'max:80'], 'url' => ['nullable', 'url:https', 'max:255']],
             ['url.url' => 'Use a full https:// address.']);
         $this->save('footer', ['footer.credit_enabled' => $d['enabled'] ? '1' : '0', 'footer.credit_text' => isset($d['text']) ? trim((string) $d['text']) : null, 'footer.credit_url' => $d['url'] ?? null], [], $request);
+
+        return back()->with('status', 'settings-saved');
+    }
+
+    /** Whether admin staff must use two-step sign-in (off only for a demo). Super admins only; logged in the audit log. */
+    public function updateStaffTwoFactor(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false, 403, 'Only a super admin can change this.');
+        $required = (bool) $request->validate(['required' => ['required', 'boolean']])['required'];
+        $this->save('security', ['security.staff_two_factor' => $required ? '1' : '0'], [], $request);
 
         return back()->with('status', 'settings-saved');
     }

@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Admin two-step sign-in can be turned off for a demo
+1. Two-step sign-in for admin staff stays required by default.
+2. A demo server can turn it off with `STAFF_TWO_FACTOR=false`.
+3. A super admin can switch it in **Admin → System → General → Admin sign-in**. The change is audit-logged, and the screen warns while it's off.
+4. The cPanel demo settings turn on the one-click demo at /demo (`DEMO_INSTALL=true`). Test: tests/Feature/Identity/StaffTwoFactorTest.php.
+
 ### Sprint 54a (part 2) — Running on a cPanel server first
 Docs: docs/operations/cpanel-setup.md. Tests: tests/Feature/Platform/GoLiveTest.php; the deploy rehearsal now also runs the cPanel set-up.
 1. The same Docker deploy kit can run on an existing cPanel/WHM server (AlmaLinux, Rocky or CloudLinux 8/9) beside its other websites:

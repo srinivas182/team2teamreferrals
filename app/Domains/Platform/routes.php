@@ -40,6 +40,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::put('system/general', [SystemSettingsController::class, 'updateGeneral'])->name('system.general');
         Route::put('system/footer-credit', [SystemSettingsController::class, 'updateFooterCredit'])->name('system.footer-credit');
         Route::put('system/demo-link', [SystemSettingsController::class, 'updateDemoLink'])->name('system.demo-link');
+        Route::put('system/staff-two-factor', [SystemSettingsController::class, 'updateStaffTwoFactor'])->name('system.staff-two-factor');
         Route::put('system/email', [SystemSettingsController::class, 'updateEmail'])->name('system.email');
         Route::put('system/modules', [SystemSettingsController::class, 'updateModules'])->name('system.modules');
         Route::put('system/{channel}', [SystemSettingsController::class, 'updateChannel'])->whereIn('channel', ['sms', 'payments', 'storage', 'cdn', 'ai', 'ai_fallback', 'video', 'analytics'])->name('system.channel');
