@@ -254,7 +254,7 @@ it('hides everything when the module is off or the category is switched off, and
     $base = ['name' => 'Mortgage lenders', 'singular' => 'mortgage lender', 'licensed' => true, 'license_label' => 'NMLS ID', 'schema_type' => 'FinancialService', 'sort' => 1, 'active' => true];
     $this->put('/admin/partners/categories/'.$mortgage->id, [...$base, 'license_lookup_url' => 'http://bad.example'])->assertSessionHasErrors('license_lookup_url');
     $this->put('/admin/partners/categories/'.$mortgage->id, [...$base, 'faq' => [['q' => 'Do I need pre-approval?', 'a' => 'Yes, most sellers expect one.']]])->assertSessionHas('status', 'partner-category-saved');
-    expect($mortgage->fresh()?->faq)->toBe([['q' => 'Do I need pre-approval?', 'a' => 'Yes, most sellers expect one.']]);
+    expect($mortgage->fresh()?->faq)->toEqual([['q' => 'Do I need pre-approval?', 'a' => 'Yes, most sellers expect one.']]); // MySQL's JSON columns reorder keys
     $this->post('/admin/partners/categories', ['name' => 'Pest control', 'singular' => 'pest control company', 'schema_type' => 'LocalBusiness', 'active' => true])->assertSessionHasNoErrors();
     expect(PartnerCategory::where('slug', 'pest-control')->exists())->toBeTrue();
     $this->actingAs($this->member)->post('/admin/partners/categories', ['name' => 'X', 'singular' => 'x', 'schema_type' => 'LocalBusiness'])->assertForbidden();

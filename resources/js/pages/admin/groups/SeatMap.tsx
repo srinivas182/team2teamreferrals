@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Plus, Send, Trash2 } from 'lucide-react';
+import { Plus, Send, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { CityPicker } from '@/components/CityPicker';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -11,6 +11,7 @@ import { Segmented } from '@/components/ui/data';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
+import { xsrf } from '@/lib/xsrf';
 import type { Seo } from '@/types/seo';
 
 type Point = {
@@ -24,6 +25,128 @@ type Point = {
     backup: string | null;
     waitlist: number;
 };
+type ListRow = {
+    line: number;
+    email: string;
+    name: string;
+    city: string;
+    state: string;
+    city_id: number | null;
+    place: string | null;
+    seat: 'open' | 'taken' | 'invited' | null;
+    problem: string | null;
+};
+const seatLabel = { open: 'Open seat', taken: 'Taken: backup or waitlist', invited: 'Already invited' } as const;
+
+/** Invite from a list you already have: upload a CSV, check what each row will do, then send the ones that are fine. */
+function InviteFromList({ basePath }: { basePath: string }) {
+    const [list, setList] = useState<ListRow[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const send = useForm({ rows: [] as { email: string; city_id: number }[] });
+    const good = (list ?? []).filter((r) => r.problem === null && r.city_id !== null);
+    const upload = async (file: File) => {
+        setBusy(true);
+        setError(null);
+        const body = new FormData();
+        body.append('file', file);
+        try {
+            const res = await fetch(`${basePath}/invites/preview`, {
+                method: 'POST',
+                body,
+                headers: { 'X-XSRF-TOKEN': xsrf(), Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+            const data = (await res.json()) as { rows?: ListRow[]; error?: string | null; message?: string };
+            if (!res.ok) setError(data.message ?? 'The file could not be read.');
+            else if (data.error) setError(data.error);
+            else setList(data.rows ?? []);
+        } catch {
+            setError('The file could not be uploaded. Try again.');
+        } finally {
+            setBusy(false);
+        }
+    };
+    return (
+        <div className="space-y-3 border-t border-line pt-3">
+            <h3 className="text-sm font-semibold">Or upload a list</h3>
+            <p className="text-xs text-muted">
+                A CSV file (from Excel or Google Sheets: File → Download → CSV) with a first row naming the columns: <code>email</code>,{' '}
+                <code>city</code>, <code>state</code>, and optionally <code>name</code>. Up to 500 rows. Nothing is sent until you check the list.
+            </p>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-medium hover:bg-bg">
+                <Upload className="size-4" aria-hidden /> {busy ? 'Reading…' : 'Choose a CSV file'}
+                <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="sr-only"
+                    onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        if (f) void upload(f);
+                    }}
+                />
+            </label>
+            {error && <Alert tone="danger">{error}</Alert>}
+            {list && (
+                <div className="space-y-2">
+                    <p className="text-sm" aria-live="polite">
+                        {good.length} ready to invite{list.length - good.length > 0 ? `, ${list.length - good.length} to fix` : ''}.
+                    </p>
+                    <div className="max-h-80 overflow-y-auto rounded-md border border-line">
+                        <table className="w-full text-xs">
+                            <thead className="sticky top-0 bg-surface text-left text-muted">
+                                <tr>
+                                    <th className="px-2 py-1.5">Line</th>
+                                    <th className="px-2 py-1.5">Email</th>
+                                    <th className="px-2 py-1.5">Seat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {list.map((r) => (
+                                    <tr key={r.line} className="border-t border-line align-top">
+                                        <td className="px-2 py-1.5 text-muted tabular">{r.line}</td>
+                                        <td className="px-2 py-1.5">
+                                            <div className="break-all">{r.email || '—'}</div>
+                                            {r.name && <div className="text-muted">{r.name}</div>}
+                                        </td>
+                                        <td className="px-2 py-1.5">
+                                            <div>{r.place ?? [r.city, r.state].filter(Boolean).join(', ')}</div>
+                                            {r.problem ? (
+                                                <span className="text-danger dark:text-[#FDA4AF]">{r.problem}</span>
+                                            ) : (
+                                                r.seat && (
+                                                    <span className={r.seat === 'open' ? 'text-success' : 'text-muted'}>{seatLabel[r.seat]}</span>
+                                                )
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            size="sm"
+                            disabled={good.length === 0}
+                            loading={send.processing}
+                            onClick={() => {
+                                send.transform(() => ({ rows: good.map((r) => ({ email: r.email, city_id: r.city_id as number })) }));
+                                send.post(`${basePath}/invites`, { preserveScroll: true, onSuccess: () => setList(null) });
+                            }}
+                        >
+                            <Send /> Send {good.length} invitation{good.length === 1 ? '' : 's'}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setList(null)}>
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 type Props = {
     group: { slug: string; name: string; territory: string };
     basePath: string;
@@ -223,6 +346,7 @@ export default function SeatMap({ group, basePath, points, counts, status, note,
                             <Send /> Send {ready.length || ''} invitation{ready.length === 1 ? '' : 's'}
                         </Button>
                     </div>
+                    <InviteFromList basePath={basePath} />
                 </Card>
             </div>
         </AdminLayout>

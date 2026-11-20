@@ -22,7 +22,7 @@ final class PhoneVerificationController
     public function show(Request $request): Response|RedirectResponse
     {
         $user = $this->user($request);
-        if ($user->hasVerifiedPhone()) {
+        if ($user->hasVerifiedPhone() || ! \App\Support\Sms\Texting::on()) {
             return redirect()->intended(route('app.home'));
         }
 

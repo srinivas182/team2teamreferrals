@@ -59,7 +59,7 @@ final class SystemSettingsController
             'staffTwoFactor' => ['required' => \App\Domains\Identity\StaffTwoFactor::required(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'footerCredit' => [...\App\Support\FooterCredit::settings(), 'canEdit' => request()->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false],
             'email' => [...$channel('mail'), 'from_address' => $s->get('mail.from_address', (string) config('mail.from.address')), 'from_name' => $s->get('mail.from_name', (string) config('mail.from.name'))],
-            'sms' => $channel('sms'),
+            'sms' => [...$channel('sms'), 'texting' => ['on' => \App\Support\Sms\Texting::on(), 'configured' => \App\Support\Sms\Texting::configured()]],
             'payments' => $channel('payments'),
             'storage' => $channel('storage'),
             'cdn' => $channel('cdn'),
@@ -112,6 +112,18 @@ final class SystemSettingsController
         }
         $this->save('footer', ['footer.credit_enabled' => $d['enabled'] ? '1' : '0', 'footer.credit_text' => isset($d['text']) ? trim((string) $d['text']) : null, 'footer.credit_url' => $d['url'] ?? null,
             'footer.credit_link_text' => $linkText !== '' ? $linkText : null], [], $request);
+
+        return back()->with('status', 'settings-saved');
+    }
+
+    /** Texting on or off (Admin → System → Text messages). On needs a working provider; logged in the audit log. */
+    public function updateTexting(Request $request): RedirectResponse
+    {
+        $on = (bool) $request->validate(['on' => ['required', 'boolean']])['on'];
+        if ($on && ! \App\Support\Sms\Texting::configured()) {
+            throw ValidationException::withMessages(['on' => 'Set up Twilio first (provider, then Save), then turn texting on.']);
+        }
+        $this->save('sms', ['sms.enabled' => $on ? '1' : '0'], [], $request);
 
         return back()->with('status', 'settings-saved');
     }

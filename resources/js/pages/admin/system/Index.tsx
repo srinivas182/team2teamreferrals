@@ -22,6 +22,7 @@ import {
 import { router } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { HealthBadge, type Health } from '@/components/admin/HealthBadge';
+import { Badge } from '@/components/ui/badge';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -54,7 +55,7 @@ type Props = {
         security_email: string | null;
     };
     email: Channel & { from_address: string; from_name: string };
-    sms: Channel;
+    sms: Channel & { texting: { on: boolean; configured: boolean } };
     payments: Channel;
     storage: Channel;
     cdn: Channel;
@@ -150,6 +151,37 @@ function initialFields(channel: Channel) {
     const out: Record<string, Record<string, string>> = {};
     for (const d of channel.drivers) out[d.key] = Object.fromEntries(d.fields.map((f) => [f.name, f.value ?? '']));
     return out;
+}
+
+/** Texting on or off. Off: nothing is texted, sign-up skips the mobile code, and alerts go by email and in the app. */
+function TextingSwitch({ texting }: { texting: { on: boolean; configured: boolean } }) {
+    const form = useForm({ on: !texting.on });
+    return (
+        <Card className="mb-6 max-w-5xl p-6">
+            <div className="flex flex-wrap items-start gap-4">
+                <div className="min-w-0 flex-1">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold">
+                        Texting {texting.on ? <Badge tone="success">On</Badge> : <Badge>Off</Badge>}
+                    </h2>
+                    <p className="mt-1 text-sm text-muted">
+                        {texting.on
+                            ? 'Verification codes and urgent referral alerts go by text. New members confirm their mobile with a code.'
+                            : 'Nothing is texted. New members aren’t asked for a mobile code, and alerts reach them by email, in the app and by push.'}
+                        {!texting.configured && ' To turn it on, choose Twilio below, fill it in and save.'}
+                    </p>
+                    {form.errors.on && <p className="mt-2 text-sm text-danger">{form.errors.on}</p>}
+                </div>
+                <Button
+                    variant={texting.on ? 'secondary' : 'primary'}
+                    disabled={!texting.on && !texting.configured}
+                    loading={form.processing}
+                    onClick={() => form.put('/admin/system/texting', { preserveScroll: true })}
+                >
+                    {texting.on ? 'Turn texting off' : 'Turn texting on'}
+                </Button>
+            </div>
+        </Card>
+    );
 }
 
 function ProviderForm({
@@ -530,6 +562,7 @@ export default function SystemSettings({
                 </div>
             )}
 
+            {tab === 'sms' && <TextingSwitch texting={sms.texting} />}
             {tab === 'sms' && (
                 <div className="grid max-w-5xl gap-6 lg:grid-cols-[1fr_340px]">
                     <Card className="p-6">

@@ -123,7 +123,7 @@ final class DemoWorkspace
                 // industry pages show them. Never on the real site, where an industry goes live only after a
                 // compliance sign-off (Admin → Industries).
                 $g->industry->forceFill(['status' => 'live', 'compliance_approved_at' => $g->industry->compliance_approved_at ?? now(),
-                    'compliance_note' => $g->industry->compliance_note ?? 'Demo install: sample network, not a compliance sign-off.'])->save();
+                    'compliance_note' => $g->industry->compliance_note ?? \App\Domains\Platform\Console\LaunchResetCommand::DEMO_NOTE])->save();
                 $g->forceFill(['status' => 'live', 'is_private' => false])->save();
             }
             $g->owners()->syncWithoutDetaching([$owner->id]);

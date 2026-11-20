@@ -30,6 +30,7 @@ it('rejects short passwords, invalid phones and unaccepted terms', function () {
 });
 
 it('logs in with a password and lands on the portal', function () {
+    textingOn(); // the checklist includes verifying the mobile only while texting is on
     $user = User::factory()->create();
     $this->post('/login', ['email' => $user->email, 'password' => 'correct horse battery staple'])->assertRedirect('/app');
     $this->assertAuthenticatedAs($user);

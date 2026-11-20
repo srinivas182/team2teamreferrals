@@ -103,6 +103,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
             Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
             Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
             Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
+            Route::post("{$prefix}/{group}/invites/preview", [App\Domains\Network\Seats\Http\SeatController::class, 'previewInvites'])->middleware('throttle:60,60')->name("seats.invite-preview.{$who}");
         });
     }
 });

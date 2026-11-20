@@ -58,7 +58,8 @@ final class IdentityServiceProvider extends ServiceProvider
             'seo' => SeoData::private($title)->toArray(),
         ]);
         Fortify::loginView($page('auth/Login', 'Log in'));
-        Fortify::registerView($page('auth/Register', 'Claim your city'));
+        // Whether texting is on decides what sign-up says about the mobile number; read on every request.
+        Fortify::registerView(fn (Request $request) => $page('auth/Register', 'Claim your city', ['texting' => \App\Support\Sms\Texting::on()])($request));
         Fortify::requestPasswordResetLinkView($page('auth/ForgotPassword', 'Reset your password'));
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [
             'email' => (string) $request->query('email'),
@@ -136,7 +137,9 @@ final class IdentityServiceProvider extends ServiceProvider
         Event::listen(Registered::class, function (Registered $event): void {
             if ($event->user instanceof User) {
                 $event->user->assignRole(Permissions::MEMBER);
-                app(Phone\PhoneVerifier::class)->send($event->user);
+                if (\App\Support\Sms\Texting::on()) {
+                    app(Phone\PhoneVerifier::class)->send($event->user);
+                }
                 // Joined through a team's invite link: remember the inviter for the reward.
                 \App\Domains\Network\Invites\InviteRewards::attach($event->user, session('invite_code'));
             }

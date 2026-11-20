@@ -60,11 +60,11 @@ it('measures activation from sign-up to first accepted referral, leaving staff, 
     [, $e] = memberWithTeam();
     Illuminate\Support\Facades\Artisan::call('t2t:catalogue:sync');
     $group = (int) DB::table('groups')->orderBy('id')->value('id');
-    DB::statement('PRAGMA defer_foreign_keys = ON'); // placeholder seat ids; only the steps matter here
+    deferForeignKeys(); // placeholder seat ids; only the steps matter here
     foreach ([$c, $d, $e] as $t) {
         DB::table('seat_applications')->insert(['group_id' => $group, 'team_id' => $t->id, 'seat_id' => 1, 'status' => 'approved', 'decided_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
     }
-    DB::statement('PRAGMA defer_foreign_keys = ON');
+    deferForeignKeys();
     $ref = fn (Team $from, ?string $accepted) => DB::table('referrals')->insert(['ulid' => strtolower((string) Str::ulid()), 'group_id' => $group, 'seat_id' => 1, 'sender_team_id' => $from->id,
         'sender_user_id' => $from->leader_id, 'routed_to' => 'primary', 'consent_method' => 'verbal', 'status' => $accepted ? 'accepted' : 'sent', 'client_name' => 'X', 'answers' => '{}', 'consent_at' => now(), 'consent_text' => 'Yes', 'respond_by' => now()->addDay(),
         'accepted_at' => $accepted, 'created_at' => now(), 'updated_at' => now()]);

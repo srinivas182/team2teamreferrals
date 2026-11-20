@@ -93,8 +93,8 @@ it('runs the scheduler heartbeat every minute', function () {
 });
 
 it('gives every table a primary key, which DigitalOcean Managed MySQL requires', function () {
-    $tables = collect(DB::select("select name from sqlite_master where type = 'table' and name not like 'sqlite_%'"))->pluck('name');
-    $without = $tables->filter(fn ($t) => collect(DB::select("pragma table_info(\"{$t}\")"))->every(fn ($c) => (int) $c->pk === 0))->values()->all();
+    $tables = collect(tableNames());
+    $without = $tables->reject(fn ($t) => collect(Illuminate\Support\Facades\Schema::getIndexes($t))->contains('primary', true))->values()->all();
     expect($tables->count())->toBeGreaterThan(50)->and($without)->toBe([]);
 });
 
