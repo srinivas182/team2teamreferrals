@@ -60,18 +60,17 @@ https://teamtoteamreferrals.com. To put the old website back: the same command w
 
 ## 6. Your admin login, and the demo
 
-In **WHM → Terminal**:
+In **WHM → Terminal** (use the address of whoever will run the demos):
 ```
-sudo -u t2tdeploy /srv/t2t/bin/artisan.sh t2t:super-admin you@yourcompany.com --show-link
+sudo -u t2tdeploy /srv/t2t/bin/artisan.sh t2t:super-admin chris@teamtoteamreferrals.com --show-link
 ```
-Open the link it prints, set a password, sign in, and set up two-factor authentication when asked.
+Open the link it prints and set a password. With `STAFF_TWO_FACTOR=false` (the demo default) two-step sign-in
+isn't required; turn it on in **Admin → System → General → Admin sign-in** before going live.
 
-The demo workspace for prospects (sample teams, referrals and earnings that keep themselves fresh; it never sends
-email or texts):
-```
-sudo -u t2tdeploy /srv/t2t/bin/artisan.sh t2t:demo create --force
-```
-It prints the demo logins. `t2t:demo reset` removes it.
+The demo for prospects: with `DEMO_INSTALL=true` (the demo default), anyone can open
+https://teamtoteamreferrals.com/demo and enter with one click, as a team or as a network owner. Sample teams,
+referrals and earnings; nothing is ever sent; it resets every hour. Nothing to set up. (`t2t:demo create --force`
+creates it straight away instead of on the first visit.)
 
 ## 7. Monitoring
 

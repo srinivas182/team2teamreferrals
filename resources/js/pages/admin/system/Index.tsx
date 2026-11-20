@@ -43,6 +43,7 @@ type Props = {
     tab: (typeof tabs)[number][0];
     footerCredit: { enabled: boolean; text: string; url: string | null; canEdit: boolean };
     demoLink: { url: string | null; demoInstall: boolean; canEdit: boolean };
+    staffTwoFactor: { required: boolean; canEdit: boolean };
     general: {
         company_name: string | null;
         support_email: string | null;
@@ -241,6 +242,7 @@ export default function SystemSettings({
     general,
     footerCredit,
     demoLink,
+    staffTwoFactor,
     email,
     sms,
     payments,
@@ -270,6 +272,7 @@ export default function SystemSettings({
     });
     const credit = useForm({ enabled: footerCredit.enabled, text: footerCredit.text, url: footerCredit.url ?? '' });
     const demo = useForm({ url: demoLink.url ?? '' });
+    const twoStep = useForm({ required: staffTwoFactor.required });
     return (
         <AdminLayout title="System settings">
             <SeoHead seo={seo} />
@@ -388,6 +391,44 @@ export default function SystemSettings({
                             </div>
                             {footerCredit.canEdit && (
                                 <Button type="submit" loading={credit.processing}>
+                                    Save
+                                </Button>
+                            )}
+                        </fieldset>
+                    </form>
+                </Card>
+            )}
+            {tab === 'general' && (
+                <Card className="mt-6 max-w-3xl p-6">
+                    <h2 className="text-lg font-semibold">Admin sign-in</h2>
+                    <p className="mt-1 text-sm text-muted">
+                        Two-step sign-in protects the admin area if a staff password is stolen. Turn it off only for a demo, and back on before going
+                        live. {staffTwoFactor.canEdit ? '' : 'Only a super admin can change it.'}
+                    </p>
+                    <form
+                        className="mt-4 space-y-4"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            twoStep.put('/admin/system/staff-two-factor', { preserveScroll: true });
+                        }}
+                    >
+                        <fieldset disabled={!staffTwoFactor.canEdit} className="space-y-4">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={twoStep.data.required}
+                                    onChange={(e) => twoStep.setData('required', e.target.checked)}
+                                />{' '}
+                                Require two-step sign-in for admin staff (recommended)
+                            </label>
+                            {!twoStep.data.required && (
+                                <p className="text-sm text-danger">
+                                    Off: staff can open the admin area with a password alone. Fine for a demo; not for the live site.
+                                </p>
+                            )}
+                            {staffTwoFactor.canEdit && (
+                                <Button type="submit" loading={twoStep.processing}>
                                     Save
                                 </Button>
                             )}

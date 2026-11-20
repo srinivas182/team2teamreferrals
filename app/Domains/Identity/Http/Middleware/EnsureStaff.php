@@ -9,7 +9,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Admin area: staff and super admins only, and only with two-step sign-in on. */
+/** Admin area: staff and super admins only, and only with two-step sign-in on (unless turned off for a demo). */
 final class EnsureStaff
 {
     public function handle(Request $request, Closure $next): Response
@@ -17,7 +17,7 @@ final class EnsureStaff
         $user = $request->user();
         abort_unless($user instanceof User && $user->isStaff(), 403);
 
-        if (! $user->hasTwoFactorEnabled()) {
+        if (\App\Domains\Identity\StaffTwoFactor::required() && ! $user->hasTwoFactorEnabled()) {
             return redirect()->route('settings.security')->with('status', 'two-factor-required');
         }
 

@@ -22,6 +22,10 @@ return [
 
     'demo_install' => (bool) env('DEMO_INSTALL', false),
 
+    // Admin staff must use two-step sign-in. The default; a super admin can change it in Admin → System → General.
+    // Turn it off only for a demo, never for the live site.
+    'staff_two_factor' => (bool) env('STAFF_TWO_FACTOR', true),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

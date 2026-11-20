@@ -22,6 +22,6 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
 
     protected function gate(): void
     {
-        Gate::define('viewHorizon', fn ($user = null) => $user instanceof User && $user->hasRole('super_admin') && $user->hasTwoFactorEnabled());
+        Gate::define('viewHorizon', fn ($user = null) => $user instanceof User && $user->hasRole('super_admin') && (! \App\Domains\Identity\StaffTwoFactor::required() || $user->hasTwoFactorEnabled()));
     }
 }
