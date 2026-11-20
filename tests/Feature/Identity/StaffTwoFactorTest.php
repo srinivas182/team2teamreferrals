@@ -47,3 +47,15 @@ it('lets only a super admin change it, from Admin → System → General', funct
     expect(StaffTwoFactor::required())->toBeTrue();
     $this->actingAs($owner)->get('/admin')->assertRedirect(route('settings.security'));
 });
+
+it('sends staff to Admin after signing in (no mobile verification there), and members to their portal', function () {
+    config(['app.staff_two_factor' => false]);
+    $admin = staffMember(Permissions::SUPER_ADMIN);
+    $admin->forceFill(['password' => bcrypt('a-long-password-1'), 'phone_verified_at' => null])->save();
+    $this->post('/login', ['email' => $admin->email, 'password' => 'a-long-password-1'])->assertRedirect('/admin');
+    $this->get('/admin')->assertOk();
+    $this->post('/logout');
+
+    $member = User::factory()->create(['email_verified_at' => now(), 'password' => bcrypt('a-long-password-2')]);
+    $this->post('/login', ['email' => $member->email, 'password' => 'a-long-password-2'])->assertRedirect('/app');
+});

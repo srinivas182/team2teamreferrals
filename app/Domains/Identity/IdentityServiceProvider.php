@@ -35,7 +35,12 @@ use Spatie\Activitylog\Models\Activity;
 /** Accounts and sign-in: Fortify (password, 2FA, passkeys, reset, verification) rendered as React pages. */
 final class IdentityServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        // Staff land in Admin after signing in, members in their portal.
+        $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, Http\Responses\LoginResponse::class);
+        $this->app->singleton(\Laravel\Fortify\Contracts\TwoFactorLoginResponse::class, Http\Responses\LoginResponse::class);
+    }
 
     public function boot(): void
     {
