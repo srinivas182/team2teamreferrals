@@ -73,7 +73,8 @@ return [
         RequestReceived::class => [
             ...Octane::prepareApplicationForNextOperation(),
             ...Octane::prepareApplicationForNextRequest(),
-            //
+            // Providers saved in Admin (email, storage) take effect on the next request, not the next restart.
+            App\Domains\Platform\Providers\ReapplyProviderSettings::class,
         ],
 
         RequestHandled::class => [

@@ -6,11 +6,35 @@ namespace App\Domains\Platform\Providers;
 
 use App\Domains\Platform\Settings\Settings;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Foundation\Application;
 
-/** Applies admin-chosen providers to Laravel's config at boot, so switching providers needs no deploy. */
+/**
+ * Applies admin-chosen providers to Laravel's config, so switching providers needs no deploy.
+ *
+ * Runs at boot, and again before every request under Octane and before every queued job ({@see self::refresh()}):
+ * those processes boot once and live for hours, so a provider saved in Admin would otherwise only take effect after
+ * a restart (found on the cPanel server: Brevo saved, test email still went to the log).
+ */
 final class ApplyProviderSettings
 {
     public function __construct(private readonly Settings $settings, private readonly Repository $config) {}
+
+    /**
+     * Apply the saved providers to this application, and drop mailers and disks built with settings that changed
+     * (only those: a disk or mailer whose settings are the same, or a test's fake, is kept).
+     */
+    public static function refresh(Application $app): void
+    {
+        $config = $app->make('config');
+        $before = [$config->get('mail'), $config->get('services'), $config->get('filesystems.disks.private')];
+        $app->make(self::class)();
+        if ($app->resolved('mail.manager') && [$config->get('mail'), $config->get('services')] !== [$before[0], $before[1]]) {
+            $app->make('mail.manager')->forgetMailers();
+        }
+        if ($app->resolved('filesystem') && $config->get('filesystems.disks.private') !== $before[2]) {
+            $app->make('filesystem')->forgetDisk('private');
+        }
+    }
 
     public function __invoke(): void
     {
