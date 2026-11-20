@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { useUrlFilters } from '@/lib/filters';
 import { money } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
 
@@ -41,7 +42,7 @@ export default function GroupsIndex({
     status?: string;
     seo: Seo;
 }) {
-    const [q, setQ] = useState('');
+    const f = useUrlFilters({ q: '', status: '', industry: '', type: '', tier: '' });
     const [creating, setCreating] = useState(false);
     const [selected, setSelected] = useState<string[]>([]);
     const [pricing, setPricing] = useState(false);
@@ -61,7 +62,18 @@ export default function GroupsIndex({
     });
     const toggle = (slug: string) => setSelected((s) => (s.includes(slug) ? s.filter((x) => x !== slug) : [...s, slug]));
     const priv = useForm({ name: '', industry: industries[0]?.slug ?? '', owner_email: '' });
-    const shown = groups.filter((g) => `${g.name} ${g.industry.name}`.toLowerCase().includes(q.toLowerCase()));
+    const shown = groups.filter(
+        (g) =>
+            (f.values.q === '' || `${g.name} ${g.industry.name} ${g.region ?? ''}`.toLowerCase().includes(f.values.q.toLowerCase())) &&
+            (f.values.status === '' || g.status === f.values.status) &&
+            (f.values.industry === '' || g.industry.slug === f.values.industry) &&
+            (f.values.tier === '' || g.industry.tier === f.values.tier) &&
+            (f.values.type === '' ||
+                (f.values.type === 'public' && !g.private) ||
+                (f.values.type === 'private' && g.private) ||
+                (f.values.type === 'launch' && g.launch)),
+    );
+    const count = (st: string) => groups.filter((g) => g.status === st).length;
     return (
         <AdminLayout
             title="Groups"
@@ -205,17 +217,53 @@ export default function GroupsIndex({
                     </div>
                 </DialogContent>
             </Dialog>
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-                <p className="flex-1 text-sm text-muted">
-                    One launch group per industry, with sample pricing. Owners, seats and editing arrive in the next sprint.
-                </p>
+            <div className="mb-4 flex flex-wrap items-end gap-3" role="search" aria-label="Filter groups">
                 <Input
                     aria-label="Search groups"
-                    placeholder="Search groups or industries"
-                    className="max-w-xs"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Search groups, industries or regions"
+                    className="w-full sm:max-w-64"
+                    value={f.values.q}
+                    onChange={(e) => f.set('q', e.target.value)}
                 />
+                <Select aria-label="Status" className="w-auto" value={f.values.status} onChange={(e) => f.set('status', e.target.value)}>
+                    <option value="">All statuses ({groups.length})</option>
+                    <option value="live">Live ({count('live')})</option>
+                    <option value="draft">Draft ({count('draft')})</option>
+                    <option value="closed">Closed ({count('closed')})</option>
+                </Select>
+                <Select
+                    aria-label="Industry"
+                    className="w-auto max-w-56"
+                    value={f.values.industry}
+                    onChange={(e) => f.set('industry', e.target.value)}
+                >
+                    <option value="">All industries</option>
+                    {industries.map((i) => (
+                        <option key={i.slug} value={i.slug}>
+                            {i.name}
+                        </option>
+                    ))}
+                </Select>
+                <Select aria-label="Compliance tier" className="w-auto" value={f.values.tier} onChange={(e) => f.set('tier', e.target.value)}>
+                    <option value="">All tiers</option>
+                    <option value="A">Tier A</option>
+                    <option value="B">Tier B</option>
+                    <option value="C">Tier C</option>
+                </Select>
+                <Select aria-label="Type" className="w-auto" value={f.values.type} onChange={(e) => f.set('type', e.target.value)}>
+                    <option value="">All types</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                    <option value="launch">Launch networks</option>
+                </Select>
+                <p className="text-sm text-muted" aria-live="polite">
+                    {shown.length === groups.length ? `${groups.length} groups` : `${shown.length} of ${groups.length}`}
+                </p>
+                {f.active > 0 && (
+                    <Button variant="ghost" size="sm" onClick={f.clear}>
+                        Clear filters
+                    </Button>
+                )}
             </div>
             <Card className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-sm">
@@ -273,9 +321,24 @@ export default function GroupsIndex({
                                     Accept in {g.rules.accept_hours} h · cap {g.rules.company_cap_pct}% · challenge after {g.rules.challenge_days}{' '}
                                     days
                                 </td>
-                                <td className="px-4 py-3">{g.status === 'live' ? <Badge tone="success">Live</Badge> : <Badge>Draft</Badge>}</td>
+                                <td className="px-4 py-3">
+                                    {g.status === 'live' ? (
+                                        <Badge tone="success">Live</Badge>
+                                    ) : g.status === 'closed' ? (
+                                        <Badge tone="danger">Closed</Badge>
+                                    ) : (
+                                        <Badge>Draft</Badge>
+                                    )}
+                                </td>
                             </tr>
                         ))}
+                        {shown.length === 0 && (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-10 text-center text-muted">
+                                    {groups.length === 0 ? 'No groups yet.' : 'No group matches these filters.'}
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </Card>

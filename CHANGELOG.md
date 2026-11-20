@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Filters in Admin → Industries and Admin → Groups
+1. Industries can be filtered by search, status (live / approved, not live / draft, each with counts), compliance tier, family and licensing (incomplete / complete / none needed).
+2. Groups can be filtered by search (name, industry or region), status (live / draft / closed, with counts), industry, tier and type (public / private / launch).
+3. Filters stay in the address, so a filtered list survives a refresh or Back and can be shared. Each list shows "X of Y" and has "Clear filters".
+4. Closed groups now show as Closed, not Draft.
+
+Test: resources/js/__tests__/filters.test.tsx.
+
 ### Demo polish
 1. Every password box (sign-up, sign-in, reset, confirm, security settings) has a show/hide button.
 2. Mobile number boxes show the country (🇺🇸 +1).

@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, Input, Select } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { useUrlFilters } from '@/lib/filters';
 import { statusMessage } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
@@ -40,6 +41,18 @@ export default function Industries({
     seo: Seo;
 }) {
     const [open, setOpen] = useState(false);
+    const f = useUrlFilters({ q: '', status: '', tier: '', family: '', licensing: '' });
+    const stage = (i: Row) => (i.status === 'live' ? 'live' : i.approved ? 'approved' : 'draft');
+    const licensing = (i: Row) => (!i.coverage ? 'none' : i.coverage.done >= i.coverage.of ? 'complete' : 'incomplete');
+    const shown = industries.filter(
+        (i) =>
+            (f.values.q === '' || `${i.name} ${i.family}`.toLowerCase().includes(f.values.q.toLowerCase())) &&
+            (f.values.status === '' || stage(i) === f.values.status) &&
+            (f.values.tier === '' || i.tier === f.values.tier) &&
+            (f.values.family === '' || i.family === f.values.family) &&
+            (f.values.licensing === '' || licensing(i) === f.values.licensing),
+    );
+    const count = (st: string) => industries.filter((i) => stage(i) === st).length;
     const form = useForm({
         name: '',
         family: 'home',
@@ -91,6 +104,49 @@ export default function Industries({
                     {statusMessage(status)}
                 </Alert>
             )}
+            <div className="mb-4 flex flex-wrap items-end gap-3" role="search" aria-label="Filter industries">
+                <Input
+                    aria-label="Search industries"
+                    placeholder="Search industries"
+                    className="w-full sm:max-w-60"
+                    value={f.values.q}
+                    onChange={(e) => f.set('q', e.target.value)}
+                />
+                <Select aria-label="Status" className="w-auto" value={f.values.status} onChange={(e) => f.set('status', e.target.value)}>
+                    <option value="">All statuses ({industries.length})</option>
+                    <option value="live">Live ({count('live')})</option>
+                    <option value="approved">Approved, not live ({count('approved')})</option>
+                    <option value="draft">Draft, needs approval ({count('draft')})</option>
+                </Select>
+                <Select aria-label="Compliance tier" className="w-auto" value={f.values.tier} onChange={(e) => f.set('tier', e.target.value)}>
+                    <option value="">All tiers</option>
+                    <option value="A">Tier A · Open</option>
+                    <option value="B">Tier B · Restricted</option>
+                    <option value="C">Tier C · Directory only</option>
+                </Select>
+                <Select aria-label="Family" className="w-auto" value={f.values.family} onChange={(e) => f.set('family', e.target.value)}>
+                    <option value="">All families</option>
+                    {Object.values(families).map((v) => (
+                        <option key={v} value={v}>
+                            {v}
+                        </option>
+                    ))}
+                </Select>
+                <Select aria-label="Licensing" className="w-auto" value={f.values.licensing} onChange={(e) => f.set('licensing', e.target.value)}>
+                    <option value="">Any licensing</option>
+                    <option value="incomplete">Licensing incomplete</option>
+                    <option value="complete">Licensing complete</option>
+                    <option value="none">No licence needed</option>
+                </Select>
+                <p className="text-sm text-muted" aria-live="polite">
+                    {shown.length === industries.length ? `${industries.length} industries` : `${shown.length} of ${industries.length}`}
+                </p>
+                {f.active > 0 && (
+                    <Button variant="ghost" size="sm" onClick={f.clear}>
+                        Clear filters
+                    </Button>
+                )}
+            </div>
             <Card className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
                     <thead className="text-left text-muted">
@@ -103,7 +159,7 @@ export default function Industries({
                         </tr>
                     </thead>
                     <tbody>
-                        {industries.map((i) => (
+                        {shown.map((i) => (
                             <tr key={i.slug} className="border-t border-line">
                                 <td className="px-4 py-3">
                                     <Link href={`/admin/industries/${i.slug}`} className="font-medium hover:text-primary">
@@ -143,10 +199,12 @@ export default function Industries({
                                 </td>
                             </tr>
                         ))}
-                        {industries.length === 0 && (
+                        {shown.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-4 py-10 text-center text-muted">
-                                    No industries yet. The 46 launch industries are loaded in Sprint 9; you can create one now to try the builder.
+                                    {industries.length === 0
+                                        ? 'No industries yet. Create one to try the builder.'
+                                        : 'No industry matches these filters.'}
                                 </td>
                             </tr>
                         )}
