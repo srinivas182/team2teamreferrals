@@ -154,17 +154,35 @@ docker version --format 'Docker {{.Server.Version}} is running.'
 if [ -f /etc/csf/csf.conf ]; then
 	step "CSF firewall: Docker support"
 	sed -i -E 's/^DOCKER = "0"/DOCKER = "1"/' /etc/csf/csf.conf
-	# CSF flushes Docker's network rules when it restarts; Docker puts them back (containers keep running).
-	touch /etc/csf/csfpost.sh
+	# CSF's Docker support covers only the default network (docker0, 172.17.x); the app runs on its own network
+	# (br-*, 172.18.x), so widen it, and after every CSF start let Docker's networks out and put Docker's rules back.
+	# Both firewall backends: cPanel servers often have CSF on iptables-legacy and Docker on nftables.
+	sed -i -E 's|^DOCKER_NETWORK4 = .*|DOCKER_NETWORK4 = "172.16.0.0/12"|' /etc/csf/csf.conf
+	if [ -f /etc/csf/csfpost.sh ] && grep -q 't2t-docker' /etc/csf/csfpost.sh; then
+		sed -i '/t2t-docker/,/^systemctl is-active --quiet docker && systemctl restart docker$/d' /etc/csf/csfpost.sh
+	fi
+	[ -s /etc/csf/csfpost.sh ] || echo '#!/bin/bash' >/etc/csf/csfpost.sh
 	chmod 700 /etc/csf/csfpost.sh
-	grep -q 't2t-docker' /etc/csf/csfpost.sh || cat >>/etc/csf/csfpost.sh <<'EOF'
-# t2t-docker: re-apply Docker's network rules after CSF restarts (Team to Team Referrals).
+	cat >>/etc/csf/csfpost.sh <<'EOF'
+# t2t-docker (Team to Team Referrals): after CSF starts, let Docker's private networks (br-*) reach the internet
+# and put Docker's own rules back.
+for IPT in iptables-legacy iptables; do
+	command -v $IPT >/dev/null || continue
+	$IPT -I FORWARD -i br+ -j ACCEPT
+	$IPT -I FORWARD -o br+ -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+done
 systemctl is-active --quiet docker && systemctl restart docker
 EOF
 	csf -r >/dev/null 2>&1 || true
 fi
-docker run --rm alpine:3.20 sh -c 'wget -q -O /dev/null https://www.google.com && echo "Containers can reach the internet."' ||
+# Tested on a private network like the app's (not only Docker's default one).
+docker network create t2t-nettest >/dev/null 2>&1 || true
+if docker run --rm --network t2t-nettest alpine:3.20 wget -q -O /dev/null https://www.google.com; then
+	echo "Containers can reach the internet."
+else
 	echo "Warning: containers can't reach the internet (the firewall?). The app needs this to send email and use its providers."
+fi
+docker network rm t2t-nettest >/dev/null 2>&1 || true
 
 step "Deploy user and folders"
 id "$DEPLOY_USER" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$DEPLOY_USER"
