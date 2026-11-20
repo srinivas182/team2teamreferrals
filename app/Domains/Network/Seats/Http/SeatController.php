@@ -167,7 +167,7 @@ final class SeatController
     private function authorizeDecider(Request $request, Group $group): void
     {
         $u = $this->user($request);
-        abort_unless($group->isOwnedBy($u) || ($u->isStaff() && $u->can('groups.manage') && $u->hasTwoFactorEnabled()), 403);
+        abort_unless($group->isOwnedBy($u) || ($u->isStaff() && $u->can('groups.manage') && (! \App\Domains\Identity\StaffTwoFactor::required() || $u->hasTwoFactorEnabled())), 403);
     }
 
     private function user(Request $request): User

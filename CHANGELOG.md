@@ -4,6 +4,10 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Fixes from the demo server
+1. Admin → AI showed "Something went wrong" on MySQL: a query used the column name `key` unquoted, which is a reserved word in MySQL.
+2. With two-step sign-in turned off for a demo, staff could not invite teams to seats; the invite check still demanded it.
+
 ### Filters in Admin → Industries and Admin → Groups
 1. Industries can be filtered by search, status (live / approved, not live / draft, each with counts), compliance tier, family and licensing (incomplete / complete / none needed).
 2. Groups can be filtered by search (name, industry or region), status (live / draft / closed, with counts), industry, tier and type (public / private / launch).
