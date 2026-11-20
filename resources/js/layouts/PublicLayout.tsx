@@ -118,8 +118,8 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                     <div className="mx-auto flex max-w-content flex-col gap-2 border-t border-line px-5 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-8">
                         <span>© {new Date().getFullYear()} Team to Team Referrals</span>
                         <span>Referral fees are paid broker to broker. We never take a share of your commission.</span>
-                        <FooterCredit />
                     </div>
+                    <FooterCredit className="mx-auto block max-w-content px-5 pb-6 text-center text-sm text-muted sm:px-8" />
                 </footer>
             </div>
             <Toaster />

@@ -22,7 +22,7 @@ const check = (ok, message) => {
 async function signIn(page) {
     await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
     await page.getByLabel('Email').fill('member@example.com');
-    await page.getByLabel('Password').fill('visual-checks-2027');
+    await page.getByLabel('Password', { exact: true }).fill('visual-checks-2027');
     await Promise.all([
         page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 15000 }),
         page.getByRole('button', { name: 'Log in' }).click(),

@@ -103,9 +103,15 @@ final class SystemSettingsController
     public function updateFooterCredit(Request $request): RedirectResponse
     {
         abort_unless($request->user()?->hasRole(\App\Domains\Identity\Authorization\Permissions::SUPER_ADMIN) ?? false, 403, 'Only a super admin can change the footer credit.');
-        $d = $request->validate(['enabled' => ['required', 'boolean'], 'text' => ['required_if:enabled,true', 'nullable', 'string', 'max:80'], 'url' => ['nullable', 'url:https', 'max:255']],
+        $d = $request->validate(['enabled' => ['required', 'boolean'], 'text' => ['required_if:enabled,true', 'nullable', 'string', 'max:120'], 'url' => ['nullable', 'url:https', 'max:255'],
+            'link_text' => ['nullable', 'string', 'max:120']],
             ['url.url' => 'Use a full https:// address.']);
-        $this->save('footer', ['footer.credit_enabled' => $d['enabled'] ? '1' : '0', 'footer.credit_text' => isset($d['text']) ? trim((string) $d['text']) : null, 'footer.credit_url' => $d['url'] ?? null], [], $request);
+        $linkText = isset($d['link_text']) ? trim((string) $d['link_text']) : '';
+        if ($linkText !== '' && ! str_contains(trim((string) ($d['text'] ?? '')), $linkText)) {
+            throw ValidationException::withMessages(['link_text' => 'Use words that appear in the text above, exactly as written.']);
+        }
+        $this->save('footer', ['footer.credit_enabled' => $d['enabled'] ? '1' : '0', 'footer.credit_text' => isset($d['text']) ? trim((string) $d['text']) : null, 'footer.credit_url' => $d['url'] ?? null,
+            'footer.credit_link_text' => $linkText !== '' ? $linkText : null], [], $request);
 
         return back()->with('status', 'settings-saved');
     }

@@ -118,6 +118,14 @@ final class DemoWorkspace
             if ($g === null) {
                 continue;
             }
+            if (config('app.demo_install')) {
+                // A demo install only: its sample networks are open, so the public directory (/groups) and the
+                // industry pages show them. Never on the real site, where an industry goes live only after a
+                // compliance sign-off (Admin → Industries).
+                $g->industry->forceFill(['status' => 'live', 'compliance_approved_at' => $g->industry->compliance_approved_at ?? now(),
+                    'compliance_note' => $g->industry->compliance_note ?? 'Demo install: sample network, not a compliance sign-off.'])->save();
+                $g->forceFill(['status' => 'live', 'is_private' => false])->save();
+            }
             $g->owners()->syncWithoutDetaching([$owner->id]);
             $reg('owner', $owner->id, $g->id);
             // One city per distinct seat territory (a network may seat by city, county or state).

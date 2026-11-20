@@ -96,7 +96,7 @@ let lastCode = '';
 async function signIn(page, email, secret) {
     await page.goto(`${BASE}/login`);
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
     // Forms post in the background (Inertia): wait for the answer, then for the page to settle.
     const posted = (path) => page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === path);
     await Promise.all([posted('/login'), page.getByRole('button', { name: 'Log in' }).click()]);

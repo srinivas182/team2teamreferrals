@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, PhoneInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { statusMessage } from '@/lib/status';
 import type { Seo } from '@/types/seo';
@@ -94,10 +94,7 @@ export default function VerifyPhone({ phone, status, seo }: { phone: string | nu
                     noValidate
                 >
                     <Field label="Mobile number" error={change.errors.phone}>
-                        <Input
-                            type="tel"
-                            inputMode="tel"
-                            autoComplete="tel-national"
+                        <PhoneInput
                             placeholder="(435) 555-0119"
                             value={change.data.phone}
                             onChange={(e) => change.setData('phone', e.target.value)}

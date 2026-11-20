@@ -203,7 +203,7 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                             <div className="ml-auto flex flex-wrap gap-2">{actions}</div>
                         </div>
                         {children}
-                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-xs text-muted lg:pb-4">
+                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-center text-xs text-muted lg:pb-4">
                             <FooterCredit />
                         </footer>
                     </main>
