@@ -38,7 +38,7 @@ const STABLE = `*,*::before,*::after{animation:none!important;transition:none!im
 async function signIn(page) {
     await page.goto(`${BASE}/login`);
     await page.getByLabel('Email').fill(EMAIL);
-    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
     await Promise.all([
         page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/login'),
         page.getByRole('button', { name: 'Log in' }).click(),
