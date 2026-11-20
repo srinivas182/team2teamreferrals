@@ -4,6 +4,21 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sprint 54a (part 2) — Running on a cPanel server first
+Docs: docs/operations/cpanel-setup.md. Tests: tests/Feature/Platform/GoLiveTest.php; the deploy rehearsal now also runs the cPanel set-up.
+1. The same Docker deploy kit can run on an existing cPanel/WHM server (AlmaLinux, Rocky or CloudLinux 8/9) beside its other websites:
+   - Apache forwards only this domain, with AutoSSL in front
+   - the app listens on 127.0.0.1 only, and has its own MySQL in Docker
+   - no virus scanner, to save memory
+   - `server-setup-cpanel.sh install`, `switch-domain` and `undo-domain`
+2. Deploys can use another SSH port and user (`*_SSH_PORT`, `*_SSH_USER`).
+3. Caddy hands the app exactly one client address, the visitor's, read from the right of the proxy headers. Before this, behind Cloudflare the app would have seen Cloudflare's address, so every visitor would have shared one rate limit.
+4. The CI rehearsal now runs on the cPanel MySQL set-up, and adds a deploy behind a proxy. It checks:
+   - the page loads
+   - one redirect from http to https, not a loop
+   - nothing listens on public ports
+   - the visitor's address is right and can't be forged
+
 ### Sprint 54a — Go-live: hosting, deploys, backups and monitoring
 Tests: tests/Feature/Platform/GoLiveTest.php; the deploy rehearsal in CI (scripts/ci/deploy-rehearsal.sh). Docs: docs/operations/ (DigitalOcean set-up, deploys, runbooks, disaster recovery); ADR 0008.
 1. A deploy kit for DigitalOcean (deploy/): one Droplet runs the production images behind Caddy and Cloudflare, with Managed MySQL and Spaces. A one-command server set-up: updates, Docker, swap, firewall, SSH lock-down, a deploy user and timers.

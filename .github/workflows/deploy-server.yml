@@ -13,6 +13,8 @@ on:
     inputs:
       environment: { type: string, required: true }
       host: { type: string, required: true }
+      ssh_port: { type: string, required: false, default: '22' }
+      ssh_user: { type: string, required: false, default: 'deploy' }
       url: { type: string, required: false, default: '' }
       image: { type: string, required: true }
       tag: { type: string, required: true }
@@ -30,7 +32,7 @@ jobs:
       name: ${{ inputs.environment }}
       url: ${{ inputs.url || null }}
     env:
-      HOST: deploy@${{ inputs.host }}
+      HOST: ${{ inputs.ssh_user }}@${{ inputs.host }}
     steps:
       - uses: actions/checkout@v7
         with: { ref: "${{ inputs.tag }}", sparse-checkout: deploy }
@@ -43,14 +45,14 @@ jobs:
           install -d -m 700 ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
-          printf 'Host *\n  ServerAliveInterval 30\n  ConnectTimeout 20\n' > ~/.ssh/config
+          printf 'Host *\n  Port %s\n  ServerAliveInterval 30\n  ConnectTimeout 20\n' "${{ inputs.ssh_port }}" > ~/.ssh/config
           ssh "$HOST" true
       - name: Copy the deploy kit
         run: |
           rsync -rlptz --delete --chmod=Du=rwx,Dg=rx,Fu=rwx,Fg=rx deploy/bin/ "$HOST:/srv/t2t/bin/"
-          rsync -rlptz deploy/compose.yaml "$HOST:/srv/t2t/compose.yaml"
+          rsync -rlptz deploy/compose.yaml deploy/compose.cpanel.yaml "$HOST:/srv/t2t/"
           ssh "$HOST" 'mkdir -p /srv/t2t/caddy'
-          rsync -rlptz deploy/caddy/Caddyfile "$HOST:/srv/t2t/caddy/Caddyfile"
+          rsync -rlptz deploy/caddy/Caddyfile deploy/caddy/Caddyfile.proxy deploy/caddy/app.caddy "$HOST:/srv/t2t/caddy/"
       - name: Secrets and settings
         env:
           ENV_FILE: ${{ secrets.ENV_FILE }}

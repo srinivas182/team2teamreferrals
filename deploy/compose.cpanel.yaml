@@ -1,0 +1,30 @@
+# Added on a cPanel server (Sprint 54a, the demo before DigitalOcean): set T2T_COMPOSE_EXTRA=compose.cpanel.yaml in
+# .env. The app gets its own MySQL 8.4 in Docker (cPanel's MySQL and the other sites on the server are left alone),
+# and no virus scanner (it needs about 1.5 GB of memory the demo server can't spare).
+services:
+  mysql:
+    image: mysql:8.4
+    command:
+      - --sql-require-primary-key=ON # as DigitalOcean's, so moving there later can't surprise us
+      - --innodb-buffer-pool-size=512M
+      - --max-connections=150
+      - --skip-name-resolve
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:?set DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME:?set DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${T2T_MYSQL_ROOT_PASSWORD:?set T2T_MYSQL_ROOT_PASSWORD}
+    volumes: [mysql:/var/lib/mysql]
+    healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"], interval: 5s, retries: 30 }
+    restart: unless-stopped
+    logging: { driver: json-file, options: { max-size: 20m, max-file: "5" } }
+
+  # No virus scanner here: a placeholder that uses no memory.
+  clamav:
+    image: alpine:3.20
+    command: ["sleep", "infinity"]
+    volumes: !reset []
+    healthcheck: { disable: true }
+
+volumes:
+  mysql:
