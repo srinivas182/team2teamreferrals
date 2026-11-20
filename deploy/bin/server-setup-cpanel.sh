@@ -28,6 +28,8 @@ case $ACTION in install | switch-domain | undo-domain) ;; *) sed -n '2,20p' "$0"
 if [ -z "$CPUSER" ] || [ -z "$DOMAIN" ]; then echo "Usage: $0 $ACTION <cPanel user> <domain>"; exit 2; fi
 grep -qE "^${DOMAIN//./\\.}: ${CPUSER}==" /etc/userdatadomains || { echo "$DOMAIN isn't a domain of the cPanel user $CPUSER (see WHM → List Accounts)."; exit 1; }
 step() { printf '\n==> %s\n' "$*"; }
+# Never stop silently: say which command failed.
+trap 'echo "Stopped: the command on line $LINENO failed: $BASH_COMMAND" >&2' ERR
 
 apache_paths() {
 	SSL_DIR=/etc/apache2/conf.d/userdata/ssl/2_4/$CPUSER/$DOMAIN
@@ -115,7 +117,8 @@ step "Tools the deploy uses"
 dnf -y -q install rsync python3 openssl curl util-linux >/dev/null
 
 step "Docker"
-if ! docker version --format '{{.Server.Version}}' 2>/dev/null | grep -qE '^[0-9]'; then
+# Docker itself, not Podman's look-alike "docker" command (which answers "docker version" with Podman's version).
+if ! rpm -q docker-ce >/dev/null 2>&1; then
 	# Podman stays: cPanel's ea-podman (containers that cPanel accounts can run) needs it. Only its "docker" shim
 	# goes, because Docker's own docker command replaces it. Podman then uses the runc that comes with Docker.
 	if [ -n "$(podman ps -aq 2>/dev/null)" ] || compgen -G '/home/*/ea-podman.d/*' >/dev/null; then
@@ -141,8 +144,9 @@ cat >/etc/docker/daemon.json <<'EOF'
   "live-restore": true
 }
 EOF
-systemctl enable docker >/dev/null 2>&1
+systemctl enable docker
 systemctl restart docker
+docker version --format 'Docker {{.Server.Version}} is running.'
 
 if [ -f /etc/csf/csf.conf ]; then
 	step "CSF firewall: Docker support"
