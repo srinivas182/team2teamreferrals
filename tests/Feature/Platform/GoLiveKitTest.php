@@ -163,3 +163,26 @@ it('uses an email provider saved in Admin on the next request and the next queue
     event(new Illuminate\Queue\Events\JobProcessing('redis', Mockery::mock(Illuminate\Contracts\Queue\Job::class)->shouldIgnoreMissing()));
     expect(config('mail.default'))->toBe('brevo');
 });
+
+it('sends email through Brevo’s API over HTTPS, for servers that block the email ports', function () {
+    Illuminate\Support\Facades\Http::fake([App\Support\Mail\BrevoApiTransport::ENDPOINT => Illuminate\Support\Facades\Http::sequence()
+        ->push(['messageId' => '<abc@smtp-relay.mailin.fr>'], 201)
+        ->push(['code' => 'invalid_parameter', 'message' => 'Sender is not valid'], 400)]);
+    $admin = kitAdmin();
+    $this->actingAs($admin)->put('/admin/system/email', ['driver' => 'brevo_api', 'from_address' => 'no-reply@teamtoteamreferrals.com', 'from_name' => 'Team to Team Referrals', 'fields' => ['api_key' => 'xkeysib-secret']])
+        ->assertSessionHasNoErrors();
+    ApplyProviderSettings::refresh(app());
+    expect(config('mail.default'))->toBe('brevo_api');
+
+    Illuminate\Support\Facades\Mail::to('pat@example.com', 'Pat')->send((new Illuminate\Mail\Mailable)->subject('Hello')->html('<p>Hi Pat</p>')
+        ->attachData('PDF', 'agreement.pdf', ['mime' => 'application/pdf']));
+    Illuminate\Support\Facades\Http::assertSent(fn ($r) => $r->url() === App\Support\Mail\BrevoApiTransport::ENDPOINT && $r->hasHeader('api-key', 'xkeysib-secret')
+        && $r['sender'] === ['email' => 'no-reply@teamtoteamreferrals.com', 'name' => 'Team to Team Referrals']
+        && $r['to'] === [['email' => 'pat@example.com', 'name' => 'Pat']] && $r['subject'] === 'Hello' && str_contains($r['htmlContent'], 'Hi Pat')
+        && $r['attachment'] === [['name' => 'agreement.pdf', 'content' => base64_encode('PDF')]]);
+    expect(Illuminate\Support\Facades\DB::table('message_deliveries')->where('provider', 'brevo_api')->where('status', 'sent')->value('provider_message_id'))->toBe('<abc@smtp-relay.mailin.fr>');
+
+    // Brevo's reason is shown when it refuses (e.g. a sender that isn't verified).
+    $this->post('/admin/system/email/test', ['to' => 'pat@example.com'])->assertSessionHasErrors();
+    expect(collect(session('errors')->all())->implode(' '))->toContain('Sender is not valid');
+});

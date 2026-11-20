@@ -35,7 +35,7 @@ it('keeps system settings behind the settings permission', function () {
     $staff->assignRole('staff');
     $this->actingAs($staff)->get('/admin/system')->assertForbidden();
     $this->actingAs(settingsAdmin())->get('/admin/system/email')->assertOk()
-        ->assertInertia(fn ($p) => $p->component('admin/system/Index')->where('tab', 'email')->has('email.drivers', 6)->where('email.health.status', 'idle'));
+        ->assertInertia(fn ($p) => $p->component('admin/system/Index')->where('tab', 'email')->has('email.drivers', 7)->where('email.health.status', 'idle'));
 });
 
 it('switches the email provider without a deploy and audits it without revealing secrets', function () {
