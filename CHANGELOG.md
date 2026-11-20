@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Demo polish
+1. Every password box (sign-up, sign-in, reset, confirm, security settings) has a show/hide button.
+2. Mobile number boxes show the country (🇺🇸 +1).
+3. The footer credit is centred, and can link just some of its words, such as the company name. Super admins set this in Admin → System → General → "Linked words".
+4. On a demo install, the demo's sample networks are open, so /groups and its industry filter show them. This never happens on the real site.
+
+Tests: FooterCreditTest, LaunchPolishTest.
+
 ### Admin two-step sign-in can be turned off for a demo
 1. Two-step sign-in for admin staff stays required by default.
 2. A demo server can turn it off with `STAFF_TWO_FACTOR=false`.

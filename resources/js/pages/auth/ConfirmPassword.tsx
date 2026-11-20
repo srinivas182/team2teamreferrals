@@ -2,7 +2,7 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/field';
+import { Field, PasswordInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
@@ -17,8 +17,7 @@ export default function ConfirmPassword({ seo }: { seo: Seo }) {
             <SeoHead seo={seo} />
             <form onSubmit={submit} className="space-y-4" noValidate>
                 <Field label="Password" error={form.errors.password}>
-                    <Input
-                        type="password"
+                    <PasswordInput
                         autoComplete="current-password"
                         autoFocus
                         value={form.data.password}

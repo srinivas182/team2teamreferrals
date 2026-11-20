@@ -5,7 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, PasswordInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
@@ -85,8 +85,7 @@ export default function Login({ status, seo }: { status?: string; seo: Seo }) {
                 {mode === 'password' && (
                     <>
                         <Field label="Password" error={form.errors.password}>
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="current-password"
                                 required
                                 value={form.data.password}

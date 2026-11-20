@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, PasswordInput } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
@@ -196,24 +196,21 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
                 <Section icon={KeyRound} title="Password" description="At least 12 characters. We check new passwords against known data breaches.">
                     <form onSubmit={savePassword} className="grid gap-4 sm:grid-cols-2" noValidate>
                         <Field label="Current password" error={password.errors.current_password} className="sm:col-span-2">
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="current-password"
                                 value={password.data.current_password}
                                 onChange={(e) => password.setData('current_password', e.target.value)}
                             />
                         </Field>
                         <Field label="New password" error={password.errors.password}>
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="new-password"
                                 value={password.data.password}
                                 onChange={(e) => password.setData('password', e.target.value)}
                             />
                         </Field>
                         <Field label="Confirm new password" error={password.errors.password_confirmation}>
-                            <Input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="new-password"
                                 value={password.data.password_confirmation}
                                 onChange={(e) => password.setData('password_confirmation', e.target.value)}
@@ -269,8 +266,7 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
                                 }}
                             >
                                 <Field label="Your password" error={others.errors.password}>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         autoComplete="current-password"
                                         value={others.data.password}
                                         onChange={(e) => others.setData('password', e.target.value)}

@@ -90,4 +90,14 @@ it('keeps the live demo to a demo install, and lets demo accounts look but not c
     $this->post('/logout')->assertRedirect();
     $this->post('/demo/enter', ['as' => 'owner']);
     expect(auth()->user()?->email)->toBe('demo1@'.DemoWorkspace::DOMAIN);
+    // On a demo install the sample networks are open, so the public directory and its industry filter show them.
+    $this->post('/logout');
+    $this->get('/groups')->assertOk()->assertInertia(fn ($p) => $p->where('groups', fn ($g) => collect($g)->pluck('slug')->intersect(array_keys(DemoWorkspace::NETWORKS))->count() === count(DemoWorkspace::NETWORKS))
+        ->where('industries', fn ($i) => count($i) >= count(DemoWorkspace::NETWORKS)));
+});
+
+it('never opens industries or networks on the real site when the demo workspace is made there', function () {
+    Artisan::call('t2t:catalogue:sync');
+    DemoWorkspace::create(true);
+    expect(Group::query()->whereIn('slug', array_keys(DemoWorkspace::NETWORKS))->where('status', 'live')->count())->toBe(0);
 });

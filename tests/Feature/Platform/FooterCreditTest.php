@@ -9,10 +9,10 @@ beforeEach(function () {
 });
 
 it('shows "Powered by MCS" in every footer, and only a super admin can change it', function () {
-    $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', ['text' => 'Powered by MCS', 'url' => null]));
+    $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', ['text' => 'Powered by MCS', 'url' => null, 'linkText' => null]));
     $this->actingAs($this->admin)->put('/admin/system/footer-credit', ['enabled' => true, 'text' => 'Powered by MCS', 'url' => 'http://insecure.example'])->assertSessionHasErrors('url');
     $this->actingAs($this->admin)->put('/admin/system/footer-credit', ['enabled' => true, 'text' => 'Powered by MCS', 'url' => 'https://mcs.example/'])->assertSessionHas('status', 'settings-saved');
-    $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', ['text' => 'Powered by MCS', 'url' => 'https://mcs.example/']));
+    $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', ['text' => 'Powered by MCS', 'url' => 'https://mcs.example/', 'linkText' => null]));
     $this->actingAs($this->admin)->get('/admin/system/general')->assertInertia(fn ($p) => $p->where('footerCredit.canEdit', true)->where('footerCredit.url', 'https://mcs.example/')
         ->where('credit.text', 'Powered by MCS'));
 
@@ -28,4 +28,14 @@ it('shows "Powered by MCS" in every footer, and only a super admin can change it
     $this->flushSession();
     $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', null));
     expect(Illuminate\Support\Facades\DB::table('activity_log')->where('description', 'like', '%footer%')->exists())->toBeTrue();
+});
+
+it('can link just some words of the credit, such as the company name', function () {
+    $text = 'Developed and maintained by Example Consultancy';
+    $this->actingAs($this->admin)->put('/admin/system/footer-credit', ['enabled' => true, 'text' => $text, 'url' => 'https://example.com', 'link_text' => 'Not in the text'])
+        ->assertSessionHasErrors('link_text');
+    $this->actingAs($this->admin)->put('/admin/system/footer-credit', ['enabled' => true, 'text' => $text, 'url' => 'https://example.com', 'link_text' => ' Example Consultancy '])
+        ->assertSessionHas('status', 'settings-saved');
+    $this->flushSession();
+    $this->get('/pricing')->assertInertia(fn ($p) => $p->where('credit', ['text' => $text, 'url' => 'https://example.com', 'linkText' => 'Example Consultancy']));
 });

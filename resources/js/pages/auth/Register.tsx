@@ -2,7 +2,7 @@ import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, PasswordInput, PhoneInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
@@ -46,22 +46,13 @@ export default function Register({ seo, invitedBy = null }: { seo: Seo; invitedB
                     <Input type="email" autoComplete="email" required value={form.data.email} onChange={set('email')} />
                 </Field>
                 <Field label="Mobile" hint="Referral alerts come by text. We’ll send a code to confirm it." error={form.errors.phone}>
-                    <Input
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel-national"
-                        placeholder="(435) 555-0119"
-                        required
-                        value={form.data.phone}
-                        onChange={set('phone')}
-                    />
+                    <PhoneInput placeholder="(435) 555-0119" required value={form.data.phone} onChange={set('phone')} />
                 </Field>
                 <Field label="Password" hint="At least 12 characters. We check it against known data breaches." error={form.errors.password}>
-                    <Input type="password" autoComplete="new-password" required value={form.data.password} onChange={set('password')} />
+                    <PasswordInput autoComplete="new-password" required value={form.data.password} onChange={set('password')} />
                 </Field>
                 <Field label="Confirm password" error={form.errors.password_confirmation}>
-                    <Input
-                        type="password"
+                    <PasswordInput
                         autoComplete="new-password"
                         required
                         value={form.data.password_confirmation}

@@ -41,7 +41,7 @@ type Check = { ok: boolean | null; message: string; at: string };
 
 type Props = {
     tab: (typeof tabs)[number][0];
-    footerCredit: { enabled: boolean; text: string; url: string | null; canEdit: boolean };
+    footerCredit: { enabled: boolean; text: string; url: string | null; linkText: string | null; canEdit: boolean };
     demoLink: { url: string | null; demoInstall: boolean; canEdit: boolean };
     staffTwoFactor: { required: boolean; canEdit: boolean };
     general: {
@@ -270,7 +270,12 @@ export default function SystemSettings({
         press_email: general.press_email ?? '',
         security_email: general.security_email ?? '',
     });
-    const credit = useForm({ enabled: footerCredit.enabled, text: footerCredit.text, url: footerCredit.url ?? '' });
+    const credit = useForm({
+        enabled: footerCredit.enabled,
+        text: footerCredit.text,
+        url: footerCredit.url ?? '',
+        link_text: footerCredit.linkText ?? '',
+    });
     const demo = useForm({ url: demoLink.url ?? '' });
     const twoStep = useForm({ required: staffTwoFactor.required });
     return (
@@ -378,7 +383,18 @@ export default function SystemSettings({
                             </label>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field label="Text" error={credit.errors.text}>
-                                    <Input value={credit.data.text} maxLength={80} onChange={(e) => credit.setData('text', e.target.value)} />
+                                    <Input value={credit.data.text} maxLength={120} onChange={(e) => credit.setData('text', e.target.value)} />
+                                </Field>
+                                <Field
+                                    label="Linked words (optional)"
+                                    hint="Only these words are the link, e.g. the company's name. Empty: the whole text."
+                                    error={credit.errors.link_text}
+                                >
+                                    <Input
+                                        value={credit.data.link_text}
+                                        maxLength={120}
+                                        onChange={(e) => credit.setData('link_text', e.target.value)}
+                                    />
                                 </Field>
                                 <Field label="Link (optional)" hint="A full https:// address; opens in a new tab." error={credit.errors.url}>
                                     <Input

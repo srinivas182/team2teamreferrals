@@ -2,7 +2,7 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Button } from '@/components/ui/button';
-import { Field, Input } from '@/components/ui/field';
+import { Field, Input, PasswordInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
@@ -20,16 +20,14 @@ export default function ResetPassword({ email, token, seo }: { email: string; to
                     <Input type="email" autoComplete="username" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
                 </Field>
                 <Field label="New password" hint="At least 12 characters." error={form.errors.password}>
-                    <Input
-                        type="password"
+                    <PasswordInput
                         autoComplete="new-password"
                         value={form.data.password}
                         onChange={(e) => form.setData('password', e.target.value)}
                     />
                 </Field>
                 <Field label="Confirm new password" error={form.errors.password_confirmation}>
-                    <Input
-                        type="password"
+                    <PasswordInput
                         autoComplete="new-password"
                         value={form.data.password_confirmation}
                         onChange={(e) => form.setData('password_confirmation', e.target.value)}
