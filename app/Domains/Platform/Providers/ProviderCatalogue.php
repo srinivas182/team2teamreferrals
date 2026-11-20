@@ -16,6 +16,11 @@ final class ProviderCatalogue
     public const PROVIDERS = [
         'mail' => [
             'log' => ['label' => 'Development log (no email sent)', 'fields' => []],
+            // Brevo (formerly Sendinblue) through its SMTP relay: no extra package, and the same keys work for its API later.
+            'brevo' => ['label' => 'Brevo', 'fields' => [
+                'login' => ['label' => 'SMTP login', 'required' => true, 'hint' => 'Brevo → SMTP & API → SMTP: the login, e.g. 9a1b2c001@smtp-brevo.com'],
+                'smtp_key' => ['label' => 'SMTP key', 'secret' => true, 'required' => true, 'hint' => 'Brevo → SMTP & API → SMTP → Generate a new SMTP key (not the API key)'],
+            ]],
             'smtp' => ['label' => 'SMTP', 'fields' => [
                 'host' => ['label' => 'Host', 'required' => true],
                 'port' => ['label' => 'Port', 'required' => true, 'hint' => '587 for STARTTLS, 465 for SSL'],

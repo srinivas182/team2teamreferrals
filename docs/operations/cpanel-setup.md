@@ -80,6 +80,33 @@ creates it straight away instead of on the first visit.)
   catches the whole server being down, which nothing on the server can report.
 - Errors with their cause: set `SENTRY_LARAVEL_DSN` in `ENV_FILE` (see runbooks.md) and re-deploy.
 
+## 8. Going live (after the demo)
+
+Do these in order. Each one is safe to do on its own.
+
+1. **Email (Brevo).** Create a Brevo account and add the domain under **Senders, domains → Domains**. Brevo shows
+   DNS records (DKIM and a TXT code); add them in **cPanel → Zone Editor**, and keep cPanel's SPF record with
+   `include:spf.brevo.com` added. When Brevo shows the domain as verified, go to **SMTP & API → SMTP**, create an SMTP
+   key, then in the app **Admin → System → Email** choose **Brevo**, paste the login and key, save, and send the test email.
+2. **Text messages.** Leave them **off** (Admin → System → Text messages) until Twilio is set up. While off, nobody is
+   asked for a phone code.
+3. **Turn the demo off and two-step sign-in on.** In GitHub, edit the `ENV_FILE` secret: delete the `DEMO_INSTALL`
+   line and set `STAFF_TWO_FACTOR=true`. Then **Actions → Deploy → Run workflow**. Sign in and set up two-step sign-in
+   when asked.
+4. **Clear the demo data.** In **WHM → Terminal**:
+   ```
+   sudo -u t2tdeploy /srv/t2t/bin/reset-for-launch.sh          # shows what it would clear; changes nothing
+   sudo -u t2tdeploy /srv/t2t/bin/reset-for-launch.sh --go     # backs up the database, then asks you to type the domain
+   ```
+   The backup is kept in `/srv/t2t/backups/` (`pre-launch-reset-….sql.gz`). Staff accounts, industries, groups,
+   places, pages and settings stay; every member, team, referral and the demo go.
+5. **Open an industry.** Admin → Industries → the industry → record the compliance sign-off (who reviewed it and
+   when) and press **Go live**. Then set its groups Live.
+6. **Invite teams.** Admin → Groups → the group → **Seat map → Invite teams → Or upload a list**: upload a CSV with columns
+   `email, city, state` (and `name` if you have it). Check the preview, then **Send**. Each invite is valid for 14 days;
+   the team signs up with that email and gets the seat with a 3-month free trial.
+7. **Backups.** Before real members join, set up the bucket and `BACKUP_*` settings (see "Backups" below).
+
 ## Day to day
 
 Every merge to `main` deploys by itself, with no downtime and an automatic rollback if anything fails

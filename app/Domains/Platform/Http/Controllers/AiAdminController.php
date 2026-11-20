@@ -73,7 +73,7 @@ final class AiAdminController
                 'placeholders' => self::required($key)])->values(),
             // What members do with suggestions, and why they dismiss them.
             'suggestions' => DB::table('ai_suggestions')->where('created_at', 'like', $month.'%')->groupBy('kind', 'key')
-                ->selectRaw("kind, key, sum(case when status = 'used' then 1 else 0 end) as used, sum(case when status = 'dismissed' then 1 else 0 end) as dismissed, sum(case when status = 'snoozed' then 1 else 0 end) as snoozed")
+                ->select('kind', 'key')->selectRaw("sum(case when status = 'used' then 1 else 0 end) as used, sum(case when status = 'dismissed' then 1 else 0 end) as dismissed, sum(case when status = 'snoozed' then 1 else 0 end) as snoozed")
                 ->orderByDesc('used')->get()->map(fn ($r) => ['kind' => (string) $r->kind, 'key' => (string) $r->key, 'used' => (int) $r->used, 'dismissed' => (int) $r->dismissed, 'snoozed' => (int) $r->snoozed,
                     'reasons' => DB::table('ai_suggestions')->where(['kind' => $r->kind, 'key' => $r->key, 'status' => 'dismissed'])->where('created_at', 'like', $month.'%')->whereNotNull('reason')
                         ->groupBy('reason')->selectRaw('reason, count(*) as n')->pluck('n', 'reason')]),

@@ -94,7 +94,7 @@ it('awards Top giver monthly once enough teams give, and shows rank on the repor
     $this->actingAs($this->a->leader)->get('/app/team/preview')->assertInertia(fn ($p) => $p->where('record.topGiverIn.0', 'Solar Installers Network'));
     Artisan::call('t2t:performance', ['--cards' => true]);
     $card = json_decode((string) DB::table('report_cards')->where('team_id', $this->a->id)->value('data'), true);
-    expect($card['giveGet']['given'])->toBe(3)->and($card['rank'])->toBe(['rank' => 1, 'of' => 4]);
+    expect($card['giveGet']['given'])->toBe(3)->and($card['rank'])->toEqual(['rank' => 1, 'of' => 4]); // MySQL's JSON columns reorder keys
 });
 
 it('lists every credit with its referral and a running balance', function () {

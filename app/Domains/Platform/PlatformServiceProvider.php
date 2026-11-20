@@ -35,7 +35,8 @@ final class PlatformServiceProvider extends ServiceProvider
         // The SMS driver follows the admin setting; every driver is wrapped so sends are logged.
         $this->app->bind(SmsSender::class, function ($app): SmsSender {
             $s = $app->make(Settings::class);
-            if ($s->get('sms.driver') === 'twilio' && $s->has('sms.twilio.sid') && $s->has('sms.twilio.token') && $s->has('sms.twilio.from')) {
+            // Texting switched off (Admin → System → Text messages): logged, never sent.
+            if (\App\Support\Sms\Texting::on()) {
                 return new RecordingSmsSender(new TwilioSmsSender((string) $s->get('sms.twilio.sid'), (string) $s->get('sms.twilio.token'), (string) $s->get('sms.twilio.from')), 'twilio');
             }
 
@@ -64,7 +65,7 @@ final class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([Analytics\AnalyticsCommand::class, Console\LoadTestSeed::class, Console\HealthCommand::class, Console\OpsRecordCommand::class, Console\OpsAlertCommand::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
+            $this->commands([Analytics\AnalyticsCommand::class, Console\LoadTestSeed::class, Console\HealthCommand::class, Console\OpsRecordCommand::class, Console\OpsAlertCommand::class, Console\LaunchResetCommand::class, \App\Domains\Referrals\Trust\TrustCommand::class, Reports\ReportsCommand::class]);
         }
         // Every minute: ship new records to the analytics store (never two runs at once).
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $s): void {

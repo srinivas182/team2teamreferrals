@@ -44,7 +44,7 @@ it('offers the app only after a member’s first referral', function () {
     $other = User::factory()->create();
     // Only who sent it matters here, so the other required columns get placeholders.
     // (SQLite checks foreign keys at commit; each test's transaction is rolled back.)
-    DB::statement('PRAGMA defer_foreign_keys = ON');
+    deferForeignKeys();
     $id = DB::table('referrals')->insertGetId(['ulid' => strtolower((string) Illuminate\Support\Str::ulid()), 'sender_user_id' => $u->id] + collect(Schema::getColumns('referrals'))
         ->reject(fn ($c) => $c['nullable'] || $c['default'] !== null || $c['auto_increment'] || in_array($c['name'], ['ulid', 'sender_user_id'], true))
         ->mapWithKeys(fn ($c) => [$c['name'] => match (true) {

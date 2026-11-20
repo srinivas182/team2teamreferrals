@@ -131,13 +131,22 @@ final class SeatController
     public function invite(Request $request, Group $group): RedirectResponse
     {
         $this->authorizeDecider($request, $group);
-        $data = $request->validate(['rows' => ['required', 'array', 'min:1', 'max:100'], 'rows.*.email' => ['required', 'email'], 'rows.*.city_id' => ['required', 'integer', 'exists:cities,id']]);
+        $data = $request->validate(['rows' => ['required', 'array', 'min:1', 'max:'.\App\Domains\Network\Seats\InviteList::MAX_ROWS], 'rows.*.email' => ['required', 'email'], 'rows.*.city_id' => ['required', 'integer', 'exists:cities,id']]);
         /** @var list<array{email: string, city_id: int}> $rows */
         $rows = array_values(array_map(fn ($r) => ['email' => (string) $r['email'], 'city_id' => (int) $r['city_id']], (array) $data['rows']));
         $result = app(\App\Domains\Network\Seats\SeatInvites::class)->send($group, $rows, $this->user($request));
         $note = "{$result['sent']} invitation(s) sent.".($result['skipped'] === [] ? '' : ' Skipped: '.implode('; ', $result['skipped']).'.');
 
         return back()->with('status', 'invites-sent')->with('inviteNote', $note);
+    }
+
+    /** Upload a list (CSV: email, city, state): see what each row would do before sending anything. */
+    public function previewInvites(Request $request, Group $group): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeDecider($request, $group);
+        $file = $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:2048']])['file'];
+
+        return response()->json(app(\App\Domains\Network\Seats\InviteList::class)->preview($group, (string) file_get_contents($file->getRealPath())));
     }
 
     /** Public invitation page: shows the seat, then sign in (or create an account) to accept. */
@@ -167,7 +176,7 @@ final class SeatController
     private function authorizeDecider(Request $request, Group $group): void
     {
         $u = $this->user($request);
-        abort_unless($group->isOwnedBy($u) || ($u->isStaff() && $u->can('groups.manage') && $u->hasTwoFactorEnabled()), 403);
+        abort_unless($group->isOwnedBy($u) || ($u->isStaff() && $u->can('groups.manage') && (! \App\Domains\Identity\StaffTwoFactor::required() || $u->hasTwoFactorEnabled())), 403);
     }
 
     private function user(Request $request): User

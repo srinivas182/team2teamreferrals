@@ -6,7 +6,7 @@ import { Field, Input, PasswordInput, PhoneInput } from '@/components/ui/field';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import type { Seo } from '@/types/seo';
 
-export default function Register({ seo, invitedBy = null }: { seo: Seo; invitedBy?: string | null }) {
+export default function Register({ seo, invitedBy = null, texting = true }: { seo: Seo; invitedBy?: string | null; texting?: boolean }) {
     const form = useForm({ first_name: '', last_name: '', email: '', phone: '', password: '', password_confirmation: '', terms: false });
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -45,7 +45,11 @@ export default function Register({ seo, invitedBy = null }: { seo: Seo; invitedB
                 <Field label="Work email" error={form.errors.email}>
                     <Input type="email" autoComplete="email" required value={form.data.email} onChange={set('email')} />
                 </Field>
-                <Field label="Mobile" hint="Referral alerts come by text. We’ll send a code to confirm it." error={form.errors.phone}>
+                <Field
+                    label="Mobile"
+                    hint={texting ? 'Referral alerts come by text. We’ll send a code to confirm it.' : 'So partners can reach you about referrals.'}
+                    error={form.errors.phone}
+                >
                     <PhoneInput placeholder="(435) 555-0119" required value={form.data.phone} onChange={set('phone')} />
                 </Field>
                 <Field label="Password" hint="At least 12 characters. We check it against known data breaches." error={form.errors.password}>

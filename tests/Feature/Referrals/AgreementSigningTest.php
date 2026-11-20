@@ -81,7 +81,7 @@ it('generates the approved agreement at acceptance and both leaders sign it', fu
     $this->post("/app/referrals/{$r->ulid}/sign", ['name' => 'chris delgado', 'consent' => true])->assertSessionHas('status', 'agreement-signed');
     $this->get("/app/referrals/{$r->ulid}")->assertInertia(fn ($p) => $p->where('agreement.canSign', false)->where('agreement.receiver.name', 'Chris Delgado'));
 
-    $this->actingAs($a->leader)->post("/app/referrals/{$r->ulid}/sign", ['name' => 'Jordan Hale', 'consent' => true]);
+    $this->actingAs($a->leader)->post("/app/referrals/{$r->ulid}/sign", ['name' => 'Jordan Hale', 'consent' => true])->assertSessionHas('status', 'agreement-signed');
     $row = DB::table('referral_agreements')->first();
     expect($row->status)->toBe('signed')->and($row->sender_ip)->not->toBeNull()->and($row->receiver_device)->not->toBeNull();
     Storage::disk('private')->assertExists($row->pdf_path);

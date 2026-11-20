@@ -29,11 +29,13 @@ it('scores profile strength from what the team has filled in', function () {
     expect(ProfileStrength::for($t)['score'])->toBe(0);
     $t->update(['name' => 'SunPath Solar', 'bio' => str_repeat('Residential solar installers. ', 4), 'service_area' => 'Austin', 'website' => 'https://sunpath.example']);
     expect(ProfileStrength::for($t)['score'])->toBe(45);
+    deferForeignKeys(); // placeholder industry and state; only the licence counts here
     DB::table('team_licenses')->insert(['team_id' => $t->id, 'industry_id' => 1, 'state_id' => 1, 'number' => 'X', 'status' => 'verified', 'created_at' => now(), 'updated_at' => now()]);
     expect(ProfileStrength::for($t)['score'])->toBe(70)->and(Licenses::rankScore($t))->toBe(60 + 21 + 10);
 });
 
 it('walks new members from sign-up to first seat on the portal home', function () {
+    textingOn();
     $u = User::factory()->create();
     $this->actingAs($u)->get('/app')->assertOk()->assertInertia(fn ($p) => $p->component('app/Home')->has('checklist', 8)->where('checklist.5.label', 'Apply for your city')->where('checklist.5.href', '/app/groups')->where('strength.score', 0));
 });

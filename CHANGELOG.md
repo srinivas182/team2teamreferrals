@@ -4,6 +4,22 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Go-live kit
+1. **Brevo** is an email provider option (Admin → System → Email): paste the SMTP login and SMTP key from Brevo.
+2. **Text messages on/off** (Admin → System → Text messages). Texts only go out when texting is on and Twilio is filled in. While it's off, nothing is texted and sign-up, sign-in and the getting-started checklist skip the "verify your mobile" code. Turning it on needs Twilio's details first; the change is audit-logged.
+3. **Invite teams from a list.** On a group's seat map, upload a CSV (email, city, state, and optionally name; up to 500 rows). Each row is checked first: the city is matched, the seat is shown as open, taken or already invited, and bad rows are explained. Then "Send N invitations" sends the good ones, the same as one-by-one invites.
+4. **Reset for launch.** `deploy/bin/reset-for-launch.sh` backs up the database, then clears every member, team, referral, billing, analytics and demo record and every non-staff account. Industries, groups and their prices, places, website pages, help, settings, templates and staff accounts stay. Industries the demo opened go back to draft; real compliance sign-offs stay. It refuses on a demo install and needs the domain typed to confirm. Every table is listed as kept or cleared, and a test fails if a new table isn't.
+5. **CI tests run on MySQL 8.4**, the same database as production, so MySQL-only mistakes like the `key` one above are caught before merging. Locally they still run on SQLite. Running them on MySQL found:
+   - **Taking a website page down failed** ("unpublished" didn't fit its column), and so did **a client saying they no longer need help** ("client_not_needed" didn't fit). A migration widens both columns.
+   - **No referral agreement could be fully signed:** MySQL stores the agreement's text with its keys re-ordered, so the second signature's tamper check always failed. The check now sorts keys before comparing, and still accepts agreements made the old way.
+   - Six tests that only worked on SQLite (key order in saved JSON, placeholder foreign keys, reading SQLite's own table list); fixed in the tests.
+
+Docs: docs/operations/cpanel-setup.md ("Going live"). Test: tests/Feature/Platform/GoLiveKitTest.php.
+
+### Fixes from the demo server
+1. Admin → AI showed "Something went wrong" on MySQL: a query used the column name `key` unquoted, which is a reserved word in MySQL.
+2. With two-step sign-in turned off for a demo, staff could not invite teams to seats; the invite check still demanded it.
+
 ### Filters in Admin → Industries and Admin → Groups
 1. Industries can be filtered by search, status (live / approved, not live / draft, each with counts), compliance tier, family and licensing (incomplete / complete / none needed).
 2. Groups can be filtered by search (name, industry or region), status (live / draft / closed, with counts), industry, tier and type (public / private / launch).

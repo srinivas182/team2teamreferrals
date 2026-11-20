@@ -28,7 +28,7 @@ final class PortalHomeController
             // From sign-up to first seat, in order. Each step links to where it's done.
             'checklist' => [
                 ['label' => 'Verify your email', 'done' => $user->hasVerifiedEmail(), 'href' => null],
-                ['label' => 'Verify your mobile', 'done' => $user->hasVerifiedPhone(), 'href' => '/verify-phone'],
+                ...(\App\Support\Sms\Texting::on() ? [['label' => 'Verify your mobile', 'done' => $user->hasVerifiedPhone(), 'href' => '/verify-phone']] : []),
                 ['label' => 'Turn on two-step sign-in or add a passkey', 'done' => $user->hasTwoFactorEnabled() || $user->passkeys()->exists(), 'href' => '/app/settings/security'],
                 ['label' => 'Complete your team profile', 'done' => $strength['score'] >= 50, 'href' => '/app/team'],
                 ['label' => 'Add your license', 'done' => $licenses > 0, 'href' => '/app/profile'],

@@ -48,7 +48,7 @@ final class ReferralAgreements
         $sections = AgreementRenderer::render($v['clauses'], $data, $addenda);
         DB::table('referral_agreements')->insert([
             'referral_id' => $ref->id, 'status' => 'pending', 'scope' => $v['scope'], 'version' => $v['version'], 'sections' => json_encode($sections),
-            'summary' => json_encode(AgreementRenderer::summary($v['clauses'], $data)), 'content_hash' => hash('sha256', (string) json_encode($sections)), 'created_at' => now(), 'updated_at' => now(),
+            'summary' => json_encode(AgreementRenderer::summary($v['clauses'], $data)), 'content_hash' => self::contentHash($sections), 'created_at' => now(), 'updated_at' => now(),
         ]);
         foreach ([$ref->sender->leader, $ref->receiver?->leader] as $u) {
             if ($u !== null) {
@@ -114,7 +114,8 @@ final class ReferralAgreements
     private function complete(Referral $ref, stdClass $a): void
     {
         $sections = (array) json_decode((string) $a->sections, true);
-        abort_unless(hash_equals((string) $a->content_hash, hash('sha256', (string) json_encode($sections))), 409, 'The agreement text changed after it was generated.');
+        // Also accepts the older hash of the text in its original key order (agreements made before this fix, on SQLite).
+        abort_unless(hash_equals((string) $a->content_hash, self::contentHash($sections)) || hash_equals((string) $a->content_hash, hash('sha256', (string) json_encode($sections))), 409, 'The agreement text changed after it was generated.');
         $path = 'agreements/'.$ref->ulid.'.pdf';
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.signed-agreement', ['ref' => $ref, 'a' => $a, 'sections' => $sections])->output();
         Storage::disk('private')->put($path, $pdf);
@@ -147,5 +148,27 @@ final class ReferralAgreements
             'protection_months' => (string) data_get($ref->group->rules, 'protection_months', 12),
             'fee_terms' => Fees::describe(Fees::forReferral($ref), legal: true), 'fee_due_days' => (string) data_get($ref->group->rules, 'fee_due_days', 10),
         ];
+    }
+
+    /**
+     * The fingerprint of the agreement text, with every object's keys sorted first. MySQL's JSON columns store keys
+     * in their own order, so a hash of the text as written would never match the text read back.
+     *
+     * @param  array<mixed>  $sections
+     */
+    public static function contentHash(array $sections): string
+    {
+        $sort = function (mixed $v) use (&$sort): mixed {
+            if (! is_array($v)) {
+                return $v;
+            }
+            if (! array_is_list($v)) {
+                ksort($v);
+            }
+
+            return array_map($sort, $v);
+        };
+
+        return hash('sha256', (string) json_encode($sort($sections)));
     }
 }

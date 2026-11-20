@@ -85,8 +85,20 @@ jobs:
     if: needs.changes.outputs.code == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # The tests run on MySQL 8.4, the database production uses, so MySQL-only mistakes (a reserved word, strict GROUP BY,
+    # foreign-key order) fail here and not on the live site. Locally they run on SQLite for speed.
     # A real ClickHouse, so the analytics store and the 10-million-event speed target are tested, not assumed.
     services:
+      mysql:
+        image: mysql:8.4
+        ports: ['3306:3306']
+        env:
+          MYSQL_DATABASE: t2t_test
+          MYSQL_USER: t2t
+          MYSQL_PASSWORD: ci-password
+          MYSQL_ROOT_PASSWORD: ci-root-password
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci-root-password" --health-interval 5s --health-timeout 5s --health-retries 30
       clickhouse:
         image: clickhouse/clickhouse-server:24.8
         ports: ['8123:8123']
@@ -138,7 +150,8 @@ jobs:
         run: npm run build
       - name: Prepare environment
         run: cp .env.example .env && php artisan key:generate
-      - name: Tests
+      - name: Tests (on MySQL)
+        env: { DB_CONNECTION: mysql, DB_HOST: 127.0.0.1, DB_PORT: '3306', DB_DATABASE: t2t_test, DB_USERNAME: t2t, DB_PASSWORD: ci-password }
         run: vendor/bin/pest --compact --log-junit storage/junit.xml
       # When tests fail, name each failing test (with its message) as an annotation on the run.
       - name: Report failing tests
