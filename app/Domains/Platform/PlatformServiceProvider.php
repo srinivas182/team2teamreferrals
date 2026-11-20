@@ -75,6 +75,8 @@ final class PlatformServiceProvider extends ServiceProvider
             $s->command('t2t:trust')->dailyAt('02:30')->onOneServer(); // nightly trust scores
             $s->command('t2t:reports')->everyFifteenMinutes()->withoutOverlapping()->onOneServer(); // scheduled reports
         });
+        // Brevo's HTTP API as a mail transport (Admin → System → Email → Brevo (API)).
+        \Illuminate\Support\Facades\Mail::extend('brevo-api', fn (array $config) => new \App\Support\Mail\BrevoApiTransport((string) ($config['key'] ?? '')));
         $this->app->make(ApplyProviderSettings::class)();
         // Queue workers boot once and run for hours: apply the saved providers before each job too.
         \Illuminate\Support\Facades\Queue::before(fn () => ApplyProviderSettings::refresh($this->app));

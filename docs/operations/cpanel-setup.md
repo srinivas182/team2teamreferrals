@@ -84,10 +84,11 @@ creates it straight away instead of on the first visit.)
 
 Do these in order. Each one is safe to do on its own.
 
-1. **Email (Brevo).** Create a Brevo account and add the domain under **Senders, domains → Domains**. Brevo shows
-   DNS records (DKIM and a TXT code); add them in **cPanel → Zone Editor**, and keep cPanel's SPF record with
-   `include:spf.brevo.com` added. When Brevo shows the domain as verified, go to **SMTP & API → SMTP**, create an SMTP
-   key, then in the app **Admin → System → Email** choose **Brevo**, paste the login and key, save, and send the test email.
+1. **Email (Brevo).** In Brevo, verify the sender address you'll send from (**Senders, domains → Senders**), and
+   preferably the whole domain (**Domains**: add the DNS records Brevo shows in **cPanel → Zone Editor**, and add
+   `include:spf.brevo.com` to the existing SPF record), so email doesn't land in spam. Then **SMTP & API → API keys →
+   Generate a new API key**. In the app: **Admin → System → Email → Brevo (API)**, paste the key, set the From address
+   to the verified sender, save, and send the test email. (Brevo (SMTP) also works where the server allows port 587.)
 2. **Text messages.** Leave them **off** (Admin → System → Text messages) until Twilio is set up. While off, nobody is
    asked for a phone code.
 3. **Turn the demo off and two-step sign-in on.** In GitHub, edit the `ENV_FILE` secret: delete the `DEMO_INSTALL`

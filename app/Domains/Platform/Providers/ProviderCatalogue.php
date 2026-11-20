@@ -17,7 +17,11 @@ final class ProviderCatalogue
         'mail' => [
             'log' => ['label' => 'Development log (no email sent)', 'fields' => []],
             // Brevo (formerly Sendinblue) through its SMTP relay: no extra package, and the same keys work for its API later.
-            'brevo' => ['label' => 'Brevo', 'fields' => [
+            // Brevo over HTTPS: works where the hosting company blocks the email ports.
+            'brevo_api' => ['label' => 'Brevo (API)', 'fields' => [
+                'api_key' => ['label' => 'API key', 'secret' => true, 'required' => true, 'hint' => 'Brevo → SMTP & API → API keys → Generate a new API key. The From address below must be a verified sender in Brevo.'],
+            ]],
+            'brevo' => ['label' => 'Brevo (SMTP)', 'fields' => [
                 'login' => ['label' => 'SMTP login', 'required' => true, 'hint' => 'Brevo → SMTP & API → SMTP: the login, e.g. 9a1b2c001@smtp-brevo.com'],
                 'smtp_key' => ['label' => 'SMTP key', 'secret' => true, 'required' => true, 'hint' => 'Brevo → SMTP & API → SMTP → Generate a new SMTP key (not the API key)'],
             ]],

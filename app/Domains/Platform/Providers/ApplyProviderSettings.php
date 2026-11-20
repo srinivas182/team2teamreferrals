@@ -80,6 +80,7 @@ final class ApplyProviderSettings
         }
 
         match ($driver) {
+            'brevo_api' => $this->config->set('mail.mailers.brevo_api', ['transport' => 'brevo-api', 'key' => $s->get('mail.brevo_api.api_key')]),
             // Brevo's SMTP relay (Admin → System → Email); the sender address must be verified in Brevo.
             'brevo' => $this->config->set('mail.mailers.brevo', ['transport' => 'smtp', 'scheme' => 'smtp', 'host' => 'smtp-relay.brevo.com', 'port' => 587,
                 'username' => $s->get('mail.brevo.login'), 'password' => $s->get('mail.brevo.smtp_key'), 'timeout' => 15]),

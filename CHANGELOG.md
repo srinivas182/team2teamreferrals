@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Brevo through its API
+1. New email provider **Brevo (API)** (Admin → System → Email): paste a Brevo API key. Email goes over HTTPS, so it works on servers whose hosting company blocks the email ports. The From address must be a sender verified in Brevo. If Brevo refuses an email, its reason is shown (e.g. "Sender is not valid").
+2. The SMTP option is now called **Brevo (SMTP)**.
+3. No new package: a small mail transport built on Laravel's HTTP client (`app/Support/Mail/BrevoApiTransport.php`).
+
+Test: tests/Feature/Platform/GoLiveKitTest.php.
+
 ### Provider settings take effect straight away
 1. An email or storage provider saved in Admin → System is now used from the next request and the next queued job. Before, the app's long-running processes kept the settings they started with until the next restart or deploy (found on the cPanel server: Brevo was saved, but the test email still went to the log).
 
