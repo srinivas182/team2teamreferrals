@@ -4,6 +4,10 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Fixes from the demo server
+1. Admin → AI showed "Something went wrong" on MySQL: a query used the column name `key` unquoted, which is a reserved word in MySQL.
+2. With two-step sign-in turned off for a demo, staff could not invite teams to seats; the invite check still demanded it.
+
 ### Demo polish
 1. Every password box (sign-up, sign-in, reset, confirm, security settings) has a show/hide button.
 2. Mobile number boxes show the country (🇺🇸 +1).

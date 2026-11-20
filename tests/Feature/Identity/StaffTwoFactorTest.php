@@ -59,3 +59,20 @@ it('sends staff to Admin after signing in (no mobile verification there), and me
     $member = User::factory()->create(['email_verified_at' => now(), 'password' => bcrypt('a-long-password-2')]);
     $this->post('/login', ['email' => $member->email, 'password' => 'a-long-password-2'])->assertRedirect('/app');
 });
+
+it('lets staff invite teams to seats without two-step sign-in when it is turned off for a demo', function () {
+    Illuminate\Support\Facades\Artisan::call('t2t:catalogue:sync');
+    $group = App\Domains\Network\Groups\Models\Group::query()->firstOrFail();
+    $admin = staffMember(Permissions::SUPER_ADMIN);
+    config(['app.staff_two_factor' => true]);
+    $this->actingAs($admin)->post("/admin/groups/{$group->slug}/invites", ['rows' => [['email' => 'x@example.com', 'city_id' => 999999]]])->assertRedirect(route('settings.security'));
+    config(['app.staff_two_factor' => false]);
+    $this->actingAs($admin)->post("/admin/groups/{$group->slug}/invites", ['rows' => [['email' => 'x@example.com', 'city_id' => 999999]]])->assertSessionHasErrors('rows.0.city_id');
+});
+
+it('opens Admin → AI with suggestions recorded (its query names a column called key)', function () {
+    config(['app.staff_two_factor' => false]);
+    $team = App\Domains\Network\Seats\Models\Team::forLeader(User::factory()->create());
+    Illuminate\Support\Facades\DB::table('ai_suggestions')->insert(['team_id' => $team->id, 'kind' => 'draft', 'key' => 'follow-up', 'status' => 'used', 'created_at' => now(), 'updated_at' => now()]);
+    $this->actingAs(staffMember(Permissions::SUPER_ADMIN))->get('/admin/ai')->assertOk()->assertInertia(fn ($p) => $p->where('suggestions.0.key', 'follow-up'));
+});
