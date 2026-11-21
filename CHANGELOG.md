@@ -4,6 +4,10 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Bigger logo on the website
+1. The website, sign-in and sign-up pages show the logo larger: 48 px tall on computers (was 36), 40 px on phones and tablets. The header stays the same height.
+2. Tablets (768–1023 px) now use the menu button, as phones do: the logo, six links and two buttons didn't fit on one line, so link names were wrapping onto two or three lines.
+
 ### Account pages inside Admin for staff
 1. Staff opening My account, Password and security or Notifications now stay in Admin (navy menu), instead of switching to the member area's look and menu. Members see them in the member area as before.
 2. The account tabs no longer show a scrollbar on Windows.

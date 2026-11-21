@@ -33,9 +33,9 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                 <header className="sticky top-[env(safe-area-inset-top,0px)] z-40 border-b border-line bg-surface/90 backdrop-blur">
                     <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-5 sm:px-8">
                         <Link href="/" aria-label="Team to Team Referrals home" prefetch>
-                            <Logo className="h-9 w-[150px]" />
+                            <Logo className="h-10 w-[166px] xl:h-12 xl:w-[200px]" />
                         </Link>
-                        <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
+                        <nav className="hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1" aria-label="Main">
                             {header.map(([label, href]) => (
                                 <Link
                                     key={href}
@@ -43,7 +43,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                                     prefetch
                                     aria-current={current === href ? 'page' : undefined}
                                     className={cn(
-                                        'rounded-md px-3 py-2 text-sm font-medium text-muted hover:text-ink',
+                                        'rounded-md px-2 py-2 text-sm font-medium whitespace-nowrap text-muted hover:text-ink xl:px-3',
                                         current === href && 'text-ink',
                                     )}
                                 >
@@ -51,7 +51,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                                 </Link>
                             ))}
                         </nav>
-                        <div className="ml-auto hidden items-center gap-2 md:flex">
+                        <div className="ml-auto hidden items-center gap-2 lg:flex">
                             <ThemeToggle />
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href="/login">Log in</Link>
@@ -61,7 +61,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                             </Button>
                         </div>
                         <button
-                            className="ml-auto rounded-md p-2 md:hidden"
+                            className="ml-auto rounded-md p-2 lg:hidden"
                             aria-label={open ? 'Close menu' : 'Open menu'}
                             aria-expanded={open}
                             onClick={() => setOpen(!open)}
@@ -70,7 +70,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                         </button>
                     </div>
                     {open && (
-                        <div className="border-t border-line bg-surface md:hidden">
+                        <div className="border-t border-line bg-surface lg:hidden">
                             <nav className="mx-auto flex max-w-content flex-col px-5 py-3" aria-label="Main">
                                 {header.map(([label, href]) => (
                                     <Link key={href} href={href} className="rounded-md px-2 py-3 font-medium">
@@ -95,7 +95,7 @@ export function PublicLayout({ children, current }: { children: ReactNode; curre
                 <footer className="mt-24 border-t border-line bg-surface">
                     <div className="mx-auto grid max-w-content gap-10 px-5 py-14 sm:grid-cols-2 sm:px-8 lg:grid-cols-5">
                         <div className="lg:col-span-2">
-                            <Logo className="h-9 w-[150px]" />
+                            <Logo className="h-10 w-[166px] xl:h-12 xl:w-[200px]" />
                             <p className="mt-4 max-w-sm text-sm text-muted">
                                 The referral network for licensed teams. Hand out-of-area leads to teams you trust, and get paid when they close.
                             </p>
