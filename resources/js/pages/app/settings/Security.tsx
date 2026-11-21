@@ -1,4 +1,4 @@
-import { router, useForm, usePage } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { usePasskeyRegister } from '@laravel/passkeys/react';
 import { Fingerprint, KeyRound, Laptop, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
@@ -10,9 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, Input, PasswordInput } from '@/components/ui/field';
-import { PortalLayout } from '@/layouts/PortalLayout';
+import { AccountLayout } from '@/layouts/AccountLayout';
 import { statusMessage } from '@/lib/status';
-import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Props = {
@@ -39,7 +38,6 @@ function Section({ icon: Icon, title, description, children }: { icon: typeof Ke
 }
 
 export default function Security({ twoFactor, passkeys, devices, status, seo }: Props) {
-    const { auth } = usePage<SharedProps>().props;
     const password = useForm({ current_password: '', password: '', password_confirmation: '' });
     const confirm2fa = useForm({ code: '' });
     const others = useForm({ password: '' });
@@ -53,7 +51,7 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
     };
 
     return (
-        <PortalLayout title="Security" user={{ name: auth.user?.name ?? '', team: '' }}>
+        <AccountLayout title="Security">
             <SeoHead seo={seo} />
             <SettingsTabs />
             <div className="max-w-3xl space-y-6">
@@ -287,6 +285,6 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
                     </Dialog>
                 </Section>
             </div>
-        </PortalLayout>
+        </AccountLayout>
     );
 }

@@ -1,4 +1,4 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { Mail, UserRound } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -7,9 +7,8 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input, PasswordInput, PhoneInput, Select } from '@/components/ui/field';
-import { PortalLayout } from '@/layouts/PortalLayout';
+import { AccountLayout } from '@/layouts/AccountLayout';
 import { statusMessage } from '@/lib/status';
-import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Props = {
@@ -36,7 +35,6 @@ function Section({ icon: Icon, title, description, children }: { icon: typeof Ma
 }
 
 export default function Account({ account, timezones, texting, status, seo }: Props) {
-    const { auth } = usePage<SharedProps>().props;
     const details = useForm({
         first_name: account.first_name,
         last_name: account.last_name,
@@ -55,7 +53,7 @@ export default function Account({ account, timezones, texting, status, seo }: Pr
     };
 
     return (
-        <PortalLayout title="My account" user={{ name: auth.user?.name ?? '', team: '' }}>
+        <AccountLayout title="My account">
             <SeoHead seo={seo} />
             <div className="max-w-3xl">
                 <SettingsTabs />
@@ -142,6 +140,6 @@ export default function Account({ account, timezones, texting, status, seo }: Pr
                     </Section>
                 </div>
             </div>
-        </PortalLayout>
+        </AccountLayout>
     );
 }

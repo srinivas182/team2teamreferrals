@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Account pages inside Admin for staff
+1. Staff opening My account, Password and security or Notifications now stay in Admin (navy menu), instead of switching to the member area's look and menu. Members see them in the member area as before.
+2. The account tabs no longer show a scrollbar on Windows.
+3. The mobile number box shows "+1" without the flag, which Windows displayed as the letters "us".
+
 ### Side menu scrollbar
 1. The admin and member side menus no longer show the browser's grey scrollbar with arrows. A thin bar in the menu's own colour appears only while the pointer is over the menu; the wheel, trackpad and touch scroll as before. Admin menu rows are a little tighter on computers, so more fit before scrolling.
 
