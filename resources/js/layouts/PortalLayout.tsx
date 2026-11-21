@@ -4,7 +4,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { AllyWidget } from '@/components/ally/AllyWidget';
 import { TourRunner } from '@/components/tour/Tour';
 import { FooterCredit } from '@/components/FooterCredit';
-import { Bell, ChevronDown, Menu, Plus, Search } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Menu, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
@@ -218,10 +218,18 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                     </nav>
                     <div className="flex items-center gap-3 border-t border-line p-4">
                         <Avatar name={user.name} size={34} />
-                        <div className="min-w-0 text-sm">
+                        <div className="min-w-0 flex-1 text-sm">
                             <div className="truncate font-semibold">{user.name}</div>
                             <div className="truncate text-muted">{user.team}</div>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => router.post('/logout')}
+                            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted hover:bg-bg hover:text-ink"
+                        >
+                            <LogOut className="size-4" aria-hidden />
+                            Sign out
+                        </button>
                     </div>
                 </aside>
                 <div className="min-w-0 pb-24 lg:pb-0">
@@ -384,6 +392,21 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                                 );
                             })}
                         </nav>
+                        <div className="mt-4 flex items-center gap-3 border-t border-line pt-4">
+                            <Avatar name={user.name} size={32} />
+                            <div className="min-w-0 flex-1 text-sm">
+                                <div className="truncate font-semibold">{user.name}</div>
+                                <div className="truncate text-muted">{user.team}</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => router.post('/logout')}
+                                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-ink hover:bg-bg"
+                            >
+                                <LogOut className="size-4" aria-hidden />
+                                Sign out
+                            </button>
+                        </div>
                     </DialogContent>
                 </Dialog>
             </div>
