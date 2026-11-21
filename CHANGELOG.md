@@ -4,6 +4,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### My account, and a tidier account menu
+1. **My account** page (`/app/settings/account`) for members and staff: name, mobile and time zone save straight away. A new mobile is confirmed by a texted code when texting is on. A new **email** needs your password, then a link sent to the new address; it only changes when that link is clicked (24 hours, works once), and the old address is told. Every change is in the audit log.
+2. My account, Password and security, and Notifications are one set of tabs.
+3. The name at the bottom of the menu (Admin and the member area, computer and phone) is now one button: it opens **My account**, **Password and security** and **Sign out**. It replaces the separate Sign out and Security settings links.
+4. The admin menu no longer shows numbers.
+
+Test: tests/Feature/Identity/MyAccountTest.php.
+
 ### Sign out
 1. **Sign out** button in Admin (under your name at the bottom of the menu, on computers and phones) and in the member area (under your name in the sidebar; on phones in **More**). Before, the only way to sign out was in the demo.
 

@@ -2,6 +2,7 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { BellRing, Lock, Moon, Newspaper, Zap } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { SettingsTabs } from '@/components/SettingsTabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ export default function NotificationSettings({
     return (
         <PortalLayout title="Notification settings" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
+            <SettingsTabs />
             <div className="max-w-4xl space-y-6">
                 {status && <Alert tone="success">{statusMessage(status)}</Alert>}
 

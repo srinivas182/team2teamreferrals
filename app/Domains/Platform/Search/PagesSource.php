@@ -11,7 +11,8 @@ final class PagesSource implements SearchSource
 {
     /** @var list<array{0: string, 1: string, 2: string, 3: ?string}> title, keywords, url, permission (null = everyone) */
     private const PAGES = [
-        ['Security settings', 'password passkey two-step 2fa devices sign out', '/app/settings/security', null],
+        ['My account', 'profile name email mobile phone time zone change email', '/app/settings/account', null],
+        ['Password and security', 'password change passkey two-step 2fa devices sign out', '/app/settings/security', null],
         ['Notification settings', 'quiet hours digest email text push alerts', '/app/settings/notifications', null],
         ['Notifications', 'inbox bell unread', '/app/notifications', null],
         ['System settings', 'email sms twilio stripe payments storage s3 ai anthropic modules maintenance export', '/admin/system', 'settings.manage'],

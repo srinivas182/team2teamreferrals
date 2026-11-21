@@ -3,6 +3,7 @@ import { usePasskeyRegister } from '@laravel/passkeys/react';
 import { Fingerprint, KeyRound, Laptop, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { SettingsTabs } from '@/components/SettingsTabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export default function Security({ twoFactor, passkeys, devices, status, seo }: 
     return (
         <PortalLayout title="Security" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
+            <SettingsTabs />
             <div className="max-w-3xl space-y-6">
                 {status && <Alert tone={status === 'two-factor-required' ? 'info' : 'success'}>{statusMessage(status)}</Alert>}
 
