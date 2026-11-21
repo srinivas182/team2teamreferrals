@@ -23,12 +23,12 @@ export function AccountMenu({ name, detail, dark = false, className }: { name: s
                     dark ? 'text-white hover:bg-white/5 data-[state=open]:bg-white/10' : 'hover:bg-bg data-[state=open]:bg-bg',
                     className,
                 )}
-                aria-label={`Account menu for ${name}`}
             >
                 <Avatar name={name} size={32} tone={dark ? 'receiver' : undefined} />
                 <span className="min-w-0 flex-1 text-sm">
                     <span className="block truncate font-semibold">{name}</span>
                     {detail && <span className={cn('block truncate', dark ? 'text-[#AAB4CE]' : 'text-muted')}>{detail}</span>}
+                    <span className="sr-only">: account menu</span>
                 </span>
                 <ChevronsUpDown className={cn('size-4 shrink-0', dark ? 'text-[#AAB4CE]' : 'text-muted')} aria-hidden />
             </DropdownMenuTrigger>
