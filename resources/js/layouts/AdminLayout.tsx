@@ -33,6 +33,7 @@ import {
     ShieldCheck,
     Plug,
     ClipboardCheck,
+    LogOut,
     Menu,
     X,
 } from 'lucide-react';
@@ -136,12 +137,20 @@ function AdminUser({ user }: { user: NonNullable<SharedProps['auth']['user']> })
     return (
         <div className="flex items-center gap-3 border-t border-white/10 p-4">
             <Avatar name={user.name} size={32} tone="receiver" />
-            <div className="min-w-0 text-sm">
+            <div className="min-w-0 flex-1 text-sm">
                 <div className="truncate font-semibold">{user.name}</div>
                 <Link href="/app/settings/security" className="text-[#AAB4CE] hover:text-white">
                     Security settings
                 </Link>
             </div>
+            <button
+                type="button"
+                onClick={() => router.post('/logout')}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white"
+            >
+                <LogOut className="size-4" aria-hidden />
+                Sign out
+            </button>
         </div>
     );
 }
