@@ -75,7 +75,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, Omit<React.InputHTM
                 className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-line bg-bg px-3 text-[15px] text-ink"
                 title="United States (+1)"
             >
-                <span aria-hidden>🇺🇸</span>
+                {/* No flag emoji: Windows shows it as the letters "US". */}
                 <span>+1</span>
                 <span className="sr-only">United States</span>
             </span>

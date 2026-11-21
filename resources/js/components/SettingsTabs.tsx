@@ -11,7 +11,7 @@ const tabs = [
 export function SettingsTabs() {
     const { url } = usePage();
     return (
-        <nav aria-label="Account settings" className="-mx-1 mb-6 flex gap-1 overflow-x-auto border-b border-line px-1">
+        <nav aria-label="Account settings" className="mb-6 flex gap-1 border-b border-line">
             {tabs.map((t) => {
                 const current = url.startsWith(t.href);
                 return (

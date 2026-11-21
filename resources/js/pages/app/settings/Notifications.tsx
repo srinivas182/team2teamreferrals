@@ -1,4 +1,4 @@
-import { router, useForm, usePage } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { BellRing, Lock, Moon, Newspaper, Zap } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
@@ -8,11 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
-import { PortalLayout } from '@/layouts/PortalLayout';
+import { AccountLayout } from '@/layouts/AccountLayout';
 import { enablePush, pushSupported } from '@/lib/push';
 import { ios, standalone } from '@/lib/pwa';
 import { statusMessage } from '@/lib/status';
-import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type TypeDef = { key: string; group: string; label: string; description: string; channels: string[]; urgent: boolean; locked: boolean };
@@ -49,7 +48,6 @@ export default function NotificationSettings({
         () => ios() && !standalone(),
         () => false,
     );
-    const { auth } = usePage<SharedProps>().props;
     const form = useForm({
         matrix,
         quiet_start: quiet.start ?? '',
@@ -66,7 +64,7 @@ export default function NotificationSettings({
     const save = () => form.transform((d) => ({ ...d, quiet_start: d.quiet_start || null, quiet_end: d.quiet_end || null }));
 
     return (
-        <PortalLayout title="Notification settings" user={{ name: auth.user?.name ?? '', team: '' }}>
+        <AccountLayout title="Notification settings">
             <SeoHead seo={seo} />
             <SettingsTabs />
             <div className="max-w-4xl space-y-6">
@@ -278,7 +276,7 @@ export default function NotificationSettings({
                     </Button>
                 </div>
             </div>
-        </PortalLayout>
+        </AccountLayout>
     );
 }
 
