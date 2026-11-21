@@ -45,8 +45,9 @@ final class Directory
         $city = isset($f['city']) && $f['city'] ? City::query()->find((int) $f['city']) : null;
         $state = isset($f['state']) && $f['state'] ? strtoupper((string) $f['state']) : null;
         $q = isset($f['q']) ? mb_strtolower(trim((string) $f['q'])) : '';
-        $filled = DB::table('seats')->whereIn('status', self::FILLED)->whereNotNull('primary_team_id')
-            ->when($state, fn ($w) => $w->where('state_code', $state))->selectRaw('group_id, count(*) as n')->groupBy('group_id')->pluck('n', 'group_id');
+        $seatStats = DB::table('seats')->whereIn('status', self::FILLED)->whereNotNull('primary_team_id')
+            ->when($state, fn ($w) => $w->where('state_code', $state))
+            ->selectRaw('group_id, count(*) as n, count(distinct state_code) as states')->groupBy('group_id')->get()->keyBy('group_id');
         $out = [];
         foreach ($groups as $g) {
             if (! empty($f['industry']) && $g->industry->slug !== $f['industry']) {
@@ -55,8 +56,13 @@ final class Directory
             if ($q !== '' && ! str_contains(mb_strtolower($g->name.' '.$g->industry->name.' '.$g->description), $q)) {
                 continue;
             }
+            $stats = $seatStats->get($g->id);
             $row = ['slug' => $g->slug, 'name' => $g->name, 'industry' => $g->industry->name, 'industrySlug' => $g->industry->slug, 'tier' => $g->industry->tier->value,
-                'description' => (string) $g->description, 'seatsFilled' => (int) ($filled[$g->id] ?? 0), 'unit' => $g->industry->territory_unit];
+                'description' => (string) $g->description, 'seatsFilled' => (int) ($stats->n ?? 0), 'states' => (int) ($stats->states ?? 0), 'unit' => $g->industry->territory_unit,
+                // For the directory card: the network's photo (or a cover drawn from its industry), who can join, and the price.
+                'photo' => $g->photo_path ? Storage::disk('public')->url($g->photo_path) : null, 'icon' => $g->industry->icon, 'family' => $g->industry->family,
+                'inviteOnly' => $g->visibility === 'invite_only',
+                'price' => ['seat' => (int) ($g->pricing['seat_price'] ?? 10), 'trialMonths' => (int) ($g->pricing['trial_months'] ?? 3)]];
             if ($city !== null) {
                 $row['citySeat'] = self::seatAt($g, $city);
             }

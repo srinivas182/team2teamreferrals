@@ -45,9 +45,13 @@ final class DirectoryController
         return Inertia::render('Directory', [
             'groups' => $rows, 'answer' => $answer, 'filters' => ['industry' => $f['industry'] ?? '', 'state' => strtoupper((string) ($f['state'] ?? '')), 'q' => $f['q'] ?? '',
                 'city' => $city !== null ? ['id' => $city->id, 'name' => $city->name.', '.DB::table('states')->where('id', $city->state_id)->value('code')] : null],
-            'industries' => Industry::query()->whereIn('id', Directory::groups()->pluck('industry_id'))->orderBy('name')->get(['slug', 'name'])->map(fn ($i) => ['slug' => $i->slug, 'name' => $i->name])->values(),
+            'industries' => Industry::query()->whereIn('id', $networks->pluck('industry_id'))->orderBy('name')->get(['slug', 'name', 'icon'])->map(fn ($i) => ['slug' => $i->slug, 'name' => $i->name, 'icon' => $i->icon])->values(),
+            'claimHref' => app(Modules::class)->enabled('prelaunch') ? '/reserve' : '/register',
             'states' => DB::table('states')->where('is_enabled', true)->orderBy('name')->get(['code', 'name']),
             'updatedOn' => substr((string) DB::table('seats')->max('updated_at'), 0, 10) ?: null,
+            // Headline numbers for the top of the page.
+            'stats' => ['networks' => $networks->count(), 'industries' => $industries, 'seats' => $filled,
+                'places' => DB::query()->fromSub(DB::table('seats')->whereIn('status', Directory::FILLED)->whereNotNull('primary_team_id')->select('territory_type', 'territory_id')->distinct(), 'p')->count()],
             'seo' => (new SeoData(title: 'Referral network directory', description: $answer, path: '/groups', index: ! $filtered, // filtered views aren't separate pages
                 schema: [Schema::organization(), $this->itemList(array_map(fn ($g) => [$g['name'], '/groups/'.$g['slug']], $rows)), Schema::breadcrumbs([['Home', '/'], ['Directory', '/groups']])]))->toArray(),
         ]);

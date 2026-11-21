@@ -61,6 +61,20 @@ it('lists live public groups with filters, and shows a city’s seat in each net
     $this->get('/groups/'.$draft->slug)->assertNotFound();
 });
 
+it('gives each directory card its cover, industry icon, price and reach, and the page its headline numbers', function () {
+    $this->solar->forceFill(['photo_path' => 'groups/solar.jpg', 'visibility' => 'invite_only', 'pricing' => ['seat_price' => 12, 'trial_months' => 2]])->save();
+    $this->get('/groups')->assertOk()->assertInertia(fn ($p) => $p
+        ->where('stats.networks', 2)->where('stats.seats', fn ($n) => $n >= 1)->where('stats.places', fn ($n) => $n >= 1)
+        ->where('claimHref', fn ($h) => in_array($h, ['/register', '/reserve'], true)) // same as the header's "Claim your city"
+        ->where('industries', fn ($i) => collect($i)->every(fn ($x) => filled($x['icon'])))
+        ->where('groups', function ($g) {
+            $solar = collect($g)->firstWhere('slug', $this->solar->slug);
+
+            return str_ends_with((string) $solar['photo'], 'groups/solar.jpg') && $solar['inviteOnly'] === true && $solar['price'] === ['seat' => 12, 'trialMonths' => 2]
+                && $solar['states'] >= 1 && filled($solar['icon']) && filled($solar['family']);
+        }));
+});
+
 it('serves a group page with its answer, rules, teams by state and open seats, showing only public facts', function () {
     $res = $this->get('/groups/'.$this->solar->slug)->assertOk();
     $props = $res->viewData('page')['props'];
