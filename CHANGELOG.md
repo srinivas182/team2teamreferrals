@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Admin menu on phones
+1. On phones and tablets the admin menu is no longer a sideways-scrolling strip across the top. A **Menu** button opens the full menu from the left, numbered (1. Dashboard, 2. Industries, …), with the signed-in person and Security settings underneath. Tapping a page closes it.
+2. The sidebar on large screens is numbered the same way, so the numbers match on every device.
+3. A search button on phones opens the same search as Ctrl K on a computer.
+
 ### Brevo through its API
 1. New email provider **Brevo (API)** (Admin → System → Email): paste a Brevo API key. Email goes over HTTPS, so it works on servers whose hosting company blocks the email ports. The From address must be a sender verified in Brevo. If Brevo refuses an email, its reason is shown (e.g. "Sender is not valid").
 2. The SMTP option is now called **Brevo (SMTP)**.

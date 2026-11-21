@@ -1,3 +1,4 @@
+import * as Drawer from '@radix-ui/react-dialog';
 import { Link, router, usePage } from '@inertiajs/react';
 import { FooterCredit } from '@/components/FooterCredit';
 import { TourRunner } from '@/components/tour/Tour';
@@ -32,6 +33,8 @@ import {
     ShieldCheck,
     Plug,
     ClipboardCheck,
+    Menu,
+    X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
@@ -91,12 +94,65 @@ const nav: Item[] = [
     { label: 'System', href: '/admin/system', icon: Settings2, permission: 'settings.manage', ready: true },
 ];
 
+/**
+ * The numbered admin menu: the sidebar on large screens and the slide-in menu on phones and tablets (one list, so the
+ * numbers match). Numbers help when talking someone through it ("open 7, License queue").
+ */
+function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNavigate?: () => void }) {
+    return (
+        <nav className="mt-2 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Admin">
+            <ol>
+                {items.map((n, i) => {
+                    const current = n.href === '/admin' ? url === '/admin' : url.startsWith(n.href);
+                    return (
+                        <li key={n.href}>
+                            <Link
+                                href={n.href}
+                                prefetch
+                                onClick={onNavigate}
+                                data-tour={onNavigate ? undefined : `admin-nav-${n.href.split('/')[2] ?? 'home'}`}
+                                aria-current={current ? 'page' : undefined}
+                                className={cn(
+                                    'flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white',
+                                    current && 'bg-white/10 text-white',
+                                )}
+                            >
+                                <span className="w-5 shrink-0 text-right text-xs text-[#7F8AA8] tabular-nums" aria-hidden>
+                                    {i + 1}.
+                                </span>
+                                <n.icon className="size-[18px] shrink-0" aria-hidden />
+                                <span className="truncate">{n.label}</span>
+                            </Link>
+                        </li>
+                    );
+                })}
+            </ol>
+        </nav>
+    );
+}
+
+/** Who is signed in, under the menu. */
+function AdminUser({ user }: { user: NonNullable<SharedProps['auth']['user']> }) {
+    return (
+        <div className="flex items-center gap-3 border-t border-white/10 p-4">
+            <Avatar name={user.name} size={32} tone="receiver" />
+            <div className="min-w-0 text-sm">
+                <div className="truncate font-semibold">{user.name}</div>
+                <Link href="/app/settings/security" className="text-[#AAB4CE] hover:text-white">
+                    Security settings
+                </Link>
+            </div>
+        </div>
+    );
+}
+
 /** Super admin area: deliberately distinct navy sidebar so it never looks like a member screen. */
 export function AdminLayout({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
     const { url, props } = usePage<SharedProps>();
     const user = props.auth.user;
     const [palette, setPalette] = useState(false);
     const [help, setHelp] = useState(false);
+    const [menu, setMenu] = useState(false);
     const shortcuts = useMemo(
         () => [
             { keys: 'g d', label: 'Go to the admin dashboard', href: '/admin' },
@@ -135,55 +191,51 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                         <Logo markOnly className="h-8 w-9 text-white" />
                         <span className="text-sm font-semibold">Admin</span>
                     </div>
-                    <nav className="mt-2 flex-1 space-y-0.5 overflow-y-auto px-3" aria-label="Admin">
-                        {allowed.map((n) => {
-                            const current = n.href === '/admin' ? url === '/admin' : url.startsWith(n.href);
-                            return (
-                                <Link
-                                    key={n.href}
-                                    href={n.href}
-                                    prefetch
-                                    data-tour={`admin-nav-${n.href.split('/')[2] ?? 'home'}`}
-                                    aria-current={current ? 'page' : undefined}
-                                    className={cn(
-                                        'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white',
-                                        current && 'bg-white/10 text-white',
-                                    )}
-                                >
-                                    <n.icon className="size-[18px]" aria-hidden />
-                                    {n.label}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                    {user && (
-                        <div className="flex items-center gap-3 border-t border-white/10 p-4">
-                            <Avatar name={user.name} size={32} tone="receiver" />
-                            <div className="min-w-0 text-sm">
-                                <div className="truncate font-semibold">{user.name}</div>
-                                <Link href="/app/settings/security" className="text-[#AAB4CE] hover:text-white">
-                                    Security settings
-                                </Link>
-                            </div>
-                        </div>
-                    )}
+                    <AdminNav items={allowed} url={url} />
+                    {user && <AdminUser user={user} />}
                 </aside>
                 <div className="min-w-0">
                     <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur sm:px-6">
+                        {/* Phones and tablets: the same numbered menu slides in from the left. */}
+                        <Drawer.Root open={menu} onOpenChange={setMenu}>
+                            <Drawer.Trigger
+                                className="-ml-1 inline-flex h-11 items-center gap-2 rounded-md px-2 text-sm font-medium text-ink hover:bg-bg lg:hidden"
+                                aria-label="Open the admin menu"
+                            >
+                                <Menu className="size-6" aria-hidden />
+                                <span>Menu</span>
+                            </Drawer.Trigger>
+                            <Drawer.Portal>
+                                <Drawer.Overlay className="fixed inset-0 z-50 bg-navy-950/50 lg:hidden" />
+                                <Drawer.Content
+                                    className="fixed inset-y-0 left-0 z-50 flex w-[86vw] max-w-[320px] flex-col bg-navy-900 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] text-white shadow-xl lg:hidden"
+                                    aria-describedby={undefined}
+                                >
+                                    <div className="flex items-center gap-2 px-5 py-4">
+                                        <Logo markOnly className="h-8 w-9 text-white" />
+                                        <Drawer.Title className="text-sm font-semibold">Admin</Drawer.Title>
+                                        <Drawer.Close
+                                            className="ml-auto inline-flex size-11 items-center justify-center rounded-md text-[#AAB4CE] hover:bg-white/5 hover:text-white"
+                                            aria-label="Close the menu"
+                                        >
+                                            <X className="size-5" aria-hidden />
+                                        </Drawer.Close>
+                                    </div>
+                                    <AdminNav items={allowed} url={url} onNavigate={() => setMenu(false)} />
+                                    {user && <AdminUser user={user} />}
+                                </Drawer.Content>
+                            </Drawer.Portal>
+                        </Drawer.Root>
                         <span className="lg:hidden">
                             <Logo markOnly className="h-8 w-9" />
                         </span>
-                        <nav className="flex gap-1 overflow-x-auto lg:hidden" aria-label="Admin">
-                            {allowed.map((n) => (
-                                <Link
-                                    key={n.href}
-                                    href={n.href}
-                                    className="rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap text-muted hover:text-ink"
-                                >
-                                    {n.label}
-                                </Link>
-                            ))}
-                        </nav>
+                        <button
+                            onClick={() => setPalette(true)}
+                            className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg hover:text-ink sm:hidden"
+                            aria-label="Search"
+                        >
+                            <Search className="size-5" aria-hidden />
+                        </button>
                         <button
                             onClick={() => setPalette(true)}
                             className="hidden h-10 flex-1 items-center gap-2 rounded-md border border-line bg-bg px-3 text-left text-sm text-subtle sm:flex sm:max-w-md"
