@@ -97,7 +97,7 @@ const nav: Item[] = [
 /** The admin menu: the sidebar on large screens and the slide-in menu on phones and tablets (one list for both). */
 function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNavigate?: () => void }) {
     return (
-        <nav className="mt-2 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Admin">
+        <nav className="mt-2 menu-scroll flex-1 space-y-0.5 px-3 pb-4 text-[#AAB4CE]" aria-label="Admin">
             <ul>
                 {items.map((n) => {
                     const current = n.href === '/admin' ? url === '/admin' : url.startsWith(n.href);
@@ -110,7 +110,7 @@ function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNa
                                 data-tour={onNavigate ? undefined : `admin-nav-${n.href.split('/')[2] ?? 'home'}`}
                                 aria-current={current ? 'page' : undefined}
                                 className={cn(
-                                    'flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white',
+                                    'flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white lg:min-h-10 lg:py-1.5',
                                     current && 'bg-white/10 text-white',
                                 )}
                             >

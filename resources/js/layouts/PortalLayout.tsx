@@ -199,7 +199,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             Send referral
                         </Link>
                     </div>
-                    <nav className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Portal">
+                    <nav className="mt-4 menu-scroll flex-1 space-y-0.5 px-3 pb-4" aria-label="Portal">
                         {primaryNav.filter(shown).map((n) => (
                             <NavLink key={n.href} item={withBadge(n)} current={isCurrent(url, n.href)} />
                         ))}
