@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import { Honeypot, useStartToken } from '@/components/partners/FormExtras';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { PageHero } from '@/components/site/Site';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -32,14 +33,17 @@ export default function SupportContact({ me, categories, category, subject, sugg
     return (
         <PublicLayout current="/help">
             <SeoHead seo={seo} />
-            <div className="mx-auto max-w-2xl px-4 py-10">
-                <p className="text-sm">
-                    <Link href="/help" className="text-primary">
+            <PageHero
+                narrow
+                eyebrow={
+                    <Link href="/help" className="normal-case hover:underline">
                         Help centre
                     </Link>
-                </p>
-                <h1 className="mt-2 font-display text-3xl font-bold">Contact support</h1>
-                <p className="mt-2">A person reads every message and replies, usually within a business day.</p>
+                }
+                title="Contact support"
+                lead="A person reads every message and replies, usually within a business day."
+            />
+            <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8">
                 {suggestions.length > 0 && (
                     <aside className="mt-4 rounded-lg border border-line bg-surface p-4 text-sm">
                         <p className="font-medium">These might already answer it:</p>

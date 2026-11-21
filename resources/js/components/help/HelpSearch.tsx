@@ -38,7 +38,7 @@ export function HelpSearch({ initial = '', large = false }: { initial?: string; 
 export function StillNeedHelp({ article, q }: { article?: string; q?: string }) {
     const qs = article ? `?article=${encodeURIComponent(article)}` : q ? `?q=${encodeURIComponent(q)}` : '';
     return (
-        <section className="mt-10 rounded-lg border border-line bg-surface p-5">
+        <section className="mt-10 rounded-2xl border border-line bg-surface p-6 shadow-sm">
             <h2 className="font-display text-xl font-bold">Still need help?</h2>
             <p className="mt-1">Send us a message and a person replies, usually within a business day.</p>
             <Button asChild className="mt-3">

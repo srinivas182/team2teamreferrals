@@ -22,17 +22,18 @@ final class BlogController
         $cat = $category !== null ? DB::table('blog_categories')->where('slug', $category)->first() : null;
         abort_if($category !== null && $cat === null, 404);
         $page = max(1, (int) $request->query('page', '1'));
-        $q = DB::table('posts as p')->leftJoin('media as m', 'm.id', '=', 'p.cover_media_id')->where('p.status', 'published')->when($cat, fn ($q, $c) => $q->where('p.category_id', $c->id));
+        $q = DB::table('posts as p')->leftJoin('media as m', 'm.id', '=', 'p.cover_media_id')->leftJoin('blog_categories as c', 'c.id', '=', 'p.category_id')->where('p.status', 'published')->when($cat, fn ($q, $c) => $q->where('p.category_id', $c->id));
         $total = (clone $q)->count();
-        $posts = $q->orderByDesc('p.published_at')->forPage($page, self::PER_PAGE)->get(['p.slug', 'p.title', 'p.answer_summary', 'p.published_at', 'm.thumb_path', 'm.alt'])
+        $posts = $q->orderByDesc('p.published_at')->forPage($page, self::PER_PAGE)->get(['p.slug', 'p.title', 'p.answer_summary', 'p.published_at', 'm.thumb_path', 'm.alt', 'c.name as category', 'c.slug as category_slug'])
             ->map(fn ($p) => ['slug' => (string) $p->slug, 'title' => \App\Domains\Content\Tokens::fill((string) $p->title), 'summary' => \App\Domains\Content\Tokens::fill((string) $p->answer_summary), 'date' => substr((string) $p->published_at, 0, 10),
-                'image' => $p->thumb_path ? MediaLibrary::url((string) $p->thumb_path) : null, 'alt' => (string) ($p->alt ?? '')])->values();
+                'image' => $p->thumb_path ? MediaLibrary::url((string) $p->thumb_path) : null, 'alt' => (string) ($p->alt ?? ''),
+                'category' => $p->category !== null ? (string) $p->category : null, 'categorySlug' => $p->category_slug !== null ? (string) $p->category_slug : null])->values();
         $path = $cat !== null ? '/blog/category/'.$cat->slug : '/blog';
         $title = $cat !== null ? $cat->name.' · Blog' : 'Blog';
         $intro = $cat?->description ?: 'Guides and news on referral networks: how out-of-area referrals work, client consent, referral fees and RESPA rules, and getting the most from your city seat.';
 
         return Inertia::render('Blog', [
-            'posts' => $posts, 'intro' => $intro, 'page' => $page, 'pages' => (int) max(1, ceil($total / self::PER_PAGE)), 'category' => $cat?->name,
+            'posts' => $posts, 'intro' => $intro, 'page' => $page, 'pages' => (int) max(1, ceil($total / self::PER_PAGE)), 'category' => $cat?->name, 'categorySlug' => $cat?->slug,
             'categories' => DB::table('blog_categories')->orderBy('name')->get(['slug', 'name'])->values(),
             'seo' => (new SeoData(title: $title,
                 description: $intro,

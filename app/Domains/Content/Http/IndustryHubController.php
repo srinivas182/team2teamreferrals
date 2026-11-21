@@ -23,7 +23,7 @@ final class IndustryHubController
 {
     public function index(): Response
     {
-        $hubs = IndustryContent::published()->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name, 'family' => Industry::FAMILIES[$i->family] ?? $i->family,
+        $hubs = IndustryContent::published()->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name, 'family' => Industry::FAMILIES[$i->family] ?? $i->family, 'familyKey' => $i->family, 'icon' => $i->icon,
             'summary' => IndustryContent::page($i)['content']['summary']])->values();
         $summary = 'Guides to the industries on '.config('seo.site_name').': what each covers, typical costs, licensing, and how referrals and fees work, reviewed by named experts.';
 

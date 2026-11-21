@@ -1,5 +1,7 @@
 import { Link } from '@inertiajs/react';
+import { BadgeCheck, BookOpen, CalendarDays, ChevronRight, Layers, UserRound } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { CtaBand, FeatureCard, PageHero, Section } from '@/components/site/Site';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
 
@@ -23,75 +25,82 @@ type Props = {
 
 /** A blog post: the answer first, then the article. Its body is HTML cleaned on the server. */
 export default function BlogPost({ post, related, seo }: Props) {
+    const hasRelated = related.industries.length > 0 || related.articles.length > 0;
     return (
         <PublicLayout current="/blog">
             <SeoHead seo={seo} />
-            <article className="mx-auto max-w-3xl px-4 py-10">
-                <p className="text-sm">
-                    <Link href="/blog" className="text-primary">
-                        Blog
-                    </Link>
-                    {post.category && post.categorySlug && (
-                        <>
-                            {' · '}
-                            <Link href={`/blog/category/${post.categorySlug}`} className="text-primary">
-                                {post.category}
+            <article>
+                <PageHero
+                    narrow
+                    eyebrow={
+                        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 normal-case">
+                            <Link href="/blog" className="hover:underline">
+                                Blog
                             </Link>
-                        </>
-                    )}
-                </p>
-                <h1 className="mt-2 font-display text-4xl font-bold">{post.title}</h1>
-                <p className="mt-4 text-lg">{post.summary}</p>
-                <p className="mt-3 text-sm text-muted">
-                    By {post.author}
-                    {post.reviewer && <> · Reviewed by {post.reviewer}</>} · Published <time dateTime={post.published}>{post.published}</time>
-                    {post.updated !== post.published && (
-                        <>
-                            {' '}
-                            · Updated <time dateTime={post.updated}>{post.updated}</time>
-                        </>
-                    )}
-                </p>
-                {post.image && <img src={post.image} alt={post.alt} className="mt-6 w-full rounded-lg" />}
-                <div className="prose mt-8 max-w-none" dangerouslySetInnerHTML={{ __html: post.body }} />
-                {(related.industries.length > 0 || related.articles.length > 0) && (
-                    <aside aria-labelledby="related" className="mt-10 border-t border-line pt-6">
-                        <h2 id="related" className="font-display text-xl font-bold">
-                            Related
-                        </h2>
-                        <div className="mt-3 grid gap-6 sm:grid-cols-2">
-                            {related.industries.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-muted">Industries in this article</h3>
-                                    <ul className="mt-1 space-y-1">
-                                        {related.industries.map((l) => (
-                                            <li key={l.url}>
-                                                <Link href={l.url} className="text-primary">
-                                                    {l.name}: costs, licensing and referrals
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                            {post.category && post.categorySlug && (
+                                <>
+                                    <ChevronRight className="size-4" aria-hidden />
+                                    <Link href={`/blog/category/${post.categorySlug}`} className="hover:underline">
+                                        {post.category}
+                                    </Link>
+                                </>
                             )}
-                            {related.articles.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-muted">Read next</h3>
-                                    <ul className="mt-1 space-y-1">
-                                        {related.articles.map((l) => (
-                                            <li key={l.url}>
-                                                <Link href={l.url} className="text-primary">
-                                                    {l.title}
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                        </nav>
+                    }
+                    title={post.title}
+                    lead={post.summary}
+                    meta={
+                        <span className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+                            <span className="inline-flex items-center gap-1.5">
+                                <UserRound className="size-4" aria-hidden /> By {post.author}
+                            </span>
+                            {post.reviewer && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <BadgeCheck className="size-4" aria-hidden /> Reviewed by {post.reviewer}
+                                </span>
                             )}
-                        </div>
-                    </aside>
-                )}
+                            <span className="inline-flex items-center gap-1.5">
+                                <CalendarDays className="size-4" aria-hidden /> Published <time dateTime={post.published}>{post.published}</time>
+                                {post.updated !== post.published && (
+                                    <>
+                                        {' '}
+                                        · Updated <time dateTime={post.updated}>{post.updated}</time>
+                                    </>
+                                )}
+                            </span>
+                        </span>
+                    }
+                />
+                <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
+                    {post.image && <img src={post.image} alt={post.alt} className="mb-10 w-full rounded-2xl shadow-sm" />}
+                    <div className="prose prose-lg max-w-3xl" dangerouslySetInnerHTML={{ __html: post.body }} />
+                </div>
             </article>
+
+            {hasRelated && (
+                <Section tinted title="Keep reading" id="related">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {related.articles.map((l) => (
+                            <FeatureCard key={l.url} icon={BookOpen} title={l.title} href={l.url}>
+                                Read next
+                            </FeatureCard>
+                        ))}
+                        {related.industries.map((l) => (
+                            <FeatureCard key={l.url} icon={Layers} title={l.name} href={l.url}>
+                                Costs, licensing and referrals
+                            </FeatureCard>
+                        ))}
+                    </div>
+                </Section>
+            )}
+            <Section>
+                <CtaBand
+                    title="Ready to trade referrals?"
+                    text="Claim the seat for your city in your industry’s network."
+                    action="Find your network"
+                    href="/groups"
+                />
+            </Section>
         </PublicLayout>
     );
 }
