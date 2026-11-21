@@ -15,7 +15,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
         <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] lg:grid-cols-2">
             <div className="flex min-w-0 flex-col px-6 py-8 sm:px-12">
                 <Link href="/" aria-label="Team to Team Referrals home" className="w-fit">
-                    <Logo className="h-9 w-[150px]" />
+                    <Logo className="h-10 w-[166px] xl:h-12 xl:w-[200px]" />
                 </Link>
                 <main id="main" className="mx-auto my-auto w-full max-w-sm py-10">
                     <h1 className="font-display text-3xl font-extrabold display">{title}</h1>
