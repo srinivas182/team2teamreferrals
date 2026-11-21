@@ -4,6 +4,9 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Logo "2" missing on phones
+1. The orange-blue "2" in the t2t logo didn't show in the admin header on phones. Two copies of the logo were on the page (one in the hidden computer sidebar) and shared the gradient the "2" is drawn with; the hidden copy's gradient draws nothing. Each logo now has its own. Test: resources/js/__tests__/logo.test.tsx.
+
 ### Admin menu on phones
 1. On phones and tablets the admin menu is no longer a sideways-scrolling strip across the top. A **Menu** button opens the full menu from the left, numbered (1. Dashboard, 2. Industries, …), with the signed-in person and Security settings underneath. Tapping a page closes it.
 2. The sidebar on large screens is numbered the same way, so the numbers match on every device.
