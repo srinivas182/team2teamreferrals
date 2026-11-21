@@ -41,6 +41,35 @@
     }
 }
 
+/*
+ * Side menus that are taller than the screen: a thin scrollbar that only appears while the pointer is over the menu,
+ * instead of the browser's grey bar with arrows (Windows). Scrolling with the wheel, trackpad or touch is unchanged.
+ */
+@utility menu-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    &:hover,
+    &:focus-within {
+        scrollbar-color: color-mix(in srgb, currentColor 30%, transparent) transparent;
+    }
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: transparent;
+        border-radius: 999px;
+    }
+    &:hover::-webkit-scrollbar-thumb,
+    &:focus-within::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, currentColor 30%, transparent);
+    }
+}
+
 @utility tabular {
     font-variant-numeric: tabular-nums;
 }

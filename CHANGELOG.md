@@ -4,6 +4,9 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Side menu scrollbar
+1. The admin and member side menus no longer show the browser's grey scrollbar with arrows. A thin bar in the menu's own colour appears only while the pointer is over the menu; the wheel, trackpad and touch scroll as before. Admin menu rows are a little tighter on computers, so more fit before scrolling.
+
 ### My account, and a tidier account menu
 1. **My account** page (`/app/settings/account`) for members and staff: name, mobile and time zone save straight away. A new mobile is confirmed by a texted code when texting is on. A new **email** needs your password, then a link sent to the new address; it only changes when that link is clicked (24 hours, works once), and the old address is told. Every change is in the audit log.
 2. My account, Password and security, and Notifications are one set of tabs.
