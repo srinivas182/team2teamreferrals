@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Website design, phase 2: detail pages
+1. Network pages: the shared header with key facts (seats filled, "N months free, then $X/mo", Claim a seat or Invite only), and the network's rules as icon cards.
+2. Team profiles: a header band with the team's logo (or initials), name, networks and badges.
+3. City pages, industry-by-state pages and industry guides: the shared header with breadcrumbs; seat and request areas as cards; nearby cities and other industries as cards; the guide's call to action as the dark band.
+4. Partner directory, partner city pages, each partner's page and Advertise with us: the shared header (the partner's logo beside its name).
+5. Press, Status, Developers and Accessibility: the shared header.
+6. Header and page body share one width on detail pages, so text lines up. On phones, a city's seat isn't boxed twice.
+
+The reserve-your-city pages keep their own launch design.
+
 ### Website design, phase 1: one modern look across the main pages
 1. Shared pieces for every public page (`components/site/Site.tsx`): a tinted page header with a label, large title and intro; section spacing; icon cards (numbered for steps); a dark call-to-action band; an accordion for questions.
 2. Website pages built in Admin → Website (How it works, Pricing, About, Contact, Terms, Privacy) use them through restyled blocks: icon cards for features and steps, stat tiles, quote cards, an accordion FAQ, pricing cards with ticks (only a plan marked in Admin is "Most popular"), and the dark band for calls to action. Text and content are unchanged. Card icons are chosen from each card's title (e.g. "Claim your city" → map pin).

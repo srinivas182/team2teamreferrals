@@ -89,62 +89,82 @@ export default function TeamPublic({
     return (
         <PublicLayout>
             <SeoHead seo={seo} />
-            <section className="mx-auto max-w-3xl px-5 py-12">
-                <div className="flex items-center gap-4">
-                    {team.logo && <img src={team.logo} alt="" className="size-16 rounded-xl object-cover" />}
-                    <div>
-                        <h1 className="font-display text-3xl font-extrabold">{team.name}</h1>
-                        <p className="text-muted">
-                            {groups.join(' · ')} · {cities.join(', ')}
-                        </p>
+            <section className="border-b border-line bg-gradient-to-b from-cobalt-50/70 to-bg dark:from-navy-900/60">
+                <div className="mx-auto max-w-4xl px-5 pt-12 pb-10 sm:px-8">
+                    <div className="flex items-center gap-5">
+                        {team.logo ? (
+                            <img src={team.logo} alt="" className="size-20 rounded-2xl border border-line bg-surface object-cover shadow-sm" />
+                        ) : (
+                            <span
+                                className="inline-flex size-20 shrink-0 items-center justify-center rounded-2xl bg-primary font-display text-2xl font-bold text-on-primary shadow-sm"
+                                aria-hidden
+                            >
+                                {team.name
+                                    .split(/\s+/)
+                                    .slice(0, 2)
+                                    .map((w) => w[0])
+                                    .join('')
+                                    .toUpperCase()}
+                            </span>
+                        )}
+                        <div>
+                            <h1 className="font-display text-4xl leading-tight font-bold">{team.name}</h1>
+                            <p className="text-muted">
+                                {groups.join(' · ')} · {cities.join(', ')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {licenses.map((l) => (
+                            <Badge key={l} tone="success">
+                                <BadgeCheck className="size-3" aria-hidden /> {l} license verified
+                            </Badge>
+                        ))}
+                        {record.trust && (
+                            <Badge tone="info">{record.trust.status === 'new' ? 'New member' : `Trust score ${record.trust.score}`}</Badge>
+                        )}
+                        {record.badges.map((b) => (
+                            <Badge key={b.key + (b.group ?? '')} tone="sender">
+                                {b.name}
+                            </Badge>
+                        ))}
+                        {serviceScore !== null && <Badge tone="info">Service score {serviceScore}</Badge>}
+                        {record.rating !== null && (
+                            <Badge tone="neutral">
+                                <Star className="size-3" aria-hidden /> {record.rating} from {record.ratings} ratings
+                            </Badge>
+                        )}
+                    </div>
+                    {team.bio && <p className="mt-5 max-w-3xl text-lg">{team.bio}</p>}
+                    {team.specialties.length > 0 && <p className="mt-3 text-sm">Specialties: {team.specialties.join(', ')}</p>}
+                    {team.languages.length > 0 && <p className="mt-1 text-sm">Languages: {team.languages.join(', ')}</p>}
+                    <p className="mt-3 text-sm text-muted">
+                        {record.closed} referrals closed{team.serviceArea ? ` · serving ${team.serviceArea}` : ''}
+                        {team.foundedYear ? ` · since ${team.foundedYear}` : ''}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {team.phone && (
+                            <a
+                                href={`tel:${team.phone}`}
+                                className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-4 text-sm font-semibold hover:border-primary"
+                            >
+                                <Phone className="size-4" aria-hidden /> {team.phone}
+                            </a>
+                        )}
+                        {team.website && (
+                            <a
+                                href={team.website}
+                                rel="noopener noreferrer"
+                                target="_blank"
+                                className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-4 text-sm font-semibold hover:border-primary"
+                            >
+                                <Globe className="size-4" aria-hidden /> Website
+                            </a>
+                        )}
                     </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {licenses.map((l) => (
-                        <Badge key={l} tone="success">
-                            <BadgeCheck className="size-3" aria-hidden /> {l} license verified
-                        </Badge>
-                    ))}
-                    {record.trust && <Badge tone="info">{record.trust.status === 'new' ? 'New member' : `Trust score ${record.trust.score}`}</Badge>}
-                    {record.badges.map((b) => (
-                        <Badge key={b.key + (b.group ?? '')} tone="sender">
-                            {b.name}
-                        </Badge>
-                    ))}
-                    {serviceScore !== null && <Badge tone="info">Service score {serviceScore}</Badge>}
-                    {record.rating !== null && (
-                        <Badge tone="neutral">
-                            <Star className="size-3" aria-hidden /> {record.rating} from {record.ratings} ratings
-                        </Badge>
-                    )}
-                </div>
-                {team.bio && <p className="mt-5">{team.bio}</p>}
-                {team.specialties.length > 0 && <p className="mt-3 text-sm">Specialties: {team.specialties.join(', ')}</p>}
-                {team.languages.length > 0 && <p className="mt-1 text-sm">Languages: {team.languages.join(', ')}</p>}
-                <p className="mt-3 text-sm text-muted">
-                    {record.closed} referrals closed{team.serviceArea ? ` · serving ${team.serviceArea}` : ''}
-                    {team.foundedYear ? ` · since ${team.foundedYear}` : ''}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {team.phone && (
-                        <a
-                            href={`tel:${team.phone}`}
-                            className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-4 text-sm font-semibold"
-                        >
-                            <Phone className="size-4" aria-hidden /> {team.phone}
-                        </a>
-                    )}
-                    {team.website && (
-                        <a
-                            href={team.website}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                            className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-4 text-sm font-semibold"
-                        >
-                            <Globe className="size-4" aria-hidden /> Website
-                        </a>
-                    )}
-                </div>
+            </section>
+            <section className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
                 <RecordFacts response={response} lastYear={lastYear} foundedYear={team.foundedYear} />
                 <Credentials items={credentials} />
                 <Ratings reviews={reviews} />
