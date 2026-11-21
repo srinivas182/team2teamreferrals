@@ -13,5 +13,10 @@ php artisan optimize
 (php artisan inertia:start-ssr >/dev/null 2>&1 &)
 (php artisan serve --port=8000 >/dev/null 2>&1 &)
 (node scripts/ci/gzip-proxy.mjs 8001 8000 >/dev/null 2>&1 &)
-for _ in $(seq 1 30); do curl -fs -o /dev/null http://127.0.0.1:8001/ && exit 0; sleep 1; done
-echo "The app did not start" >&2; exit 1
+for _ in $(seq 1 30); do curl -fs -o /dev/null http://127.0.0.1:8001/ && break; sleep 1; done
+curl -fs -o /dev/null http://127.0.0.1:8001/ || { echo "The app did not start" >&2; exit 1; }
+# Warm up: open every page the checks measure once, so the first page tested isn't timed on a cold server
+# (one Lighthouse run per page on pull requests; a cold first page scored 0.76 against 0.99 warm).
+for url in $(node -e 'const f=["lighthouserc.json","lighthouserc.mobile.json"];console.log([...new Set(f.flatMap(c=>require("./"+c).ci.collect.url))].join(" "))'); do
+    curl -fs -o /dev/null --compressed "$url" || true
+done
