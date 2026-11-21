@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { HelpSearch, StillNeedHelp } from '@/components/help/HelpSearch';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { PageHero } from '@/components/site/Site';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
 
@@ -9,14 +10,17 @@ export default function HelpSearchPage({ q, results, seo }: { q: string; results
     return (
         <PublicLayout current="/help">
             <SeoHead seo={seo} />
-            <div className="mx-auto max-w-3xl px-4 py-10">
-                <p className="text-sm">
-                    <Link href="/help" className="text-primary">
+            <PageHero
+                narrow
+                eyebrow={
+                    <Link href="/help" className="normal-case hover:underline">
                         Help centre
                     </Link>
-                </p>
-                <h1 className="mt-2 font-display text-3xl font-bold">Search help</h1>
-                <div className="mt-4">
+                }
+                title="Search help"
+            />
+            <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8">
+                <div>
                     <HelpSearch initial={q} />
                 </div>
                 {q && (

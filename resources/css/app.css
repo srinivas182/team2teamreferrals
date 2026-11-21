@@ -156,6 +156,10 @@
     .prose {
         line-height: 1.7;
     }
+    /* Long reading (articles, legal pages): a size up, the line kept to a comfortable length by the container. */
+    .prose-lg {
+        font-size: 1.125rem;
+    }
     .prose > * + * {
         margin-top: 1em;
     }
@@ -191,7 +195,7 @@
         text-underline-offset: 0.15em;
     }
     .prose blockquote {
-        border-left: 3px solid var(--color-line);
+        border-left: 3px solid var(--color-primary);
         padding-left: 1em;
         color: var(--color-muted);
     }

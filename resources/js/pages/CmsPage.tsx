@@ -4,6 +4,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
 import { CmsBlock, type Block } from '@/components/cms/Blocks';
+import { PageHero } from '@/components/site/Site';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
 
@@ -30,7 +31,7 @@ function ContactForm({ b, token }: { b: Block; token: string }) {
         return <Alert tone="success">Thanks, your message is on its way. We answer within one business day.</Alert>;
     }
     return (
-        <section className="max-w-2xl space-y-3 py-6">
+        <section className="my-10 max-w-2xl space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm sm:p-8">
             {typeof b.heading === 'string' && b.heading && <h2 className="font-display text-2xl font-bold">{b.heading}</h2>}
             {typeof b.intro === 'string' && b.intro && <p className="text-muted">{b.intro}</p>}
             <div className="grid gap-3 sm:grid-cols-2">
@@ -85,18 +86,30 @@ export default function CmsPage({ page, preview, contactToken, seo }: Props) {
                     Preview of version {preview.version}: not public, not indexed.
                 </div>
             )}
-            <article className="mx-auto max-w-5xl px-4 py-10">
-                <header className="max-w-3xl">
-                    <h1 className="font-display text-4xl font-bold">{page.title}</h1>
-                    {page.summary && <p className="mt-4 text-lg">{page.summary}</p>}
-                    {/* The date matches the page's structured data (dateModified), so readers and answer engines see the same. */}
-                    <p className="mt-2 text-sm text-muted">
-                        {page.template === 'legal' ? 'Effective' : 'Updated'} <time dateTime={page.updated}>{formatDay(page.updated)}</time>
-                    </p>
-                </header>
-                {page.blocks.map((b, i) =>
-                    b.type === 'contact_form' ? contactToken ? <ContactForm key={i} b={b} token={contactToken} /> : null : <CmsBlock key={i} b={b} />,
-                )}
+            <article>
+                <PageHero
+                    narrow={page.template === 'legal'}
+                    eyebrow={page.template === 'legal' ? 'Legal' : undefined}
+                    title={page.title}
+                    lead={page.summary || undefined}
+                    // The date matches the page's structured data (dateModified), so readers and answer engines see the same.
+                    meta={
+                        <>
+                            {page.template === 'legal' ? 'Effective' : 'Updated'} <time dateTime={page.updated}>{formatDay(page.updated)}</time>
+                        </>
+                    }
+                />
+                <div className={page.template === 'legal' ? 'mx-auto max-w-4xl px-5 pb-12 sm:px-8' : 'mx-auto max-w-6xl px-5 pb-12 sm:px-8'}>
+                    {page.blocks.map((b, i) =>
+                        b.type === 'contact_form' ? (
+                            contactToken ? (
+                                <ContactForm key={i} b={b} token={contactToken} />
+                            ) : null
+                        ) : (
+                            <CmsBlock key={i} b={b} />
+                        ),
+                    )}
+                </div>
             </article>
         </PublicLayout>
     );

@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Website design, phase 1: one modern look across the main pages
+1. Shared pieces for every public page (`components/site/Site.tsx`): a tinted page header with a label, large title and intro; section spacing; icon cards (numbered for steps); a dark call-to-action band; an accordion for questions.
+2. Website pages built in Admin → Website (How it works, Pricing, About, Contact, Terms, Privacy) use them through restyled blocks: icon cards for features and steps, stat tiles, quote cards, an accordion FAQ, pricing cards with ticks (only a plan marked in Admin is "Most popular"), and the dark band for calls to action. Text and content are unchanged. Card icons are chosen from each card's title (e.g. "Claim your city" → map pin).
+3. Find a pro: the search sits in the header; the four steps are cards; the answer engines quote is its own section.
+4. Blog: category buttons in the header, the newest post as a large card, the rest as cards with a cover (the post's image, or a colour per category). Posts: an article header with author, reviewer and dates, a reading width, and "Keep reading" cards.
+5. Industries: industry cards with their icons, grouped by family, with jump links.
+6. Help centre: a large search in the header, topic cards with icons, popular questions as cards. Articles, topics, search and Contact support use the same header and reading width.
+
+Phase 2 (network, team, city and partner pages; Press, Status, Developers, Accessibility, reserve pages) follows.
+
 ### Network directory redesign (/groups)
 1. A proper opening section: headline, the live numbers (networks, industries, seats filled, cities covered) and one search bar with the city picker built in.
 2. Industry chips with their icons replace the industry dropdown; the state filter stays next to them. Picking a city, chip or state updates the list at once.

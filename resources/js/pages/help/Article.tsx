@@ -1,8 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { StillNeedHelp } from '@/components/help/HelpSearch';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { PageHero } from '@/components/site/Site';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/field';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -35,90 +36,97 @@ export default function HelpArticle({ article, category, related, seo }: Props) 
     return (
         <PublicLayout current="/help">
             <SeoHead seo={seo} />
-            <article className="mx-auto max-w-3xl px-4 py-10">
-                <p className="text-sm">
-                    <Link href="/help" className="text-primary">
-                        Help centre
-                    </Link>
-                    {category.slug && (
-                        <>
-                            {' · '}
-                            <Link href={`/help/topic/${category.slug}`} className="text-primary">
-                                {category.name}
+            <article>
+                <PageHero
+                    narrow
+                    eyebrow={
+                        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 normal-case">
+                            <Link href="/help" className="hover:underline">
+                                Help centre
                             </Link>
-                        </>
-                    )}
-                </p>
-                <h1 className="mt-2 font-display text-4xl font-bold">{article.title}</h1>
-                <p className="mt-4 rounded-lg border-l-4 border-primary bg-surface p-4 text-lg">{article.summary}</p>
-                <div className="prose mt-6 max-w-none" dangerouslySetInnerHTML={{ __html: article.html }} />
-                <p className="mt-6 text-sm text-muted">
-                    Updated <time dateTime={article.updated}>{article.updated}</time>
-                </p>
-                <section aria-labelledby="helpful" className="mt-8 rounded-lg border border-line p-4">
-                    <h2 id="helpful" className="font-semibold">
-                        Was this helpful?
-                    </h2>
-                    {vote === null ? (
-                        <div className="mt-2 flex gap-2">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                    setVote(true);
-                                    send(true);
-                                }}
-                            >
-                                <ThumbsUp /> Yes
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                    setVote(false);
-                                    send(false);
-                                }}
-                            >
-                                <ThumbsDown /> No
-                            </Button>
-                        </div>
-                    ) : vote || sent ? (
-                        <p className="mt-2 text-sm">Thanks for letting us know.</p>
-                    ) : (
-                        <div className="mt-2 space-y-2">
-                            <label htmlFor="missing" className="text-sm">
-                                What were you looking for? (optional)
-                            </label>
-                            <Textarea id="missing" rows={2} maxLength={1000} value={comment} onChange={(e) => setComment(e.target.value)} />
-                            <Button
-                                size="sm"
-                                onClick={() => {
-                                    if (comment.trim()) send(false, comment.trim());
-                                    setSent(true);
-                                }}
-                            >
-                                Send
-                            </Button>
-                        </div>
-                    )}
-                </section>
-                {related.length > 0 && (
-                    <section aria-labelledby="related" className="mt-8">
-                        <h2 id="related" className="font-display text-xl font-bold">
-                            Related questions
-                        </h2>
-                        <ul className="mt-3 space-y-2">
-                            {related.map((r) => (
-                                <li key={r.href}>
-                                    <Link href={r.href} className="text-primary">
-                                        {r.title}
+                            {category.slug && (
+                                <>
+                                    <ChevronRight className="size-4" aria-hidden />
+                                    <Link href={`/help/topic/${category.slug}`} className="hover:underline">
+                                        {category.name}
                                     </Link>
-                                </li>
-                            ))}
-                        </ul>
+                                </>
+                            )}
+                        </nav>
+                    }
+                    title={article.title}
+                />
+                <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
+                    <p className="max-w-3xl rounded-2xl border-l-4 border-primary bg-surface p-5 text-lg shadow-sm">{article.summary}</p>
+                    <div className="prose prose-lg mt-8 max-w-3xl" dangerouslySetInnerHTML={{ __html: article.html }} />
+                    <p className="mt-6 text-sm text-muted">
+                        Updated <time dateTime={article.updated}>{article.updated}</time>
+                    </p>
+                    <section aria-labelledby="helpful" className="mt-10 max-w-3xl rounded-2xl border border-line bg-surface p-5 shadow-sm">
+                        <h2 id="helpful" className="font-semibold">
+                            Was this helpful?
+                        </h2>
+                        {vote === null ? (
+                            <div className="mt-2 flex gap-2">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setVote(true);
+                                        send(true);
+                                    }}
+                                >
+                                    <ThumbsUp /> Yes
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setVote(false);
+                                        send(false);
+                                    }}
+                                >
+                                    <ThumbsDown /> No
+                                </Button>
+                            </div>
+                        ) : vote || sent ? (
+                            <p className="mt-2 text-sm">Thanks for letting us know.</p>
+                        ) : (
+                            <div className="mt-2 space-y-2">
+                                <label htmlFor="missing" className="text-sm">
+                                    What were you looking for? (optional)
+                                </label>
+                                <Textarea id="missing" rows={2} maxLength={1000} value={comment} onChange={(e) => setComment(e.target.value)} />
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        if (comment.trim()) send(false, comment.trim());
+                                        setSent(true);
+                                    }}
+                                >
+                                    Send
+                                </Button>
+                            </div>
+                        )}
                     </section>
-                )}
-                <StillNeedHelp article={article.slug} />
+                    {related.length > 0 && (
+                        <section aria-labelledby="related" className="mt-8">
+                            <h2 id="related" className="font-display text-xl font-bold">
+                                Related questions
+                            </h2>
+                            <ul className="mt-3 space-y-2">
+                                {related.map((r) => (
+                                    <li key={r.href}>
+                                        <Link href={r.href} className="text-primary">
+                                            {r.title}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+                    <StillNeedHelp article={article.slug} />
+                </div>
             </article>
         </PublicLayout>
     );
