@@ -117,7 +117,7 @@ function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNa
                                     current && 'bg-white/10 text-white',
                                 )}
                             >
-                                <span className="w-5 shrink-0 text-right text-xs text-[#7F8AA8] tabular-nums" aria-hidden>
+                                <span className="w-5 shrink-0 text-right text-xs text-[#AAB4CE] tabular-nums" aria-hidden>
                                     {i + 1}.
                                 </span>
                                 <n.icon className="size-[18px] shrink-0" aria-hidden />
