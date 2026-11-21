@@ -55,9 +55,10 @@ export function PageHero({
         <section className={cn('border-b border-line bg-gradient-to-b from-cobalt-50/70 to-bg dark:from-navy-900/60', className)}>
             <div className={cn('mx-auto px-5 pt-12 pb-10 sm:px-8 sm:pt-14', narrow ? 'max-w-4xl' : 'max-w-6xl')}>
                 {eyebrow && <div className="text-sm font-semibold tracking-wide text-primary uppercase">{eyebrow}</div>}
-                <h1 className="mt-2 max-w-3xl font-display text-4xl leading-tight font-bold text-balance sm:text-5xl">{title}</h1>
-                {lead && <div className="mt-4 max-w-2xl text-lg text-muted">{lead}</div>}
-                {meta && <div className="mt-3 text-sm text-muted">{meta}</div>}
+                <h1 className="mt-2 max-w-3xl font-display text-4xl leading-tight font-bold sm:text-5xl">{title}</h1>
+                {/* Paragraphs, not boxes: the opening answer is what search and answer engines quote (the SEO audit counts it). */}
+                {lead && <p className="mt-4 max-w-2xl text-lg text-muted">{lead}</p>}
+                {meta && <p className="mt-3 text-sm text-muted">{meta}</p>}
                 {children && <div className="mt-8">{children}</div>}
             </div>
         </section>

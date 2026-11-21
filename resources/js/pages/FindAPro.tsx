@@ -29,7 +29,7 @@ export default function FindAPro({ answer, industries, seo }: { answer: string; 
             <PageHero
                 eyebrow="For homeowners and clients"
                 title="Find a trusted pro"
-                lead="One verified pro per city, checked and held to response deadlines."
+                lead="Tell us what you need and where. Your request goes to the one verified pro for your city: licensed where required, held to response deadlines, and never sold to several."
             >
                 <form
                     className="grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end"

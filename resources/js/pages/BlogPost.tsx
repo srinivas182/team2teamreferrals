@@ -50,7 +50,7 @@ export default function BlogPost({ post, related, seo }: Props) {
                     title={post.title}
                     lead={post.summary}
                     meta={
-                        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
                             <span className="inline-flex items-center gap-1.5">
                                 <UserRound className="size-4" aria-hidden /> By {post.author}
                             </span>
