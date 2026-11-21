@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { PageHero } from '@/components/site/Site';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import type { Seo } from '@/types/seo';
 
@@ -86,13 +87,18 @@ export default function Developers({ spec, scopes, limits, seo }: Props) {
     return (
         <PublicLayout>
             <SeoHead seo={seo} />
-            <div className="mx-auto max-w-6xl px-4 py-10">
-                <h1 className="font-display text-4xl font-bold">API for developers</h1>
-                <p className="mt-3 max-w-3xl text-lg text-muted">
-                    Send and track referrals between verified teams from your own systems: create a referral, follow every status change, and read
-                    your leads, networks, seats and profile. Every team gets the API with its seat.
-                </p>
-                <section aria-labelledby="start" className="mt-8 grid gap-6 lg:grid-cols-2">
+            <PageHero
+                eyebrow="Developers"
+                title="API for developers"
+                lead={
+                    <>
+                        Send and track referrals between verified teams from your own systems: create a referral, follow every status change, and read
+                        your leads, networks, seats and profile. Every team gets the API with its seat.
+                    </>
+                }
+            />
+            <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+                <section aria-labelledby="start" className="grid gap-6 lg:grid-cols-2">
                     <div>
                         <h2 id="start" className="font-display text-2xl font-bold">
                             Getting started
@@ -265,7 +271,11 @@ export default function Developers({ spec, scopes, limits, seo }: Props) {
                             .map(({ path, method, op }) => {
                                 const body = deref(op.requestBody?.content['application/json'].schema);
                                 return (
-                                    <article key={op.operationId} id={op.operationId} className="rounded-lg border border-line p-4">
+                                    <article
+                                        key={op.operationId}
+                                        id={op.operationId}
+                                        className="rounded-2xl border border-line bg-surface p-5 shadow-sm"
+                                    >
                                         <h3 className="flex flex-wrap items-center gap-2 font-semibold">
                                             <span className={`rounded px-2 py-0.5 text-xs uppercase ${METHOD_TONE[method] ?? ''}`}>{method}</span>
                                             <code className="text-sm break-all">{path}</code>

@@ -1,5 +1,6 @@
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
+import { PageHero } from '@/components/site/Site';
 import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -23,13 +24,13 @@ export default function Status({
     return (
         <PublicLayout>
             <SeoHead seo={seo} />
-            <section className="mx-auto max-w-2xl px-5 py-16">
-                <h1 className="font-display text-3xl font-extrabold display">System status</h1>
+            <PageHero narrow eyebrow="Status" title="System status" />
+            <section className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
                 <div
                     className={
                         allOk
-                            ? 'mt-6 flex items-center gap-3 rounded-lg bg-[#ECFDF3] p-5 text-success dark:bg-success/15'
-                            : 'mt-6 flex items-center gap-3 rounded-lg bg-[#FEF9E7] p-5 text-warning dark:bg-warning/15'
+                            ? 'flex items-center gap-3 rounded-2xl bg-[#ECFDF3] p-6 text-success shadow-sm dark:bg-success/15'
+                            : 'flex items-center gap-3 rounded-2xl bg-[#FEF9E7] p-6 text-warning shadow-sm dark:bg-warning/15'
                     }
                     role="status"
                 >
