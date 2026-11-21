@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Identity\Http\Controllers\AccountController;
 use App\Domains\Identity\Http\Controllers\Admin\AuditLogController;
 use App\Domains\Identity\Http\Controllers\Admin\DashboardController;
 use App\Domains\Identity\Http\Controllers\Admin\StaffController;
@@ -19,6 +20,9 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
         Route::get('login/magic/{token}', [MagicLinkController::class, 'consume'])->middleware('signed')->name('login.magic.consume');
     });
 
+    // The link sent to a new email address: works signed in or not (it may be opened on another device).
+    Route::get('account/{user}/email/confirm', [AccountController::class, 'confirmEmailChange'])->middleware(['signed', 'throttle:20,1'])->name('settings.account.email.confirm');
+
     // "This wasn't me" from new-device emails: works signed in or not.
     Route::get('account/{user}/secure', [SecureAccountController::class, 'show'])->middleware(['signed', 'throttle:20,1'])->name('account.secure');
     Route::post('account/{user}/secure', [SecureAccountController::class, 'store'])->middleware(['signed', 'throttle:10,1'])->name('account.secure.store');
@@ -29,6 +33,13 @@ Route::middleware(['web', 'noindex:always'])->group(function (): void {
         Route::post('verify-phone/email', [PhoneVerificationController::class, 'sendByEmail'])->name('verification.phone.email');
         Route::post('verify-phone', [PhoneVerificationController::class, 'verify'])->name('verification.phone.verify');
         Route::put('verify-phone/number', [PhoneVerificationController::class, 'update'])->name('verification.phone.update');
+
+        // My account: name, email, mobile, time zone. Members and staff alike; only a verified email needed.
+        Route::middleware('verified')->group(function (): void {
+            Route::get('app/settings/account', [AccountController::class, 'show'])->name('settings.account');
+            Route::put('app/settings/account', [AccountController::class, 'update'])->middleware('throttle:20,1')->name('settings.account.update');
+            Route::post('app/settings/account/email', [AccountController::class, 'requestEmailChange'])->middleware('throttle:6,10')->name('settings.account.email');
+        });
 
         // Security settings need only a verified email, so staff without a mobile can still turn on two-step sign-in.
         Route::prefix('app/settings/security')->middleware('verified')->group(function (): void {

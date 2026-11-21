@@ -33,14 +33,13 @@ import {
     ShieldCheck,
     Plug,
     ClipboardCheck,
-    LogOut,
     Menu,
     X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { AccountMenu } from '@/components/AccountMenu';
 import { Logo } from '@/components/brand/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Avatar } from '@/components/ui/people';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -95,15 +94,12 @@ const nav: Item[] = [
     { label: 'System', href: '/admin/system', icon: Settings2, permission: 'settings.manage', ready: true },
 ];
 
-/**
- * The numbered admin menu: the sidebar on large screens and the slide-in menu on phones and tablets (one list, so the
- * numbers match). Numbers help when talking someone through it ("open 7, License queue").
- */
+/** The admin menu: the sidebar on large screens and the slide-in menu on phones and tablets (one list for both). */
 function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNavigate?: () => void }) {
     return (
         <nav className="mt-2 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Admin">
-            <ol>
-                {items.map((n, i) => {
+            <ul>
+                {items.map((n) => {
                     const current = n.href === '/admin' ? url === '/admin' : url.startsWith(n.href);
                     return (
                         <li key={n.href}>
@@ -118,16 +114,13 @@ function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNa
                                     current && 'bg-white/10 text-white',
                                 )}
                             >
-                                <span className="w-5 shrink-0 text-right text-xs text-[#AAB4CE] tabular-nums" aria-hidden>
-                                    {i + 1}.
-                                </span>
                                 <n.icon className="size-[18px] shrink-0" aria-hidden />
                                 <span className="truncate">{n.label}</span>
                             </Link>
                         </li>
                     );
                 })}
-            </ol>
+            </ul>
         </nav>
     );
 }
@@ -135,22 +128,8 @@ function AdminNav({ items, url, onNavigate }: { items: Item[]; url: string; onNa
 /** Who is signed in, under the menu. */
 function AdminUser({ user }: { user: NonNullable<SharedProps['auth']['user']> }) {
     return (
-        <div className="flex items-center gap-3 border-t border-white/10 p-4">
-            <Avatar name={user.name} size={32} tone="receiver" />
-            <div className="min-w-0 flex-1 text-sm">
-                <div className="truncate font-semibold">{user.name}</div>
-                <Link href="/app/settings/security" className="text-[#AAB4CE] hover:text-white">
-                    Security settings
-                </Link>
-            </div>
-            <button
-                type="button"
-                onClick={() => router.post('/logout')}
-                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-[#AAB4CE] hover:bg-white/5 hover:text-white"
-            >
-                <LogOut className="size-4" aria-hidden />
-                Sign out
-            </button>
+        <div className="border-t border-white/10 p-3">
+            <AccountMenu name={user.name} detail="Admin" dark />
         </div>
     );
 }

@@ -20,7 +20,7 @@ beforeEach(function () {
     Notification::fake();
     modulesOn(...array_keys(array_filter(Modules::ALL, fn ($m) => ($m['available'] ?? true) !== false)));
     $this->nav = (string) file_get_contents(resource_path('js/layouts/nav.ts'));
-    $this->layout = (string) file_get_contents(resource_path('js/layouts/PortalLayout.tsx'));
+    $this->layout = file_get_contents(resource_path('js/layouts/PortalLayout.tsx')).file_get_contents(resource_path('js/components/AccountMenu.tsx'));
 });
 
 it('opens every menu link for a seat-holding owner', function () {
