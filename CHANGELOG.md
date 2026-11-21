@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Network directory redesign (/groups)
+1. A proper opening section: headline, the live numbers (networks, industries, seats filled, cities covered) and one search bar with the city picker built in.
+2. Industry chips with their icons replace the industry dropdown; the state filter stays next to them. Picking a city, chip or state updates the list at once.
+3. Each network is a card: its photo (or a cover in its industry's colours with its icon), industry badge, name, two-line description, teams and states, "N months free, then $X/mo", and "Seats open" or "Invite only". Buttons: View network and Claim a seat. With a city chosen, the card shows that city's seat, with "Claim this seat" when it's open.
+4. When no network is live yet, "Networks are opening" with a Claim your city button, instead of an empty list. When filters match nothing, a clear-filters prompt.
+5. A "How a seat works" band in three steps, and "Don't see your industry? Request a network".
+6. The summary that search and answer engines quote stays on the page, under "About this directory".
+
+Test: tests/Feature/Network/DirectoryTest.php.
+
 ### Bigger logo on the website
 1. The website, sign-in and sign-up pages show the logo larger: 48 px tall on computers (was 36), 40 px on phones and tablets. The header stays the same height.
 2. Tablets (768–1023 px) now use the menu button, as phones do: the logo, six links and two buttons didn't fit on one line, so link names were wrapping onto two or three lines.
