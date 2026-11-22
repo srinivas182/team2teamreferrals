@@ -21,7 +21,7 @@ The mark is a **t2t** lettermark. The "2" is an arrow, so the mark reads "team t
 | `brand/logo/t2t-mark.svg` / `-on-dark.svg` | Mark alone, where the name appears nearby |
 | `brand/icons/app-icon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` | App, PWA and home-screen icons |
 | `brand/icons/favicon.svg`, `favicon.ico`, `favicon-16/32/48.png` | Browser tabs. Uses the arrow-2 alone, because the full mark is too fine below 48 px |
-| `brand/social/og-image.png` | Link previews (1200 × 630) |
+| `brand/social/share-card.png` | Link previews (1200 × 630), drawn from `share-card.html` with `node scripts/brand/share-card.mjs`. Logo and headline stay in the middle 630 px so square crops (Slack, iMessage) show them whole. |
 | `brand/social/avatar-400.png` | Social profile pictures |
 
 All lettering is outlined, so the files render the same everywhere without fonts. To regenerate after a change: `cd tools/brand && python3 build.py`.

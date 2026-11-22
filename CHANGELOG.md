@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Link preview card
+1. A new card for shared links (`/brand/share-card.png`, 1200 × 630): the logo, headline and address are centred within the middle square, so apps that crop previews to a square (Slack, iMessage, LinkedIn on phones) show them whole instead of cutting off the left side. WhatsApp and others still show the full card.
+2. A new file name, so apps that cached the old card fetch the new one.
+3. Its source is `brand/social/share-card.html`; `node scripts/brand/share-card.mjs` redraws it.
+
 ### Website design, phase 2: detail pages
 1. Network pages: the shared header with key facts (seats filled, "N months free, then $X/mo", Claim a seat or Invite only), and the network's rules as icon cards.
 2. Team profiles: a header band with the team's logo (or initials), name, networks and badges.

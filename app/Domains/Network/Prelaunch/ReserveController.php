@@ -100,7 +100,7 @@ final class ReserveController
             $s = $this->reservations->shared($shareId);
             abort_if($s === null, 404);
             if (! ShareImage::generate($shareId, $s['business'], $s['territory'], $s['group'])) {
-                return redirect('/brand/og-image.png');
+                return redirect((string) config('seo.default_image'));
             }
         }
 
