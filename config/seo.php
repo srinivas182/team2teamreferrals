@@ -10,7 +10,8 @@ return [
     'site_name' => env('SEO_SITE_NAME', 'Team to Team Referrals'),
     'short_name' => 't2t',
     'default_description' => 'The referral network for licensed teams. Hand out-of-area leads to verified teams you trust, track every step, and get paid when they close.',
-    'default_image' => '/brand/og-image.png',
+    // A new name when the card changes: Slack, WhatsApp and LinkedIn cache previews by image address.
+    'default_image' => '/brand/share-card.png',
     'locale' => 'en_US',
 
     // Canonical origin. Requests on any other host or scheme are 301-redirected here in production.
