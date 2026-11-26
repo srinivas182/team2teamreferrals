@@ -92,9 +92,11 @@ export default function MyGroups({ rows, status, seo }: { rows: Row[]; status?: 
                             );
                         })}
                     </ul>
-                    <Button asChild variant="secondary" className="mt-6">
-                        <Link href="/app/groups">Join new groups</Link>
-                    </Button>
+                    <div className="mt-6">
+                        <Button asChild variant="secondary">
+                            <Link href="/app/groups">Join new groups</Link>
+                        </Button>
+                    </div>
                 </>
             )}
         </PortalLayout>

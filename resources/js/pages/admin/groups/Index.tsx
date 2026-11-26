@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus, Tags, TrendingUp } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
@@ -269,8 +269,17 @@ export default function GroupsIndex({
             </div>
             {pendingTotal > 0 && (
                 <Alert tone="info" className="mb-4">
-                    {pendingTotal} seat {pendingTotal === 1 ? 'application is' : 'applications are'} waiting for approval. Look for the “to approve”
-                    tag next to a group.
+                    {pendingTotal} seat {pendingTotal === 1 ? 'application is' : 'applications are'} waiting for approval:{' '}
+                    {groups
+                        .filter((g) => g.pendingApplications > 0)
+                        .map((g, i) => (
+                            <Fragment key={g.slug}>
+                                {i > 0 && ', '}
+                                <Link href={`/admin/groups/${g.slug}/applications`} className="font-semibold underline">
+                                    {g.name} ({g.pendingApplications})
+                                </Link>
+                            </Fragment>
+                        ))}
                 </Alert>
             )}
             <Card className="overflow-x-auto">

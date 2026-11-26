@@ -23,14 +23,17 @@ import type { SharedProps } from '@/types/auth';
 
 type Props = { title: string; actions?: ReactNode; children: ReactNode; user?: { name: string; team: string }; isGroupOwner?: boolean };
 
-const isCurrent = (url: string, href: string) => (href === '/app' ? url === '/app' : url === href || url.startsWith(href + '/'));
+const matches = (url: string, href: string) => (href === '/app' ? url === '/app' : url === href || url.startsWith(href + '/'));
+const allHrefs = [...primaryNav, ...portalNav, ...ownerNav, ...moreNav.flatMap((g) => g.items)].map((n) => n.href);
+/** The menu item for this page: the longest matching link wins, so /app/groups/mine lights up "My groups", not "Join new groups". */
+const isCurrent = (url: string, href: string) => matches(url, href) && !allHrefs.some((h) => h.length > href.length && matches(url, h));
 
 function NavLink({ item, current }: { item: NavItem; current: boolean }) {
     return (
         <Link
             href={item.href}
             prefetch
-            data-tour={`nav-${item.href.split('/')[2] ?? 'home'}`}
+            data-tour={`nav-${item.href.split('/').slice(2).join('-') || 'home'}`}
             aria-current={current ? 'page' : undefined}
             className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium text-muted hover:bg-bg hover:text-ink',
