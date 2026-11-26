@@ -3,7 +3,7 @@ import { Clock, Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CityPicker } from '@/components/CityPicker';
 import { article } from '@/components/directory/TeamCard';
-import { AnswerInput, type Answer, type FormField } from '@/components/referrals/AnswerInput';
+import { AnswerInput, shows, type Answer, type FormField } from '@/components/referrals/AnswerInput';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Select } from '@/components/ui/field';
 
@@ -55,7 +55,9 @@ export function RequestForm({ block, pro, place }: { block: RequestBlock; pro: s
     }, []);
     const errors = form.errors as Record<string, string>;
     const steps = ['What you need', 'When and how', 'Your details'];
-    const missing = block.questions.some((q) => q.required && [undefined, '', null].includes(form.data.answers[q.key] as string));
+    const missing = block.questions.some(
+        (q) => q.required && shows(q, form.data.answers) && [undefined, '', null].includes(form.data.answers[q.key] as string),
+    );
     return (
         <section id="request" aria-labelledby="request-title" className="mt-8 scroll-mt-20 rounded-lg border border-line bg-surface p-5">
             <h2 id="request-title" className="font-display text-2xl font-bold">
@@ -105,15 +107,22 @@ export function RequestForm({ block, pro, place }: { block: RequestBlock; pro: s
                                 <CityPicker onPick={(c) => setCityId(c.id)} />
                             </Field>
                         )}
-                        {block.questions.map((q) => (
-                            <Field key={q.key} label={`${q.label}${q.required ? '' : ' (optional)'}`} error={errors[`answers.${q.key}`]}>
-                                <AnswerInput
-                                    f={q}
-                                    value={form.data.answers[q.key]}
-                                    onChange={(v) => form.setData('answers', { ...form.data.answers, [q.key]: v })}
-                                />
-                            </Field>
-                        ))}
+                        {block.questions
+                            .filter((q) => shows(q, form.data.answers))
+                            .map((q) => (
+                                <Field
+                                    key={q.key}
+                                    label={`${q.label}${q.required ? '' : ' (optional)'}`}
+                                    error={errors[`answers.${q.key}`]}
+                                    hint={q.help}
+                                >
+                                    <AnswerInput
+                                        f={q}
+                                        value={form.data.answers[q.key]}
+                                        onChange={(v) => form.setData('answers', { ...form.data.answers, [q.key]: v })}
+                                    />
+                                </Field>
+                            ))}
                     </>
                 )}
                 {step === 1 && (

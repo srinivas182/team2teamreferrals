@@ -60,6 +60,10 @@ final class AdminGroupsController
                     'history' => DB::table('seat_events')->leftJoin('teams', 'teams.id', '=', 'seat_events.team_id')->where('seat_id', $s->id)->orderByDesc('seat_events.id')->limit(10)->get(['seat_events.event', 'seat_events.created_at', 'teams.name as team'])
                         ->map(fn ($e) => ['event' => (string) $e->event, 'when' => (string) $e->created_at, 'team' => $e->team])]),
             'pendingApplications' => DB::table('seat_applications')->where(['group_id' => $group->id, 'status' => 'pending'])->count(),
+            // Cities with no team that members sent referrals from anyway (to a nearby team): seats worth filling.
+            'emptyCityDemand' => DB::table('referrals')->where('group_id', $group->id)->whereNotNull('client_city_id')->where('created_at', '>=', now()->subDays(180))
+                ->selectRaw('client_city_id, count(*) as n')->groupBy('client_city_id')->orderByDesc('n')->limit(10)->get()
+                ->map(fn ($r) => ['city' => (string) \App\Domains\Network\Locations\Models\City::label((int) $r->client_city_id), 'referrals' => (int) $r->n])->values(),
             'affected' => GroupSettings::affected($group),
             'health' => GroupSettings::health($group),
             'status' => session('status'),

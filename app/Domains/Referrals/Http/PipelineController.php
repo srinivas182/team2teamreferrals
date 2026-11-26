@@ -23,8 +23,9 @@ final class PipelineController
     /** The board: the team's accepted referrals by stage, one network at a time. */
     public function board(Request $request): Response
     {
-        $team = Team::of($this->user($request));
-        $refs = $team === null ? collect() : Referral::query()->with(['group.industry', 'seat', 'sender'])->where(['receiver_team_id' => $team->id, 'status' => 'accepted'])->latest('stage_changed_at')->get();
+        $user = $this->user($request);
+        $team = Team::of($user);
+        $refs = $team === null ? collect() : \App\Domains\Referrals\Visibility::apply(Referral::query()->with(['group.industry', 'seat', 'sender'])->where('status', 'accepted'), $team, $user, 'received')->latest('stage_changed_at')->get();
         $groups = $refs->pluck('group')->unique('id')->values();
         $slug = (string) $request->query('group', '');
         $group = $groups->firstWhere('slug', $slug) ?? $groups->first();

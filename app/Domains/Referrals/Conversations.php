@@ -22,10 +22,9 @@ final class Conversations
 
     public static function canListenToReferral(User $user, string $referralUlid): bool
     {
-        $team = Team::of($user);
-        $ref = Referral::query()->where('ulid', $referralUlid)->first(['id', 'sender_team_id', 'receiver_team_id']);
+        $ref = Referral::query()->where('ulid', $referralUlid)->first();
 
-        return $team !== null && $ref !== null && in_array($team->id, [$ref->sender_team_id, $ref->receiver_team_id], true);
+        return $ref !== null && Visibility::canView($ref, $user);
     }
 
     /** Record that a team has read up to the latest message; tells the other side ("Seen") when it moves on. */
@@ -86,7 +85,7 @@ final class Conversations
     }
 
     /** @return array<int, array{referral: string, client: string, territory: string, who: string, excerpt: string, when: string}> */
-    public static function search(Team $team, string $q): array
+    public static function search(Team $team, string $q, ?User $user = null): array
     {
         $q = trim($q);
         if (mb_strlen($q) < 2) {
@@ -94,7 +93,7 @@ final class Conversations
         }
         $rows = DB::table('referral_messages as m')->join('referrals as r', 'r.id', '=', 'm.referral_id')->join('teams as t', 't.id', '=', 'm.team_id')
             ->join('seats as s', 's.id', '=', 'r.seat_id')
-            ->where(fn ($w) => $w->where('r.sender_team_id', $team->id)->orWhere('r.receiver_team_id', $team->id))
+            ->where(fn ($w) => $user !== null ? Visibility::apply($w, $team, $user, null, 'r.') : $w->where('r.sender_team_id', $team->id)->orWhere('r.receiver_team_id', $team->id))
             ->where('m.body', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], $q).'%')->orderByDesc('m.id')->limit(50)
             ->get(['r.id as rid', 'r.ulid', 'r.client_name', 'r.status', 'r.receiver_team_id', 's.territory_name', 't.name as who', 'm.body', 'm.created_at']);
 

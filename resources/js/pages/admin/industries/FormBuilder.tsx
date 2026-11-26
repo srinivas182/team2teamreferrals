@@ -20,6 +20,7 @@ export type FormField = {
     options?: string[];
     role?: string;
     help?: string;
+    when?: { field: string; in: string[] };
 };
 type Props = {
     scope: TemplateScope;
@@ -161,6 +162,7 @@ export default function FormBuilder({ scope, industry, body, source, version, hi
                                     />
                                 </Field>
                             )}
+                            <ShowWhen f={f} earlier={fields.slice(0, i)} onChange={(when) => set(i, { when })} />
                             <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
                                 <label className="flex items-center gap-1.5">
                                     <input type="checkbox" checked={f.required} onChange={(e) => set(i, { required: e.target.checked })} /> Required
@@ -260,5 +262,45 @@ export default function FormBuilder({ scope, industry, body, source, version, hi
                 </div>
             </div>
         </TemplateShell>
+    );
+}
+
+/** "Show only when": ask this question only for some answers to an earlier choice or yes/no question. */
+function ShowWhen({ f, earlier, onChange }: { f: FormField; earlier: FormField[]; onChange: (when: FormField['when']) => void }) {
+    const parents = earlier.filter((p) => ['choice', 'multi_choice', 'boolean'].includes(p.type));
+    if (parents.length === 0 || ['client_name', 'client_phone'].includes(f.key)) return null;
+    const parent = parents.find((p) => p.key === f.when?.field);
+    const options = parent ? (parent.type === 'boolean' ? ['Yes', 'No'] : (parent.options ?? []).filter((o) => o.trim() !== '')) : [];
+    return (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <Select
+                aria-label={`When to ask “${f.label}”`}
+                value={f.when?.field ?? ''}
+                onChange={(e) => onChange(e.target.value ? { field: e.target.value, in: [] } : undefined)}
+                className="h-9 w-auto"
+            >
+                <option value="">Always ask</option>
+                {parents.map((p) => (
+                    <option key={p.key} value={p.key}>
+                        Only when “{p.label}” is…
+                    </option>
+                ))}
+            </Select>
+            {options.map((o) => (
+                <label key={o} className="flex items-center gap-1.5">
+                    <input
+                        type="checkbox"
+                        checked={f.when?.in.includes(o) ?? false}
+                        onChange={(e) =>
+                            onChange({
+                                field: f.when!.field,
+                                in: e.target.checked ? [...(f.when?.in ?? []), o] : (f.when?.in ?? []).filter((x) => x !== o),
+                            })
+                        }
+                    />{' '}
+                    {o}
+                </label>
+            ))}
+        </div>
     );
 }

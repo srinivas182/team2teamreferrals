@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Prospect feedback, part 1: property address, member privacy, nearby teams
+1. **Address of the home they're selling.** On real estate referrals, choosing "Selling" or "Both" now asks for the home's address (required). It is private: the receiving team sees it only after accepting. Saved property forms get it as a new version (roll back from the form builder if needed).
+2. **Show-when questions.** Admins can now set any question to appear only for certain answers to an earlier question ("Only when Buying or selling? is Selling"), in Admin → Industries → form. The send form, the public request form, the chat bot and the API all follow it.
+3. **Team members see only their own referrals.** Leaders and assistants still see everything. Members see referrals they sent, referrals they accepted, and new offers waiting for the team. This applies to the inbox, sent, pipeline, message search, earnings and the API. Only leaders and assistants can decline (declining passes the client to another team), and the fee export is for them too.
+4. **First to accept gets it.** If two teammates tap Accept at the same time, only one gets the referral; the other is told a teammate took it. The referral page shows who accepted.
+5. **Nearby teams.** When no team holds the client's city, the send screen lists nearby teams nearest first (up to 5), with a "Search within 100 / 150 miles" button. The receiving team sees "The client is in Saint George, UT, 17 miles from your seat". Admin → a group → Seats lists the cities without a team that members sent referrals from: seats worth filling.
+
 ### My groups, and pending applications for admins
 1. Member menu, Network: a new **My groups** page lists every network and city your team applied for, with where each stands (waiting for approval, seat holder, backup, waitlist, not approved), the dates, and when a free trial ends. After applying, you land here.
 2. **Groups** is now **Join new groups**. An "Applied" tag on a network links to My groups. The checklist's "Hold your first seat" opens My groups.

@@ -18,10 +18,13 @@ final class Matches
 {
     public const MILES = 60;
 
-    public const LIMIT = 3;
+    /** The wider searches a sender can ask for when nothing is close. */
+    public const RADII = [60, 100, 150];
+
+    public const LIMIT = 5;
 
     /** @return list<array{team: string, teamSlug: string, cityId: int, city: string, miles: int, score: ?int}> */
-    public static function nearby(Group $group, int $cityId, ?int $excludeTeamId = null): array
+    public static function nearby(Group $group, int $cityId, ?int $excludeTeamId = null, int $radius = self::MILES): array
     {
         $origin = DB::table('cities')->where('id', $cityId)->first(['lat', 'lon']);
         if ($origin === null || $origin->lat === null || $origin->lon === null) {
@@ -38,15 +41,32 @@ final class Matches
                 continue;
             }
             $miles = self::miles((float) $origin->lat, (float) $origin->lon, (float) $r->lat, (float) $r->lon);
+            if ($miles > $radius) {
+                continue;
+            }
             $team = Team::query()->with('leader')->find((int) $r->primary_team_id);
-            if ($miles > self::MILES || $team === null || $training->blocks($team->leader, $group)) {
+            if ($team === null || $training->blocks($team->leader, $group)) {
                 continue;
             }
             $out[] = ['team' => $team->name, 'teamSlug' => (string) $team->slug, 'cityId' => (int) $r->city_id, 'city' => $r->name.', '.$r->code, 'miles' => (int) round($miles), 'score' => ServiceScore::for($team)['score']];
         }
-        usort($out, fn ($a, $b) => [$b['score'] ?? -1, $a['miles']] <=> [$a['score'] ?? -1, $b['miles']]);
+        // Nearest first (the sender is choosing by distance); the better service score breaks a tie.
+        usort($out, fn ($a, $b) => [$a['miles'], $b['score'] ?? -1] <=> [$b['miles'], $a['score'] ?? -1]);
 
         return array_slice($out, 0, self::LIMIT);
+    }
+
+    /** Miles between two cities' centres, or null when either has no coordinates. */
+    public static function between(int $a, int $b): ?int
+    {
+        $c = DB::table('cities')->whereIn('id', [$a, $b])->get(['id', 'lat', 'lon'])->keyBy('id');
+        $x = $c->get($a);
+        $y = $c->get($b);
+        if ($x === null || $y === null || $x->lat === null || $y->lat === null || $x->lon === null || $y->lon === null) {
+            return null;
+        }
+
+        return (int) round(self::miles((float) $x->lat, (float) $x->lon, (float) $y->lat, (float) $y->lon));
     }
 
     private static function miles(float $lat1, float $lon1, float $lat2, float $lon2): float

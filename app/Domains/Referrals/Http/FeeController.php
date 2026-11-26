@@ -27,7 +27,8 @@ final class FeeController
     {
         $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
         $rows = DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->join('teams as p', 'p.id', '=', 'f.payer_team_id')->join('teams as q', 'q.id', '=', 'f.payee_team_id')
-            ->where(fn ($w) => $w->where('f.payer_team_id', $team->id)->orWhere('f.payee_team_id', $team->id))->orderByDesc('f.id')->limit(300)
+            ->where(fn ($w) => $w->where('f.payer_team_id', $team->id)->orWhere('f.payee_team_id', $team->id))
+            ->where(fn ($w) => \App\Domains\Referrals\Visibility::apply($w, $team, $this->user($request), null, 'r.'))->orderByDesc('f.id')->limit(300)
             ->get(['f.*', 'r.ulid', 'r.client_name', 'p.name as payer', 'q.name as payee']);
         $sum = fn ($set) => (int) $set->sum('amount_cents');
 
@@ -85,7 +86,8 @@ final class FeeController
     {
         $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
         $rows = DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->join('teams as p', 'p.id', '=', 'f.payer_team_id')->join('teams as q', 'q.id', '=', 'f.payee_team_id')
-            ->where(fn ($w) => $w->where('f.payer_team_id', $team->id)->orWhere('f.payee_team_id', $team->id))->where('f.created_at', 'like', $year.'%')->orderBy('f.created_at')
+            ->where(fn ($w) => $w->where('f.payer_team_id', $team->id)->orWhere('f.payee_team_id', $team->id))
+            ->where(fn ($w) => \App\Domains\Referrals\Visibility::apply($w, $team, $this->user($request), null, 'r.'))->where('f.created_at', 'like', $year.'%')->orderBy('f.created_at')
             ->get(['f.*', 'r.client_name', 'p.name as payer', 'q.name as payee']);
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.earnings-year', ['team' => $team, 'year' => $year, 'rows' => $rows])->download("referral-earnings-{$year}.pdf");
@@ -96,6 +98,8 @@ final class FeeController
         $f = DB::table('referral_fees')->where('id', $fee)->first();
         $team = Team::of($this->user($request));
         abort_unless($f !== null && $team !== null && in_array($team->id, [(int) $f->payer_team_id, (int) $f->payee_team_id], true) && $f->statement_path, 404);
+        $ref = Referral::query()->find((int) $f->referral_id);
+        abort_unless($ref !== null && \App\Domains\Referrals\Visibility::canView($ref, $this->user($request)), 404);
 
         return Storage::disk('private')->download((string) $f->statement_path, 'referral-fee-statement.pdf');
     }
@@ -118,6 +122,7 @@ final class FeeController
     {
         $team = Team::of($this->user($request)) ?? Team::forLeader($this->user($request));
         // A month (YYYY-MM) or a whole year (YYYY) for the year-end export.
+        abort_unless(\App\Domains\Referrals\Visibility::seesAll($team, $this->user($request)), 403, 'Your team leader can export the team’s fees.');
         $period = (string) $request->validate(['month' => ['required', 'regex:/^\d{4}(-\d{2})?$/']])['month'];
 
         return response(Fees::csv($team, $period), 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => "attachment; filename=\"referral-fees-{$period}.csv\""]);

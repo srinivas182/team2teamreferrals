@@ -150,7 +150,7 @@ final class AccountController extends Controller
         if ($full) {
             $templates = app(\App\Domains\Network\Industries\Templates\IndustryTemplates::class);
             $out['form'] = array_map(fn ($f) => ['key' => (string) $f['key'], 'label' => (string) ($f['label'] ?? $f['key']), 'type' => (string) ($f['type'] ?? 'text'),
-                'required' => (bool) ($f['required'] ?? false), 'options' => $f['options'] ?? null], $templates->resolve('form', $g->industry, $g->id)['body']);
+                'required' => (bool) ($f['required'] ?? false), 'options' => $f['options'] ?? null, 'when' => $f['when'] ?? null], $templates->resolve('form', $g->industry, $g->id)['body']);
             $out['stages'] = array_map(fn ($s) => ['key' => (string) $s['key'], 'label' => (string) $s['label'], 'kind' => (string) $s['kind']], $templates->resolve('stages', $g->industry, $g->id)['body']);
             if ($g->is_sandbox) {
                 $out['sandbox_seats'] = \App\Domains\Api\Sandbox::seats($g);

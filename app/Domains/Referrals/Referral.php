@@ -20,6 +20,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $sender_team_id
  * @property int $sender_user_id
  * @property ?int $receiver_team_id
+ * @property ?int $receiver_user_id
+ * @property ?int $client_city_id
+ * @property ?int $distance_miles
  * @property string $routed_to
  * @property string $source
  * @property string $status

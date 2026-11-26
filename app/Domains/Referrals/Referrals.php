@@ -8,6 +8,7 @@ use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Phone\PhoneNumber;
 use App\Domains\Messaging\Notifier;
 use App\Domains\Network\Groups\Models\Group;
+use App\Domains\Network\Industries\Templates\FieldRules;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Locations\Models\City;
 use App\Domains\Network\Seats\Models\Seat;
@@ -57,7 +58,7 @@ final class Referrals
      * @param  array<string, mixed>  $answers
      * @return array{referral: Referral, duplicate: false}|array{referral: null, duplicate: true}
      */
-    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false, bool $textClient = false, ?Group $from = null): array
+    public function send(User $sender, Group $group, City $city, array $answers, bool $consent, ?string $notes, bool $confirmDuplicate = false, bool $textClient = false, ?Group $from = null, ?City $clientCity = null): array
     {
         $team = Team::of($sender) ?? Team::forLeader($sender);
         if ($group->industry->tier === \App\Domains\Network\Industries\Tier::Directory) {
@@ -85,6 +86,9 @@ final class Referrals
         $errors = [];
         foreach ($form as $f) {
             $key = (string) $f['key'];
+            if (! FieldRules::shows($f, $answers)) {
+                continue; // a question that doesn't apply (an address when they're buying) is neither required nor kept
+            }
             $v = $answers[$key] ?? null;
             if (($f['required'] ?? false) && ($v === null || $v === '' || $v === [])) {
                 $errors["answers.{$key}"] = ($f['label'] ?? $key).' is required.';
@@ -114,7 +118,9 @@ final class Referrals
         }
 
         $receiver = $route['team'];
-        $ref = DB::transaction(function () use ($group, $route, $receiver, $team, $sender, $clean, $phone, $email, $notes, $clientName, $from) {
+        // Sent to a nearby team because no one holds the client's own city: remember where the client is, and how far.
+        $away = $clientCity !== null && $clientCity->id !== $city->id ? ['client_city_id' => $clientCity->id, 'distance_miles' => Assist\Matches::between($clientCity->id, $city->id)] : [];
+        $ref = DB::transaction(function () use ($group, $route, $receiver, $team, $sender, $clean, $phone, $email, $notes, $clientName, $from, $away) {
             $ref = Referral::create([
                 'client_token' => \Illuminate\Support\Str::random(40),
                 'group_id' => $group->id, 'introduced_from_group_id' => $from?->id, 'seat_id' => $route['seat']->id, 'sender_team_id' => $team->id, 'sender_user_id' => $sender->id, 'receiver_team_id' => $receiver->id,
@@ -122,6 +128,9 @@ final class Referrals
                 'consent_at' => now(), 'consent_method' => 'sender_attested', 'consent_text' => self::consentText($group),
                 'respond_by' => now()->addHours((int) $group->rule('accept_hours')),
             ]);
+            if ($away !== []) {
+                $ref->forceFill($away)->save();
+            }
             $this->event($ref, 'sent', $team, $sender, ['to' => $receiver->name, 'role' => $route['role']]);
             $ref->forceFill(['temperature' => Nurture::classify($ref)])->save();
 
@@ -164,8 +173,11 @@ final class Referrals
     public function accept(Referral $ref, User $user): void
     {
         $this->mustReceive($ref, $user);
-        abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
-        $ref->forceFill(['status' => 'accepted', 'accepted_at' => now()])->save();
+        // Conditional update: if two teammates tap Accept at the same moment, only one of them gets the referral.
+        $won = Referral::query()->whereKey($ref->id)->where(['status' => 'sent', 'receiver_team_id' => $ref->receiver_team_id])
+            ->update(['status' => 'accepted', 'accepted_at' => now(), 'receiver_user_id' => $user->id, 'updated_at' => now()]);
+        abort_unless($won === 1, 422, 'This referral is no longer waiting for a decision. A teammate may have accepted it.');
+        $ref->refresh();
         app(Pipeline::class)->start($ref);
         if ($ref->source === 'consumer') {
             Consumer\ConsumerRequests::accepted($ref);
@@ -184,6 +196,8 @@ final class Referrals
     public function decline(Referral $ref, User $user, string $reason): void
     {
         $this->mustReceive($ref, $user);
+        // Declining passes the client on to another team, so only the team's leader or an assistant can do it.
+        abort_unless(Visibility::seesAll(Team::of($user) ?? new Team, $user), 403, 'Only your team leader can decline a referral for the team.');
         abort_unless($ref->status === 'sent', 422, 'This referral is no longer waiting for a decision.');
         $this->passOn($ref, $user, 'declined', $reason);
     }
@@ -203,9 +217,7 @@ final class Referrals
     /** Who may see a referral: the sending team, and the team that currently has it. */
     public function canView(Referral $ref, User $user): bool
     {
-        $team = Team::of($user);
-
-        return $team !== null && ($team->id === $ref->sender_team_id || $team->id === $ref->receiver_team_id);
+        return Visibility::canView($ref, $user);
     }
 
     /** One-tap link for the current receiver: opens a confirm screen (never accepts on open, so email scanners can't). */

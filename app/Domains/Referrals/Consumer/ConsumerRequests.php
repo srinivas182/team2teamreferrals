@@ -8,6 +8,7 @@ use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Phone\PhoneNumber;
 use App\Domains\Messaging\Notifier;
 use App\Domains\Network\Groups\Models\Group;
+use App\Domains\Network\Industries\Templates\FieldRules;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Locations\Models\City;
 use App\Domains\Network\Seats\Models\Seat;
@@ -109,6 +110,9 @@ final class ConsumerRequests
         $answers = [];
         $errors = [];
         foreach ($this->questions($group) as $f) {
+            if (! FieldRules::shows($f, (array) ($d['answers'] ?? []))) {
+                continue;
+            }
             $v = $d['answers'][$f['key']] ?? null;
             if (($f['required'] ?? false) && ($v === null || $v === '' || $v === [])) {
                 $errors['answers.'.$f['key']] = ($f['label'] ?? $f['key']).' is required.';

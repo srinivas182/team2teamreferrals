@@ -57,6 +57,32 @@ final class Schemas
                 }
             }
         }
+        // A show-when rule must point at an earlier choice question and use its options.
+        foreach ($fields as $i => $f) {
+            if (! isset($f['when'])) {
+                continue;
+            }
+            $label = trim((string) ($f['label'] ?? ''));
+            $when = FieldRules::clean($f['when']);
+            $parent = null;
+            foreach (array_slice($fields, 0, (int) $i) as $p) {
+                if (($p['key'] ?? null) === ($when['field'] ?? null)) {
+                    $parent = $p;
+                }
+            }
+            if ($when === null || $parent === null || ! in_array($parent['type'] ?? '', ['choice', 'multi_choice', 'boolean'], true)) {
+                $errors[] = "“{$label}”: “show only when” must point at an earlier choice or yes/no question.";
+
+                continue;
+            }
+            $options = ($parent['type'] ?? '') === 'boolean' ? ['Yes', 'No'] : array_map('strval', (array) ($parent['options'] ?? []));
+            if (array_diff($when['in'], $options) !== []) {
+                $errors[] = "“{$label}”: “show only when” uses an answer that “{$parent['label']}” doesn’t offer.";
+            }
+            if (in_array($f['key'] ?? '', ['client_name', 'client_phone'], true)) {
+                $errors[] = "“{$label}” is always needed, so it can’t be hidden.";
+            }
+        }
         if (count($fields) > 30) {
             $errors[] = 'Keep forms to 30 fields or fewer; long forms stop members sending referrals.';
         }
@@ -134,6 +160,10 @@ final class Schemas
         foreach ($fields as $f) {
             $k = 'fields.'.$f['key'];
             $base = [($f['required'] ?? false) ? 'required' : 'nullable'];
+            // A show-when field is required only when the earlier answer shows it.
+            if (($f['required'] ?? false) && ($when = FieldRules::clean($f['when'] ?? null)) !== null) {
+                $base = ['nullable', 'required_if:fields.'.$when['field'].','.implode(',', array_map(fn ($o) => str_replace(',', '\,', $o), $when['in']))];
+            }
             $rules += match ($f['type']) {
                 'text' => [$k => [...$base, 'string', 'max:200']],
                 'textarea' => [$k => [...$base, 'string', 'max:3000']],

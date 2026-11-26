@@ -1,5 +1,5 @@
 import { Link, router, usePage, Deferred } from '@inertiajs/react';
-import { BellOff, Paperclip, Search } from 'lucide-react';
+import { BellOff, MapPin, Paperclip, Search } from 'lucide-react';
 import { useReferralLive } from '@/lib/realtime';
 import { Lock } from 'lucide-react';
 import { useState } from 'react';
@@ -38,6 +38,9 @@ type Props = {
         answers: { label: string; value: unknown }[];
     };
     isReceiver: boolean;
+    canDecline: boolean;
+    outOfArea: { city: string | null; miles: number | null } | null;
+    acceptedBy: string | null;
     pipeline: PipelineInfo | null;
     closing: ClosingInfo | null;
     aiSummary?: { summary: string; usageId: number | null } | null;
@@ -104,6 +107,9 @@ const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : typeof v === 'bo
 export default function ReferralShow({
     referral: r,
     isReceiver,
+    canDecline,
+    outOfArea,
+    acceptedBy,
     agreement: ag,
     closing,
     matches = [],
@@ -161,7 +167,16 @@ export default function ReferralShow({
                         <p className="mt-3 text-sm text-muted">
                             From {r.sender} to {r.receiver ?? '—'}
                             {r.routedTo === 'backup' ? ' (backup)' : ''}
+                            {acceptedBy ? ` · accepted by ${acceptedBy}` : ''}
                         </p>
+                        {outOfArea?.city && (
+                            <p className="mt-2 flex items-center gap-1.5 text-sm">
+                                <MapPin className="size-4 text-primary" aria-hidden />
+                                The {terms.client} is in {outOfArea.city}
+                                {outOfArea.miles !== null ? `, ${outOfArea.miles} miles from ${isReceiver ? 'your' : 'this'} seat` : ''}. No team
+                                holds that city yet.
+                            </p>
+                        )}
                         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
                             {r.answers.map((a) => (
                                 <div key={a.label}>
@@ -310,6 +325,7 @@ export default function ReferralShow({
                     {isReceiver && waiting && (
                         <Card className="space-y-3 p-6">
                             <h2 className="font-semibold">Can you help this {terms.client}?</h2>
+                            {!canDecline && <p className="text-sm text-muted">The first person in your team to accept gets this {terms.client}.</p>}
                             {declining ? (
                                 <div className="flex flex-wrap gap-2">
                                     <Input
@@ -330,9 +346,11 @@ export default function ReferralShow({
                             ) : (
                                 <div className="flex gap-2">
                                     <Button onClick={() => router.post(`/app/referrals/${r.id}/accept`, {}, { preserveScroll: true })}>Accept</Button>
-                                    <Button variant="ghost" onClick={() => setDeclining(true)}>
-                                        Decline
-                                    </Button>
+                                    {canDecline && (
+                                        <Button variant="ghost" onClick={() => setDeclining(true)}>
+                                            Decline
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                         </Card>

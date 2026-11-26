@@ -54,6 +54,8 @@ it('turns a form into validation rules for sending a referral', function () {
     expect($ok->passes())->toBeTrue();
     $bad = Validator::make(['fields' => ['client_name' => 'Tom', 'timeline' => 'Someday', 'side' => 'Buying', 'price_range' => ['min' => 500000, 'max' => 100]]], $rules);
     expect($bad->errors()->keys())->toContain('fields.client_phone')->toContain('fields.timeline')->toContain('fields.price_range.max');
+    $selling = Validator::make(['fields' => ['client_name' => 'Tom', 'client_phone' => '+14355550119', 'timeline' => 'Within 30 days', 'side' => 'Selling', 'price_range' => ['min' => 1, 'max' => 2]]], $rules);
+    expect($selling->errors()->keys())->toBe(['fields.property_address']);
 });
 
 it('inherits the family default until customised, versions saves and resets', function () {

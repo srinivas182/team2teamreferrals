@@ -42,7 +42,11 @@ abstract class Controller
     {
         $team = $this->team($request);
 
-        return Referral::query()->where('ulid', $id)->where(fn ($q) => $q->where('sender_team_id', $team->id)->orWhere('receiver_team_id', $team->id))->firstOrFail();
+        $user = $request->user();
+
+        // A token works with the rights of the person who made it: a team member's token sees only their referrals.
+        return Referral::query()->where('ulid', $id)->where(fn ($q) => $user instanceof User ? \App\Domains\Referrals\Visibility::apply($q, $team, $user)
+            : $q->where('sender_team_id', $team->id)->orWhere('receiver_team_id', $team->id))->firstOrFail();
     }
 
     protected function limit(Request $request): int

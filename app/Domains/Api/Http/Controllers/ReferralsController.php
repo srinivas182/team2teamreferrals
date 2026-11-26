@@ -34,6 +34,7 @@ final class ReferralsController extends Controller
             // Finding by email only matches referrals where your team can see the email: ones it sent, or accepted.
             ->when(isset($d['client_email']), fn ($q) => $q->where('client_email', mb_strtolower((string) $d['client_email']))
                 ->where(fn ($w) => $w->where('sender_team_id', $team->id)->orWhere(fn ($r) => $r->where('receiver_team_id', $team->id)->where('status', 'accepted'))))
+            ->when($request->user() instanceof \App\Domains\Identity\Models\User, fn ($q) => \App\Domains\Referrals\Visibility::apply($q, $team, $request->user()))
             ->orderByDesc('id');
         $page = $q->cursorPaginate($this->limit($request));
 

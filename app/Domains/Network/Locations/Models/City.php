@@ -34,6 +34,14 @@ final class City extends Model
     }
 
     /** @return BelongsTo<State, $this> */
+    /** "Katy, TX", for showing a city by id. */
+    public static function label(int $id): ?string
+    {
+        $c = self::query()->with('state:id,code')->find($id);
+
+        return $c === null ? null : $c->name.', '.$c->state->code;
+    }
+
     public function state(): BelongsTo
     {
         return $this->belongsTo(State::class);

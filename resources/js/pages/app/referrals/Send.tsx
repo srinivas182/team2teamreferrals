@@ -2,7 +2,7 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight, ShieldCheck, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CityPicker, type CityOption } from '@/components/CityPicker';
-import { AnswerInput, type Answer, type FormField } from '@/components/referrals/AnswerInput';
+import { shows, AnswerInput, type Answer, type FormField } from '@/components/referrals/AnswerInput';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ type Preview = {
     backup: string | null;
     avgAcceptMinutes: number | null;
     matches?: Match[];
+    radius?: number;
+    radii?: number[];
 };
 
 export default function Send({
@@ -65,7 +67,11 @@ export default function Send({
         draft: prefill?.draft ?? null,
         confirm_duplicate: false,
         text_client: false,
+        client_city_id: null as number | null,
     });
+    // Nearby search: how far to look, and the client's own city once a nearby team's city is chosen instead.
+    const [radius, setRadius] = useState(60);
+    const [clientCity, setClientCity] = useState<{ label: string; miles: number } | null>(null);
     // Fields a draft couldn't fill with confidence.
     const check = (key: string): string | undefined => {
         const why = prefill?.review?.[key];
@@ -78,11 +84,11 @@ export default function Send({
     const e = form.errors as Record<string, string>;
     useEffect(() => {
         if (!form.data.city_id || !form.data.group) return;
-        fetch(`/app/send/preview?group=${form.data.group}&city_id=${form.data.city_id}`, { headers: { Accept: 'application/json' } })
+        fetch(`/app/send/preview?group=${form.data.group}&city_id=${form.data.city_id}&radius=${radius}`, { headers: { Accept: 'application/json' } })
             .then((r) => (r.ok ? r.json() : null))
             .then(setPreview)
             .catch(() => setPreview(null));
-    }, [form.data.city_id, form.data.group]);
+    }, [form.data.city_id, form.data.group, radius]);
     if (groups.length === 0) {
         return (
             <PortalLayout title="Send a referral" user={{ name: auth.user?.name ?? '', team: '' }}>
@@ -149,19 +155,28 @@ export default function Send({
                             initial={cityLabel}
                             onPick={(c: CityOption) => {
                                 setPreview(null);
-                                form.setData('city_id', c.id);
+                                setRadius(60);
+                                setClientCity(null);
+                                form.setData((d) => ({ ...d, city_id: c.id, client_city_id: null }));
                             }}
                         />
                     </Field>
-                    {g?.form.map((f) => (
-                        <Field key={f.key} label={`${f.label}${f.required ? '' : ' (optional)'}`} error={e[`answers.${f.key}`]} hint={check(f.key)}>
-                            <AnswerInput
-                                f={f}
-                                value={form.data.answers[f.key]}
-                                onChange={(v) => form.setData('answers', { ...form.data.answers, [f.key]: v })}
-                            />
-                        </Field>
-                    ))}
+                    {g?.form
+                        .filter((f) => shows(f, form.data.answers))
+                        .map((f) => (
+                            <Field
+                                key={f.key}
+                                label={`${f.label}${f.required ? '' : ' (optional)'}`}
+                                error={e[`answers.${f.key}`]}
+                                hint={check(f.key) ?? f.help}
+                            >
+                                <AnswerInput
+                                    f={f}
+                                    value={form.data.answers[f.key]}
+                                    onChange={(v) => form.setData('answers', { ...form.data.answers, [f.key]: v })}
+                                />
+                            </Field>
+                        ))}
                     <Field label="Note for the receiving pro (optional)" error={e.notes}>
                         <Textarea rows={2} value={form.data.notes} onChange={(ev) => form.setData('notes', ev.target.value)} />
                     </Field>
@@ -219,6 +234,11 @@ export default function Send({
                     ) : preview.team ? (
                         <>
                             <p className="text-lg font-semibold">{preview.team}</p>
+                            {clientCity && form.data.client_city_id && (
+                                <p className="rounded-md bg-bg p-2 text-sm">
+                                    Your client is in {clientCity.label}, {clientCity.miles} miles away. The team will see that.
+                                </p>
+                            )}
                             <p className="text-sm text-muted">
                                 {preview.territory} ·{' '}
                                 {preview.role === 'backup' ? 'backup pro (the holder isn’t taking referrals right now)' : 'seat holder'}
@@ -250,8 +270,9 @@ export default function Send({
                                                 variant="secondary"
                                                 onClick={() => {
                                                     setPreview(null);
+                                                    setClientCity({ label: clientCity?.label ?? (cityLabel || preview.territory), miles: m.miles });
                                                     setCityLabel(m.city);
-                                                    form.setData('city_id', m.cityId);
+                                                    form.setData((d) => ({ ...d, city_id: m.cityId, client_city_id: d.client_city_id ?? d.city_id }));
                                                 }}
                                             >
                                                 Use {m.city.split(',')[0]}
@@ -261,6 +282,17 @@ export default function Send({
                                     <p className="text-xs text-muted">Check your client is happy to work with a pro from a nearby city.</p>
                                 </>
                             )}
+                            {(preview.matches ?? []).length === 0 && (
+                                <p className="text-sm text-muted">No teams in this network within {preview.radius ?? radius} miles.</p>
+                            )}
+                            {(() => {
+                                const next = (preview.radii ?? [60, 100, 150]).find((r) => r > (preview.radius ?? radius));
+                                return next ? (
+                                    <Button size="sm" variant="ghost" onClick={() => setRadius(next)}>
+                                        Search within {next} miles
+                                    </Button>
+                                ) : null;
+                            })()}
                         </div>
                     )}
                 </Card>
