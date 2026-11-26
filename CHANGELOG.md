@@ -4,6 +4,11 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Footer on the sign-in pages
+1. Log in, sign up, check your email, password reset and the other sign-in pages now end with the same footer as the website (menu, © line, "Powered by").
+2. Fixed the grey strip under the dark panel on those pages: two hidden helpers sat in the page grid and added an empty row.
+3. The footer is one shared component (`components/site/SiteFooter.tsx`).
+
 ### Link preview card
 1. A new card for shared links (`/brand/share-card.png`, 1200 × 630): the logo, headline and address are centred within the middle square, so apps that crop previews to a square (Slack, iMessage, LinkedIn on phones) show them whole instead of cutting off the left side. WhatsApp and others still show the full card.
 2. A new file name, so apps that cached the old card fetch the new one.
