@@ -1,7 +1,27 @@
 import { Input, Select, Textarea } from '@/components/ui/field';
 
-export type FormField = { key: string; label: string; type: string; required?: boolean; options?: string[] };
+export type FormField = {
+    key: string;
+    label: string;
+    type: string;
+    required?: boolean;
+    options?: string[];
+    help?: string;
+    when?: { field: string; in: string[] };
+};
 export type Answer = string | string[] | boolean;
+
+/** Whether a question applies, given the answers so far (an address only when they're selling, say). Mirrors FieldRules.php. */
+export function shows(f: FormField, answers: Record<string, Answer | undefined>): boolean {
+    if (!f.when?.field) return true;
+    const given = answers[f.when.field];
+    const values = Array.isArray(given)
+        ? given
+        : given === undefined || given === ''
+          ? []
+          : [typeof given === 'boolean' ? (given ? 'Yes' : 'No') : given];
+    return values.some((v) => f.when!.in.includes(v));
+}
 
 type Wiring = { id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean };
 

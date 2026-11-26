@@ -33,6 +33,14 @@ final class City extends Model
         return ['is_enabled' => 'boolean', 'population' => 'integer'];
     }
 
+    /** "Katy, TX", for showing a city by id. */
+    public static function label(int $id): ?string
+    {
+        $c = self::query()->with('state:id,code')->find($id);
+
+        return $c === null ? null : $c->name.', '.$c->state->code;
+    }
+
     /** @return BelongsTo<State, $this> */
     public function state(): BelongsTo
     {

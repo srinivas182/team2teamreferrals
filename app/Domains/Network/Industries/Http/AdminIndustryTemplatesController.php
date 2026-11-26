@@ -6,6 +6,7 @@ namespace App\Domains\Network\Industries\Http;
 
 use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Models\Industry;
+use App\Domains\Network\Industries\Templates\FieldRules;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Industries\Templates\Schemas;
 use App\Domains\Seo\SeoData;
@@ -128,6 +129,9 @@ final class AdminIndustryTemplatesController
         }
         if (! empty($item['role'])) {
             $out['role'] = (string) $item['role'];
+        }
+        if (($when = FieldRules::clean($item['when'] ?? null)) !== null) {
+            $out['when'] = $when;
         }
 
         return $out;

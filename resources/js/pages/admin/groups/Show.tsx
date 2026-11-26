@@ -71,6 +71,7 @@ type Props = {
     overrides: { kind: string; label: string; version: number | null }[];
     seats: SeatRow[];
     pendingApplications: number;
+    emptyCityDemand: { city: string; referrals: number }[];
     affected: { seats: number; trial: number; paying: number };
     health: { owners: number; seats: number; referralsThisMonth: number | null; avgAcceptMinutes: number | null; quietSeats: number | null };
     status?: string;
@@ -110,7 +111,19 @@ function When({
     );
 }
 
-export default function GroupShow({ group, owners, scheduled, overrides, seats, pendingApplications, affected, health, status, seo }: Props) {
+export default function GroupShow({
+    group,
+    owners,
+    scheduled,
+    overrides,
+    seats,
+    pendingApplications,
+    emptyCityDemand,
+    affected,
+    health,
+    status,
+    seo,
+}: Props) {
     const g = group;
     const details = useForm<{ name: string; description: string; status: string; visibility: string; photo: File | null }>({
         name: g.name,
@@ -417,6 +430,13 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
                             Applications{pendingApplications ? ` (${pendingApplications} pending)` : ''}
                         </Link>
                     </div>
+                    {emptyCityDemand.length > 0 && (
+                        <p className="border-b border-line p-4 text-sm">
+                            <span className="font-medium">Cities without a team that members sent referrals from</span>{' '}
+                            <span className="text-muted">(last 6 months, sent to a nearby team): </span>
+                            {emptyCityDemand.map((d) => `${d.city} (${d.referrals})`).join(', ')}
+                        </p>
+                    )}
                     <table className="w-full min-w-[820px] text-sm">
                         <thead className="text-left text-muted">
                             <tr>

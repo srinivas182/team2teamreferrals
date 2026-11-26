@@ -6,6 +6,7 @@ namespace App\Domains\Referrals\Bot;
 
 use App\Domains\Identity\Models\User;
 use App\Domains\Network\Groups\Models\Group;
+use App\Domains\Network\Industries\Templates\FieldRules;
 use App\Domains\Network\Industries\Templates\IndustryTemplates;
 use App\Domains\Network\Seats\Models\Team;
 use App\Domains\Referrals\Intake\Extractor;
@@ -113,7 +114,7 @@ final class Bot
         }
         $answers = (array) json_decode((string) ($d->answers ?? '[]'), true);
         foreach ($this->form((int) $d->group_id) as $f) {
-            if (($f['required'] ?? false) && ! array_key_exists($f['key'], $answers)) {
+            if (($f['required'] ?? false) && ! array_key_exists($f['key'], $answers) && FieldRules::shows($f, $answers)) {
                 $opts = $f['type'] === 'choice' ? "\n".collect($f['options'] ?? [])->values()->map(fn ($o, $i) => ($i + 1).') '.$o)->implode("\n") : ($f['type'] === 'boolean' ? ' (yes or no)' : '');
 
                 return $ask('answer:'.$f['key'], $f['label'].'?'.$opts);

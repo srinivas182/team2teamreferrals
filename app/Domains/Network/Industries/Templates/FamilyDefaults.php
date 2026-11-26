@@ -26,6 +26,7 @@ final class FamilyDefaults
         $extra = match ($family) {
             'property' => [
                 $f('side', 'Buying or selling?', 'choice', true, ['options' => ['Buying', 'Selling', 'Both', 'Renting']]),
+                $f('property_address', 'Address of the home they’re selling', 'text', true, ['sensitive' => true, 'help' => 'Street, city and ZIP. The receiving pro sees it once they accept.', 'when' => ['field' => 'side', 'in' => ['Selling', 'Both']]]),
                 $f('price_range', 'Price range', 'money_range', true, ['role' => 'value']),
                 $f('pre_approved', 'Pre-approved for a mortgage?', 'boolean'),
                 $f('areas', 'Neighbourhoods or areas', 'text'),

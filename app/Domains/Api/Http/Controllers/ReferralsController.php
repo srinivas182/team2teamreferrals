@@ -35,6 +35,11 @@ final class ReferralsController extends Controller
             ->when(isset($d['client_email']), fn ($q) => $q->where('client_email', mb_strtolower((string) $d['client_email']))
                 ->where(fn ($w) => $w->where('sender_team_id', $team->id)->orWhere(fn ($r) => $r->where('receiver_team_id', $team->id)->where('status', 'accepted'))))
             ->orderByDesc('id');
+        // A token works with the rights of the person who made it: a team member's token sees only their referrals.
+        $user = $request->user();
+        if ($user instanceof \App\Domains\Identity\Models\User) {
+            \App\Domains\Referrals\Visibility::apply($q, $team, $user);
+        }
         $page = $q->cursorPaginate($this->limit($request));
 
         return response()->json(Resources::page($page, array_values(array_map(fn (Referral $r) => Resources::referral($r, $team), $page->items()))));

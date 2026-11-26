@@ -11,6 +11,7 @@ use App\Domains\Network\Locations\Models\City;
 use App\Domains\Network\Seats\Models\Team;
 use App\Domains\Referrals\Referral;
 use App\Domains\Referrals\Referrals;
+use App\Domains\Referrals\Visibility;
 use App\Domains\Seo\SeoData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -92,7 +93,8 @@ final class ReferralController
     /** Smart routing preview: who will receive it, before sending. */
     public function preview(Request $request): JsonResponse
     {
-        $d = $request->validate(['group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id']]);
+        $d = $request->validate(['group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id'],
+            'radius' => ['nullable', 'integer', 'in:'.implode(',', \App\Domains\Referrals\Assist\Matches::RADII)]]);
         $r = $this->referrals->route(Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']));
         $team = $r['team'];
         // Average time to accept over the last 50 accepted referrals (computed in PHP so it works on any database).
@@ -105,7 +107,8 @@ final class ReferralController
         return response()->json(['territory' => $r['territory'], 'team' => $team?->name, 'role' => $team ? $r['role'] : null, 'backup' => $r['role'] === 'holder' ? $r['seat']->backup?->name : null,
             'avgAcceptMinutes' => is_numeric($avg) ? (int) round((float) $avg) : null,
             // No one to receive it here: the best nearby seat holders in this network.
-            'matches' => $team === null ? \App\Domains\Referrals\Assist\Matches::nearby($group, (int) $d['city_id'], Team::of($this->user($request))?->id) : []]);
+            'matches' => $team === null ? \App\Domains\Referrals\Assist\Matches::nearby($group, (int) $d['city_id'], Team::of($this->user($request))?->id, (int) ($d['radius'] ?? \App\Domains\Referrals\Assist\Matches::MILES)) : [],
+            'radius' => (int) ($d['radius'] ?? \App\Domains\Referrals\Assist\Matches::MILES), 'radii' => \App\Domains\Referrals\Assist\Matches::RADII]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -114,10 +117,11 @@ final class ReferralController
             'group' => ['required', 'exists:groups,slug'], 'city_id' => ['required', 'integer', 'exists:cities,id'], 'answers' => ['required', 'array'],
             'consent' => ['accepted'], 'notes' => ['nullable', 'string', 'max:2000'], 'confirm_duplicate' => ['boolean'], 'text_client' => ['boolean'],
             'from_profile' => ['nullable', 'string', 'max:80'],
-            'draft' => ['nullable', 'string', 'size:26'],
+            'draft' => ['nullable', 'string', 'size:26'], 'client_city_id' => ['nullable', 'integer', 'exists:cities,id'],
         ], ['consent.accepted' => 'Your client must agree to be contacted before you send a referral.']);
         $user = $this->user($request);
-        $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false), (bool) ($d['text_client'] ?? false));
+        $r = $this->referrals->send($user, Group::query()->where('slug', $d['group'])->firstOrFail(), City::query()->findOrFail((int) $d['city_id']), (array) $d['answers'], true, $d['notes'] ?? null, (bool) ($d['confirm_duplicate'] ?? false), (bool) ($d['text_client'] ?? false),
+            clientCity: ! empty($d['client_city_id']) ? City::query()->find((int) $d['client_city_id']) : null);
         if ($r['duplicate']) {
             return back()->with('duplicate', true);
         }
@@ -196,6 +200,10 @@ final class ReferralController
                 'answers' => collect($referral->answers)->map(fn ($v, $k) => ['label' => (string) ($form[$k]['label'] ?? $k), 'value' => $hide && ($form[$k]['sensitive'] ?? false) ? null : $v])->values(),
             ],
             'isReceiver' => $isReceiver,
+            // Sent to this team from a nearby city that has no team of its own.
+            'outOfArea' => $referral->client_city_id !== null ? ['city' => City::label((int) $referral->client_city_id), 'miles' => $referral->distance_miles] : null,
+            'canDecline' => $isReceiver && $team !== null && Visibility::seesAll($team, $user),
+            'acceptedBy' => $isReceiver && $referral->receiver_user_id !== null ? User::query()->find($referral->receiver_user_id)?->name : null,
             'agreement' => $this->agreementFor($referral, $user),
             'pipeline' => $referral->status === 'accepted' ? [
                 'stages' => app(\App\Domains\Referrals\Pipeline::class)->stages($referral), 'current' => $referral->stage,
@@ -448,7 +456,7 @@ final class ReferralController
         $team = Team::of($this->user($request));
         $q = (string) $request->query('q', '');
 
-        return Inertia::render('app/referrals/Search', ['q' => $q, 'results' => $team ? \App\Domains\Referrals\Conversations::search($team, $q) : [], 'seo' => SeoData::private('Search messages')->toArray()]);
+        return Inertia::render('app/referrals/Search', ['q' => $q, 'results' => $team ? \App\Domains\Referrals\Conversations::search($team, $q, $this->user($request)) : [], 'seo' => SeoData::private('Search messages')->toArray()]);
     }
 
     public function logCall(Request $request, Referral $referral, \App\Domains\Referrals\Pipeline $pipeline): RedirectResponse
@@ -623,11 +631,12 @@ final class ReferralController
     /** @param  array<string, mixed>  $extra */
     private function list(Request $request, string $col, string $page, string $title, array $extra = []): Response
     {
-        $team = Team::of($this->user($request));
+        $user = $this->user($request);
+        $team = Team::of($user);
 
         return Inertia::render($page, [
             // Waiting referrals first, soonest deadline on top, so nothing urgent is missed.
-            'items' => $team === null ? [] : Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name'])->where($col, $team->id)
+            'items' => $team === null ? [] : Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name'])->where(fn ($q) => Visibility::apply($q, $team, $user, $col === 'sender_team_id' ? 'sent' : 'received'))
                 ->orderByRaw("case when status = 'sent' then 0 else 1 end")->orderByRaw("case when status = 'sent' then respond_by end")->latest()->limit(200)->get()
                 ->map(fn (Referral $r) => ['id' => $r->ulid, 'status' => $r->status, 'client' => $col === 'receiver_team_id' && $r->status !== 'accepted' ? $r->shortClientName() : $r->client_name, 'territory' => $r->seat->territory_name, 'group' => $r->group->name,
                     'sender' => $r->sender->name, 'receiver' => $r->receiver?->name, 'respondBy' => $r->respond_by->toIso8601String(), 'when' => $r->created_at->toIso8601String()]),
