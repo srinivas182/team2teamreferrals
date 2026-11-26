@@ -636,7 +636,7 @@ final class ReferralController
 
         return Inertia::render($page, [
             // Waiting referrals first, soonest deadline on top, so nothing urgent is missed.
-            'items' => $team === null ? [] : Visibility::apply(Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name']), $team, $user, $col === 'sender_team_id' ? 'sent' : 'received')
+            'items' => $team === null ? [] : Referral::query()->with(['seat:id,territory_name', 'sender:id,name', 'receiver:id,name', 'group:id,name'])->where(fn ($q) => Visibility::apply($q, $team, $user, $col === 'sender_team_id' ? 'sent' : 'received'))
                 ->orderByRaw("case when status = 'sent' then 0 else 1 end")->orderByRaw("case when status = 'sent' then respond_by end")->latest()->limit(200)->get()
                 ->map(fn (Referral $r) => ['id' => $r->ulid, 'status' => $r->status, 'client' => $col === 'receiver_team_id' && $r->status !== 'accepted' ? $r->shortClientName() : $r->client_name, 'territory' => $r->seat->territory_name, 'group' => $r->group->name,
                     'sender' => $r->sender->name, 'receiver' => $r->receiver?->name, 'respondBy' => $r->respond_by->toIso8601String(), 'when' => $r->created_at->toIso8601String()]),

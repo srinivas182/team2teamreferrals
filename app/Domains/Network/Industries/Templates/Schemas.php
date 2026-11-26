@@ -75,7 +75,7 @@ final class Schemas
 
                 continue;
             }
-            $options = ($parent['type'] ?? '') === 'boolean' ? ['Yes', 'No'] : array_map('strval', (array) ($parent['options'] ?? []));
+            $options = $parent['type'] === 'boolean' ? ['Yes', 'No'] : array_map('strval', (array) ($parent['options'] ?? []));
             if (array_diff($when['in'], $options) !== []) {
                 $errors[] = "“{$label}”: “show only when” uses an answer that “{$parent['label']}” doesn’t offer.";
             }

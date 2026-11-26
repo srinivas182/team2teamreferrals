@@ -31,7 +31,6 @@ final class FieldRules
     /**
      * Keeps only a valid rule (the field it depends on, and the answers that show it).
      *
-     * @param  array<mixed>  $when
      * @return array{field: string, in: list<string>}|null
      */
     public static function clean(mixed $when): ?array

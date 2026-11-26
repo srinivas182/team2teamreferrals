@@ -26,14 +26,14 @@ final class Visibility
      * Narrows a referrals query to what this person may see. $side: 'sent', 'received' or null for both;
      * $p is the referrals table alias prefix ("r.") when the query joins other tables.
      */
-    public static function apply(Builder $q, Team $team, User $user, ?string $side = null, string $p = ''): Builder
+    public static function apply(Builder $q, Team $team, User $user, ?string $side = null, string $p = ''): void
     {
         $all = self::seesAll($team, $user);
         $sent = fn ($w) => $w->where("{$p}sender_team_id", $team->id)->when(! $all, fn ($w) => $w->where("{$p}sender_user_id", $user->id));
         $received = fn ($w) => $w->where("{$p}receiver_team_id", $team->id)
             ->when(! $all, fn ($w) => $w->where(fn ($m) => $m->where("{$p}receiver_user_id", $user->id)->orWhere("{$p}status", 'sent')));
 
-        return match ($side) {
+        match ($side) {
             'sent' => $q->where($sent),
             'received' => $q->where($received),
             default => $q->where(fn ($w) => $w->where($sent)->orWhere($received)),

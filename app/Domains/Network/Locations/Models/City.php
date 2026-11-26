@@ -33,7 +33,6 @@ final class City extends Model
         return ['is_enabled' => 'boolean', 'population' => 'integer'];
     }
 
-    /** @return BelongsTo<State, $this> */
     /** "Katy, TX", for showing a city by id. */
     public static function label(int $id): ?string
     {
@@ -42,6 +41,7 @@ final class City extends Model
         return $c === null ? null : $c->name.', '.$c->state->code;
     }
 
+    /** @return BelongsTo<State, $this> */
     public function state(): BelongsTo
     {
         return $this->belongsTo(State::class);

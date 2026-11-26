@@ -25,7 +25,7 @@ final class PipelineController
     {
         $user = $this->user($request);
         $team = Team::of($user);
-        $refs = $team === null ? collect() : \App\Domains\Referrals\Visibility::apply(Referral::query()->with(['group.industry', 'seat', 'sender'])->where('status', 'accepted'), $team, $user, 'received')->latest('stage_changed_at')->get();
+        $refs = $team === null ? collect() : Referral::query()->with(['group.industry', 'seat', 'sender'])->where('status', 'accepted')->where(fn ($q) => \App\Domains\Referrals\Visibility::apply($q, $team, $user, 'received'))->latest('stage_changed_at')->get();
         $groups = $refs->pluck('group')->unique('id')->values();
         $slug = (string) $request->query('group', '');
         $group = $groups->firstWhere('slug', $slug) ?? $groups->first();
