@@ -4,6 +4,9 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Back-office footer at the bottom of the screen
+1. In Admin and the member area, the "Powered by" footer now sits at the bottom of the screen on short pages (like Apply for a city), instead of right under the content. Long pages are unchanged.
+
 ### Footer on the sign-in pages
 1. Log in, sign up, check your email, password reset and the other sign-in pages now end with the same footer as the website (menu, © line, "Powered by").
 2. Fixed the grey strip under the dark panel on those pages: two hidden helpers sat in the page grid and added an empty row.
