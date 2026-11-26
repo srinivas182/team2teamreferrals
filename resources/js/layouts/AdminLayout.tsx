@@ -182,7 +182,7 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                     <AdminNav items={allowed} url={url} />
                     {user && <AdminUser user={user} />}
                 </aside>
-                <div className="min-w-0">
+                <div className="flex min-h-screen min-w-0 flex-col">
                     <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur sm:px-6">
                         {/* Phones and tablets: the same numbered menu slides in from the left. */}
                         <Drawer.Root open={menu} onOpenChange={setMenu}>
@@ -237,13 +237,15 @@ export function AdminLayout({ title, actions, children }: { title: string; actio
                             <ThemeToggle />
                         </div>
                     </header>
-                    <main id="main" className="px-4 py-6 sm:px-6 lg:px-8">
+                    <main id="main" className="flex flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
                         <div className="mb-6 flex flex-wrap items-center gap-3">
                             <h1 className="font-display text-2xl font-bold display sm:text-[28px]">{title}</h1>
                             <div className="ml-auto flex flex-wrap gap-2">{actions}</div>
                         </div>
                         {children}
-                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-center text-xs text-muted lg:pb-4">
+                        {/* Grows to fill a short page, so the footer always sits at the bottom of the screen. */}
+                        <div aria-hidden className="min-h-12 flex-1" />
+                        <footer className="border-t border-line pt-4 pb-20 text-center text-xs text-muted lg:pb-4">
                             <FooterCredit />
                         </footer>
                     </main>

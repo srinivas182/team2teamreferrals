@@ -220,7 +220,7 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                         <AccountMenu name={user.name} detail={user.team || undefined} />
                     </div>
                 </aside>
-                <div className="min-w-0 pb-24 lg:pb-0">
+                <div className="flex min-h-[calc(100dvh-6rem)] min-w-0 flex-col pb-24 lg:min-h-screen lg:pb-0">
                     {(props as { demo?: boolean }).demo && (
                         <div role="status" className="bg-orange-500 px-4 py-2 text-center text-sm font-medium text-navy-900">
                             You’re exploring the live demo. Nothing is sent, and everything resets every hour.{' '}
@@ -307,14 +307,16 @@ export function PortalLayout({ title, actions, children, user = { name: 'Member'
                             </Popover>
                         </div>
                     </header>
-                    <main id="main" className="px-4 py-6 sm:px-6 lg:px-8">
+                    <main id="main" className="flex flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
                         <AppBanners />
                         <div className="mb-6 flex flex-wrap items-center gap-3">
                             <h1 className="font-display text-2xl font-bold display sm:text-[28px]">{title}</h1>
                             <div className="ml-auto flex gap-2">{actions}</div>
                         </div>
                         {children}
-                        <footer className="mt-12 border-t border-line pt-4 pb-20 text-center text-xs text-muted lg:pb-4">
+                        {/* Grows to fill a short page, so the footer always sits at the bottom of the screen. */}
+                        <div aria-hidden className="min-h-12 flex-1" />
+                        <footer className="border-t border-line pt-4 pb-20 text-center text-xs text-muted lg:pb-4">
                             <FooterCredit />
                         </footer>
                     </main>
