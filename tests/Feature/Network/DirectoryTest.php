@@ -130,7 +130,7 @@ it('starts a claim on a public page and ends it in a pending application', funct
     $member = User::factory()->create();
     $this->actingAs($member)->get('/claim/'.$this->solar->slug.'/'.$this->austin->id)->assertRedirect('/app/groups/'.$this->solar->slug.'/apply?city='.$this->austin->id);
     $this->get('/app/groups/'.$this->solar->slug.'/apply?city='.$this->austin->id)->assertOk()->assertInertia(fn ($p) => $p->where('city.id', $this->austin->id)->where('city.name', 'Austin, TX'));
-    $this->post('/app/groups/'.$this->solar->slug.'/apply', ['city_id' => $this->austin->id, 'license_number' => 'TX-2'])->assertRedirect('/app');
+    $this->post('/app/groups/'.$this->solar->slug.'/apply', ['city_id' => $this->austin->id, 'license_number' => 'TX-2'])->assertRedirect('/app/groups/mine');
     expect(DB::table('seat_applications')->where(['group_id' => $this->solar->id, 'team_id' => Team::of($member)->id])->value('status'))->toBe('pending');
 });
 

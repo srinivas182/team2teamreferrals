@@ -160,6 +160,18 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
                 </Alert>
             )}
 
+            {pendingApplications > 0 && (
+                <div className="mb-4 flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-md bg-[#FEF9E7] p-3 text-sm text-[#8A5A00] dark:bg-warning/15 dark:text-[#FCD34D]">
+                    <span>
+                        <strong>{pendingApplications}</strong> seat {pendingApplications === 1 ? 'application is' : 'applications are'} waiting for
+                        your approval.
+                    </span>
+                    <Button size="sm" asChild>
+                        <Link href={`/admin/groups/${g.slug}/applications`}>Review applications</Link>
+                    </Button>
+                </div>
+            )}
+
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Kpi label="Owners" value={String(health.owners)} />
                 <Kpi label="Seats" value={String(health.seats)} />
@@ -177,6 +189,12 @@ export default function GroupShow({ group, owners, scheduled, overrides, seats, 
                         className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium capitalize ${tab === t ? 'border-primary' : 'border-transparent text-muted hover:text-ink'}`}
                     >
                         {t === 'pricing' ? 'Pricing' : t}
+                        {t === 'seats' && pendingApplications > 0 && (
+                            <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-semibold text-white normal-case">
+                                {pendingApplications}
+                                <span className="sr-only"> waiting for approval</span>
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>

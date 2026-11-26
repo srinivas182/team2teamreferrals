@@ -42,7 +42,7 @@ final class SeatController
         $team = Team::forLeader($this->user($request));
         $this->seats->apply($group, $team, City::query()->findOrFail((int) $data['city_id']), $data['license_number'] ?? null, $this->user($request));
 
-        return redirect()->to('/app')->with('status', 'seat-applied');
+        return redirect()->to('/app/groups/mine')->with('status', 'seat-applied');
     }
 
     public function offer(Request $request, int $offer): Response

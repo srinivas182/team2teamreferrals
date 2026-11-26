@@ -158,7 +158,7 @@ it('maps a city to its county or state for industries with bigger territories', 
 
 it('lets members apply and owners decide through the screens, and keeps others out', function () {
     $member = User::factory()->create();
-    $this->actingAs($member)->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->city->id, 'license_number' => 'LIC-1'])->assertRedirect('/app')->assertSessionHas('status', 'seat-applied');
+    $this->actingAs($member)->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->city->id, 'license_number' => 'LIC-1'])->assertRedirect('/app/groups/mine')->assertSessionHas('status', 'seat-applied');
     $id = (int) DB::table('seat_applications')->value('id');
 
     $this->actingAs(User::factory()->create())->post("/app/group/solar-installers-network/applications/{$id}/approve")->assertForbidden();
@@ -173,4 +173,19 @@ it('shows real seat counts in the group admin', function () {
     $admin = User::factory()->create(['two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now()]);
     $admin->assignRole('super_admin');
     $this->actingAs($admin)->get('/admin/groups/solar-installers-network')->assertInertia(fn ($p) => $p->where('health.seats', 1)->where('affected.trial', 1)->has('seats', 1)->where('group.rules.grace_days', 7));
+});
+
+it('lists the team’s applications and seats in My groups, and counts pending ones for admins', function () {
+    $member = User::factory()->create();
+    $this->actingAs($member)->get('/app/groups/mine')->assertOk()->assertInertia(fn ($p) => $p->component('app/groups/Mine')->has('rows', 0));
+    $this->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->city->id, 'license_number' => 'LIC-1']);
+    $this->get('/app/groups/mine')->assertInertia(fn ($p) => $p->has('rows', 1)->where('rows.0.state', 'pending')->where('rows.0.group', $this->solar->name)->where('status', 'seat-applied'));
+
+    $admin = User::factory()->create(['two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now()]);
+    $admin->assignRole('super_admin');
+    $this->actingAs($admin)->get('/admin/groups')->assertInertia(fn ($p) => $p->where('groups', fn ($g) => collect($g)->firstWhere('slug', 'solar-installers-network')['pendingApplications'] === 1));
+    $this->get('/admin/groups/solar-installers-network')->assertInertia(fn ($p) => $p->where('pendingApplications', 1));
+
+    $this->seats->approve((int) DB::table('seat_applications')->value('id'), $this->owner);
+    $this->actingAs($member)->get('/app/groups/mine')->assertInertia(fn ($p) => $p->where('rows.0.state', 'holder')->whereNot('rows.0.trialEnds', null));
 });
