@@ -52,6 +52,7 @@ const MEMBER = [
     ['app-sent', '/app/sent'],
     ['app-earnings', '/app/earnings'],
     ['app-groups', '/app/groups'],
+    ['app-groups-mine', '/app/groups/mine'],
     ['app-team', '/app/team'],
     ['app-billing', '/app/billing'],
     ['app-dashboard', '/app/dashboard'],

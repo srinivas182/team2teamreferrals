@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### My groups, and pending applications for admins
+1. Member menu, Network: a new **My groups** page lists every network and city your team applied for, with where each stands (waiting for approval, seat holder, backup, waitlist, not approved), the dates, and when a free trial ends. After applying, you land here.
+2. **Groups** is now **Join new groups**. An "Applied" tag on a network links to My groups. The checklist's "Hold your first seat" opens My groups.
+3. Admin → Groups: a "N to approve" tag beside each group with pending seat applications (it links straight to them), and a note above the list with the total.
+4. Admin → a group: a banner with the number waiting and a **Review applications** button, and a count on the Seats tab.
+
 ### Back-office footer at the bottom of the screen
 1. In Admin and the member area, the "Powered by" footer now sits at the bottom of the screen on short pages (like Apply for a city), instead of right under the content. Long pages are unchanged.
 

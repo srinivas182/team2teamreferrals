@@ -29,8 +29,15 @@ export default function MemberGroups({ groups, seo }: { groups: G[]; seo: Seo })
     const [q, setQ] = useState('');
     const shown = groups.filter((g) => `${g.name} ${g.industry} ${g.family}`.toLowerCase().includes(q.toLowerCase()));
     return (
-        <PortalLayout title="Find your network" user={{ name: auth.user?.name ?? '', team: '' }}>
+        <PortalLayout title="Join new groups" user={{ name: auth.user?.name ?? '', team: '' }}>
             <SeoHead seo={seo} />
+            <p className="mb-4 max-w-2xl text-muted">
+                Pick a network for your industry and apply for your city. Your applications and seats are in{' '}
+                <Link href="/app/groups/mine" className="font-medium text-primary hover:underline">
+                    My groups
+                </Link>
+                .
+            </p>
             <Input
                 aria-label="Search networks"
                 placeholder="Search by industry, e.g. solar, mortgage, roofing"
@@ -51,7 +58,11 @@ export default function MemberGroups({ groups, seo }: { groups: G[]; seo: Seo })
                             {!g.live && <Badge tone="sender">Founding seats</Badge>}
                             {g.inviteOnly && <Badge>Invite only</Badge>}
                             {g.mine && (
-                                <Badge tone={g.mine === 'approved' ? 'success' : 'warning'}>{g.mine === 'pending' ? 'Applied' : g.mine}</Badge>
+                                <Link href="/app/groups/mine" className="hover:underline">
+                                    <Badge tone={g.mine === 'approved' ? 'success' : 'warning'}>
+                                        {g.mine === 'pending' ? 'Applied, waiting for approval' : g.mine === 'approved' ? 'Approved' : 'Declined'}
+                                    </Badge>
+                                </Link>
                             )}
                         </div>
                         <div className="mt-auto pt-4">

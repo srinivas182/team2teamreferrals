@@ -28,6 +28,7 @@ type Group = {
     industry: { slug: string | null; name: string | null; tier: string | null };
     pricing: { seat_price: number; founding_price: number; trial_months: number; value_guarantee: boolean; annual_months_free: number };
     rules: { accept_hours: number; company_cap_pct: number; challenge_days: number };
+    pendingApplications: number;
 };
 
 /** The launch groups with their pricing and rules. Editing groups, owners and seats arrives in Sprint 10. */
@@ -44,6 +45,7 @@ export default function GroupsIndex({
 }) {
     const f = useUrlFilters({ q: '', status: '', industry: '', type: '', tier: '' });
     const [creating, setCreating] = useState(false);
+    const pendingTotal = groups.reduce((n, g) => n + g.pendingApplications, 0);
     const [selected, setSelected] = useState<string[]>([]);
     const [pricing, setPricing] = useState(false);
     const note = usePage<{ flash: { note?: string | null } }>().props.flash.note;
@@ -265,6 +267,12 @@ export default function GroupsIndex({
                     </Button>
                 )}
             </div>
+            {pendingTotal > 0 && (
+                <Alert tone="info" className="mb-4">
+                    {pendingTotal} seat {pendingTotal === 1 ? 'application is' : 'applications are'} waiting for approval. Look for the “to approve”
+                    tag next to a group.
+                </Alert>
+            )}
             <Card className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-sm">
                     <thead className="text-left text-muted">
@@ -300,7 +308,12 @@ export default function GroupsIndex({
                                         {g.name}
                                     </Link>{' '}
                                     {g.launch && <Badge tone="sender">Launch</Badge>} {g.private && <Badge tone="info">Private</Badge>}{' '}
-                                    {g.region && <Badge>{g.region}</Badge>}
+                                    {g.region && <Badge>{g.region}</Badge>}{' '}
+                                    {g.pendingApplications > 0 && (
+                                        <Link href={`/admin/groups/${g.slug}/applications`} className="hover:underline">
+                                            <Badge tone="warning">{g.pendingApplications} to approve</Badge>
+                                        </Link>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3">
                                     <Link href={`/admin/industries/${g.industry.slug}`} className="hover:text-primary">

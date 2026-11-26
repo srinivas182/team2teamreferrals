@@ -53,7 +53,8 @@ export const moreNav: NavGroup[] = [
         key: 'network',
         label: 'Network',
         items: [
-            { label: 'Groups', href: '/app/groups', icon: Users },
+            { label: 'My groups', href: '/app/groups/mine', icon: BadgeCheck },
+            { label: 'Join new groups', href: '/app/groups', icon: Users },
             { label: 'Directory', href: '/app/directory', icon: BookUser, module: 'community' },
             { label: 'Feed', href: '/app/feed', icon: MessagesSquare, module: 'community' },
             { label: 'Events', href: '/app/events', icon: CalendarDays, module: 'events' },
