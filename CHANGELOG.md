@@ -4,6 +4,9 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Fee wording
+- The site footer and the Groups page no longer say "We never take a share of your commission". They now say: referral fees are paid team to team (broker to broker in real estate); we charge a monthly seat fee and, where it applies, a flat platform fee when a referral closes.
+
 ### 1-month trials, card on every claim, platform fee charged straight away
 1. **Every group's free trial is 1 month** (existing groups changed; new groups start at 1). Copy reads "1 month" / "First month free".
 2. **A card is also needed to accept a seat invitation or a waitlist offer** (when payments are on), with the same card step as claiming; a saved card is reused.

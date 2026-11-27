@@ -33,7 +33,7 @@ const steps = [
     {
         icon: BadgeDollarSign,
         title: 'Get paid when they close',
-        body: 'Referral fees are paid broker to broker. We never take a share of your commission.',
+        body: 'Referral fees are paid team to team (broker to broker in real estate). We charge a monthly seat fee and, where it applies, a flat platform fee when a referral closes.',
     },
 ];
 
