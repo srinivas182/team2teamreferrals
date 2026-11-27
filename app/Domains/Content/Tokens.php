@@ -25,7 +25,7 @@ final class Tokens
             $prices = DB::table('groups')->whereNotNull('pricing')->pluck('pricing')->map(fn ($p) => (array) json_decode((string) $p, true));
             $seat = $prices->pluck('seat_price')->filter(fn ($v) => is_numeric($v))->min();
             $trial = $prices->pluck('trial_months')->filter(fn ($v) => is_numeric($v))->max();
-            $default = ['seat_price' => 10, 'trial_months' => 3, 'annual_months_free' => 2]; // as Group::defaultPricing
+            $default = ['seat_price' => 10, 'trial_months' => 1, 'annual_months_free' => 2]; // as Group::defaultPricing
 
             return [
                 'site_name' => (string) config('seo.site_name', 'Team to Team Referrals'),
@@ -81,6 +81,10 @@ final class Tokens
             return $text;
         }
         $vars = [...self::site(), ...$extra];
+        // "{trial_months} months" reads "1 months" for a one-month trial: say "1 month" (also in copy already saved).
+        if (($vars['trial_months'] ?? null) === '1') {
+            $text = str_replace('{trial_months} months', '1 month', $text);
+        }
 
         return (string) preg_replace_callback('/\{([a-z_]+)\}/', fn ($m) => $vars[$m[1]] ?? $m[0], $text);
     }

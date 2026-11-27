@@ -168,5 +168,5 @@ it('reactivates at once when the payer presses Pay now', function () {
     $this->decline = false;
     $this->actingAs($this->teamA->leader)->post('/app/billing/team/invoices/'.($this->inv)()->id.'/pay')->assertSessionHas('status', 'invoice-paid');
     expect($this->seat->fresh()->status)->toBe('active');
-    $this->actingAs(User::factory()->create())->post('/app/billing/team/invoices/'.($this->inv)()->id.'/pay')->assertForbidden();
+    $this->actingAs(User::factory()->create())->post('/app/billing/team/invoices/'.($this->inv)()->id.'/pay')->assertNotFound(); // a stranger gets a team of their own, which has no such invoice
 });

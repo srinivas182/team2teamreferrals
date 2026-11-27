@@ -1,17 +1,18 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
+import { ClaimCard, needsCard, type ClaimBilling } from '@/components/billing/ClaimCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PublicLayout } from '@/layouts/PublicLayout';
-import { money } from '@/lib/utils';
+import { money, months } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Invite = { token: string; email: string; territory: string; group: string; industry: string; price: number; trial: number; expires: string };
 
-export default function Invitation({ invite, seo }: { invite: Invite | null; seo: Seo }) {
+export default function Invitation({ invite, billing, seo }: { invite: Invite | null; billing: ClaimBilling | null; seo: Seo }) {
     const { auth, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     return (
         <PublicLayout>
@@ -26,7 +27,7 @@ export default function Invitation({ invite, seo }: { invite: Invite | null; seo
                         <ul className="mt-6 space-y-2 text-sm">
                             {[
                                 `One verified ${invite.industry.toLowerCase()} pro per territory`,
-                                `${invite.trial} months free, then ${money(invite.price)} a month`,
+                                `${months(invite.trial)} free, then ${money(invite.price)} a month`,
                                 'Send and receive tracked referrals across the country',
                             ].map((t) => (
                                 <li key={t} className="flex gap-2">
@@ -42,9 +43,17 @@ export default function Invitation({ invite, seo }: { invite: Invite | null; seo
                         )}
                         <div className="mt-8">
                             {auth.user ? (
-                                <Button size="lg" className="w-full" onClick={() => router.post(`/invites/${invite.token}/accept`)}>
-                                    Accept and claim {invite.territory}
-                                </Button>
+                                <div className="space-y-4">
+                                    {billing && <ClaimCard billing={billing} error={errors.card} />}
+                                    <Button
+                                        size="lg"
+                                        className="w-full"
+                                        disabled={billing !== null && needsCard(billing)}
+                                        onClick={() => router.post(`/invites/${invite.token}/accept`)}
+                                    >
+                                        Accept and claim {invite.territory}
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className="grid gap-2 sm:grid-cols-2">
                                     <Button size="lg" asChild>

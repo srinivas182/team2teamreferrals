@@ -10,7 +10,7 @@ import { Kpi, Segmented } from '@/components/ui/data';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { statusMessage } from '@/lib/status';
-import { money } from '@/lib/utils';
+import { money, firstFree } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
 
 type Pricing = {
@@ -72,6 +72,13 @@ type Props = {
     seats: SeatRow[];
     pendingApplications: number;
     emptyCityDemand: { city: string; referrals: number }[];
+    platformFee: {
+        allowed: boolean;
+        canEdit: boolean;
+        unlocked: boolean;
+        industry: { mode: string; flatCents: number | null; percent: number | null; enabled: boolean };
+        group: { mode: string; flatCents: number | null; percent: number | null; enabled: boolean } | null;
+    };
     affected: { seats: number; trial: number; paying: number };
     health: { owners: number; seats: number; referralsThisMonth: number | null; avgAcceptMinutes: number | null; quietSeats: number | null };
     status?: string;
@@ -119,6 +126,7 @@ export default function GroupShow({
     seats,
     pendingApplications,
     emptyCityDemand,
+    platformFee,
     affected,
     health,
     status,
@@ -332,7 +340,7 @@ export default function GroupShow({
                                 </div>
                                 <ul className="mt-3 space-y-1.5 text-sm">
                                     {[
-                                        `First ${p.trial_months} months free`,
+                                        firstFree(p.trial_months),
                                         p.value_guarantee && g.industry.guaranteeAllowed
                                             ? 'Free for any month without a referral'
                                             : 'Billed monthly after the trial',
@@ -359,6 +367,7 @@ export default function GroupShow({
                                 <p className="mt-2 text-muted">Projected monthly revenue after trials: {money(affected.paying * p.seat_price)}</p>
                             </div>
                         </Card>
+                        <PlatformFeeCard slug={g.slug} fee={platformFee} />
                     </div>
                 </div>
             )}
@@ -598,5 +607,79 @@ export default function GroupShow({
                 </Card>
             )}
         </AdminLayout>
+    );
+}
+
+const feeText = (f: { mode: string; flatCents: number | null; percent: number | null }) =>
+    f.mode === 'flat'
+        ? `${money((f.flatCents ?? 0) / 100)} flat per Won referral`
+        : f.mode === 'percent'
+          ? `${f.percent}% of each referral fee`
+          : 'No fee';
+
+/**
+ * The platform's fee for this group (admins only): the industry default (a flat $250 per Won referral), or a flat
+ * amount or percentage of its own. Taken from the referring team when they've been paid their referral fee.
+ */
+function PlatformFeeCard({ slug, fee }: { slug: string; fee: Props['platformFee'] }) {
+    const form = useForm({
+        mode: fee.group ? fee.group.mode : 'default',
+        flat: fee.group?.mode === 'flat' ? (fee.group.flatCents ?? 0) / 100 : 250,
+        percent: fee.group?.mode === 'percent' ? (fee.group.percent ?? 0) : 10,
+    });
+    const errors = form.errors as Record<string, string>;
+    if (!fee.allowed) {
+        return (
+            <Card className="p-5 text-sm">
+                <h3 className="font-semibold">Platform fee</h3>
+                <p className="mt-1 text-muted">None: this industry’s tier doesn’t allow fees tied to referrals.</p>
+            </Card>
+        );
+    }
+    const active = fee.unlocked && (fee.group ? fee.group.enabled : fee.industry.enabled);
+    return (
+        <Card className="space-y-3 p-5 text-sm">
+            <div className="flex items-center gap-2">
+                <h3 className="font-semibold">Platform fee</h3>
+                <Badge tone={active ? 'success' : 'neutral'} className="ml-auto">
+                    {active ? 'Charging' : 'Off'}
+                </Badge>
+            </div>
+            <p className="text-muted">
+                Charged to the referring team’s card when they’ve received their referral fee. Industry default: {feeText(fee.industry)}
+                {fee.industry.enabled ? '' : ' (off)'}.
+                {!fee.unlocked && ' Platform fees are locked until a super admin unlocks them in Admin → Industries.'}
+            </p>
+            {fee.canEdit ? (
+                <>
+                    <Select aria-label="Platform fee for this group" value={form.data.mode} onChange={(e) => form.setData('mode', e.target.value)}>
+                        <option value="default">Use the industry default</option>
+                        <option value="flat">A flat amount for this group</option>
+                        <option value="percent">A percentage of the referral fee</option>
+                        <option value="none">No platform fee for this group</option>
+                    </Select>
+                    {form.data.mode === 'flat' && (
+                        <Field label="Flat fee per Won referral ($)" error={errors.flat}>
+                            <Input type="number" value={form.data.flat} onChange={(e) => form.setData('flat', +e.target.value)} />
+                        </Field>
+                    )}
+                    {form.data.mode === 'percent' && (
+                        <Field label="Percentage of the referral fee" error={errors.percent}>
+                            <Input type="number" value={form.data.percent} onChange={(e) => form.setData('percent', +e.target.value)} />
+                        </Field>
+                    )}
+                    {errors.fee && <p className="text-danger">{errors.fee}</p>}
+                    <Button
+                        size="sm"
+                        onClick={() => form.put(`/admin/groups/${slug}/platform-fee`, { preserveScroll: true })}
+                        loading={form.processing}
+                    >
+                        Save platform fee
+                    </Button>
+                </>
+            ) : (
+                <p>This group: {fee.group ? feeText(fee.group) : 'the industry default'}. Only a super admin can change it.</p>
+            )}
+        </Card>
     );
 }

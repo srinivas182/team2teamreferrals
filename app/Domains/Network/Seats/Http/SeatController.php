@@ -33,7 +33,7 @@ final class SeatController
             // When the group is open only to some cities, say which.
             'openCities' => \App\Domains\Network\Groups\GroupCities::summary($group),
             // The card is saved when claiming (charged only after the free trial); a card already on file is reused.
-            'billing' => $this->billing($request, $group),
+            'billing' => self::billing(Team::of($this->user($request)), $group),
             'city' => $city !== null ? ['id' => $city->id, 'name' => $city->name.', '.DB::table('states')->where('id', $city->state_id)->value('code')] : null,
             'seo' => SeoData::private('Apply to '.$group->name)->toArray(),
         ]);
@@ -44,9 +44,7 @@ final class SeatController
         abort_if($group->is_private, 404);
         $data = $request->validate(['city_id' => ['required', 'integer', 'exists:cities,id'], 'license_number' => ['nullable', 'string', 'max:60']]);
         $team = Team::forLeader($this->user($request));
-        if (app(\App\Domains\Platform\Payments\Stripe::class)->connected() && \App\Domains\Billing\BillingAccounts::cardFor($team) === null) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['card' => 'Add a card to claim this seat. It isn’t charged until your free trial ends.']);
-        }
+        self::requireCard($team);
         $this->seats->apply($group, $team, City::query()->findOrFail((int) $data['city_id']), $data['license_number'] ?? null, $this->user($request));
 
         return redirect()->to('/app/groups/mine')->with('status', 'seat-applied');
@@ -56,18 +54,22 @@ final class SeatController
     {
         $row = DB::table('seat_offers')->join('seats', 'seats.id', '=', 'seat_offers.seat_id')->join('groups', 'groups.id', '=', 'seats.group_id')
             ->where('seat_offers.id', $offer)->where('seat_offers.team_id', Team::forLeader($this->user($request))->id)
-            ->first(['seat_offers.id', 'seat_offers.status', 'seat_offers.expires_at', 'seats.territory_name', 'groups.name as group_name', 'groups.pricing']);
+            ->first(['seat_offers.id', 'seat_offers.status', 'seat_offers.expires_at', 'seats.territory_name', 'seats.group_id', 'groups.name as group_name', 'groups.pricing']);
         abort_if($row === null, 404);
+        $group = Group::query()->with('industry')->findOrFail((int) $row->group_id);
 
         return Inertia::render('app/seats/Offer', [
             'offer' => ['id' => (int) $row->id, 'status' => (string) $row->status, 'expiresAt' => (string) $row->expires_at, 'territory' => (string) $row->territory_name, 'group' => (string) $row->group_name, 'pricing' => json_decode((string) $row->pricing, true)],
+            'billing' => self::billing(Team::forLeader($this->user($request)), $group),
             'seo' => SeoData::private('Seat offer')->toArray(),
         ]);
     }
 
     public function accept(Request $request, int $offer): RedirectResponse
     {
-        $this->seats->acceptOffer($offer, Team::forLeader($this->user($request)));
+        $team = Team::forLeader($this->user($request));
+        self::requireCard($team);
+        $this->seats->acceptOffer($offer, $team);
 
         return redirect()->to('/app')->with('status', 'seat-claimed');
     }
@@ -168,37 +170,48 @@ final class SeatController
 
         return Inertia::render('Invitation', [
             'invite' => $invite && $seat ? ['token' => $token, 'email' => (string) $invite->email, 'territory' => $seat->territory_name, 'group' => $seat->group->name, 'industry' => $seat->group->industry->name,
-                'price' => (int) ($seat->group->pricing['seat_price'] ?? 10), 'trial' => (int) ($seat->group->pricing['trial_months'] ?? 3), 'expires' => (string) $invite->expires_at] : null,
+                'price' => (int) ($seat->group->pricing['seat_price'] ?? 10), 'trial' => (int) ($seat->group->pricing['trial_months'] ?? 1), 'expires' => (string) $invite->expires_at] : null,
+            'billing' => $seat !== null && $request->user() instanceof User ? self::billing(Team::of($request->user()), $seat->group) : null,
             'seo' => (new SeoData(title: 'Your invitation', description: 'Team to Team Referrals', index: false))->toArray(),
         ]);
     }
 
     public function acceptInvitation(Request $request, string $token): RedirectResponse
     {
+        self::requireCard(Team::of($this->user($request)) ?? Team::forLeader($this->user($request)));
         $outcome = app(\App\Domains\Network\Seats\SeatInvites::class)->accept($token, $this->user($request));
 
         return redirect()->to('/app')->with('status', $outcome === 'primary' ? 'seat-claimed' : 'application-approved-'.$outcome);
     }
 
     /**
-     * What the claim page says about paying: the card on file (or none yet), and when the first charge would be if the
-     * seat were approved today. Billing is monthly in arrears, so it's the 1st of the month after the trial ends.
+     * What a claim screen (apply, invitation, waitlist offer) says about paying: the card on file (or none yet), and
+     * when the first charge would be if the seat started today. Billing is monthly in arrears, so it's the 1st of the
+     * month after the trial ends.
      *
-     * @return array{stripeKey: ?string, card: array{brand: string, last4: string, payer: string}|null, trialEnds: string, firstCharge: string, extension: bool}
+     * @return array{stripeKey: ?string, card: array{brand: string, last4: string, payer: string}|null, trialMonths: int, price: int, unit: string, firstCharge: string, extension: bool}
      */
-    private function billing(Request $request, Group $group): array
+    public static function billing(?Team $team, Group $group): array
     {
         $stripe = app(\App\Domains\Platform\Payments\Stripe::class);
-        $team = Team::of($this->user($request));
-        $trialEnds = now()->addMonths((int) ($group->pricing['trial_months'] ?? 3));
+        $trial = (int) ($group->pricing['trial_months'] ?? 1);
 
         return [
             'stripeKey' => $stripe->connected() ? $stripe->publishableKey() : null,
             'card' => $team !== null ? \App\Domains\Billing\BillingAccounts::cardFor($team) : null,
-            'trialEnds' => $trialEnds->toFormattedDateString(),
-            'firstCharge' => $trialEnds->copy()->addMonthNoOverflow()->startOfMonth()->toFormattedDateString(),
+            'trialMonths' => $trial, 'price' => (int) ($group->pricing['seat_price'] ?? 10),
+            'unit' => ['city' => 'city', 'county' => 'county', 'metro' => 'metro area', 'state' => 'state'][$group->industry->territory_unit] ?? 'city',
+            'firstCharge' => now()->addMonths($trial)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString(),
             'extension' => (bool) ($group->pricing['value_guarantee'] ?? false) && $group->industry->tier->allowsValueGuarantee(),
         ];
+    }
+
+    /** With payments on, a seat can't be claimed (applied for, or accepted from an invitation or offer) without a card. */
+    public static function requireCard(Team $team): void
+    {
+        if (app(\App\Domains\Platform\Payments\Stripe::class)->connected() && \App\Domains\Billing\BillingAccounts::cardFor($team) === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['card' => 'Add a card to claim this seat. It isn’t charged until your free trial ends.']);
+        }
     }
 
     private function authorizeDecider(Request $request, Group $group): void

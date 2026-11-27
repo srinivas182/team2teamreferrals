@@ -100,9 +100,9 @@ final class Invoicing
      *
      * @param  list<array<string, mixed>>  $lines
      */
-    public function issue(string $type, int $id, string $period, array $lines): ?int
+    public function issue(string $type, int $id, string $period, array $lines, string $sourceKey = 'monthly'): ?int
     {
-        if (DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id, 'period' => $period])->exists()) {
+        if (DB::table('invoices')->where(['owner_type' => $type, 'owner_id' => $id, 'period' => $period, 'source_key' => $sourceKey])->exists()) {
             return null;
         }
         $lines = PricingRules::apply($type, $id, $lines);
@@ -113,7 +113,7 @@ final class Invoicing
         }
         $invoiceId = DB::table('invoices')->insertGetId([
             'number' => 'T2T-'.str_replace('-', '', $period).'-'.str_pad((string) (DB::table('invoices')->count() + 1), 6, '0', STR_PAD_LEFT),
-            'owner_type' => $type, 'owner_id' => $id, 'period' => $period, 'lines' => json_encode($lines), 'total_cents' => $total,
+            'owner_type' => $type, 'owner_id' => $id, 'period' => $period, 'source_key' => $sourceKey, 'lines' => json_encode($lines), 'total_cents' => $total,
             'status' => $total === 0 ? 'zero' : 'open', 'created_at' => now(), 'updated_at' => now(),
         ]);
         PricingRules::commit($type, $id, $lines);
@@ -165,6 +165,24 @@ final class Invoicing
                 $this->notifier->send($u, 'seat.payment', ['group' => 'Billing', 'headline' => "Your card ending {$acc->card_last4} expires soon", 'body' => 'Add a new card on the Billing page so your seats keep running without interruption.'], url('/app/billing'));
             }
         }
+    }
+
+    /**
+     * A platform fee is charged as soon as it's owed (the referring team has its referral fee), on an invoice of its
+     * own, to the referring team's card. A failed charge is retried like any invoice; left unpaid past the grace days
+     * it locks the team (TeamLock) until paid. Does nothing while fee collection is off (it waits for the monthly run).
+     */
+    public function chargePlatformFee(int $feeId): ?int
+    {
+        $f = DB::table('referral_fees as f')->join('referrals as r', 'r.id', '=', 'f.referral_id')->where('f.id', $feeId)
+            ->where('f.platform_fee_status', 'owed')->whereNull('f.platform_invoice_id')->first(['f.*', 'r.client_name']);
+        if ($f === null || ! PricingRules::platformFeeCollectionOn() || (int) $f->platform_fee_cents <= 0) {
+            return null;
+        }
+        $line = ['type' => 'platform_fee', 'platform_fee_id' => (int) $f->id, 'days' => 0, 'free_reason' => null, 'amount_cents' => (int) $f->platform_fee_cents,
+            'description' => 'Platform fee on the $'.number_format($f->amount_cents / 100, 2).' referral fee for '.\App\Domains\Referrals\Referral::shorten((string) $f->client_name)];
+
+        return $this->issue('team', (int) $f->payee_team_id, now()->format('Y-m'), [$line], 'fee:'.$f->id);
     }
 
     /** Charge an open or failed invoice now (the billing run, a scheduled retry, or "Pay now"). */

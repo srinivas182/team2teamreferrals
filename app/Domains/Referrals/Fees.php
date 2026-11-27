@@ -146,13 +146,33 @@ final class Fees
         $fee = $this->fee($feeId);
         abort_unless($this->onTeam($user, (int) $fee->payee_team_id) && in_array($fee->status, ['due', 'paid'], true), 403);
         // The referring team has the money now: the platform fee from it becomes owed (billed with their account, Sprint 22).
-        DB::table('referral_fees')->where('id', $feeId)->update(['status' => 'received', 'received_at' => now(), 'updated_at' => now(),
-            'platform_fee_status' => (int) $fee->platform_fee_cents > 0 ? 'owed' : 'none', 'platform_fee_owed_at' => (int) $fee->platform_fee_cents > 0 ? now() : null]);
+        $this->received($fee);
     }
 
-    /** Daily: a reminder on the due date and another a week later (once each). */
+    /** The referring team has its money: the platform fee becomes owed and is charged to its card straight away. */
+    private function received(stdClass $fee): void
+    {
+        DB::table('referral_fees')->where('id', $fee->id)->update(['status' => 'received', 'received_at' => now(), 'updated_at' => now(),
+            'platform_fee_status' => (int) $fee->platform_fee_cents > 0 ? 'owed' : 'none', 'platform_fee_owed_at' => (int) $fee->platform_fee_cents > 0 ? now() : null]);
+        if ((int) $fee->platform_fee_cents > 0) {
+            app(\App\Domains\Billing\Invoicing::class)->chargePlatformFee((int) $fee->id);
+        }
+    }
+
+    /** Days after the paying team marks a fee paid before it counts as received, unless the referring team disputes it. */
+    public const AUTO_RECEIVED_DAYS = 14;
+
+    /** Daily: a reminder on the due date and another a week later (once each); fees marked paid long ago count as received. */
     public function remind(): void
     {
+        // Marked paid 14 days ago and the referring team hasn't confirmed or disputed it: treat it as received.
+        foreach (DB::table('referral_fees')->where('status', 'paid')->where('paid_at', '<=', now()->subDays(self::AUTO_RECEIVED_DAYS))->get() as $fee) {
+            $this->received($fee);
+            $payee = Team::query()->with('leader')->find((int) $fee->payee_team_id);
+            if ($payee !== null) {
+                $this->notifier->send($payee->leader, 'referral.message', ['headline' => 'A referral fee was marked received', 'body' => 'It was marked paid '.self::AUTO_RECEIVED_DAYS.' days ago and you didn’t report a problem, so it now counts as received'.((int) $fee->platform_fee_cents > 0 ? '. The platform fee of $'.number_format($fee->platform_fee_cents / 100, 2).' has been charged to your card.' : '.')], url('/app/earnings'));
+            }
+        }
         foreach (DB::table('referral_fees')->where('status', 'due')->where('due_on', '<=', now()->toDateString())->get() as $fee) {
             $overdue = now()->toDateString() >= now()->parse((string) $fee->due_on)->addDays(7)->toDateString();
             $kind = $overdue ? 'fee_overdue' : 'fee_due';
@@ -192,8 +212,24 @@ final class Fees
         if (! $ref->group->industry->tier->allowsPlatformFee()) {
             return 0;
         }
-        $rule = \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where(['industry_id' => $ref->group->industry_id, 'enabled' => true])
-            ->where(fn ($q) => $q->where('group_id', $ref->group_id)->orWhereNull('group_id'))->orderByRaw('group_id is null')->first();
+        // A group's own rule wins (including "no fee" for that group); otherwise the industry's.
+        $own = \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where(['industry_id' => $ref->group->industry_id, 'group_id' => $ref->group_id])->first();
+        if ($own !== null && ($own->mode === 'none' || ! $own->enabled)) {
+            return $own->mode === 'none' ? 0 : self::industryFee($ref, $referralFeeCents);
+        }
+        $rule = $own ?? \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where(['industry_id' => $ref->group->industry_id, 'enabled' => true])->whereNull('group_id')->first();
+        $cents = match ($rule?->mode) {
+            'percent' => (int) round($referralFeeCents * (float) $rule->percent / 100),
+            'flat' => (int) $rule->flat_cents,
+            default => 0,
+        };
+
+        return min($cents, $referralFeeCents);
+    }
+
+    private static function industryFee(Referral $ref, int $referralFeeCents): int
+    {
+        $rule = \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where(['industry_id' => $ref->group->industry_id, 'enabled' => true])->whereNull('group_id')->first();
         $cents = match ($rule?->mode) {
             'percent' => (int) round($referralFeeCents * (float) $rule->percent / 100),
             'flat' => (int) $rule->flat_cents,

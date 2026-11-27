@@ -194,7 +194,8 @@ final class BillingController
     {
         $user = $this->user($request);
         $id = match ($type) {
-            'team' => Team::of($user)?->id,
+            // A new pro's team of one is created when first needed (adding a card while accepting an invitation, say).
+            'team' => (Team::of($user) ?? Team::forLeader($user))->id,
             'company' => Company::administeredBy($user)?->id,
             default => null,
         };

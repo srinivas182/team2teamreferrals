@@ -37,6 +37,8 @@ final class RenewController
 
         return Inertia::render('app/Renew', [
             'locked' => TeamLock::locked($team),
+            // Why: unpaid seats, or a charge (a platform fee) left unpaid past its grace days.
+            'unpaidCharges' => TeamLock::unpaidCharges($team),
             'team' => $team->name,
             'canPay' => $canPay,
             'leader' => $team->leader->name,

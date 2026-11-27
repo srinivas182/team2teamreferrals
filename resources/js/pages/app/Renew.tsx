@@ -13,6 +13,7 @@ import type { Seo } from '@/types/seo';
 
 type Props = {
     locked: boolean;
+    unpaidCharges: number;
     team: string;
     canPay: boolean;
     leader: string;
@@ -28,7 +29,7 @@ type Props = {
 const usd = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
 /** Renew: an unpaid team's seats, the referrals it missed while inactive, and paying to get them back. */
-export default function Renew({ locked, team, canPay, leader, seats, missed, invoices, card, stripeKey, status, seo }: Props) {
+export default function Renew({ locked, unpaidCharges, team, canPay, leader, seats, missed, invoices, card, stripeKey, status, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [error, setError] = useState<string | null>(null);
     const [paying, setPaying] = useState<number | null>(null);
@@ -38,7 +39,21 @@ export default function Renew({ locked, team, canPay, leader, seats, missed, inv
             <SeoHead seo={seo} />
             <div className="max-w-4xl space-y-6">
                 {status && <Alert tone="success">{statusMessage(status)}</Alert>}
-                {seats.length === 0 ? (
+                {unpaidCharges > 0 && (
+                    <Card className="space-y-2 border-danger/40 p-6">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
+                            <div>
+                                <h2 className="font-semibold">An unpaid charge has locked your team</h2>
+                                <p className="mt-1 text-sm text-muted">
+                                    We couldn’t take a payment (a platform fee on a referral fee you received) and it’s now past its grace days. Your
+                                    team can use Team to Team again as soon as it’s paid. You can still work the clients you’d already accepted.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                )}
+                {seats.length === 0 && unpaidCharges === 0 ? (
                     <Card className="p-6">
                         <h2 className="font-semibold">You’re all set</h2>
                         <p className="mt-1 text-muted">None of your seats need renewing.</p>
@@ -46,7 +61,7 @@ export default function Renew({ locked, team, canPay, leader, seats, missed, inv
                             <Link href="/app">Go to your home page</Link>
                         </Button>
                     </Card>
-                ) : (
+                ) : seats.length === 0 ? null : (
                     <Card className="space-y-3 border-danger/40 p-6">
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
@@ -74,7 +89,7 @@ export default function Renew({ locked, team, canPay, leader, seats, missed, inv
                     </Card>
                 )}
 
-                {seats.length > 0 && (
+                {(seats.length > 0 || unpaidCharges > 0) && (
                     <Card className="space-y-4 p-6">
                         <h2 className="font-semibold">Renew</h2>
                         {!canPay ? (
