@@ -240,7 +240,7 @@ export default function GroupsIndex({
                             f.values.status === key ? 'bg-primary text-white' : 'text-muted hover:text-ink',
                         )}
                     >
-                        {label} <span className="tabular-nums opacity-80">({n})</span>
+                        {label} <span className="tabular-nums">({n})</span>
                     </button>
                 ))}
             </nav>
