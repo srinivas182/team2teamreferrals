@@ -32,7 +32,10 @@ export function SiteFooter({ className }: { className?: string }) {
             </div>
             <div className="mx-auto flex max-w-content flex-col gap-2 border-t border-line px-5 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-8">
                 <span>© {new Date().getFullYear()} Team to Team Referrals</span>
-                <span>Referral fees are paid broker to broker. We never take a share of your commission.</span>
+                <span className="sm:max-w-xl sm:text-right">
+                    Referral fees are paid team to team (broker to broker in real estate). We charge a monthly seat fee and, where it applies, a flat
+                    platform fee when a referral closes.
+                </span>
             </div>
             <FooterCredit className="mx-auto block max-w-content px-5 pb-6 text-center text-sm text-muted sm:px-8" />
         </footer>
