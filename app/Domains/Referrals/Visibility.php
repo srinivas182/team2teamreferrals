@@ -10,8 +10,9 @@ use Illuminate\Contracts\Database\Query\Builder;
 
 /**
  * Who in a team sees which referrals. Leaders and assistants see all of the team's referrals. Members see the ones
- * they sent, the ones they accepted, and offers still waiting for the team (so they can accept them); never a
- * teammate's clients. Every list, page, search, earnings view and API call goes through here.
+ * they sent, the ones they accepted, and offers still waiting that the team's sharing mode lets them take (all of
+ * them when it's open to everyone, the ones offered to them when taking turns, none when the leader assigns);
+ * never a teammate's clients. Every list, page, search, earnings view and API call goes through here.
  */
 final class Visibility
 {
@@ -29,9 +30,15 @@ final class Visibility
     public static function apply(Builder $q, Team $team, User $user, ?string $side = null, string $p = ''): void
     {
         $all = self::seesAll($team, $user);
+        $mode = LeadSharing::mode($team);
+        $offers = fn ($m) => match ($mode) {
+            'leader' => $m->whereRaw('1 = 0'),
+            'turns' => $m->where("{$p}status", 'sent')->where(fn ($o) => $o->whereNull("{$p}offered_user_id")->orWhere("{$p}offered_user_id", $user->id)),
+            default => $m->where("{$p}status", 'sent'),
+        };
         $sent = fn ($w) => $w->where("{$p}sender_team_id", $team->id)->when(! $all, fn ($w) => $w->where("{$p}sender_user_id", $user->id));
         $received = fn ($w) => $w->where("{$p}receiver_team_id", $team->id)
-            ->when(! $all, fn ($w) => $w->where(fn ($m) => $m->where("{$p}receiver_user_id", $user->id)->orWhere("{$p}status", 'sent')));
+            ->when(! $all, fn ($w) => $w->where(fn ($m) => $m->where("{$p}receiver_user_id", $user->id)->orWhere($offers)));
 
         match ($side) {
             'sent' => $q->where($sent),
@@ -51,6 +58,6 @@ final class Visibility
         }
 
         return ($team->id === $ref->sender_team_id && $ref->sender_user_id === $user->id)
-            || ($team->id === $ref->receiver_team_id && ($ref->receiver_user_id === $user->id || $ref->status === 'sent'));
+            || ($team->id === $ref->receiver_team_id && ($ref->receiver_user_id === $user->id || ($ref->status === 'sent' && LeadSharing::mayAccept($ref, $team, $user))));
     }
 }

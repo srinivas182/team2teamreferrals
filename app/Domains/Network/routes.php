@@ -115,6 +115,7 @@ Route::middleware(['web', 'noindex:always'])->get('invites/{token}', [App\Domain
 Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class, 'verified'])->group(function (): void {
     Route::get('app/team', [App\Domains\Network\Teams\TeamController::class, 'show'])->name('team.show');
     Route::post('app/team', [App\Domains\Network\Teams\TeamController::class, 'update'])->name('team.update');
+    Route::post('app/team/sharing', [App\Domains\Network\Teams\TeamController::class, 'sharing'])->name('team.sharing');
     Route::post('app/team/invites', [App\Domains\Network\Teams\TeamController::class, 'invite'])->middleware('throttle:20,60')->name('team.invite');
     Route::delete('app/team/invites/{invite}', [App\Domains\Network\Teams\TeamController::class, 'revokeInvite'])->whereNumber('invite')->name('team.invite.revoke');
     Route::delete('app/team/members/{member}', [App\Domains\Network\Teams\TeamController::class, 'removeMember'])->name('team.member.remove');

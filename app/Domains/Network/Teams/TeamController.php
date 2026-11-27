@@ -41,6 +41,7 @@ final class TeamController
                 ->map(fn ($i) => ['id' => (int) $i->id, 'email' => (string) $i->email, 'role' => (string) $i->role, 'expires' => (string) $i->expires_at]) : [],
             'roles' => Team::ROLES,
             'quickReplies' => \App\Domains\Referrals\Conversations::quickReplies($team),
+            'sharing' => ['mode' => \App\Domains\Referrals\LeadSharing::mode($team), 'minutes' => DB::table('teams')->where('id', $team->id)->value('member_accept_minutes')],
             'showDealValue' => (bool) DB::table('teams')->where('id', $team->id)->value('show_deal_value'),
             'specialties' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('specialties'), true) ?: [],
             'languages' => json_decode((string) DB::table('teams')->where('id', $team->id)->value('languages'), true) ?: [],
@@ -163,6 +164,19 @@ final class TeamController
         $row = DB::table('team_invites')->where('token_hash', hash('sha256', $token))->where('status', 'pending')->where('expires_at', '>', now())->first();
 
         return $row;
+    }
+
+    /** The leader chooses how new referrals are shared in the team, and how long members have to accept. */
+    public function sharing(Request $request): RedirectResponse
+    {
+        [$team] = $this->teamFor($request, ['leader']);
+        $d = $request->validate([
+            'mode' => ['required', Rule::in(\App\Domains\Referrals\LeadSharing::MODES)],
+            'minutes' => ['nullable', 'integer', Rule::in([15, 30, 60, 120, 180, 240, 360, 480, 720])],
+        ]);
+        DB::table('teams')->where('id', $team->id)->update(['lead_sharing' => $d['mode'], 'member_accept_minutes' => $d['minutes'] ?? null, 'updated_at' => now()]);
+
+        return back()->with('status', 'sharing-saved');
     }
 
     /**

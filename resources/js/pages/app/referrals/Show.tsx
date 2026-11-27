@@ -39,6 +39,7 @@ type Props = {
     };
     isReceiver: boolean;
     canDecline: boolean;
+    acceptNote: string | null;
     assignTo: { id: string; name: string }[];
     outOfArea: { city: string | null; miles: number | null } | null;
     acceptedBy: string | null;
@@ -109,6 +110,7 @@ export default function ReferralShow({
     referral: r,
     isReceiver,
     canDecline,
+    acceptNote,
     assignTo,
     outOfArea,
     acceptedBy,
@@ -327,7 +329,7 @@ export default function ReferralShow({
                     {isReceiver && waiting && (
                         <Card className="space-y-3 p-6">
                             <h2 className="font-semibold">Can you help this {terms.client}?</h2>
-                            {!canDecline && <p className="text-sm text-muted">The first person in your team to accept gets this {terms.client}.</p>}
+                            {acceptNote && <p className="text-sm text-muted">{acceptNote}</p>}
                             {declining ? (
                                 <div className="flex flex-wrap gap-2">
                                     <Input
