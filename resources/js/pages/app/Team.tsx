@@ -1,4 +1,4 @@
-import { router, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { Trash2, UserPlus } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
@@ -160,6 +160,11 @@ export default function Team({
                     <Card className="p-6">
                         <div className="flex items-center gap-2">
                             <h2 className="font-semibold">Members</h2>
+                            {canEdit && members.length > 1 && (
+                                <Link href="/app/team/performance" className="text-sm font-medium text-primary hover:underline">
+                                    See how each member is doing
+                                </Link>
+                            )}
                             {teamTrained && (
                                 <Badge tone="success" className="ml-auto">
                                     Network trained

@@ -39,6 +39,7 @@ type Props = {
     };
     isReceiver: boolean;
     canDecline: boolean;
+    assignTo: { id: string; name: string }[];
     outOfArea: { city: string | null; miles: number | null } | null;
     acceptedBy: string | null;
     pipeline: PipelineInfo | null;
@@ -108,6 +109,7 @@ export default function ReferralShow({
     referral: r,
     isReceiver,
     canDecline,
+    assignTo,
     outOfArea,
     acceptedBy,
     agreement: ag,
@@ -353,6 +355,7 @@ export default function ReferralShow({
                                     )}
                                 </div>
                             )}
+                            {assignTo.length > 1 && !declining && <AssignTo referral={r.id} people={assignTo} />}
                         </Card>
                     )}
                 </div>
@@ -850,5 +853,29 @@ function MatchesCard({ id, client, matches }: { id: string; client: string; matc
                 </div>
             ))}
         </Card>
+    );
+}
+
+/** Leaders and assistants: give a waiting referral to a teammate (it is accepted in their name). */
+function AssignTo({ referral, people }: { referral: string; people: { id: string; name: string }[] }) {
+    const [who, setWho] = useState('');
+    return (
+        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+            <Select aria-label="Assign to a teammate" value={who} onChange={(e) => setWho(e.target.value)} className="h-10 w-auto">
+                <option value="">Assign to a teammate…</option>
+                {people.map((p) => (
+                    <option key={p.id} value={p.id}>
+                        {p.name}
+                    </option>
+                ))}
+            </Select>
+            <Button
+                variant="secondary"
+                disabled={!who}
+                onClick={() => router.post(`/app/referrals/${referral}/assign`, { member: who }, { preserveScroll: true })}
+            >
+                Assign
+            </Button>
+        </div>
     );
 }

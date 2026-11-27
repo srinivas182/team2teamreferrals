@@ -203,6 +203,9 @@ final class ReferralController
             // Sent to this team from a nearby city that has no team of its own.
             'outOfArea' => $referral->client_city_id !== null ? ['city' => City::label((int) $referral->client_city_id), 'miles' => $referral->distance_miles] : null,
             'canDecline' => $isReceiver && $team !== null && Visibility::seesAll($team, $user),
+            // Leaders and assistants can give a waiting referral to a teammate.
+            'assignTo' => $isReceiver && $referral->status === 'sent' && $team !== null && Visibility::seesAll($team, $user)
+                ? $team->members()->orderBy('first_name')->get()->map(fn (User $m) => ['id' => $m->ulid, 'name' => $m->name])->values() : [],
             'acceptedBy' => $isReceiver && $referral->receiver_user_id !== null ? User::query()->find($referral->receiver_user_id)?->name : null,
             'agreement' => $this->agreementFor($referral, $user),
             'pipeline' => $referral->status === 'accepted' ? [
@@ -544,8 +547,10 @@ final class ReferralController
     public function quickAccept(Request $request, Referral $referral, int $team): RedirectResponse
     {
         abort_unless($referral->status === 'sent' && $referral->receiver_team_id === $team, 410, 'This referral is no longer waiting for you.');
-        $leader = Team::query()->findOrFail($team)->leader;
-        $this->referrals->accept($referral, $leader);
+        $t = Team::query()->findOrFail($team);
+        // A teammate's own link (signed with their id) gives the referral to them; the leader's has no id.
+        $u = $request->query('u') !== null ? User::query()->find((int) $request->query('u')) : null;
+        $this->referrals->accept($referral, $u !== null && $t->roleOf($u) !== null ? $u : $t->leader);
 
         return redirect()->to('/app/referrals/'.$referral->ulid)->with('status', 'referral-accepted');
     }
@@ -618,6 +623,15 @@ final class ReferralController
         $this->referrals->accept($referral, $this->user($request));
 
         return back()->with('status', 'referral-accepted');
+    }
+
+    /** The leader gives a waiting referral to a teammate. */
+    public function assign(Request $request, Referral $referral): RedirectResponse
+    {
+        $member = User::query()->where('ulid', (string) $request->validate(['member' => ['required', 'string', 'size:26']])['member'])->firstOrFail();
+        $this->referrals->assign($referral, $this->user($request), $member);
+
+        return back()->with('status', 'referral-assigned');
     }
 
     public function decline(Request $request, Referral $referral): RedirectResponse

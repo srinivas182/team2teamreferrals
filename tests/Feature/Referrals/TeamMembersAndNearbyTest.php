@@ -140,3 +140,68 @@ it('finds nearby teams nearest first, can search wider, and tells the receiver h
     $admin->assignRole('super_admin');
     $this->actingAs($admin)->get('/admin/groups/solar-installers-network')->assertInertia(fn ($p) => $p->where('emptyCityDemand.0', ['city' => 'Saint George, UT', 'referrals' => 1]));
 });
+
+it('tells everyone in the team about a new referral, each with their own one-tap link, and nudges the leader halfway', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    $ref = app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g), true, null, true)['referral'];
+
+    foreach ([$b->leader, $priya] as $person) {
+        Notification::assertSentTo($person, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.waiting');
+    }
+    // Priya's one-tap link gives the referral to her.
+    $link = Referrals::quickLink($ref, $priya);
+    expect($link)->toContain('u='.$priya->id);
+    $this->post($link)->assertRedirect("/app/referrals/{$ref->ulid}");
+    expect($ref->fresh()->receiver_user_id)->toBe($priya->id);
+
+    // Another referral nobody takes: halfway through the window the leader hears, once.
+    $two = app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g, ['client_phone' => '+14355550199']), true, null, true)['referral'];
+    $this->travel((int) $g->rule('accept_hours') * 30 - 10)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    Notification::assertNotSentTo($b->leader, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.unclaimed');
+    $this->travel(20)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect(Notification::sent($b->leader, App\Domains\Messaging\InAppNotification::class)->filter(fn ($n) => $n->type === 'referral.unclaimed')->count())->toBe(1);
+    expect($two->fresh()->status)->toBe('sent');
+});
+
+it('lets the leader assign a waiting referral to a teammate, who is told and then works it', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    $sam = ($this->member)($b);
+    $ref = app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g), true, null, true)['referral'];
+
+    $this->actingAs($b->leader)->get("/app/referrals/{$ref->ulid}")->assertInertia(fn ($p) => $p->has('assignTo', 3));
+    $this->actingAs($sam)->post("/app/referrals/{$ref->ulid}/assign", ['member' => $priya->ulid])->assertForbidden();
+    $this->actingAs($b->leader)->post("/app/referrals/{$ref->ulid}/assign", ['member' => $priya->ulid])->assertSessionHas('status', 'referral-assigned');
+    expect($ref->fresh())->status->toBe('accepted')->receiver_user_id->toBe($priya->id);
+    Notification::assertSentTo($priya, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.assigned' && str_contains($n->title, 'assigned you'));
+    // Sam can't work Priya's referral; Priya can, and the sender's messages reach her.
+    $this->actingAs($sam)->post("/app/referrals/{$ref->ulid}/messages", ['body' => 'Hi'])->assertNotFound();
+    app(Referrals::class)->message($ref->fresh(), $a->leader, 'Thanks for taking this');
+    Notification::assertSentTo($priya, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.message');
+    expect($ref->fresh()->handler()?->id)->toBe($priya->id);
+});
+
+it('shows leaders how each member is doing, and keeps it from members', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    $refs = app(Referrals::class);
+    $one = $refs->send($a->leader, $g, $this->cities[3], ($this->answers)($g), true, null, true)['referral'];
+    $refs->send($a->leader, $g, $this->cities[3], ($this->answers)($g, ['client_phone' => '+14355550188']), true, null, true);
+    $this->travel(30)->minutes();
+    $refs->accept($one->fresh(), $priya);
+
+    $this->actingAs($priya)->get('/app/team/performance')->assertForbidden();
+    $this->actingAs($b->leader)->get('/app/team/performance?days=30')->assertOk()->assertInertia(fn ($p) => $p->component('app/TeamPerformance')
+        ->where('days', 30)->where('totals.offered', 2)->where('totals.accepted', 1)->where('totals.waiting', 1)
+        ->where('rows.0.name', $priya->name)->where('rows.0.accepted', 1)->where('rows.0.medianMinutes', 30)->where('rows.0.open', 1));
+});

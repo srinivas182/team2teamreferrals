@@ -54,6 +54,7 @@ const MEMBER = [
     ['app-groups', '/app/groups'],
     ['app-groups-mine', '/app/groups/mine'],
     ['app-team', '/app/team'],
+    ['app-team-performance', '/app/team/performance'],
     ['app-billing', '/app/billing'],
     ['app-dashboard', '/app/dashboard'],
     ['app-notifications', '/app/notifications'],

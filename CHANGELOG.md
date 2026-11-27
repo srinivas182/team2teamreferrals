@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Prospect feedback, part 2: teams share referrals
+1. **Everyone in the team hears about a new referral** (email, text, in-app and push, by each person's settings). Each person's one-tap Accept link is their own, so whoever taps first gets the client.
+2. **Leader nudge.** Halfway to the response deadline, if nobody in a team of two or more has accepted, the leader is told (new notification "No one in your team has accepted yet").
+3. **Assign to a teammate.** On a waiting referral, the leader or an assistant can pick a teammate and Assign: it is accepted for the team in that person's name, and they are told ("A referral was assigned to you").
+4. **The person working a referral gets its messages and reminders**: messages from the sender, update nudges, first-contact and stage reminders go to the teammate who accepted it (the leader when nobody did). Members can only work referrals they can see.
+5. **Team performance** (Team and account → Team performance, leaders and assistants): offers, accepted, waiting and missed for the last 30 days, 90 days or 12 months, and for each member: accepted, typical time to accept, still open, closed won, closing rate, value closed, referrals sent and fees earned.
+
 ### Prospect feedback, part 1: property address, member privacy, nearby teams
 1. **Address of the home they're selling.** On real estate referrals, choosing "Selling" or "Both" now asks for the home's address (required). It is private: the receiving team sees it only after accepting. Saved property forms get it as a new version (roll back from the form builder if needed).
 2. **Show-when questions.** Admins can now set any question to appear only for certain answers to an earlier question ("Only when Buying or selling? is Selling"), in Admin → Industries → form. The send form, the public request form, the chat bot and the API all follow it.

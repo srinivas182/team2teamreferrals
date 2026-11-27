@@ -84,6 +84,7 @@ const messages: Record<string, string> = {
     'training-reminded': 'Reminder sent.',
     'referral-sent': 'Referral sent. The pro has been told and the clock is running.',
     'referral-accepted': 'Accepted. The sender has been told; the client’s full details are now visible.',
+    'referral-assigned': 'Assigned. Your teammate has been told and can see the client’s full details.',
     'referral-declined': 'Declined. It has moved to the backup pro if there is one, and the sender has been told.',
     'agreement-signed': 'Signed. When both sides have signed, the signed PDF will be on the referral.',
     'client-asked': 'We’ve texted your client to confirm. You’ll be told when they do.',
