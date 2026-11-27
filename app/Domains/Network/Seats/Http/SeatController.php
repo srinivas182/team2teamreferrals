@@ -30,6 +30,8 @@ final class SeatController
         return Inertia::render('app/groups/Apply', [
             'group' => ['slug' => $group->slug, 'name' => $group->name, 'visibility' => $group->visibility, 'industry' => $group->industry->name, 'territory' => $group->industry->territory_unit,
                 'licenseRequired' => $group->industry->license_required, 'terms' => $group->industry->terms(), 'pricing' => $group->pricing],
+            // When the group is open only to some cities, say which.
+            'openCities' => \App\Domains\Network\Groups\GroupCities::summary($group),
             'city' => $city !== null ? ['id' => $city->id, 'name' => $city->name.', '.DB::table('states')->where('id', $city->state_id)->value('code')] : null,
             'seo' => SeoData::private('Apply to '.$group->name)->toArray(),
         ]);

@@ -101,6 +101,11 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
             Route::get("{$prefix}/{group}/applications", [App\Domains\Network\Seats\Http\SeatController::class, 'applications'])->name("seats.applications.{$who}");
             Route::post("{$prefix}/{group}/applications/{application}/approve", [App\Domains\Network\Seats\Http\SeatController::class, 'approve'])->whereNumber('application')->name("seats.approve.{$who}");
             Route::post("{$prefix}/{group}/applications/{application}/decline", [App\Domains\Network\Seats\Http\SeatController::class, 'declineApplication'])->whereNumber('application')->name("seats.decline.{$who}");
+            Route::get("{$prefix}/{group}/cities", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'show'])->name("groups.cities.{$who}");
+            Route::put("{$prefix}/{group}/cities", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'save'])->name("groups.cities.save.{$who}");
+            Route::get("{$prefix}/{group}/cities/state/{code}", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'state'])->where('code', '[A-Za-z]{2}')->name("groups.cities.state.{$who}");
+            Route::get("{$prefix}/{group}/referrals", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'index'])->name("groups.referrals.{$who}");
+            Route::get("{$prefix}/{group}/referrals.csv", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'csv'])->name("groups.referrals.csv.{$who}");
             Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
             Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
             Route::post("{$prefix}/{group}/invites/preview", [App\Domains\Network\Seats\Http\SeatController::class, 'previewInvites'])->middleware('throttle:60,60')->name("seats.invite-preview.{$who}");

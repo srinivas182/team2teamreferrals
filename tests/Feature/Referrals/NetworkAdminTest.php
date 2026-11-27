@@ -110,3 +110,30 @@ it('[12] opens every admin menu link for a super admin', function () {
     }
     expect($m[1])->not->toBeEmpty()->and($broken)->toBe([]);
 });
+
+it('gives super admins full lead names, the money and totals, and logs their exports', function () {
+    DB::table('referrals')->where('id', $this->refs[0]->id)->update(['earnings_cents' => 900000]);
+    DB::table('referral_fees')->insert(['referral_id' => $this->refs[0]->id, 'payer_team_id' => $this->b->id, 'payee_team_id' => $this->a->id, 'type' => 'flat', 'rate' => 0, 'basis_cents' => 0,
+        'amount_cents' => 225000, 'platform_fee_cents' => 22500, 'status' => 'paid', 'due_on' => now()->toDateString(), 'created_at' => now(), 'updated_at' => now()]);
+    $this->actingAs($this->admin)->get('/admin/referrals')->assertInertia(fn ($p) => $p->where('fullNames', true)
+        ->where('totals', ['count' => 3, 'gci' => 900000, 'commission' => 225000, 'platform' => 22500])
+        ->where('rows.2.sn', 1)->where('rows.0.sn', 3) // newest first; S/N counts from the oldest
+        ->where('rows.2.client', 'Maria Lopez1')->where('rows.2.gci', 900000)->where('rows.2.commission', 225000)->where('rows.2.platform', 22500)
+        ->where('rows.2.senderPerson', $this->a->leader->name)->where('rows.2.receiverPerson', $this->b->leader->name)->where('rows.2.status', 'accepted'));
+    $csv = $this->get('/admin/referrals/export.csv?from='.now()->subDay()->toDateString().'&to='.now()->toDateString())->streamedContent();
+    expect($csv)->toContain('S/N,Date,Referral,"Lead name"')->toContain('Maria Lopez1')->toContain('9000.00')->toContain('2250.00')->toContain('225.00');
+    expect(DB::table('activity_log')->where('event', 'referrals-exported')->count())->toBe(1);
+    // Support staff still see short names, and exports aren't logged as name exports.
+    $this->actingAs($this->support)->get('/admin/referrals')->assertInertia(fn ($p) => $p->where('fullNames', false)->where('rows.2.client', fn ($c) => ! str_contains((string) $c, 'Lopez')));
+});
+
+it('shows a group’s referrals to its owners (short names) and admins, with export by date', function () {
+    $owner = User::factory()->create();
+    DB::table('group_owners')->insert(['group_id' => Group::where('slug', 'solar-installers-network')->value('id'), 'user_id' => $owner->id, 'created_at' => now(), 'updated_at' => now()]);
+    $this->actingAs($owner)->get('/app/group/solar-installers-network/referrals')->assertOk()->assertInertia(fn ($p) => $p->component('admin/groups/Referrals')
+        ->where('totals.count', 3)->where('rows.0.client', fn ($c) => ! str_contains((string) $c, 'Lopez')));
+    expect($this->get('/app/group/solar-installers-network/referrals.csv?from=2020-01-01&to=2020-12-31')->streamedContent())->not->toContain('Lone Star');
+    $this->actingAs($this->a->leader)->get('/app/group/solar-installers-network/referrals')->assertForbidden();
+    $this->actingAs($this->admin)->get('/admin/groups/solar-installers-network/referrals?stage=accepted')->assertInertia(fn ($p) => $p->where('totals.count', 1)->where('rows.0.client', 'Maria Lopez1'));
+    $this->get('/admin/groups')->assertInertia(fn ($p) => $p->where('groups', fn ($g) => collect($g)->firstWhere('slug', 'solar-installers-network')['referrals'] === 3));
+});

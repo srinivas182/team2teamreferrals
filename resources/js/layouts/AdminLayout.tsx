@@ -72,7 +72,7 @@ const nav: Item[] = [
     { label: 'Introductions', href: '/admin/pairings', icon: Handshake, permission: 'industries.manage', ready: true },
     { label: 'License queue', href: '/admin/licenses', icon: BadgeCheck, permission: 'licenses.verify', ready: true },
     { label: 'Network dashboard', href: '/admin/network', icon: ArrowLeftRight, permission: 'referrals.view', ready: true },
-    { label: 'Network CRM', href: '/admin/referrals', icon: KanbanSquare, permission: 'referrals.view', ready: true },
+    { label: 'Referrals', href: '/admin/referrals', icon: KanbanSquare, permission: 'referrals.view', ready: true },
     { label: 'Revenue', href: '/admin/revenue', icon: DollarSign, permission: 'revenue.view', ready: true },
     { label: 'Reports', href: '/admin/reports', icon: FileBarChart, permission: 'referrals.view', ready: true },
     { label: 'Growth', href: '/admin/growth/prospects', icon: Rocket, permission: 'growth.manage', ready: true },

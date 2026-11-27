@@ -29,6 +29,7 @@ type Props = {
         hub: string | null;
     };
     answer: string;
+    openCities?: string | null;
     seats: Seat[];
     open: OpenPlace[];
     map: MapData;
@@ -38,7 +39,7 @@ type Props = {
 };
 
 /** A group's public page: what it is, its rules, the teams holding its seats by state, and open seats to claim. */
-export default function GroupPublic({ group, answer, seats, open, map, disclosure, viewer, seo }: Props) {
+export default function GroupPublic({ group, answer, openCities, seats, open, map, disclosure, viewer, seo }: Props) {
     const byState = seats.reduce<Record<string, Seat[]>>((acc, s) => ({ ...acc, [s.state ?? '']: [...(acc[s.state ?? ''] ?? []), s] }), {});
     return (
         <PublicLayout current="/groups">
@@ -63,7 +64,14 @@ export default function GroupPublic({ group, answer, seats, open, map, disclosur
                     }
                     title={group.name}
                     lead={answer}
-                    meta={group.owners.length > 0 ? <>Run by {group.owners.join(', ')}</> : undefined}
+                    meta={
+                        group.owners.length > 0 || openCities ? (
+                            <>
+                                {group.owners.length > 0 && <>Run by {group.owners.join(', ')}. </>}
+                                {openCities}
+                            </>
+                        ) : undefined
+                    }
                 >
                     <div className="flex flex-wrap gap-3">
                         <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium">

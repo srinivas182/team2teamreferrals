@@ -56,6 +56,12 @@ export default function GroupOverview({ group, health, upcoming, insights = null
                 <a href={`/app/group/${group.slug}/applications`} className="text-sm font-medium text-primary">
                     Applications
                 </a>
+                <a href={`/app/group/${group.slug}/cities`} className="mr-2 text-sm font-medium text-primary">
+                    Cities that can join
+                </a>
+                <a href={`/app/group/${group.slug}/referrals`} className="mr-2 text-sm font-medium text-primary">
+                    Referrals and export
+                </a>
                 <a href={`/app/group/${group.slug}/seat-map`} className="mr-2 text-sm font-medium text-primary">
                     Seat map and invitations
                 </a>
