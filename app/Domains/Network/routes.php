@@ -183,6 +183,8 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/sent', [App\Domains\Referrals\Http\ReferralController::class, 'sent'])->name('referrals.sent');
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
+    Route::post('app/referrals/{referral}/assign', [App\Domains\Referrals\Http\ReferralController::class, 'assign'])->name('referrals.assign');
+    Route::get('app/team/performance', [App\Domains\Network\Teams\TeamPerformanceController::class, '__invoke'])->name('team.performance');
     Route::get('app/referrals/{referral}/files/{attachment}', [App\Domains\Referrals\Http\ReferralController::class, 'attachment'])->middleware('signed')->whereNumber('attachment')->name('referrals.attachment');
     Route::post('app/referrals/{referral}/close/confirm', [App\Domains\Referrals\Http\ReferralController::class, 'confirmClose'])->name('referrals.close.confirm');
     Route::post('app/referrals/{referral}/close/dispute', [App\Domains\Referrals\Http\ReferralController::class, 'disputeClose'])->name('referrals.close.dispute');

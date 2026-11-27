@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Referrals;
 
+use App\Domains\Identity\Models\User;
 use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Seats\Models\Seat;
 use App\Domains\Network\Seats\Models\Team;
@@ -102,6 +103,16 @@ final class Referral extends Model
     }
 
     /** "Tom B.": what the receiver sees until they accept (and in notifications), so contact details stay private. */
+    /** The person working this referral: whoever accepted it, or the receiving team's leader. */
+    public function handler(): ?User
+    {
+        if ($this->receiver_user_id !== null && ($u = User::query()->find($this->receiver_user_id)) !== null) {
+            return $u;
+        }
+
+        return $this->receiver?->leader;
+    }
+
     public function shortClientName(): string
     {
         return self::shorten($this->client_name);

@@ -221,16 +221,35 @@ final class Referrals
     }
 
     /** One-tap link for the current receiver: opens a confirm screen (never accepts on open, so email scanners can't). */
-    public static function quickLink(Referral $ref): string
+    /** One-tap accept from the email or text. With $for, accepting from it gives the referral to that teammate. */
+    public static function quickLink(Referral $ref, ?User $for = null): string
     {
-        return \Illuminate\Support\Facades\URL::temporarySignedRoute('referrals.quick', $ref->respond_by, ['referral' => $ref->ulid, 'team' => (int) $ref->receiver_team_id]);
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute('referrals.quick', $ref->respond_by, ['referral' => $ref->ulid, 'team' => (int) $ref->receiver_team_id, ...($for !== null ? ['u' => $for->id] : [])]);
+    }
+
+    /**
+     * The leader (or an assistant) gives a waiting referral to a teammate: it is accepted for the team, in that
+     * teammate's name, and they are told straight away.
+     */
+    public function assign(Referral $ref, User $leader, User $member): void
+    {
+        $team = Team::of($leader);
+        abort_unless($team !== null && $team->id === $ref->receiver_team_id && Visibility::seesAll($team, $leader), 403, 'Only your team leader or an assistant can assign referrals.');
+        abort_unless($team->roleOf($member) !== null, 422, 'That person isn’t in your team.');
+        $this->accept($ref, $leader);
+        $ref->forceFill(['receiver_user_id' => $member->id])->save();
+        $this->event($ref, 'assigned', $team, $leader, ['to' => $member->name]);
+        $ref->loadMissing(['seat', 'group.industry']);
+        if ($member->id !== $leader->id) {
+            $this->notifier->send($member, 'referral.assigned', ['client' => $ref->client_name, 'city' => $ref->seat->territory_name, 'leader' => $leader->first_name ?: $leader->name], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+        }
     }
 
     /** @param list<\Illuminate\Http\UploadedFile> $files */
     public function message(Referral $ref, User $user, string $body, array $files = []): void
     {
         $team = Team::of($user);
-        abort_unless($team !== null && in_array($team->id, [$ref->sender_team_id, $ref->receiver_team_id], true), 403);
+        abort_unless($team !== null && Visibility::canView($ref, $user), 403);
         $messageId = DB::table('referral_messages')->insertGetId(['referral_id' => $ref->id, 'team_id' => $team->id, 'user_id' => $user->id, 'body' => mb_substr(trim($body), 0, 4000), 'created_at' => now()]);
         if ($files !== []) {
             Attachments::store($ref, $team, $user, (int) $messageId, $files);
@@ -239,11 +258,13 @@ final class Referrals
         $ref->loadMissing(['sender.leader', 'receiver.leader', 'group.industry']);
         $other = $team->id === $ref->sender_team_id ? $ref->receiver : $ref->sender;
         Events\ReferralChanged::dispatch($ref, 'message');
-        if ($other !== null && ! Conversations::muted($ref, $other->leader)) {
+        // Messages to the receiving side go to whoever is working the referral (the teammate who accepted it).
+        $to = $other !== null && $other->id === $ref->receiver_team_id ? ($ref->handler() ?? $other->leader) : $other?->leader;
+        if ($other !== null && $to !== null && ! Conversations::muted($ref, $to)) {
             $toReceiverEarly = $other->id === $ref->receiver_team_id && $ref->status !== 'accepted';
             $excerpt = mb_strimwidth($toReceiverEarly ? Referral::maskContacts($body) : $body, 0, 160, '…');
             $name = $toReceiverEarly ? $ref->shortClientName() : $ref->client_name;
-            $this->notifier->send($other->leader, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt, '_reply_to' => ReplyAddress::for($ref, $other->leader)], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+            $this->notifier->send($to, 'referral.message', ['headline' => "{$team->name} sent a message about {$name}", 'body' => $excerpt, '_reply_to' => ReplyAddress::for($ref, $to)], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
         }
     }
 
@@ -335,9 +356,12 @@ final class Referrals
         if ($ref->receiver === null) {
             return;
         }
-        $this->notifier->send($ref->receiver->leader, 'referral.waiting', [
-            'client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours'),
-        ], self::quickLink($ref), $ref->group->industry, $ref->group_id);
+        // Everyone in the team hears about it; the first to accept gets it. Each person's one-tap link is their own.
+        $data = ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours')];
+        $people = $ref->receiver->members()->get()->push($ref->receiver->leader)->unique('id');
+        foreach ($people as $person) {
+            $this->notifier->send($person, 'referral.waiting', $data, self::quickLink($ref, $person->id === $ref->receiver->leader_id ? null : $person), $ref->group->industry, $ref->group_id);
+        }
     }
 
     private function mustReceive(Referral $ref, User $user): void

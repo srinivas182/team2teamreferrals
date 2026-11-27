@@ -120,16 +120,19 @@ final class Pipeline
         $this->event($ref, 'nudged', $team, $user);
         $ref->loadMissing(['receiver.leader', 'group.industry']);
         Events\ReferralChanged::dispatch($ref, 'progress');
-        if ($ref->receiver !== null && ! Conversations::muted($ref, $ref->receiver->leader)) {
-            $this->notifier->send($ref->receiver->leader, 'referral.message', ['headline' => "{$team->name} would love an update on {$ref->client_name}", 'body' => 'A quick note or stage change on the referral keeps them in the loop.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+        $handler = $ref->handler();
+        if ($handler !== null && ! Conversations::muted($ref, $handler)) {
+            $this->notifier->send($handler, 'referral.message', ['headline' => "{$team->name} would love an update on {$ref->client_name}", 'body' => 'A quick note or stage change on the referral keeps them in the loop.'], url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
         }
     }
 
     /** Every 15 minutes: first-contact reminders, stalled-referral nudges, missed deadlines and stage time limits. */
     public function tick(): void
     {
+        $this->unclaimed();
         foreach (Referral::query()->with(['group.industry', 'receiver.leader', 'seat', 'sender.leader'])->where('status', 'accepted')->whereNull('closed_at')->get() as $ref) {
-            $leader = $ref->receiver?->leader;
+            // Reminders go to whoever is working the referral: the teammate who accepted it, or the leader.
+            $leader = $ref->handler();
             if ($leader === null || $ref->accepted_at === null) {
                 continue;
             }
@@ -162,6 +165,25 @@ final class Pipeline
         }
     }
 
+    /**
+     * Halfway to the response deadline with nobody in a multi-person team accepting: tell the leader, who can accept
+     * it or assign it to a teammate. Once per referral and team.
+     */
+    private function unclaimed(): void
+    {
+        $teams = DB::table('team_members')->select('team_id')->groupBy('team_id')->havingRaw('count(*) > 1');
+        $refs = Referral::query()->with(['group.industry', 'receiver.leader', 'seat'])->where('status', 'sent')->whereIn('receiver_team_id', $teams)->where('respond_by', '>', now())->get();
+        foreach ($refs as $ref) {
+            $hours = (int) $ref->group->rule('accept_hours');
+            $leader = $ref->receiver?->leader;
+            if ($leader === null || now()->lt($ref->respond_by->copy()->subMinutes((int) ($hours * 30))) || ! $this->once($ref, 'unclaimed', (string) $ref->receiver_team_id)) {
+                continue;
+            }
+            $this->notifier->send($leader, 'referral.unclaimed', ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'hours' => max(1, (int) round(now()->diffInMinutes($ref->respond_by) / 60))],
+                url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+        }
+    }
+
     private function moveTo(Referral $ref, Team $team, User $user, string $key, ?string $note): void
     {
         $from = $ref->stage;
@@ -183,7 +205,7 @@ final class Pipeline
     private function mustWork(Referral $ref, User $user): Team
     {
         $team = Team::of($user);
-        abort_unless($team !== null && $team->id === $ref->receiver_team_id && $ref->status === 'accepted', 403);
+        abort_unless($team !== null && $team->id === $ref->receiver_team_id && $ref->status === 'accepted' && Visibility::canView($ref, $user), 403);
 
         return $team;
     }

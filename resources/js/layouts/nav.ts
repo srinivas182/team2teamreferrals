@@ -1,4 +1,5 @@
 import {
+    Activity,
     GraduationCap,
     Building2,
     BadgeCheck,
@@ -81,6 +82,7 @@ export const moreNav: NavGroup[] = [
         label: 'Team and account',
         items: [
             { label: 'Team', href: '/app/team', icon: UserCog },
+            { label: 'Team performance', href: '/app/team/performance', icon: Activity, leaders: true },
             { label: 'Profile and licenses', href: '/app/profile', icon: BadgeCheck },
             { label: 'Notifications', href: '/app/notifications', icon: Bell },
             { label: 'Company', href: '/app/company', icon: Building2, leaders: true },
