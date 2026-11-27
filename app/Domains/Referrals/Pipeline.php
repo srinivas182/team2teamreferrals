@@ -166,22 +166,53 @@ final class Pipeline
     }
 
     /**
-     * Halfway to the response deadline with nobody in a multi-person team accepting: tell the leader, who can accept
-     * it or assign it to a teammate. Once per referral and team.
+     * Waiting referrals in teams of two or more, per the team's sharing mode (LeadSharing):
+     * open to everyone, once the members' time is up with nobody accepting, the leader is told; taking turns, when a
+     * turn runs out it moves to the next person, and after everyone has had one it is open to the whole team and the
+     * leader is told. When the leader assigns, the leader already has it. Each notice goes once.
      */
     private function unclaimed(): void
     {
         $teams = DB::table('team_members')->select('team_id')->groupBy('team_id')->havingRaw('count(*) > 1');
-        $refs = Referral::query()->with(['group.industry', 'receiver.leader', 'seat'])->where('status', 'sent')->whereIn('receiver_team_id', $teams)->where('respond_by', '>', now())->get();
+        $refs = Referral::query()->with(['group.industry', 'receiver.leader', 'seat', 'sender'])->where('status', 'sent')->whereIn('receiver_team_id', $teams)->where('respond_by', '>', now())->get();
         foreach ($refs as $ref) {
-            $hours = (int) $ref->group->rule('accept_hours');
-            $leader = $ref->receiver?->leader;
-            if ($leader === null || now()->lt($ref->respond_by->copy()->subMinutes((int) ($hours * 30))) || ! $this->once($ref, 'unclaimed', (string) $ref->receiver_team_id)) {
+            $team = $ref->receiver;
+            if ($team === null) {
                 continue;
             }
-            $this->notifier->send($leader, 'referral.unclaimed', ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'hours' => max(1, (int) round(now()->diffInMinutes($ref->respond_by) / 60))],
-                url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
+            $mode = LeadSharing::mode($team);
+            if ($mode === 'turns') {
+                if ($ref->offered_user_id === null || $ref->offered_until === null || now()->lt($ref->offered_until)) {
+                    continue;
+                }
+                $had = DB::table('referral_reminders')->where(['referral_id' => $ref->id, 'kind' => 'turn'])->where('cycle', 'like', $team->id.':%')
+                    ->pluck('cycle')->map(fn ($c) => (int) explode(':', (string) $c)[1])->all();
+                $had = array_values($had);
+                $next = LeadSharing::next($team, $ref->offered_user_id, $had);
+                if ($next !== null) {
+                    app(Referrals::class)->offerTurn($ref, $team, $next);
+
+                    continue;
+                }
+                $ref->forceFill(['offered_user_id' => null, 'offered_until' => null])->save(); // everyone had a turn: open to all
+                $this->tellLeaderUnclaimed($ref);
+            } elseif ($mode === 'everyone') {
+                $start = $ref->respond_by->copy()->subHours((int) $ref->group->rule('accept_hours'));
+                if (now()->gte($start->addMinutes(LeadSharing::memberMinutes($team, $ref->group)))) {
+                    $this->tellLeaderUnclaimed($ref);
+                }
+            }
         }
+    }
+
+    private function tellLeaderUnclaimed(Referral $ref): void
+    {
+        $leader = $ref->receiver?->leader;
+        if ($leader === null || ! $this->once($ref, 'unclaimed', (string) $ref->receiver_team_id)) {
+            return;
+        }
+        $this->notifier->send($leader, 'referral.unclaimed', ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'hours' => max(1, (int) round(now()->diffInMinutes($ref->respond_by) / 60))],
+            url('/app/referrals/'.$ref->ulid), $ref->group->industry, $ref->group_id);
     }
 
     private function moveTo(Referral $ref, Team $team, User $user, string $key, ?string $note): void

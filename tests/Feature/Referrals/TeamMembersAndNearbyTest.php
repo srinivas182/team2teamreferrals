@@ -141,7 +141,7 @@ it('finds nearby teams nearest first, can search wider, and tells the receiver h
     $this->actingAs($admin)->get('/admin/groups/solar-installers-network')->assertInertia(fn ($p) => $p->where('emptyCityDemand.0', ['city' => 'Saint George, UT', 'referrals' => 1]));
 });
 
-it('tells everyone in the team about a new referral, each with their own one-tap link, and nudges the leader halfway', function () {
+it('tells everyone in the team about a new referral, each with their own one-tap link, and nudges the leader when members’ time is up', function () {
     $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
     $a = ($this->seat)($g, 'Sender Solar', 2);
     $b = ($this->seat)($g, 'Holder Solar', 3);
@@ -159,9 +159,9 @@ it('tells everyone in the team about a new referral, each with their own one-tap
 
     // Another referral nobody takes: halfway through the window the leader hears, once.
     $two = app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g, ['client_phone' => '+14355550199']), true, null, true)['referral'];
-    $this->travel((int) $g->rule('accept_hours') * 30 - 10)->minutes();
+    $this->travel((int) $g->rule('accept_hours') * 15 - 10)->minutes();
     app(App\Domains\Referrals\Pipeline::class)->tick();
-    Notification::assertNotSentTo($b->leader, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.unclaimed');
+    expect(Notification::sent($b->leader, App\Domains\Messaging\InAppNotification::class)->filter(fn ($n) => $n->type === 'referral.unclaimed')->count())->toBe(0);
     $this->travel(20)->minutes();
     app(App\Domains\Referrals\Pipeline::class)->tick();
     app(App\Domains\Referrals\Pipeline::class)->tick();
@@ -204,4 +204,94 @@ it('shows leaders how each member is doing, and keeps it from members', function
     $this->actingAs($b->leader)->get('/app/team/performance?days=30')->assertOk()->assertInertia(fn ($p) => $p->component('app/TeamPerformance')
         ->where('days', 30)->where('totals.offered', 2)->where('totals.accepted', 1)->where('totals.waiting', 1)
         ->where('rows.0.name', $priya->name)->where('rows.0.accepted', 1)->where('rows.0.medianMinutes', 30)->where('rows.0.open', 1));
+});
+
+it('lets only the leader choose how referrals are shared and how long members have', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    $this->actingAs($b->leader)->get('/app/team')->assertInertia(fn ($p) => $p->where('sharing', ['mode' => 'everyone', 'minutes' => null]));
+    $this->actingAs($priya)->post('/app/team/sharing', ['mode' => 'leader'])->assertForbidden();
+    $this->actingAs($b->leader)->post('/app/team/sharing', ['mode' => 'turns', 'minutes' => 45])->assertSessionHasErrors('minutes');
+    $this->post('/app/team/sharing', ['mode' => 'turns', 'minutes' => 60])->assertSessionHas('status', 'sharing-saved');
+    expect(App\Domains\Referrals\LeadSharing::mode($b))->toBe('turns')->and(App\Domains\Referrals\LeadSharing::memberMinutes($b, $g))->toBe(60);
+    $this->post('/app/team/sharing', ['mode' => 'everyone'])->assertSessionHasNoErrors();
+    expect(App\Domains\Referrals\LeadSharing::memberMinutes($b, $g))->toBe((int) $g->rule('accept_hours') * 15); // a quarter
+});
+
+it('open to everyone: tells the leader once the members’ time (a quarter by default) is up', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    ($this->member)($b);
+    app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g), true, null, true);
+    $unclaimed = fn () => Notification::sent($b->leader, App\Domains\Messaging\InAppNotification::class)->filter(fn ($n) => $n->type === 'referral.unclaimed')->count();
+    $this->travel((int) $g->rule('accept_hours') * 15 - 5)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect($unclaimed())->toBe(0);
+    $this->travel(10)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect($unclaimed())->toBe(1);
+});
+
+it('takes turns: one person at a time, in order, then open to all with the leader told', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    $sam = ($this->member)($b);
+    DB::table('teams')->where('id', $b->id)->update(['lead_sharing' => 'turns', 'member_accept_minutes' => 60]);
+    $send = fn (string $phone) => app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g, ['client_phone' => $phone]), true, null, true)['referral'];
+    $waiting = fn (User $u) => Notification::sent($u, App\Domains\Messaging\InAppNotification::class)->filter(fn ($n) => $n->type === 'referral.waiting')->count();
+
+    // Rotation: the leader (first member row), then Priya, then Sam.
+    $one = $send('+14355550301');
+    expect($one->fresh()->offered_user_id)->toBe($b->leader_id)->and($waiting($priya))->toBe(0);
+    $this->actingAs($priya)->get("/app/referrals/{$one->ulid}")->assertNotFound();
+    $this->actingAs($priya)->post("/app/referrals/{$one->ulid}/accept")->assertForbidden();
+
+    $this->travel(61)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect($one->fresh()->offered_user_id)->toBe($priya->id)->and($waiting($priya))->toBe(1);
+    $this->actingAs($priya)->get("/app/referrals/{$one->ulid}")->assertInertia(fn ($p) => $p->where('acceptNote', fn ($n) => str_contains($n, 'your turn')));
+    $this->actingAs($sam)->get("/app/referrals/{$one->ulid}")->assertNotFound();
+
+    // The next new referral starts with the next person (Sam), so turns stay fair.
+    $two = $send('+14355550302');
+    expect($two->fresh()->offered_user_id)->toBe($sam->id);
+
+    // Nobody takes the first: Sam, then everyone has had a turn: open to all, leader told once.
+    $this->travel(61)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect($one->fresh()->offered_user_id)->toBe($sam->id);
+    $this->travel(61)->minutes();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    app(App\Domains\Referrals\Pipeline::class)->tick();
+    expect($one->fresh()->offered_user_id)->toBeNull();
+    expect(Notification::sent($b->leader, App\Domains\Messaging\InAppNotification::class)->filter(fn ($n) => $n->type === 'referral.unclaimed')->count())->toBe(1);
+    $this->actingAs($priya)->post("/app/referrals/{$one->ulid}/accept")->assertRedirect();
+    expect($one->fresh()->receiver_user_id)->toBe($priya->id);
+});
+
+it('leader assigns: only the leader hears, and members see nothing until given it', function () {
+    $g = Group::where('slug', 'solar-installers-network')->firstOrFail();
+    $a = ($this->seat)($g, 'Sender Solar', 2);
+    $b = ($this->seat)($g, 'Holder Solar', 3);
+    $priya = ($this->member)($b);
+    DB::table('teams')->where('id', $b->id)->update(['lead_sharing' => 'leader']);
+    $ref = app(Referrals::class)->send($a->leader, $g, $this->cities[3], ($this->answers)($g), true, null, true)['referral'];
+    Notification::assertSentTo($b->leader, App\Domains\Messaging\InAppNotification::class, fn ($n) => $n->type === 'referral.waiting');
+    Notification::assertNotSentTo($priya, App\Domains\Messaging\InAppNotification::class);
+    $this->actingAs($priya)->get('/app/inbox')->assertInertia(fn ($p) => $p->has('items', 0));
+    $this->actingAs($priya)->post("/app/referrals/{$ref->ulid}/accept")->assertForbidden();
+    $this->actingAs($b->leader)->post("/app/referrals/{$ref->ulid}/assign", ['member' => $priya->ulid])->assertSessionHas('status', 'referral-assigned');
+    $this->actingAs($priya)->get("/app/referrals/{$ref->ulid}")->assertOk();
+});
+
+it('opens every email with a plain, personal hello', function () {
+    config(['mail.default' => 'array']);
+    $u = User::factory()->create(['first_name' => 'Priya', 'last_name' => 'Shah']);
+    app(Illuminate\Notifications\Channels\MailChannel::class)->send($u, new App\Domains\Messaging\Mail\PlatformMessage('referral.waiting', [['title' => 'New referral', 'body' => 'Tom in Austin', 'url' => null]]));
+    $html = (string) collect(app('mailer')->getSymfonyTransport()->messages())->last()->getOriginalMessage()->getHtmlBody();
+    expect($html)->toContain('Hello Priya Shah,')->not->toContain('Hello!')->not->toMatch('/<h1[^>]*>\s*Hello/');
 });

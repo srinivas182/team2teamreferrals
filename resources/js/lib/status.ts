@@ -102,6 +102,7 @@ const messages: Record<string, string> = {
     'thread-muted': 'Muted. Deadline reminders will still come through.',
     'thread-unmuted': 'Unmuted.',
     'quick-replies-saved': 'Quick replies saved.',
+    'sharing-saved': 'Saved. New referrals are shared the new way from now on.',
     'time-off-added': 'Time off added. New referrals will go to your backup, and your score is paused.',
     'time-off-removed': 'Time off removed.',
     'challenge-appealed': 'Appeal sent. The seat stays with you until the group owner decides.',
