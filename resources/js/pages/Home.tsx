@@ -430,7 +430,7 @@ export default function Home({ industries, stats, map, joinHref, demoUrl, faq = 
                         <ShieldCheck className="size-7 text-success" aria-hidden />
                         <h2 className="mt-4 font-display text-2xl font-bold display">Pay for a network that works for you</h2>
                         <p className="mt-3 text-muted">
-                            Every seat starts with a free trial. In networks with the value guarantee, any month in which no referral reaches you is
+                            Every seat starts with a free trial. In networks with a free extension, any month in which no referral reaches you is
                             free, automatically.
                         </p>
                         <Button className="mt-6 h-auto min-h-11 py-2 text-center whitespace-normal" variant="secondary" asChild>

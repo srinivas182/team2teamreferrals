@@ -64,7 +64,8 @@ it('keeps key pages within their query budgets', function (string $url, int $bud
     // 23: a first visit creates the team, which checks its public web address isn't already taken (once per team).
     // +1 (Sprint 53b): "has this member sent a referral?", checked once per session every ten minutes.
     // +1 (simplification): leads and drafts waiting, for the one inbox's badge (one query, remembered for a minute).
-    'portal home' => ['/app', 25, null],
+    // +1: is the member's team locked for not paying (one query; every portal page checks it).
+    'portal home' => ['/app', 26, null],
     'admin staff' => ['/admin/staff', 30, 'super_admin'],
     'admin audit' => ['/admin/audit', 30, 'super_admin'],
 ]);

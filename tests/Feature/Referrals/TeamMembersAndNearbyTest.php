@@ -295,3 +295,11 @@ it('opens every email with a plain, personal hello', function () {
     $html = (string) collect(app('mailer')->getSymfonyTransport()->messages())->last()->getOriginalMessage()->getHtmlBody();
     expect($html)->toContain('Hello Priya Shah,')->not->toContain('Hello!')->not->toMatch('/<h1[^>]*>\s*Hello/');
 });
+
+it('puts the website logo at the top of every email', function () {
+    $u = User::factory()->create();
+    app(Illuminate\Notifications\Channels\MailChannel::class)->send($u, new App\Domains\Messaging\Mail\PlatformMessage('referral.waiting', [['title' => 'New referral', 'body' => 'Tom in Austin', 'url' => null]]));
+    $html = (string) collect(app('mailer')->getSymfonyTransport()->messages())->last()->getOriginalMessage()->getHtmlBody();
+    expect($html)->toContain('/brand/email-logo.png')->toContain('alt="'.config('app.name'));
+    expect(file_exists(public_path('brand/email-logo.png')))->toBeTrue();
+});

@@ -124,7 +124,8 @@ final class Seats
                 $this->event($seat, $seat->primary, 'inactive');
                 $left = (int) $seat->group->rule('release_days') - (int) $seat->group->rule('grace_days');
                 if ($seat->primary) {
-                    $this->tellTeam($seat->primary, $seat, 'seat.payment', "Your {$seat->territory_name} seat is inactive", "New referrals now go to the backup team. You can still work the referrals you already accepted, and you’re not charged while inactive. Pay within {$left} days to keep the seat.", url('/app/billing'));
+                    $locked = \App\Domains\Billing\TeamLock::locked($seat->primary);
+                    $this->tellTeam($seat->primary, $seat, 'seat.payment', "Your {$seat->territory_name} seat is inactive", 'New referrals now go to the backup team'.($locked ? ', and your team can’t use Team to Team until you renew' : '').". You can still work the referrals you already accepted, and you’re not charged while inactive. Renew within {$left} days to keep the seat.", url('/app/renew'));
                 }
                 $this->tellOwners($seat->group, 'Seat inactive', ($seat->primary->name ?? 'A team')." ({$seat->territory_name}) is inactive; referrals go to the backup.");
             }

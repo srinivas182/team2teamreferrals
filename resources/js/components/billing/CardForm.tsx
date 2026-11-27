@@ -31,7 +31,22 @@ export function loadStripe(key: string): Promise<StripeJs> {
 export { xsrf };
 
 /** Add or replace a card with Stripe's own form (card details never reach our servers). */
-export function CardForm({ setupUrl, saveUrl, stripeKey, onDone }: { setupUrl: string; saveUrl: string; stripeKey: string; onDone: () => void }) {
+export function CardForm({
+    setupUrl,
+    saveUrl,
+    stripeKey,
+    onDone,
+    keepPage = false,
+    label = 'Add or replace card',
+}: {
+    setupUrl: string;
+    saveUrl: string;
+    stripeKey: string;
+    onDone: () => void;
+    /** Keep what's already filled in on the page (the claim form) when the card is saved. */
+    keepPage?: boolean;
+    label?: string;
+}) {
     const box = useRef<HTMLDivElement>(null);
     const [state, setState] = useState<{ stripe: StripeJs; elements: unknown } | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -59,13 +74,13 @@ export function CardForm({ setupUrl, saveUrl, stripeKey, onDone }: { setupUrl: s
         const r = await state.stripe.confirmSetup({ elements: state.elements, redirect: 'if_required' });
         setBusy(false);
         if (r.error) return setError(r.error.message);
-        router.post(saveUrl, { payment_method: r.setupIntent?.payment_method }, { preserveScroll: true, onSuccess: onDone });
+        router.post(saveUrl, { payment_method: r.setupIntent?.payment_method }, { preserveScroll: true, preserveState: keepPage, onSuccess: onDone });
     };
     return (
         <div className="space-y-3">
             {!state && (
                 <Button variant="secondary" size="sm" onClick={() => void start()}>
-                    <CreditCard /> Add or replace card
+                    <CreditCard /> {label}
                 </Button>
             )}
             <div ref={box} />

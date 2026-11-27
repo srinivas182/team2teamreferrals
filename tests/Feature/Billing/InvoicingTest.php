@@ -20,6 +20,10 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     Artisan::call('t2t:locations:import', ['--path' => base_path('tests/fixtures/locations')]);
     Artisan::call('t2t:catalogue:sync');
+    // These tests cover the free extension, which new groups have off by default.
+    foreach (Group::with('industry')->get() as $g) {
+        $g->update(['pricing' => [...$g->pricing, 'value_guarantee' => $g->industry->tier->allowsValueGuarantee()]]);
+    }
     Notification::fake();
     Storage::fake('private');
     fakeSms();

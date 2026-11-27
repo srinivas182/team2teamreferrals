@@ -99,7 +99,9 @@ final class Group extends Model
     /** @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} */
     public static function defaultPricing(Industry $industry): array
     {
-        // $10 per city per group; founders pay the same $10, locked while they hold the seat. Multi-city discounts off by default. The value guarantee is never allowed where fees must not depend on referrals (Tier C).
-        return ['seat_price' => 10, 'founding_price' => 10, 'trial_months' => 3, 'value_guarantee' => $industry->tier->allowsValueGuarantee(), 'annual_months_free' => 2, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]];
+        // $10 per city per group; founders pay the same $10, locked while they hold the seat. Multi-city discounts off by default.
+        // The free extension (a month with no referral offered is free; stored as value_guarantee) is off by default, and never
+        // allowed where fees must not depend on referrals (Tier C). Groups created before this keep their own setting.
+        return ['seat_price' => 10, 'founding_price' => 10, 'trial_months' => 3, 'value_guarantee' => false, 'annual_months_free' => 2, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]];
     }
 }

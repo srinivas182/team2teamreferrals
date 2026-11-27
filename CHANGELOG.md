@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Card when claiming, free extension, locking unpaid teams, logo in emails
+1. **Card when claiming a city.** When payments are switched on, the claim page asks for a card (saved with Stripe, nothing charged today) and says the price, the trial, and the date of the first charge if approved today. A card already on file (the team's, or its company's) is shown and reused; "Use a different card" replaces it. Each city is still its own seat with its own trial, price and status, billed together once a month.
+2. **Free extension** (was "value guarantee"): any month with no referral offered to a seat is free. Off by default for new groups; groups that already exist keep their setting. Turn it on per group in Admin → Groups → a group → Pricing. Customers never see the words "value guarantee".
+3. **Unpaid teams are locked.** After the grace days, an unpaid seat goes inactive and its new referrals go to the backup team (as before). When every seat a team holds is inactive, the whole team (leader, assistants and members) is locked out until it pays: they see only **Renew**, Billing, their settings, and the clients they had already accepted. Renew lists the inactive seats (and when each would go to the next team), **"You missed N referrals while inactive"** with each one, and a Renew button per unpaid invoice. Members are told to ask their leader. Paying unlocks at once.
+4. **Logo at the top of every email** instead of the words "Team to Team Referrals" (which stay as the image's alt text).
+
 ### Admin referral reports, group status tabs, cities that can join
 1. **Admin → Referrals** (was "Network CRM"): S/N, date, lead name, network, city, referred by (team and person), referred to (team and person), lead status, GCI received, referral commission (with its status) and platform earnings, with totals for the filters. Super admins see full lead names; their exports are logged. Others keep the short name. Export all, or any date range, as CSV.
 2. **A group's Referrals page** (Admin → a group → Seats → "Referrals and export", and for group owners on their group page): the same list, totals and export for that group. The groups list has a Referrals count per group.

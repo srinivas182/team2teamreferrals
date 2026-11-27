@@ -42,6 +42,24 @@ final class BillingAccounts
         return $row;
     }
 
+    /**
+     * The card a team's seats would be billed to: its company's when the company pays centrally and has one, else the
+     * team's own. Null when there's none yet.
+     *
+     * @return array{brand: string, last4: string, payer: string}|null
+     */
+    public static function cardFor(Team $team): ?array
+    {
+        foreach (array_filter([$team->company_id !== null ? ['company', (int) $team->company_id] : null, ['team', $team->id]]) as [$type, $id]) {
+            $row = DB::table('billing_customers')->where(['owner_type' => $type, 'owner_id' => $id])->whereNotNull('payment_method_id')->where('needs_new_card', false)->first();
+            if ($row !== null) {
+                return ['brand' => (string) $row->card_brand, 'last4' => (string) $row->card_last4, 'payer' => $type];
+            }
+        }
+
+        return null;
+    }
+
     /** Who may manage this payer's billing: team leader or assistant; for a company, its admin. */
     public static function canManage(User $user, string $type, int $id): bool
     {

@@ -58,7 +58,7 @@ export default function GroupsIndex({
             seat_price: 10,
             founding_price: 10,
             trial_months: 3,
-            value_guarantee: true,
+            value_guarantee: false,
             annual_months_free: 2,
             discounts: { '2': 0, '5': 0, '20': 0 },
         },
@@ -105,7 +105,7 @@ export default function GroupsIndex({
             <Dialog open={pricing} onOpenChange={setPricing}>
                 <DialogContent
                     title={`Set pricing for ${selected.length} groups`}
-                    description="Each group gets this pricing. Tier C groups always keep the value guarantee off."
+                    description="Each group gets this pricing. Tier C groups always keep the free extension off."
                 >
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
@@ -144,7 +144,7 @@ export default function GroupsIndex({
                                 checked={bulk.data.values.value_guarantee}
                                 onChange={(e) => bulk.setData('values', { ...bulk.data.values, value_guarantee: e.target.checked })}
                             />{' '}
-                            Value guarantee (free month when no referral is offered)
+                            Free extension (a month with no referral offered is free)
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             <Field label="When">
@@ -313,7 +313,7 @@ export default function GroupsIndex({
                                     onChange={(e) => setSelected(e.target.checked ? shown.map((g) => g.slug) : [])}
                                 />
                             </th>
-                            {['Group', 'Industry', 'Referrals', 'Seat price', 'Trial', 'Value guarantee', 'Rules', 'Status'].map((h) => (
+                            {['Group', 'Industry', 'Referrals', 'Seat price', 'Trial', 'Free extension', 'Rules', 'Status'].map((h) => (
                                 <th key={h} scope="col" className="px-4 py-3 font-medium">
                                     {h}
                                 </th>
@@ -360,9 +360,7 @@ export default function GroupsIndex({
                                     {money(g.pricing.seat_price)} <span className="text-muted">· founding {money(g.pricing.founding_price)}</span>
                                 </td>
                                 <td className="px-4 py-3">{g.pricing.trial_months} months</td>
-                                <td className="px-4 py-3">
-                                    {g.pricing.value_guarantee ? <Badge tone="success">On</Badge> : <Badge>Off (Tier C)</Badge>}
-                                </td>
+                                <td className="px-4 py-3">{g.pricing.value_guarantee ? <Badge tone="success">On</Badge> : <Badge>Off</Badge>}</td>
                                 <td className="px-4 py-3 text-muted">
                                     Accept in {g.rules.accept_hours} h · cap {g.rules.company_cap_pct}% · challenge after {g.rules.challenge_days}{' '}
                                     days
