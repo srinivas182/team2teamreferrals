@@ -4,6 +4,13 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### 1-month trials, card on every claim, platform fee charged straight away
+1. **Every group's free trial is 1 month** (existing groups changed; new groups start at 1). Copy reads "1 month" / "First month free".
+2. **A card is also needed to accept a seat invitation or a waitlist offer** (when payments are on), with the same card step as claiming; a saved card is reused.
+3. **Platform fee default: a flat $250 per Won referral** in every industry where a platform fee is allowed (tier A). It switches on when a super admin unlocks platform fees (Admin → Industries), for approved industries. Only a super admin can change it: per industry, or per group on the group's Pricing tab (its own flat amount, a percentage of the referral fee, none, or back to the default). Group owners can't.
+4. **Charged at once**: when the referring team confirms it received its referral fee, the platform fee is charged to its card on an invoice of its own (no longer waiting for the 1st). A fee marked paid counts as received after 14 days unless the referring team reports a problem.
+5. **Unpaid platform fee locks the team**: a failed charge is retried; still unpaid after 7 days, the referring team (leader, assistants, members) is locked out like an unpaid seat, with the charge and a pay button on Renew. Paying unlocks at once.
+
 ### Card when claiming, free extension, locking unpaid teams, logo in emails
 1. **Card when claiming a city.** When payments are switched on, the claim page asks for a card (saved with Stripe, nothing charged today) and says the price, the trial, and the date of the first charge if approved today. A card already on file (the team's, or its company's) is shown and reused; "Use a different card" replaces it. Each city is still its own seat with its own trial, price and status, billed together once a month.
 2. **Free extension** (was "value guarantee"): any month with no referral offered to a seat is free. Off by default for new groups; groups that already exist keep their setting. Turn it on per group in Admin → Groups → a group → Pricing. Customers never see the words "value guarantee".

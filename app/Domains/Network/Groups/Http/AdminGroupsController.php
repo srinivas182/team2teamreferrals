@@ -9,6 +9,7 @@ use App\Domains\Network\Groups\GroupSettings;
 use App\Domains\Network\Groups\Models\Group;
 use App\Domains\Network\Industries\Models\Industry;
 use App\Domains\Seo\SeoData;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,47 @@ final class AdminGroupsController
         ]);
     }
 
+    /** @return array<string, mixed> */
+    private function platformFee(Group $group): array
+    {
+        $rule = fn (?int $groupId) => \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where('industry_id', $group->industry_id)
+            ->when($groupId, fn ($q, $v) => $q->where('group_id', $v), fn ($q) => $q->whereNull('group_id'))->first();
+        $shape = fn ($r) => $r === null ? null : ['mode' => (string) $r->mode, 'flatCents' => $r->flat_cents, 'percent' => $r->percent !== null ? (float) $r->percent : null, 'enabled' => (bool) $r->enabled];
+        $user = request()->user();
+
+        return [
+            'allowed' => $group->industry->tier->allowsPlatformFee(),
+            'canEdit' => $user instanceof User && $user->hasRole('super_admin'),
+            'unlocked' => app(\App\Domains\Network\Industries\Compliance::class)->feesUnlocked(),
+            'industry' => $shape($rule(null)) ?? ['mode' => 'none', 'flatCents' => null, 'percent' => null, 'enabled' => false],
+            'group' => $shape($rule($group->id)),
+        ];
+    }
+
+    /** Super admin: this group's platform fee (the industry default, a flat amount, a percentage, or none). */
+    public function savePlatformFee(Request $request, Group $group): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->hasRole('super_admin'), 403, 'Only a super admin can change platform fees.');
+        $d = $request->validate(['mode' => ['required', 'in:default,flat,percent,none'], 'flat' => ['required_if:mode,flat', 'nullable', 'numeric', 'min:1', 'max:100000'], 'percent' => ['required_if:mode,percent', 'nullable', 'numeric', 'min:0.5', 'max:50']]);
+        $group->load('industry');
+        $compliance = app(\App\Domains\Network\Industries\Compliance::class);
+        if ($d['mode'] === 'default') {
+            \App\Domains\Network\Industries\Models\PlatformFeeRule::query()->where(['industry_id' => $group->industry_id, 'group_id' => $group->id])->delete();
+        } else {
+            // Charged only while fees are unlocked and the industry approved; saved either way so it's ready.
+            $on = $d['mode'] !== 'none' && $compliance->feesUnlocked() && $group->industry->isApproved() && $group->industry->tier->allowsPlatformFee();
+            try {
+                $compliance->saveFeeRule($group->industry, $group->id, ['mode' => $d['mode'] === 'none' ? 'none' : $d['mode'], 'percent' => $d['mode'] === 'percent' ? (float) $d['percent'] : null,
+                    'flat_cents' => $d['mode'] === 'flat' ? (int) round((float) $d['flat'] * 100) : null, 'charge_at' => 'closing'], $on, $user);
+            } catch (DomainException $e) {
+                return back()->withErrors(['fee' => $e->getMessage()]);
+            }
+        }
+
+        return back()->with('status', 'group-saved');
+    }
+
     public function show(Group $group): Response
     {
         $group->load('industry');
@@ -61,6 +103,7 @@ final class AdminGroupsController
                     'history' => DB::table('seat_events')->leftJoin('teams', 'teams.id', '=', 'seat_events.team_id')->where('seat_id', $s->id)->orderByDesc('seat_events.id')->limit(10)->get(['seat_events.event', 'seat_events.created_at', 'teams.name as team'])
                         ->map(fn ($e) => ['event' => (string) $e->event, 'when' => (string) $e->created_at, 'team' => $e->team])]),
             'pendingApplications' => DB::table('seat_applications')->where(['group_id' => $group->id, 'status' => 'pending'])->count(),
+            'platformFee' => $this->platformFee($group),
             // Cities with no team that members sent referrals from anyway (to a nearby team): seats worth filling.
             'emptyCityDemand' => DB::table('referrals')->where('group_id', $group->id)->whereNotNull('client_city_id')->where('created_at', '>=', now()->subDays(180))
                 ->selectRaw('client_city_id, count(*) as n')->groupBy('client_city_id')->orderByDesc('n')->limit(10)->get()

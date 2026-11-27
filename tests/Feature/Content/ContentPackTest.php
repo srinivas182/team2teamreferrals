@@ -29,7 +29,7 @@ it('DONE WHEN (site): a fresh install publishes finished core pages that pass th
         ($this->aeo)($url);
     }
     $p = ($this->aeo)('/pricing');
-    expect($p['page']['summary'])->toContain('$10 a month')->toContain('3 months free');
+    expect($p['page']['summary'])->toContain('$10 a month')->toContain('1 month free');
     $menus = $this->get('/blog')->viewData('page')['props']['menus'];
     expect(collect($menus['header'])->pluck(1))->toContain('/how-it-works', '/pricing');
     $llms = $this->get('/llms.txt')->getContent();

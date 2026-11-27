@@ -74,10 +74,31 @@ final class Compliance
         return $this->settings->get('compliance.platform_fee_unlocked') === '1';
     }
 
-    /** Super admin only: confirms licensing and fund routing are in place. Until then no fee can be switched on anywhere. */
+    /** The default platform fee for an industry where one is allowed: flat, per Won referral. Off until switched on. */
+    public const DEFAULT_FEE_CENTS = 25000;
+
+    public static function defaultFeeRule(Industry $industry): void
+    {
+        if ($industry->tier->allowsPlatformFee() && ! PlatformFeeRule::query()->where('industry_id', $industry->id)->whereNull('group_id')->exists()) {
+            PlatformFeeRule::query()->create(['industry_id' => $industry->id, 'group_id' => null, 'mode' => 'flat', 'flat_cents' => self::DEFAULT_FEE_CENTS, 'charge_at' => 'closing']);
+        }
+    }
+
+    /**
+     * Super admin only: confirms licensing and fund routing are in place. Until then no fee can be switched on anywhere.
+     * Unlocking switches on each approved industry's fee rule (the flat default unless an admin changed it), so every
+     * group where a fee is allowed charges it; an admin can still switch any industry or group off.
+     */
     public function unlockFees(User $by, string $confirmation): void
     {
         $this->settings->set('compliance.platform_fee_unlocked', '1', userId: $by->id);
+        foreach (Industry::query()->where('tier', Tier::Open->value)->get() as $industry) {
+            self::defaultFeeRule($industry);
+            if ($industry->isApproved()) {
+                PlatformFeeRule::query()->where('industry_id', $industry->id)->whereNull('group_id')->where('mode', '!=', 'none')
+                    ->update(['enabled' => true, 'enabled_at' => now(), 'enabled_by' => $by->id]);
+            }
+        }
         activity('admin')->causedBy($by)->event('platform-fee-unlocked')->withProperties(['confirmation' => $confirmation])->log('Platform referral fees unlocked');
     }
 

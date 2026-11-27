@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ClaimCard, needsCard, type ClaimBilling } from '@/components/billing/ClaimCard';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -12,12 +13,13 @@ import type { Seo } from '@/types/seo';
 
 type Props = {
     offer: { id: number; status: string; expiresAt: string; territory: string; group: string; pricing: { seat_price: number; trial_months: number } };
+    billing: ClaimBilling;
     seo: Seo;
 };
 
 /** A seat offered to this team, with a live countdown. Unclaimed offers pass to the next team automatically. */
-export default function Offer({ offer, seo }: Props) {
-    const { auth } = usePage<SharedProps>().props;
+export default function Offer({ offer, billing, seo }: Props) {
+    const { auth, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         const t = window.setInterval(() => setNow(Date.now()), 1000);
@@ -42,8 +44,13 @@ export default function Offer({ offer, seo }: Props) {
                             {money(offer.pricing.seat_price)} a month after a {offer.pricing.trial_months}-month free trial. If you don’t claim it in
                             time, it goes to the next team.
                         </p>
+                        <div className="mt-4">
+                            <ClaimCard billing={billing} error={errors.card} />
+                        </div>
                         <div className="mt-6 flex gap-2">
-                            <Button onClick={() => router.post(`/app/seats/offers/${offer.id}/accept`)}>Claim this seat</Button>
+                            <Button disabled={needsCard(billing)} onClick={() => router.post(`/app/seats/offers/${offer.id}/accept`)}>
+                                Claim this seat
+                            </Button>
                             <Button variant="ghost" onClick={() => router.post(`/app/seats/offers/${offer.id}/decline`)}>
                                 No thanks
                             </Button>

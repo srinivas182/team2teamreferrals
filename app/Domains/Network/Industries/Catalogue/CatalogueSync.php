@@ -46,6 +46,7 @@ final class CatalogueSync
                     $industry = Industry::create(['slug' => $slug, ...$values, 'tier' => Tier::from($values['tier']), 'training_locked' => $values['tier'] === 'B']);
                     $industry->forceFill(['catalogue_snapshot' => $values])->save();
                     $this->templatesFor($industry, $entry);
+                    \App\Domains\Network\Industries\Compliance::defaultFeeRule($industry);
                     $stats['created']++;
 
                     return;

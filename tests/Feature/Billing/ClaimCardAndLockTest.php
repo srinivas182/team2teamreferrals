@@ -43,7 +43,7 @@ it('takes a card when claiming a city, reuses it for the next one, and says when
     ($this->stripeOn)();
     $team = Team::forLeader(User::factory()->create());
     $this->actingAs($team->leader)->get('/app/groups/solar-installers-network/apply')->assertInertia(fn ($p) => $p->where('billing.stripeKey', 'pk_test_123')->where('billing.card', null)
-        ->where('billing.extension', false)->where('billing.firstCharge', now()->addMonths(3)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString()));
+        ->where('billing.extension', false)->where('billing.firstCharge', now()->addMonths(1)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString()));
     $this->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->cities[2]->id, 'license_number' => 'L'])->assertSessionHasErrors('card');
     ($this->card)($team);
     $this->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->cities[2]->id, 'license_number' => 'L'])->assertSessionHasNoErrors();
@@ -114,4 +114,19 @@ it('doesn’t lock a team that still has a paid seat', function () {
     Seat::query()->where('primary_team_id', $team->id)->orderBy('id')->first()->forceFill(['status' => 'inactive', 'inactive_at' => now()])->save();
     expect(TeamLock::locked($team))->toBeFalse();
     $this->actingAs($team->leader)->get('/app')->assertOk();
+});
+
+it('asks for a card when accepting an invitation or a waitlist offer, and gives every group a 1-month trial', function () {
+    ($this->stripeOn)();
+    expect(Group::defaultPricing($this->g->industry)['trial_months'])->toBe(1);
+    $owner = User::factory()->create();
+    DB::table('group_owners')->insert(['group_id' => $this->g->id, 'user_id' => $owner->id, 'created_at' => now(), 'updated_at' => now()]);
+    $invited = User::factory()->create(['email' => 'invited@example.com']);
+    $seat = Seat::query()->create(['group_id' => $this->g->id, 'territory_type' => 'city', 'territory_id' => $this->cities[2]->id, 'territory_name' => 'Austin, TX']);
+    $token = Illuminate\Support\Str::random(48);
+    DB::table('seat_invites')->insert(['group_id' => $this->g->id, 'seat_id' => $seat->id, 'email' => 'invited@example.com', 'token_hash' => hash('sha256', $token), 'expires_at' => now()->addDays(14), 'invited_by' => $owner->id, 'created_at' => now(), 'updated_at' => now()]);
+    $this->actingAs($invited)->get("/invites/{$token}")->assertInertia(fn ($p) => $p->where('billing.card', null)->where('billing.trialMonths', 1));
+    $this->post("/invites/{$token}/accept")->assertSessionHasErrors('card');
+    ($this->card)(Team::of($invited) ?? Team::forLeader($invited));
+    $this->post("/invites/{$token}/accept")->assertSessionHasNoErrors();
 });

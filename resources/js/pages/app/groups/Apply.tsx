@@ -1,7 +1,7 @@
 import { useForm, usePage } from '@inertiajs/react';
 import { Check, MapPin } from 'lucide-react';
 import { useState } from 'react';
-import { CardForm } from '@/components/billing/CardForm';
+import { ClaimCard, needsCard, type ClaimBilling } from '@/components/billing/ClaimCard';
 import { CityPicker, type CityOption } from '@/components/CityPicker';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
-import { money } from '@/lib/utils';
+import { money, firstFree } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
@@ -26,21 +26,13 @@ type Props = {
     };
     city?: { id: number; name: string } | null;
     openCities?: string | null;
-    billing: {
-        stripeKey: string | null;
-        card: { brand: string; last4: string; payer: string } | null;
-        trialEnds: string;
-        firstCharge: string;
-        extension: boolean;
-    };
+    billing: ClaimBilling;
     seo: Seo;
 };
 
 const unitWord: Record<string, string> = { city: 'city', county: 'county', metro: 'metro area', state: 'state' };
 
 export default function Apply({ group, city: claimed, openCities, billing, seo }: Props) {
-    const [changingCard, setChangingCard] = useState(false);
-    const needsCard = billing.stripeKey !== null && billing.card === null;
     const { auth } = usePage<SharedProps>().props;
     const [city, setCity] = useState<CityOption | null>(
         claimed ? { id: claimed.id, name: claimed.name, state: '', county: null, population: 0, label: claimed.name } : null,
@@ -84,45 +76,10 @@ export default function Apply({ group, city: claimed, openCities, billing, seo }
                             <Input value={form.data.license_number} onChange={(e) => form.setData('license_number', e.target.value)} />
                         </Field>
                     )}
-                    {billing.stripeKey && (
-                        <section aria-labelledby="pay" className="space-y-2 rounded-lg border border-line p-4">
-                            <h2 id="pay" className="font-semibold">
-                                Payment card
-                            </h2>
-                            <p className="text-sm text-muted">
-                                Nothing is charged today. After your {group.pricing.trial_months}-month free trial it’s{' '}
-                                {money(group.pricing.seat_price)} per {unitWord[group.territory]} per month, billed to this card. If you’re approved
-                                today, your first charge is on {billing.firstCharge}. Cancel any time before then and you pay nothing.
-                                {billing.extension && ' Any month you’re offered no referrals is free (a free extension).'}
-                            </p>
-                            {billing.card && !changingCard ? (
-                                <p className="flex flex-wrap items-center gap-3 text-sm">
-                                    <span>
-                                        {billing.card.payer === 'company' ? 'Your company’s card' : 'Your card'}: {billing.card.brand.toUpperCase()}{' '}
-                                        ending {billing.card.last4}
-                                    </span>
-                                    {billing.card.payer === 'team' && (
-                                        <button type="button" className="font-medium text-primary" onClick={() => setChangingCard(true)}>
-                                            Use a different card
-                                        </button>
-                                    )}
-                                </p>
-                            ) : (
-                                <CardForm
-                                    setupUrl="/app/billing/team/setup-intent"
-                                    saveUrl="/app/billing/team/card"
-                                    stripeKey={billing.stripeKey}
-                                    keepPage
-                                    label="Add a card"
-                                    onDone={() => setChangingCard(false)}
-                                />
-                            )}
-                            {errors.card && <p className="text-sm text-danger">{errors.card}</p>}
-                        </section>
-                    )}
+                    <ClaimCard billing={billing} error={errors.card} />
                     {errors.group && <Alert tone="danger">{errors.group}</Alert>}
                     <Button
-                        disabled={!city || group.visibility === 'invite_only' || needsCard}
+                        disabled={!city || group.visibility === 'invite_only' || needsCard(billing)}
                         loading={form.processing}
                         onClick={() => form.post(`/app/groups/${group.slug}/apply`)}
                     >
@@ -135,7 +92,7 @@ export default function Apply({ group, city: claimed, openCities, billing, seo }
                     <ul className="mt-4 space-y-2 text-sm">
                         {[
                             `${money(group.pricing.seat_price)} per ${unitWord[group.territory]} per month`,
-                            `First ${group.pricing.trial_months} months free`,
+                            firstFree(group.pricing.trial_months),
                             billing.stripeKey ? 'Card saved now, charged only after the trial' : 'No card needed during the trial',
                             ...(billing.extension ? ['Free extension: any month with no referral offered is free'] : []),
                             'If the seat is taken, you can back it up or join the waitlist',

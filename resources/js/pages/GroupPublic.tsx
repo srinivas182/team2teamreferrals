@@ -8,7 +8,7 @@ import { SeoHead } from '@/components/seo/SeoHead';
 import { IconChip, PageHero } from '@/components/site/Site';
 import { Badge } from '@/components/ui/badge';
 import { PublicLayout } from '@/layouts/PublicLayout';
-import { money } from '@/lib/utils';
+import { money, months } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
 
 type Seat = { territory: string; state: string | null; territoryId: number; type: string; cityId: number; team: PublicTeam };
@@ -78,7 +78,7 @@ export default function GroupPublic({ group, answer, openCities, seats, open, ma
                             <Users className="size-4 text-primary" aria-hidden /> {seats.length} {seats.length === 1 ? 'seat' : 'seats'} filled
                         </span>
                         <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium">
-                            <CalendarCheck className="size-4 text-primary" aria-hidden /> {group.pricing.trial_months} months free, then{' '}
+                            <CalendarCheck className="size-4 text-primary" aria-hidden /> {months(group.pricing.trial_months)} free, then{' '}
                             {money(group.pricing.seat_price)}/mo
                         </span>
                         {group.visibility === 'invite_only' ? (
@@ -120,7 +120,7 @@ export default function GroupPublic({ group, answer, openCities, seats, open, ma
                                 { icon: BadgeDollarSign, text: group.rules.fees },
                                 {
                                     icon: CalendarCheck,
-                                    text: `Seats are ${money(group.pricing.seat_price)} a month after ${group.pricing.trial_months} months free.`,
+                                    text: `Seats are ${money(group.pricing.seat_price)} a month after ${months(group.pricing.trial_months)} free.`,
                                 },
                             ].map((r) => (
                                 <li key={r.text} className="flex gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm">

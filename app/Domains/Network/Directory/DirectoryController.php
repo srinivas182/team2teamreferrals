@@ -77,7 +77,7 @@ final class DirectoryController
                 'owners' => $group->owners()->get()->map(fn (User $u) => $u->name)->values(),
                 'rules' => ['accept_hours' => (int) $group->rule('accept_hours'), 'first_contact_hours' => (int) $group->rule('first_contact_hours'), 'update_days' => (int) $group->rule('update_days'),
                     'training' => (bool) $group->rule('training_required') && app(Modules::class)->enabled('training'), 'fees' => IndustryContent::tierFact($industry)],
-                'pricing' => ['seat_price' => (int) ($group->pricing['seat_price'] ?? 10), 'trial_months' => (int) ($group->pricing['trial_months'] ?? 3)],
+                'pricing' => ['seat_price' => (int) ($group->pricing['seat_price'] ?? 10), 'trial_months' => (int) ($group->pricing['trial_months'] ?? 1)],
                 'hub' => IndustryContent::record($industry)?->status === 'published' ? '/industries/'.$industry->slug : null],
             'answer' => $answer, 'openCities' => \App\Domains\Network\Groups\GroupCities::summary($group), 'seats' => $seats, 'open' => Directory::openPlaces($group), 'map' => NetworkMap::forGroup($group),
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,

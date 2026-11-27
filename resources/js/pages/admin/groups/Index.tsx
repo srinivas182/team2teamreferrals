@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { useUrlFilters } from '@/lib/filters';
-import { cn, money } from '@/lib/utils';
+import { cn, money, months } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
 
 type Group = {
@@ -359,7 +359,7 @@ export default function GroupsIndex({
                                 <td className="px-4 py-3 tabular">
                                     {money(g.pricing.seat_price)} <span className="text-muted">· founding {money(g.pricing.founding_price)}</span>
                                 </td>
-                                <td className="px-4 py-3">{g.pricing.trial_months} months</td>
+                                <td className="px-4 py-3">{months(g.pricing.trial_months)}</td>
                                 <td className="px-4 py-3">{g.pricing.value_guarantee ? <Badge tone="success">On</Badge> : <Badge>Off</Badge>}</td>
                                 <td className="px-4 py-3 text-muted">
                                     Accept in {g.rules.accept_hours} h · cap {g.rules.company_cap_pct}% · challenge after {g.rules.challenge_days}{' '}

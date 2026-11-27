@@ -77,6 +77,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
         Route::delete('{group}/{kind}', [AdminIndustryTemplatesController::class, 'groupReset'])->whereIn('kind', ['form', 'stages'])->name('templates.reset');
         Route::get('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'show'])->name('show');
         Route::post('{group}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateDetails'])->name('details');
+        Route::put('{group}/platform-fee', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'savePlatformFee'])->name('platform-fee');
         Route::put('{group}/{section}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'updateSettings'])->whereIn('section', ['pricing', 'rules'])->name('settings');
         Route::delete('{group}/scheduled/{change}', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'cancelScheduled'])->whereNumber('change')->name('scheduled.cancel');
         Route::post('{group}/owners', [App\Domains\Network\Groups\Http\AdminGroupsController::class, 'addOwner'])->name('owners.add');

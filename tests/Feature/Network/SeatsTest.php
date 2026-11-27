@@ -54,7 +54,7 @@ it('gives the first approved team the seat on a free trial, the second the backu
 
     $seat = Seat::firstOrFail();
     expect($seat->status)->toBe('trial')->and($seat->primary_team_id)->toBe($a->id)->and($seat->backup_team_id)->toBe($b->id)
-        ->and($seat->founding)->toBeTrue()->and($seat->trial_ends_at->toDateString())->toBe(now()->addMonths(3)->toDateString())
+        ->and($seat->founding)->toBeTrue()->and($seat->trial_ends_at->toDateString())->toBe(now()->addMonths(1)->toDateString())
         ->and($seat->waitlist()->count())->toBe(1)->and($seat->receiver()?->id)->toBe($a->id);
     expect(toldAbout($a->leader, 'seat.decision'))->toBeTrue()->and(toldAbout($this->owner, 'seat.update'))->toBeTrue()->and(toldAbout($this->platform, 'seat.update'))->toBeTrue();
     expect(DB::table('seat_events')->where('seat_id', $seat->id)->pluck('event')->all())->toContain('applied', 'claimed', 'backup', 'waitlisted');
