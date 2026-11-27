@@ -4,6 +4,12 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Admin referral reports, group status tabs, cities that can join
+1. **Admin → Referrals** (was "Network CRM"): S/N, date, lead name, network, city, referred by (team and person), referred to (team and person), lead status, GCI received, referral commission (with its status) and platform earnings, with totals for the filters. Super admins see full lead names; their exports are logged. Others keep the short name. Export all, or any date range, as CSV.
+2. **A group's Referrals page** (Admin → a group → Seats → "Referrals and export", and for group owners on their group page): the same list, totals and export for that group. The groups list has a Referrals count per group.
+3. **Groups list tabs**: Live and active (opens first), Draft, Closed, All.
+4. **Cities that can join** (a group's Seats tab, and owners' group page): all cities by default, or only the cities chosen state by state (tick several, search, select all, remove). Teams elsewhere can't apply; the group's public page and the apply page say which cities are open. Teams already holding seats elsewhere keep them (a note says how many).
+
 ### Prospect feedback, part 2: teams share referrals
 1. **Everyone in the team hears about a new referral** (email, text, in-app and push, by each person's settings). Each person's one-tap Accept link is their own, so whoever taps first gets the client.
 2. **Leader nudge.** Halfway to the response deadline, if nobody in a team of two or more has accepted, the leader is told (new notification "No one in your team has accepted yet").

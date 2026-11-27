@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { useUrlFilters } from '@/lib/filters';
-import { money } from '@/lib/utils';
+import { cn, money } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
 
 type Group = {
@@ -29,6 +29,7 @@ type Group = {
     pricing: { seat_price: number; founding_price: number; trial_months: number; value_guarantee: boolean; annual_months_free: number };
     rules: { accept_hours: number; company_cap_pct: number; challenge_days: number };
     pendingApplications: number;
+    referrals: number;
 };
 
 /** The launch groups with their pricing and rules. Editing groups, owners and seats arrives in Sprint 10. */
@@ -43,7 +44,7 @@ export default function GroupsIndex({
     status?: string;
     seo: Seo;
 }) {
-    const f = useUrlFilters({ q: '', status: '', industry: '', type: '', tier: '' });
+    const f = useUrlFilters({ q: '', status: 'live', industry: '', type: '', tier: '' });
     const [creating, setCreating] = useState(false);
     const pendingTotal = groups.reduce((n, g) => n + g.pendingApplications, 0);
     const [selected, setSelected] = useState<string[]>([]);
@@ -67,7 +68,7 @@ export default function GroupsIndex({
     const shown = groups.filter(
         (g) =>
             (f.values.q === '' || `${g.name} ${g.industry.name} ${g.region ?? ''}`.toLowerCase().includes(f.values.q.toLowerCase())) &&
-            (f.values.status === '' || g.status === f.values.status) &&
+            (f.values.status === 'all' || g.status === f.values.status) &&
             (f.values.industry === '' || g.industry.slug === f.values.industry) &&
             (f.values.tier === '' || g.industry.tier === f.values.tier) &&
             (f.values.type === '' ||
@@ -219,6 +220,30 @@ export default function GroupsIndex({
                     </div>
                 </DialogContent>
             </Dialog>
+            {/* Status tabs: live groups first. */}
+            <nav aria-label="Group status" className="mb-4 flex w-fit flex-wrap rounded-lg border border-line bg-surface p-1 text-sm">
+                {(
+                    [
+                        ['live', 'Live and active', count('live')],
+                        ['draft', 'Draft', count('draft')],
+                        ['closed', 'Closed', count('closed')],
+                        ['all', 'All', groups.length],
+                    ] as const
+                ).map(([key, label, n]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => f.set('status', key)}
+                        aria-pressed={f.values.status === key}
+                        className={cn(
+                            'rounded-md px-3 py-1.5 font-medium',
+                            f.values.status === key ? 'bg-primary text-white' : 'text-muted hover:text-ink',
+                        )}
+                    >
+                        {label} <span className="tabular-nums opacity-80">({n})</span>
+                    </button>
+                ))}
+            </nav>
             <div className="mb-4 flex flex-wrap items-end gap-3" role="search" aria-label="Filter groups">
                 <Input
                     aria-label="Search groups"
@@ -227,12 +252,6 @@ export default function GroupsIndex({
                     value={f.values.q}
                     onChange={(e) => f.set('q', e.target.value)}
                 />
-                <Select aria-label="Status" className="w-auto" value={f.values.status} onChange={(e) => f.set('status', e.target.value)}>
-                    <option value="">All statuses ({groups.length})</option>
-                    <option value="live">Live ({count('live')})</option>
-                    <option value="draft">Draft ({count('draft')})</option>
-                    <option value="closed">Closed ({count('closed')})</option>
-                </Select>
                 <Select
                     aria-label="Industry"
                     className="w-auto max-w-56"
@@ -283,7 +302,7 @@ export default function GroupsIndex({
                 </Alert>
             )}
             <Card className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[980px] text-sm">
                     <thead className="text-left text-muted">
                         <tr>
                             <th scope="col" className="w-10 px-4 py-3">
@@ -294,7 +313,7 @@ export default function GroupsIndex({
                                     onChange={(e) => setSelected(e.target.checked ? shown.map((g) => g.slug) : [])}
                                 />
                             </th>
-                            {['Group', 'Industry', 'Seat price', 'Trial', 'Value guarantee', 'Rules', 'Status'].map((h) => (
+                            {['Group', 'Industry', 'Referrals', 'Seat price', 'Trial', 'Value guarantee', 'Rules', 'Status'].map((h) => (
                                 <th key={h} scope="col" className="px-4 py-3 font-medium">
                                     {h}
                                 </th>
@@ -331,6 +350,11 @@ export default function GroupsIndex({
                                     <Badge tone={g.industry.tier === 'A' ? 'success' : g.industry.tier === 'B' ? 'warning' : 'neutral'}>
                                         Tier {g.industry.tier}
                                     </Badge>
+                                </td>
+                                <td className="px-4 py-3 tabular-nums">
+                                    <Link href={`/admin/groups/${g.slug}/referrals`} className="font-medium text-primary hover:underline">
+                                        {g.referrals}
+                                    </Link>
                                 </td>
                                 <td className="px-4 py-3 tabular">
                                     {money(g.pricing.seat_price)} <span className="text-muted">· founding {money(g.pricing.founding_price)}</span>

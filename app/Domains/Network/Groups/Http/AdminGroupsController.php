@@ -23,12 +23,13 @@ final class AdminGroupsController
     public function __invoke(): Response
     {
         $pending = DB::table('seat_applications')->where('status', 'pending')->selectRaw('group_id, count(*) as n')->groupBy('group_id')->pluck('n', 'group_id');
+        $referrals = DB::table('referrals')->selectRaw('group_id, count(*) as n')->groupBy('group_id')->pluck('n', 'group_id');
 
         return Inertia::render('admin/groups/Index', [
             'groups' => Group::query()->with('industry:id,slug,name,tier')->orderBy('name')->get()->map(fn (Group $g) => [
                 'slug' => $g->slug, 'name' => $g->name, 'status' => $g->status, 'launch' => $g->is_launch, 'private' => $g->is_private, 'region' => $g->region,
                 'industry' => ['slug' => $g->industry->slug, 'name' => $g->industry->name, 'tier' => $g->industry->tier->value],
-                'pricing' => $g->pricing, 'rules' => $g->rules, 'pendingApplications' => (int) ($pending[$g->id] ?? 0),
+                'pricing' => $g->pricing, 'rules' => $g->rules, 'pendingApplications' => (int) ($pending[$g->id] ?? 0), 'referrals' => (int) ($referrals[$g->id] ?? 0),
             ]),
             'industries' => Industry::query()->orderBy('name')->get(['slug', 'name'])->map(fn (Industry $i) => ['slug' => $i->slug, 'name' => $i->name]),
             'status' => session('status'),

@@ -8,7 +8,6 @@ use App\Domains\Billing\RevenueTypes;
 use App\Domains\Identity\Models\User;
 use App\Domains\Referrals\Referral;
 use App\Domains\Seo\SeoData;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,43 +76,34 @@ final class NetworkAdminController
         }, 'revenue-'.$p->from->toDateString().'-to-'.$p->to->toDateString().'.csv', ['Content-Type' => 'text/csv']);
     }
 
-    /** The network CRM: every referral, filtered. */
     public function crm(Request $request): Response
     {
         $f = $this->filters($request);
-        $q = $this->crmQuery($f);
-        $total = (clone $q)->count();
-        $page = max(1, (int) $request->query('page', '1'));
-        $rows = $q->orderByDesc('r.id')->forPage($page, self::PER_PAGE)->get(['r.ulid', 'r.client_name', 'r.status', 'r.stage', 'r.created_at', 'r.sender_team_id', 'r.receiver_team_id', 'g.name as network', 's.territory_name as city']);
-        $teams = DB::table('teams')->pluck('name', 'id');
+        $q = ReferralLedger::query($f);
+        $totals = ReferralLedger::totals($q);
+        $pages = (int) max(1, ceil($totals['count'] / self::PER_PAGE));
+        $page = min($pages, max(1, (int) $request->query('page', '1')));
 
         return Inertia::render('admin/NetworkCrm', [
-            'filters' => $f, 'total' => $total, 'page' => $page, 'pages' => (int) max(1, ceil($total / self::PER_PAGE)),
-            'rows' => $rows->map(fn ($r) => ['id' => (string) $r->ulid, 'client' => Referral::shorten((string) $r->client_name), 'network' => (string) $r->network, 'city' => (string) $r->city,
-                'sender' => (string) ($teams[$r->sender_team_id] ?? ''), 'receiver' => (string) ($teams[$r->receiver_team_id] ?? ''), 'stage' => (string) ($r->stage ?? $r->status), 'date' => substr((string) $r->created_at, 0, 10)])->values(),
+            'filters' => $f, 'total' => $totals['count'], 'totals' => $totals, 'page' => $page, 'pages' => $pages,
+            'rows' => ReferralLedger::rows($q, $page, self::PER_PAGE, ReferralLedger::fullNames($this->user($request)), $totals['count']),
+            'fullNames' => ReferralLedger::fullNames($this->user($request)),
             'options' => ['industries' => DB::table('industries')->orderBy('name')->get(['slug', 'name']), 'groups' => DB::table('groups')->orderBy('name')->get(['slug', 'name']),
-                'states' => DB::table('states')->orderBy('code')->pluck('code'), 'stages' => ['sent', 'accepted', 'declined', 'expired', 'won', 'lost']],
+                'states' => DB::table('states')->orderBy('code')->pluck('code'), 'stages' => ReferralLedger::STAGES],
             'revealed' => session('revealed'),
-            'seo' => SeoData::private('Network CRM')->toArray(),
+            'seo' => SeoData::private('Referrals')->toArray(),
         ]);
     }
 
     public function crmCsv(Request $request): StreamedResponse
     {
-        $q = $this->crmQuery($this->filters($request));
-        $teams = DB::table('teams')->pluck('name', 'id');
+        $f = $this->filters($request);
+        $full = ReferralLedger::fullNames($this->user($request));
+        if ($full) {
+            activity('privacy')->causedBy($request->user())->event('referrals-exported')->withProperties(['filters' => $f])->log('Referrals exported with client names');
+        }
 
-        return response()->streamDownload(function () use ($q, $teams) {
-            $out = fopen('php://output', 'w');
-            if ($out === false) {
-                return;
-            }
-            fputcsv($out, ['Referral', 'Date', 'Network', 'City', 'Sender', 'Receiver', 'Stage', 'Client']);
-            foreach ($q->orderByDesc('r.id')->limit(10000)->get(['r.ulid', 'r.created_at', 'g.name as network', 's.territory_name as city', 'r.sender_team_id', 'r.receiver_team_id', 'r.stage', 'r.status', 'r.client_name']) as $r) {
-                fputcsv($out, [$r->ulid, substr((string) $r->created_at, 0, 10), $r->network, $r->city, $teams[$r->sender_team_id] ?? '', $teams[$r->receiver_team_id] ?? '', $r->stage ?? $r->status, Referral::shorten((string) $r->client_name)]);
-            }
-            fclose($out);
-        }, 'network-referrals.csv', ['Content-Type' => 'text/csv']);
+        return ReferralLedger::csv(ReferralLedger::query($f), $full, 'referrals'.(isset($f['from']) ? '-'.$f['from'] : '').(isset($f['to']) ? '-to-'.$f['to'] : '').'.csv');
     }
 
     /** Full client details for one referral, for a support case: a stated reason, and audited. */
@@ -129,24 +119,7 @@ final class NetworkAdminController
     /** @return array<string, string> */
     private function filters(Request $request): array
     {
-        $keys = ['industry', 'group', 'state', 'city', 'sender', 'receiver', 'stage', 'from', 'to', 'q'];
-
-        return collect($keys)->mapWithKeys(fn ($k) => [$k => mb_substr(trim((string) $request->query($k, '')), 0, 80)])->filter(fn ($v) => $v !== '')->all();
-    }
-
-    /** @param array<string, string> $f */
-    private function crmQuery(array $f): Builder
-    {
-        $team = fn (string $name) => DB::table('teams')->where('name', 'like', '%'.$name.'%')->select('id');
-
-        return DB::table('referrals as r')->join('groups as g', 'g.id', '=', 'r.group_id')->join('industries as i', 'i.id', '=', 'g.industry_id')
-            ->join('seats as s', 's.id', '=', 'r.seat_id')->join('cities as c', 'c.id', '=', 's.territory_id')->join('states as st', 'st.id', '=', 'c.state_id')
-            ->when($f['industry'] ?? null, fn ($q, $v) => $q->where('i.slug', $v))->when($f['group'] ?? null, fn ($q, $v) => $q->where('g.slug', $v))
-            ->when($f['state'] ?? null, fn ($q, $v) => $q->where('st.code', strtoupper($v)))->when($f['city'] ?? null, fn ($q, $v) => $q->where('c.name', 'like', '%'.$v.'%'))
-            ->when($f['sender'] ?? null, fn ($q, $v) => $q->whereIn('r.sender_team_id', $team($v)))->when($f['receiver'] ?? null, fn ($q, $v) => $q->whereIn('r.receiver_team_id', $team($v)))
-            ->when($f['stage'] ?? null, fn ($q, $v) => in_array($v, ['won', 'lost'], true) ? $q->where('r.stage', $v) : $q->where('r.status', $v))
-            ->when($f['from'] ?? null, fn ($q, $v) => $q->where('r.created_at', '>=', $v.' 00:00:00'))->when($f['to'] ?? null, fn ($q, $v) => $q->where('r.created_at', '<=', $v.' 23:59:59'))
-            ->when($f['q'] ?? null, fn ($q, $v) => $q->where('r.ulid', $v));
+        return collect(ReferralLedger::FILTERS)->mapWithKeys(fn ($k) => [$k => mb_substr(trim((string) $request->query($k, '')), 0, 80)])->filter(fn ($v) => $v !== '')->all();
     }
 
     /** @return array{rows: list<array{type: string, label: string, cents: int, previous: int}>, net: int, previousNet: int, refunds: int, tax: int, invoices: int} */

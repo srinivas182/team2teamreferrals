@@ -30,6 +30,9 @@ final class Seats
         if ($group->visibility === 'invite_only' || $group->is_private) {
             throw ValidationException::withMessages(['group' => 'This group is invite only.']);
         }
+        if (! \App\Domains\Network\Groups\GroupCities::allows($group, $city)) {
+            throw ValidationException::withMessages(['city_id' => "{$group->name} isn’t open to teams in {$city->name} yet. ".(\App\Domains\Network\Groups\GroupCities::summary($group) ?? '')]);
+        }
         $territory = Territory::fromCity($group->industry->territory_unit, $city);
         $this->checkLicense($group, $territory['state_code'], $licenseNumber);
         $seat = Seat::query()->firstOrCreate(['group_id' => $group->id, 'territory_type' => $territory['territory_type'], 'territory_id' => $territory['territory_id']], $territory);

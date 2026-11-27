@@ -89,6 +89,7 @@ const messages: Record<string, string> = {
     'agreement-signed': 'Signed. When both sides have signed, the signed PDF will be on the referral.',
     'client-asked': 'We’ve texted your client to confirm. You’ll be told when they do.',
     'wording-saved': 'Saved. Your network’s messages now use this wording.',
+    'group-cities-saved': 'Saved. Only teams in the cities you chose can apply now.',
     'wording-reset': 'Back to the industry’s wording.',
     'texting-approved': 'Texting clients is now on for this industry.',
     'texting-stopped': 'Texting clients is now off for this industry.',

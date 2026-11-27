@@ -24,12 +24,13 @@ type Props = {
         pricing: { seat_price: number; trial_months: number; value_guarantee: boolean };
     };
     city?: { id: number; name: string } | null;
+    openCities?: string | null;
     seo: Seo;
 };
 
 const unitWord: Record<string, string> = { city: 'city', county: 'county', metro: 'metro area', state: 'state' };
 
-export default function Apply({ group, city: claimed, seo }: Props) {
+export default function Apply({ group, city: claimed, openCities, seo }: Props) {
     const { auth } = usePage<SharedProps>().props;
     const [city, setCity] = useState<CityOption | null>(
         claimed ? { id: claimed.id, name: claimed.name, state: '', county: null, population: 0, label: claimed.name } : null,
@@ -42,6 +43,7 @@ export default function Apply({ group, city: claimed, seo }: Props) {
             <div className="grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
                 <Card className="space-y-5 p-6">
                     {group.visibility === 'invite_only' && <Alert tone="info">This group is invite only. Ask its owner for an invitation.</Alert>}
+                    {openCities && <Alert tone="info">{openCities}</Alert>}
                     <Field
                         label="Your city"
                         hint={

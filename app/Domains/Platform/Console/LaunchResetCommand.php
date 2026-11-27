@@ -29,7 +29,7 @@ final class LaunchResetCommand extends Command
         'migrations', 'settings', 'roles', 'permissions', 'role_has_permissions', 'menus', 'redirects', 'gone_urls',
         'states', 'counties', 'cities', 'city_aliases', 'metros', 'county_metro',
         'industries', 'industry_content', 'industry_licensing', 'industry_pairings', 'industry_templates', 'agreement_state_addenda',
-        'groups', 'group_message_wording', 'group_scheduled_changes', 'platform_fee_rules', 'coupons', 'training_modules',
+        'groups', 'group_cities', 'group_message_wording', 'group_scheduled_changes', 'platform_fee_rules', 'coupons', 'training_modules',
         'cms_pages', 'cms_page_versions', 'posts', 'blog_categories', 'help_articles', 'help_categories', 'support_macros',
         'notification_templates', 'campaigns', 'campaign_steps', 'ai_prompts', 'ally_evals', 'aeo_questions', 'partner_categories',
         'video_scripts', 'video_renders',

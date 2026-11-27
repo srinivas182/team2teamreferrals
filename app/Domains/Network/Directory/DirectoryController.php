@@ -79,7 +79,7 @@ final class DirectoryController
                     'training' => (bool) $group->rule('training_required') && app(Modules::class)->enabled('training'), 'fees' => IndustryContent::tierFact($industry)],
                 'pricing' => ['seat_price' => (int) ($group->pricing['seat_price'] ?? 10), 'trial_months' => (int) ($group->pricing['trial_months'] ?? 3)],
                 'hub' => IndustryContent::record($industry)?->status === 'published' ? '/industries/'.$industry->slug : null],
-            'answer' => $answer, 'seats' => $seats, 'open' => Directory::openPlaces($group), 'map' => NetworkMap::forGroup($group),
+            'answer' => $answer, 'openCities' => \App\Domains\Network\Groups\GroupCities::summary($group), 'seats' => $seats, 'open' => Directory::openPlaces($group), 'map' => NetworkMap::forGroup($group),
             'disclosure' => ($d = IndustryContent::disclosure($industry)) !== null ? \App\Domains\Content\Tokens::fill($d) : null,
             'viewer' => $request->user() instanceof User ? 'member' : 'guest',
             // Indexed once someone public holds a seat; until then the page is mostly empty.

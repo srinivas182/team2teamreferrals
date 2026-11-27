@@ -423,7 +423,13 @@ export default function GroupShow({
                 <Card className="overflow-x-auto">
                     <div className="flex items-center gap-3 border-b border-line p-4 text-sm">
                         <span className="text-muted">{seats.length} seats with a holder, backup or waitlist</span>
-                        <Link href={`/admin/groups/${g.slug}/seat-map`} className="ml-auto font-medium text-primary">
+                        <Link href={`/admin/groups/${g.slug}/cities`} className="ml-auto font-medium text-primary">
+                            Cities that can join
+                        </Link>
+                        <Link href={`/admin/groups/${g.slug}/referrals`} className="font-medium text-primary">
+                            Referrals and export
+                        </Link>
+                        <Link href={`/admin/groups/${g.slug}/seat-map`} className="font-medium text-primary">
                             Seat map and invitations
                         </Link>
                         <Link href={`/admin/groups/${g.slug}/applications`} className="font-medium text-primary">
