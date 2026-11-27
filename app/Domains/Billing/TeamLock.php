@@ -20,8 +20,9 @@ final class TeamLock
     /** Whether the person's team is locked, in one query (this runs on every portal page). */
     public static function lockedFor(\App\Domains\Identity\Models\User $user): bool
     {
-        $team = DB::table('team_members')->where('user_id', $user->id)->orderByRaw("case role when 'leader' then 0 else 1 end")->limit(1)->select('team_id');
-        $s = DB::table('seats')->whereIn('primary_team_id', $team)->selectRaw("count(*) as n, sum(case when status = 'inactive' then 1 else 0 end) as off")->first();
+        // A scalar subquery (= …, not IN …): MySQL doesn't allow LIMIT inside IN.
+        $s = DB::table('seats')->whereRaw("primary_team_id = (select team_id from team_members where user_id = ? order by case role when 'leader' then 0 else 1 end limit 1)", [$user->id])
+            ->selectRaw("count(*) as n, sum(case when status = 'inactive' then 1 else 0 end) as off")->first();
 
         if ($s === null) {
             return false;
