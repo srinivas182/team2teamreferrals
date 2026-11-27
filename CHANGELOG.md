@@ -9,6 +9,7 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 2. **A group's Referrals page** (Admin → a group → Seats → "Referrals and export", and for group owners on their group page): the same list, totals and export for that group. The groups list has a Referrals count per group.
 3. **Groups list tabs**: Live and active (opens first), Draft, Closed, All.
 4. **Cities that can join** (a group's Seats tab, and owners' group page): all cities by default, or only the cities chosen state by state (tick several, search, select all, remove). Teams elsewhere can't apply; the group's public page and the apply page say which cities are open. Teams already holding seats elsewhere keep them (a note says how many).
+
 ### How teams share referrals, and personal emails
 1. **Team → How new referrals are shared** (the leader picks one; the others see it):
    - **Open to everyone (first to accept)**, the default: everyone is told, the first to accept gets it.
