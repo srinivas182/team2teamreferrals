@@ -30,7 +30,7 @@ final class GroupSettings
         ], ['founding_price.lte' => 'The founding price can’t be higher than the seat price.'])->validate();
 
         if ($v['value_guarantee'] && ! $group->industry->tier->allowsValueGuarantee()) {
-            throw ValidationException::withMessages(['value_guarantee' => 'This industry’s tier needs fees that are the same for everyone and don’t depend on referrals, so the value guarantee must stay off.']);
+            throw ValidationException::withMessages(['value_guarantee' => 'This industry’s tier needs fees that are the same for everyone and don’t depend on referrals, so the free extension must stay off.']);
         }
         if (! ($v['discounts'][2] <= $v['discounts'][5] && $v['discounts'][5] <= $v['discounts'][20])) {
             throw ValidationException::withMessages(['discounts' => 'Larger seat counts should get the same or a bigger discount.']);

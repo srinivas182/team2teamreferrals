@@ -136,6 +136,11 @@ final class Referrals
 
             return $ref;
         });
+        // A seat that's inactive (unpaid) sent this to its backup: the holder sees it as missed on their Renew page.
+        \App\Domains\Billing\TeamLock::recordMissed($route['seat'], $ref, $clientName);
+        if ($clientCity !== null && $clientCity->id !== $city->id) {
+            \App\Domains\Billing\TeamLock::recordMissed($this->route($group, $clientCity)['seat'], $ref, $clientName);
+        }
         $this->tellReceiver($ref);
         if ($textClient) {
             $this->requestClientConsent($ref);
@@ -165,6 +170,7 @@ final class Referrals
 
             return $ref;
         });
+        \App\Domains\Billing\TeamLock::recordMissed($seat, $ref, (string) $req->name);
         $this->tellReceiver($ref);
 
         return $ref;

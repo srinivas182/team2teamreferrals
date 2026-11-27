@@ -299,7 +299,7 @@ export default function GroupShow({
                                 onChange={(e) => setP('value_guarantee', e.target.checked)}
                             />
                             <span>
-                                <strong>Value guarantee:</strong> any month with no referral offered to a seat is free.
+                                <strong>Free extension:</strong> any month with no referral offered to a seat is free (off by default).
                                 {!g.industry.guaranteeAllowed && (
                                     <span className="block text-muted">
                                         Locked off for Tier C: fees must be the same for everyone and not depend on referrals.
@@ -335,7 +335,7 @@ export default function GroupShow({
                                         `First ${p.trial_months} months free`,
                                         p.value_guarantee && g.industry.guaranteeAllowed
                                             ? 'Free for any month without a referral'
-                                            : 'Flat monthly listing fee',
+                                            : 'Billed monthly after the trial',
                                         `Founding members: ${money(p.founding_price)}, locked`,
                                         `Annual billing: ${p.annual_months_free} months free`,
                                     ].map((t) => (

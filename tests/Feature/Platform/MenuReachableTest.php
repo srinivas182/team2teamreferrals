@@ -42,7 +42,7 @@ it('opens every menu link for a seat-holding owner', function () {
 
 it('has every portal page in the menu or the command palette', function () {
     // Pages reached from inside another page by design (a record, a step of a flow, a filtered list).
-    $byDesign = ['app/referrals/inbox', 'app/notifications/settings', 'app/team/preview', 'app/share', 'app/profile-leads', 'app/groups', 'app/settings/notifications', 'app/settings/security', 'app/settings/profile', 'app/billing', 'app/nurture', 'app/earnings', 'app/credits', 'app/invites', 'app/badges', 'app/leaderboards', 'app/directory', 'app/onboarding', 'app/sent', 'app/send', 'app/introduce'];
+    $byDesign = ['app/referrals/inbox', 'app/notifications/settings', 'app/team/preview', 'app/share', 'app/profile-leads', 'app/groups', 'app/settings/notifications', 'app/settings/security', 'app/settings/profile', 'app/billing', 'app/renew', 'app/nurture', 'app/earnings', 'app/credits', 'app/invites', 'app/badges', 'app/leaderboards', 'app/directory', 'app/onboarding', 'app/sent', 'app/send', 'app/introduce'];
     $missing = [];
     foreach (Route::getRoutes() as $r) {
         $uri = $r->uri();
