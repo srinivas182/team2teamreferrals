@@ -55,7 +55,7 @@ export default function Renew({ locked, team, canPay, leader, seats, missed, inv
                                     {locked ? 'Your team’s seats are inactive until you renew' : 'Some of your seats are inactive'}
                                 </h2>
                                 <p className="mt-1 text-sm text-muted">
-                                    We couldn’t take payment. New referrals for these {seats.length === 1 ? 'seat go' : 'seats go'} to the backup
+                                    We couldn’t take payment. New referrals for {seats.length === 1 ? 'this seat go' : 'these seats go'} to the backup
                                     team, and other teams can’t send to you. {locked && 'You can still work the clients you’d already accepted.'}{' '}
                                     Paying brings {seats.length === 1 ? 'it' : 'them'} back at once.
                                 </p>
