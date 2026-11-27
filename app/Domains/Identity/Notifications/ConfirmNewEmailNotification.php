@@ -22,7 +22,7 @@ final class ConfirmNewEmailNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Confirm your new email for Team to Team Referrals')
-            ->greeting('Hi '.$this->firstName.',')
+            ->greeting('Hello '.$this->firstName.',')
             ->line('You asked to use this address to sign in to Team to Team Referrals. Confirm it and it becomes your sign-in email.')
             ->action('Confirm this email', $this->link)
             ->line('The link works for 24 hours. If you didn’t ask for this, ignore this email: nothing changes.');

@@ -9,6 +9,14 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 2. **A group's Referrals page** (Admin → a group → Seats → "Referrals and export", and for group owners on their group page): the same list, totals and export for that group. The groups list has a Referrals count per group.
 3. **Groups list tabs**: Live and active (opens first), Draft, Closed, All.
 4. **Cities that can join** (a group's Seats tab, and owners' group page): all cities by default, or only the cities chosen state by state (tick several, search, select all, remove). Teams elsewhere can't apply; the group's public page and the apply page say which cities are open. Teams already holding seats elsewhere keep them (a note says how many).
+### How teams share referrals, and personal emails
+1. **Team → How new referrals are shared** (the leader picks one; the others see it):
+   - **Open to everyone (first to accept)**, the default: everyone is told, the first to accept gets it.
+   - **Take turns (round robin)**: one person at a time, in order; each new referral starts with the next person. When a turn runs out it moves on; after everyone has had a turn it is open to the whole team and the leader is told.
+   - **Leader assigns**: only the leader and assistants are told; members see a referral only once it's given to them.
+2. **Time members have to accept**: set by the leader (15 minutes to 12 hours), by default a quarter of the network's response time (6 hours when it's 24). Open to everyone: the leader is told when it runs out with nobody accepting (it was halfway before). Take turns: it is the length of each turn.
+3. A member on their turn sees "It's your turn on this client until 3:30 pm".
+4. **Emails open with a plain "Hello Priya Shah,"** instead of a bold "Hello!".
 
 ### Prospect feedback, part 2: teams share referrals
 1. **Everyone in the team hears about a new referral** (email, text, in-app and push, by each person's settings). Each person's one-tap Accept link is their own, so whoever taps first gets the client.

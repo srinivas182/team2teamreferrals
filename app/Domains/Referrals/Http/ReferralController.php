@@ -203,6 +203,12 @@ final class ReferralController
             // Sent to this team from a nearby city that has no team of its own.
             'outOfArea' => $referral->client_city_id !== null ? ['city' => City::label((int) $referral->client_city_id), 'miles' => $referral->distance_miles] : null,
             'canDecline' => $isReceiver && $team !== null && Visibility::seesAll($team, $user),
+            // For a member looking at a waiting referral: how the team shares it.
+            'acceptNote' => $isReceiver && $referral->status === 'sent' && $team !== null && ! Visibility::seesAll($team, $user)
+                ? (\App\Domains\Referrals\LeadSharing::mode($team) === 'turns' && $referral->offered_user_id === $user->id && $referral->offered_until !== null
+                    ? 'It’s your turn on this '.$referral->group->industry->terms()['client'].' until '.$referral->offered_until->timezone($user->timezone)->format('g:i a').'. After that it goes to the next person.'
+                    : 'The first person in your team to accept gets this '.$referral->group->industry->terms()['client'].'.')
+                : null,
             // Leaders and assistants can give a waiting referral to a teammate.
             'assignTo' => $isReceiver && $referral->status === 'sent' && $team !== null && Visibility::seesAll($team, $user)
                 ? $team->members()->orderBy('first_name')->get()->map(fn (User $m) => ['id' => $m->ulid, 'name' => $m->name])->values() : [],

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $name
  * @property list<string>|null $widget_domains
  * @property int $leader_id
+ * @property ?int $turn_last_user_id
  * @property ?int $company_id
  * @property ?int $sandbox_of_team_id
  * @property ?\Illuminate\Support\Carbon $api_plan_since

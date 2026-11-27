@@ -15,6 +15,8 @@ final class MessagingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(PushSender::class, WebPushSender::class);
+        // Every notification email opens with "Hello <full name>,".
+        $this->app->bind(\Illuminate\Notifications\Channels\MailChannel::class, Mail\PersonalMailChannel::class);
     }
 
     public function boot(): void

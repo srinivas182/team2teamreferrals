@@ -22,7 +22,7 @@ final class EmailChangedNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Your Team to Team sign-in email was changed')
-            ->greeting('Hi '.$this->firstName.',')
+            ->greeting('Hello '.$this->firstName.',')
             ->line('Your account now signs in with '.$this->newEmail.'. This address won’t get account emails any more.')
             ->line('If you didn’t make this change, reply to this email or contact support straight away so we can secure your account.');
     }

@@ -173,9 +173,12 @@ final class Referrals
     public function accept(Referral $ref, User $user): void
     {
         $this->mustReceive($ref, $user);
+        $mine = Team::of($user);
+        abort_unless($mine !== null && LeadSharing::mayAccept($ref, $mine, $user), 403, LeadSharing::mode($mine ?? new Team) === 'leader'
+            ? 'Your team leader gives out new referrals.' : 'It’s a teammate’s turn on this referral right now.');
         // Conditional update: if two teammates tap Accept at the same moment, only one of them gets the referral.
         $won = Referral::query()->whereKey($ref->id)->where(['status' => 'sent', 'receiver_team_id' => $ref->receiver_team_id])
-            ->update(['status' => 'accepted', 'accepted_at' => now(), 'receiver_user_id' => $user->id, 'updated_at' => now()]);
+            ->update(['status' => 'accepted', 'accepted_at' => now(), 'receiver_user_id' => $user->id, 'offered_user_id' => null, 'offered_until' => null, 'updated_at' => now()]);
         abort_unless($won === 1, 422, 'This referral is no longer waiting for a decision. A teammate may have accepted it.');
         $ref->refresh();
         app(Pipeline::class)->start($ref);
@@ -356,12 +359,39 @@ final class Referrals
         if ($ref->receiver === null) {
             return;
         }
-        // Everyone in the team hears about it; the first to accept gets it. Each person's one-tap link is their own.
-        $data = ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours')];
-        $people = $ref->receiver->members()->get()->push($ref->receiver->leader)->unique('id');
-        foreach ($people as $person) {
-            $this->notifier->send($person, 'referral.waiting', $data, self::quickLink($ref, $person->id === $ref->receiver->leader_id ? null : $person), $ref->group->industry, $ref->group_id);
+        // Who hears depends on how the team shares referrals (LeadSharing). Each person's one-tap link is their own.
+        $team = $ref->receiver;
+        $ref->forceFill(['offered_user_id' => null, 'offered_until' => null])->save();
+        $people = match (LeadSharing::mode($team)) {
+            'leader' => LeadSharing::leadersAndAssistants($team),
+            'turns' => collect([LeadSharing::next($team, $team->turn_last_user_id)])->filter(),
+            default => $team->members()->get()->push($team->leader)->unique('id'),
+        };
+        if (LeadSharing::mode($team) === 'turns' && ($first = $people->first()) !== null) {
+            $this->offerTurn($ref, $team, $first);
+
+            return;
         }
+        foreach ($people as $person) {
+            $this->tellPerson($ref, $person);
+        }
+    }
+
+    /** Take turns: offer the referral to one person for the members' time, and remember whose turn it was. */
+    public function offerTurn(Referral $ref, Team $team, User $person): void
+    {
+        $until = now()->addMinutes(LeadSharing::memberMinutes($team, $ref->group));
+        $ref->forceFill(['offered_user_id' => $person->id, 'offered_until' => $until->lt($ref->respond_by) ? $until : $ref->respond_by])->save();
+        DB::table('teams')->where('id', $team->id)->update(['turn_last_user_id' => $person->id]);
+        DB::table('referral_reminders')->insertOrIgnore(['referral_id' => $ref->id, 'kind' => 'turn', 'cycle' => $team->id.':'.$person->id, 'sent_at' => now()]);
+        $this->event($ref, 'offered', $team, null, ['to' => $person->name]);
+        $this->tellPerson($ref, $person);
+    }
+
+    private function tellPerson(Referral $ref, User $person): void
+    {
+        $data = ['client' => $ref->shortClientName(), 'city' => $ref->seat->territory_name, 'team' => $ref->sender->name, 'hours' => (int) $ref->group->rule('accept_hours')];
+        $this->notifier->send($person, 'referral.waiting', $data, self::quickLink($ref, $person->id === $ref->receiver?->leader_id ? null : $person), $ref->group->industry, $ref->group_id);
     }
 
     private function mustReceive(Referral $ref, User $user): void
