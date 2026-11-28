@@ -9,7 +9,7 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Item = { label: string; done: boolean; href: string | null };
-type Sharing = { group: string; sent: number; nextFree: boolean; thisFree: boolean; paused: boolean };
+type Sharing = { group: string; sent: number; nextFree: boolean; thisFree: boolean; paused: boolean; pausedUntil: string | null; notReal: number };
 type Strength = { score: number; items: { label: string; points: number; done: boolean }[] };
 
 export default function Home({ checklist, strength, sharing = [], seo }: { checklist: Item[]; strength: Strength; sharing?: Sharing[]; seo: Seo }) {
@@ -61,7 +61,7 @@ export default function Home({ checklist, strength, sharing = [], seo }: { check
                                     <li key={s.group}>
                                         <span className="font-medium">{s.group}: </span>
                                         {s.paused
-                                            ? 'Paused: 3 of your referrals in the last 90 days were marked not a real client.'
+                                            ? `Paused until ${s.pausedUntil ?? 'later'}: 3 referrals you sent in the last 90 days were marked not a real client. Your seat isn’t affected.`
                                             : s.nextFree
                                               ? `Next month is free ✓ (${s.sent} good referral${s.sent === 1 ? '' : 's'} sent this month)`
                                               : 'Send 1 good referral this month to make next month free.'}

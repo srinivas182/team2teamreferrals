@@ -36,8 +36,9 @@ type Props = {
     trust?: {
         score: number | null;
         status: string;
-        parts: Record<string, { label: string; tip: string; points: number | null; items: number }>;
+        parts: Record<string, { label: string; tip: string; points: number | null; items: number; good?: number }>;
     } | null;
+    sharing?: { group: string; notReal: number; paused: boolean; pausedUntil: string | null }[];
     challenges: Ch[];
     isLeader: boolean;
     score: Score;
@@ -54,6 +55,7 @@ type Props = {
 /** The service score, fully explained: every part, the numbers behind it, and what would help most. */
 export default function Performance({
     trust = null,
+    sharing = [],
     challenges = [],
     isLeader = false,
     score,
@@ -83,10 +85,33 @@ export default function Performance({
                             <li key={k}>
                                 <span className="font-medium">{p.label}: </span>
                                 {p.points === null ? <span className="text-muted">not enough yet ({p.items} of 3)</span> : `${p.points}`}
+                                {p.points !== null && p.good !== undefined && (
+                                    <span className="text-muted">
+                                        {' '}
+                                        · {p.good} of {p.items}
+                                    </span>
+                                )}
                                 {p.points !== null && p.points < 80 && <span className="block text-xs text-muted">{p.tip}</span>}
                             </li>
                         ))}
                     </ul>
+                    {sharing.length > 0 && (
+                        <ul className="mt-4 space-y-1 border-t border-line pt-3 text-sm" data-testid="not-real-counts">
+                            {sharing.map((g) => (
+                                <li key={g.group}>
+                                    <span className="font-medium">{g.group}: </span>
+                                    {g.paused
+                                        ? `sharing reward paused until ${g.pausedUntil ?? 'later'} (${g.notReal} referrals marked not a real client in 90 days)`
+                                        : `${g.notReal} of 3 referrals marked not a real client in the last 90 days`}
+                                    {!g.paused && g.notReal > 0 && (
+                                        <span className="block text-xs text-muted">
+                                            At 3, free months from sending pause in this group for a while.
+                                        </span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
             <SeoHead seo={seo} />

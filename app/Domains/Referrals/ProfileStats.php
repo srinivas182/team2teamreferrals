@@ -29,7 +29,9 @@ final class ProfileStats
             // From the badge engine (re-checked monthly).
             'badges' => \App\Domains\Community\Badges\Badges::of($team),
             // The trust score (nightly): a number, or "New".
-            'trust' => ($t = Trust\TrustScore::stored($team->id)) !== null ? ['score' => $t['score'], 'status' => $t['status']] : null,
+            // The parts shown as tiles carry their counts, so a profile can say "9 of 10".
+            'trust' => ($t = Trust\TrustScore::stored($team->id)) !== null ? ['score' => $t['score'], 'status' => $t['status'],
+                'parts' => collect(['response', 'conversion', 'quality'])->mapWithKeys(fn ($k) => [$k => ['items' => (int) data_get($t, "parts.{$k}.items", 0), 'good' => (int) data_get($t, "parts.{$k}.good", 0)]])->all()] : null,
             'topGiverIn' => array_values(array_map(fn ($b) => (string) $b['group'], array_filter(\App\Domains\Community\Badges\Badges::of($team), fn ($b) => $b['key'] === 'top_giver'))),
             'builder' => collect(\App\Domains\Community\Badges\Badges::of($team))->contains('key', 'network_builder'),
             'thanks' => Referral::query()->with('receiver:id,name')->where(['sender_team_id' => $team->id, 'thanks_public' => true])->whereNotNull('thanks_note')->latest('thanks_at')->limit(6)->get()

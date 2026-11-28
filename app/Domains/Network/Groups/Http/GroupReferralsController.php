@@ -38,6 +38,8 @@ final class GroupReferralsController
             'rows' => ReferralLedger::rows($q, $page, self::PER_PAGE, ReferralLedger::fullNames($user), $totals['count']),
             // "Not a real client" calls the sender asked the owner to review.
             'notRealReviews' => \App\Domains\Referrals\NotRealClients::pending($group),
+            // Teams whose sharing reward is paused here, to lift, keep or remove.
+            'pausedTeams' => \App\Domains\Referrals\SharingReward::pausedIn($group),
             'seo' => SeoData::private('Referrals · '.$group->name)->toArray(),
         ]);
     }
@@ -62,6 +64,26 @@ final class GroupReferralsController
         $notReal->decide($ref, $group, $user, $request->validate(['decision' => ['required', 'in:reinstate,uphold']])['decision'] === 'reinstate');
 
         return back()->with('status', 'not-real-decided');
+    }
+
+    /** Lift, keep or remove for a team whose sharing reward is paused in this group. */
+    public function sharingPause(Request $request, Group $group, int $team, \App\Domains\Referrals\NotRealClients $notReal): \Illuminate\Http\RedirectResponse
+    {
+        $user = $this->authorize($request, $group);
+        $t = \App\Domains\Network\Seats\Models\Team::query()->findOrFail($team);
+        $d = $request->validate(['action' => ['required', 'in:lift,keep,remove'], 'reason' => ['required_if:action,lift,remove', 'nullable', 'string', 'min:5', 'max:500']],
+            ['reason.required_if' => 'Add a short reason (it’s kept in the activity log).']);
+        $action = (string) $d['action'];
+        $reason = (string) ($d['reason'] ?? '');
+        if ($action === 'lift') {
+            $notReal->lift($group, $t, $user, $reason);
+        } elseif ($action === 'keep') {
+            $notReal->keep($group, $t, $user);
+        } else {
+            abort_if($notReal->remove($group, $t, $user, $reason) === 0, 422, 'This team holds no seat in this group.');
+        }
+
+        return back()->with('status', "sharing-pause-{$action}");
     }
 
     /** @return array<string, string> */

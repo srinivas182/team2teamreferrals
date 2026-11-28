@@ -146,7 +146,7 @@ it('lets admins preview weights without saving, then save with an audit; members
     Artisan::call('t2t:trust');
     $admin = User::factory()->create(['two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now()]);
     $admin->assignRole('super_admin');
-    $w = ['response' => 80, 'updates' => 5, 'conversion' => 5, 'fees' => 5, 'accuracy' => 5];
+    $w = ['response' => 80, 'updates' => 5, 'conversion' => 5, 'fees' => 5, 'accuracy' => 5, 'quality' => 0];
     $this->actingAs($this->b->leader)->post('/admin/trust', ['weights' => $w])->assertForbidden();
     $this->actingAs($admin)->post('/admin/trust/preview', ['weights' => $w])->assertSessionHas('trust_preview', fn ($p) => $p['result']['teams'] >= 1 && $p['result']['down'] >= 1);
     expect(TrustScore::weights()['response'])->toBe(25); // nothing saved

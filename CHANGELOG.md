@@ -4,6 +4,23 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Referral quality: fair pauses and a public track record
+1. **Pauses count per group.** Three "not a real client" marks in 90 days pause the sharing reward only in the group where they happened. The team's seat and the referrals it receives are not affected.
+2. **Polite messages.**
+   - After the 2nd mark, the sender gets a friendly heads-up to check client details first.
+   - After the 3rd, the reward pauses. The message gives the date it ends and says the seat isn't affected.
+   - Owners get a neutral note: "No action is needed". The old "keeps sending clients who aren't real" wording is gone.
+3. **Owner and super admin actions.** The group's Referrals page has a new "Sharing reward paused" list with three actions:
+   - **Lift pause:** needs a reason, can be used any number of times, and restarts the count.
+   - **Keep paused:** the pause ends on its own date.
+   - **Remove team:** needs a reason; the team's seats are released and offered to the next teams.
+
+   Every action is recorded in the activity log.
+4. **Repeat pauses.** A second pause within 12 months asks the owners to review the team. A third pause also alerts the super admins.
+5. **Referral quality in the trust score.** It's a new 6th part (weight 10, adjustable on the Trust page): referrals the team sent that were real clients, out of those accepted. A referral waiting on the owner's review counts as real until decided.
+6. **Track record panel on team profiles.** A new panel shows six tiles: Trust score, Closing rate, Responds on time, Referral quality, Rating and Referrals closed. There is no "Verified" tile, because every team is verified before it joins. Each tile has its "x of y" counts and a line on what it means. Rates show after 3 referrals and say "New" before that.
+7. **Performance page.** Each trust part now shows "x of y". Each group shows how many referrals were marked not a real client in the last 90 days, out of 3.
+
 ### Sharing reward (replaces the free extension)
 1. **Sharing reward.** The old "free extension" switch is renamed and changed. A team that sends at least one good referral in a month gets its seat in that group free the next month. It's one free month at most each month, however many referrals the team sends. A good referral is one the other team accepts and contacts, and that nobody marked "not a real client". Annual plans get the month as a credit (1/12). The old "a month with no referrals is free" rule is gone.
 2. **Defaults.** Seats are $25 a month (seat and founding price) in every group. The sharing reward is on in every Tier A group, and Tier B and C groups can't turn it on. A migration applies this to every existing group.

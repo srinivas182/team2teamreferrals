@@ -20,11 +20,25 @@ type Props = {
     stages: string[];
     rows: LedgerRow[];
     notRealReviews: { id: string; date: string; sender: string; receiver: string; reason: string; note: string }[];
+    pausedTeams: PausedTeam[];
     seo: Seo;
 };
 
 /** A group's referrals (owners and staff): how many, the list with the money, and a CSV for any date range. */
-export default function GroupReferrals({ group, basePath, admin, filters, totals, page, pages, stages, rows, notRealReviews, seo }: Props) {
+export default function GroupReferrals({
+    group,
+    basePath,
+    admin,
+    filters,
+    totals,
+    page,
+    pages,
+    stages,
+    rows,
+    notRealReviews,
+    pausedTeams,
+    seo,
+}: Props) {
     const [f, setF] = useState<Record<string, string>>(filters);
     const apply = (extra: Record<string, string | number> = {}) =>
         router.get(`${basePath}/referrals`, { ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)), ...extra }, { preserveState: true });
@@ -84,6 +98,20 @@ export default function GroupReferrals({ group, basePath, admin, filters, totals
                         <Download className="size-4" aria-hidden /> Export {filters.from || filters.to ? 'these dates' : 'all'} (CSV)
                     </a>
                 </Card>
+                {pausedTeams.length > 0 && (
+                    <Card className="space-y-3 p-4 text-sm">
+                        <h2 className="font-semibold">Sharing reward paused ({pausedTeams.length})</h2>
+                        <p className="text-muted">
+                            These teams had 3 referrals marked “not a real client” in 90 days, so they earn no free months in this group until the
+                            date shown. Their seats and the referrals they receive are not affected.
+                        </p>
+                        <ul className="divide-y divide-line">
+                            {pausedTeams.map((t) => (
+                                <PausedTeamRow key={t.teamId} t={t} basePath={basePath} />
+                            ))}
+                        </ul>
+                    </Card>
+                )}
                 {notRealReviews.length > 0 && (
                     <Card className="space-y-3 border-warning/40 p-4 text-sm">
                         <h2 className="font-semibold">“Not a real client” calls to review ({notRealReviews.length})</h2>
@@ -142,5 +170,75 @@ export default function GroupReferrals({ group, basePath, admin, filters, totals
                 )}
             </div>
         </AdminLayout>
+    );
+}
+
+type PausedTeam = { team: string; teamId: number; count: number; until: string; pauses: number; kept: boolean };
+
+/** One paused team: lift (with a reason), keep, or remove from the group (two steps, with a reason). */
+function PausedTeamRow({ t, basePath }: { t: PausedTeam; basePath: string }) {
+    const [mode, setMode] = useState<'none' | 'lift' | 'remove'>('none');
+    const [reason, setReason] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const send = (action: 'lift' | 'keep' | 'remove') =>
+        router.post(
+            `${basePath}/sharing-pause/${t.teamId}`,
+            { action, reason },
+            { preserveScroll: true, onError: (e) => setError(e.reason ?? Object.values(e)[0] ?? null) },
+        );
+    return (
+        <li className="space-y-2 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <span>
+                    <span className="font-medium">{t.team}</span>
+                    <span className="block text-muted">
+                        {t.count} not-real in 90 days · paused until {t.until}
+                        {t.pauses > 1 && ` · pause ${t.pauses} in 12 months`}
+                        {t.kept && ' · you kept this pause'}
+                    </span>
+                </span>
+                {mode === 'none' && (
+                    <span className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => setMode('lift')}>
+                            Lift pause
+                        </Button>
+                        {!t.kept && (
+                            <Button size="sm" variant="ghost" onClick={() => send('keep')}>
+                                Keep paused
+                            </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="text-danger" onClick={() => setMode('remove')}>
+                            Remove team
+                        </Button>
+                    </span>
+                )}
+            </div>
+            {mode !== 'none' && (
+                <div className="flex flex-wrap items-end gap-2">
+                    <label className="min-w-64 flex-1">
+                        <span className="mb-1 block text-xs text-muted">
+                            {mode === 'lift'
+                                ? 'Why lift it? (kept in the activity log)'
+                                : 'Why remove them? Their seats are offered to the next teams.'}
+                        </span>
+                        <Input value={reason} onChange={(e) => setReason(e.target.value)} aria-invalid={error !== null} />
+                    </label>
+                    <Button size="sm" variant={mode === 'remove' ? 'danger' : 'primary'} onClick={() => send(mode)}>
+                        {mode === 'lift' ? 'Lift pause' : `Remove ${t.team}`}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                            setMode('none');
+                            setError(null);
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    {error && <p className="w-full text-xs text-danger">{error}</p>}
+                </div>
+            )}
+        </li>
     );
 }
