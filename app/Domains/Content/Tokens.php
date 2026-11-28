@@ -25,7 +25,7 @@ final class Tokens
             $prices = DB::table('groups')->whereNotNull('pricing')->pluck('pricing')->map(fn ($p) => (array) json_decode((string) $p, true));
             $seat = $prices->pluck('seat_price')->filter(fn ($v) => is_numeric($v))->min();
             $trial = $prices->pluck('trial_months')->filter(fn ($v) => is_numeric($v))->max();
-            $default = ['seat_price' => 10, 'trial_months' => 1, 'annual_months_free' => 2]; // as Group::defaultPricing
+            $default = ['seat_price' => 25, 'trial_months' => 1, 'annual_months_free' => 2]; // as Group::defaultPricing
 
             return [
                 'site_name' => (string) config('seo.site_name', 'Team to Team Referrals'),

@@ -203,6 +203,10 @@ final class ReferralController
             // Sent to this team from a nearby city that has no team of its own.
             'outOfArea' => $referral->client_city_id !== null ? ['city' => City::label((int) $referral->client_city_id), 'miles' => $referral->distance_miles] : null,
             'canDecline' => $isReceiver && $team !== null && Visibility::seesAll($team, $user),
+            'canMarkNotReal' => \App\Domains\Referrals\NotRealClients::canMark($referral, $user),
+            'notReal' => $referral->invalid_at !== null ? ['reason' => \App\Domains\Referrals\NotRealClients::REASONS[$referral->invalid_reason] ?? (string) $referral->invalid_reason,
+                'note' => (string) $referral->invalid_note, 'disputed' => $referral->invalid_disputed_at !== null] : null,
+            'notRealReasons' => \App\Domains\Referrals\NotRealClients::REASONS,
             // For a member looking at a waiting referral: how the team shares it.
             'acceptNote' => $isReceiver && $referral->status === 'sent' && $team !== null && ! Visibility::seesAll($team, $user)
                 ? (\App\Domains\Referrals\LeadSharing::mode($team) === 'turns' && $referral->offered_user_id === $user->id && $referral->offered_until !== null
@@ -629,6 +633,24 @@ final class ReferralController
         $this->referrals->accept($referral, $this->user($request));
 
         return back()->with('status', 'referral-accepted');
+    }
+
+    /** The receiver: this accepted client isn't real (with what they tried). */
+    public function notReal(Request $request, Referral $referral, \App\Domains\Referrals\NotRealClients $notReal): RedirectResponse
+    {
+        $d = $request->validate(['reason' => ['required', 'in:'.implode(',', array_keys(\App\Domains\Referrals\NotRealClients::REASONS))], 'note' => ['required', 'string', 'min:15', 'max:1000']],
+            ['note.min' => 'Say what you tried (calls, texts, emails) in a sentence or two.']);
+        $notReal->mark($referral, $this->user($request), $d['reason'], $d['note']);
+
+        return back()->with('status', 'not-real-marked');
+    }
+
+    /** The sender asks the group owner to review a "not a real client" call. */
+    public function disputeNotReal(Request $request, Referral $referral, \App\Domains\Referrals\NotRealClients $notReal): RedirectResponse
+    {
+        $notReal->dispute($referral, $this->user($request), (string) $request->validate(['why' => ['required', 'string', 'min:10', 'max:1000']])['why']);
+
+        return back()->with('status', 'not-real-disputed');
     }
 
     /** The leader gives a waiting referral to a teammate. */

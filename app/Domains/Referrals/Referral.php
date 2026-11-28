@@ -25,6 +25,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $offered_user_id
  * @property ?\Illuminate\Support\Carbon $offered_until
  * @property ?int $client_city_id
+ * @property ?\Illuminate\Support\Carbon $invalid_at
+ * @property ?string $invalid_reason
+ * @property ?string $invalid_note
+ * @property ?\Illuminate\Support\Carbon $invalid_disputed_at
  * @property ?int $distance_miles
  * @property string $routed_to
  * @property string $source
@@ -82,7 +86,7 @@ final class Referral extends Model
 
     protected function casts(): array
     {
-        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'offered_until' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean', 'fee_proposal' => 'array', 'client_emails_stopped_at' => 'datetime'];
+        return ['answers' => 'array', 'consent_at' => 'datetime', 'consent_requested_at' => 'datetime', 'client_confirmed_at' => 'datetime', 'respond_by' => 'datetime', 'offered_until' => 'datetime', 'invalid_at' => 'datetime', 'invalid_disputed_at' => 'datetime', 'accepted_at' => 'datetime', 'stage_changed_at' => 'datetime', 'first_contact_at' => 'datetime', 'last_update_at' => 'datetime', 'closing_date' => 'date', 'closed_at' => 'datetime', 'last_nudged_at' => 'datetime', 'close_confirmed_at' => 'datetime', 'thanks_at' => 'datetime', 'thanks_public' => 'boolean', 'fee_proposal' => 'array', 'client_emails_stopped_at' => 'datetime'];
     }
 
     /** @return list<string> */

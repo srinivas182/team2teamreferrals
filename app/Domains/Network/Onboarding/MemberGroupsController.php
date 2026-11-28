@@ -27,7 +27,7 @@ final class MemberGroupsController
         return Inertia::render('app/groups/Index', [
             'groups' => Group::query()->with('industry:id,name,family,territory_unit,tier')->where('is_private', false)->where('status', '!=', 'closed')->orderBy('name')->get()
                 ->map(fn (Group $g) => ['slug' => $g->slug, 'name' => $g->name, 'industry' => $g->industry->name, 'family' => Industry::FAMILIES[$g->industry->family] ?? $g->industry->family,
-                    'territory' => $g->industry->territory_unit, 'price' => (int) ($g->pricing['seat_price'] ?? 10), 'trial' => (int) ($g->pricing['trial_months'] ?? 3),
+                    'territory' => $g->industry->territory_unit, 'price' => (int) ($g->pricing['seat_price'] ?? 25), 'trial' => (int) ($g->pricing['trial_months'] ?? 1),
                     'inviteOnly' => $g->visibility === 'invite_only', 'live' => $g->status === 'live', 'mine' => $mine[$g->id] ?? null]),
             'seo' => SeoData::private('Join new groups')->toArray(),
         ]);

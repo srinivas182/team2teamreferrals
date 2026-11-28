@@ -43,7 +43,7 @@ it('takes a card when claiming a city, reuses it for the next one, and says when
     ($this->stripeOn)();
     $team = Team::forLeader(User::factory()->create());
     $this->actingAs($team->leader)->get('/app/groups/solar-installers-network/apply')->assertInertia(fn ($p) => $p->where('billing.stripeKey', 'pk_test_123')->where('billing.card', null)
-        ->where('billing.extension', false)->where('billing.firstCharge', now()->addMonths(1)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString()));
+        ->where('billing.reward', true)->where('billing.firstCharge', now()->addMonths(1)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString()));
     $this->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->cities[2]->id, 'license_number' => 'L'])->assertSessionHasErrors('card');
     ($this->card)($team);
     $this->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->cities[2]->id, 'license_number' => 'L'])->assertSessionHasNoErrors();
@@ -54,10 +54,14 @@ it('takes a card when claiming a city, reuses it for the next one, and says when
     $this->actingAs($other->leader)->post('/app/groups/solar-installers-network/apply', ['city_id' => $this->cities[3]->id, 'license_number' => 'L'])->assertSessionHasNoErrors();
 });
 
-it('starts new groups with the free extension off, and keeps the word out of the claim page when off', function () {
-    expect(Group::defaultPricing($this->g->industry)['value_guarantee'])->toBeFalse();
-    $this->g->update(['pricing' => [...$this->g->pricing, 'value_guarantee' => true]]);
-    $this->actingAs(User::factory()->create())->get('/app/groups/solar-installers-network/apply')->assertInertia(fn ($p) => $p->where('billing.extension', true));
+it('starts Tier A groups at $25 with the sharing reward on, and Tier B and C groups with it off', function () {
+    expect(Group::defaultPricing($this->g->industry))->toMatchArray(['seat_price' => 25, 'founding_price' => 25, 'trial_months' => 1, 'sharing_reward' => true]);
+    $mortgage = App\Domains\Network\Industries\Models\Industry::where('slug', 'mortgage')->firstOrFail();
+    $hospice = App\Domains\Network\Industries\Models\Industry::where('slug', 'hospice')->firstOrFail();
+    expect(Group::defaultPricing($mortgage)['sharing_reward'])->toBeFalse()->and(Group::defaultPricing($hospice)['sharing_reward'])->toBeFalse();
+    // The claim page shows the reward only while it's on.
+    $this->g->update(['pricing' => [...$this->g->pricing, 'sharing_reward' => false]]);
+    $this->actingAs(User::factory()->create())->get('/app/groups/solar-installers-network/apply')->assertInertia(fn ($p) => $p->where('billing.reward', false));
 });
 
 it('locks a team whose every seat is unpaid, except Renew, Billing and clients it already accepted, and lists what it missed', function () {

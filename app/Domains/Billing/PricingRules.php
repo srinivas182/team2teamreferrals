@@ -36,7 +36,7 @@ final class PricingRules
     /** Annual price for a seat: 12 months less the group's free months (default 2). */
     public static function annualCents(Seat $seat): int
     {
-        $monthly = (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 10);
+        $monthly = (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 25);
 
         return (int) round($monthly * 100 * (12 - (int) data_get($seat->group->pricing, 'annual_months_free', 2)));
     }

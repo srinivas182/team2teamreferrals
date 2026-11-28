@@ -22,26 +22,26 @@ beforeEach(function () {
 
 function pricingPayload(array $over = []): array
 {
-    return ['when' => 'now', 'values' => [...['seat_price' => 89, 'founding_price' => 59, 'trial_months' => 3, 'value_guarantee' => true, 'annual_months_free' => 2, 'discounts' => ['2' => 10, '5' => 15, '20' => 25]], ...$over]];
+    return ['when' => 'now', 'values' => [...['seat_price' => 89, 'founding_price' => 59, 'trial_months' => 3, 'sharing_reward' => true, 'annual_months_free' => 2, 'discounts' => ['2' => 10, '5' => 15, '20' => 25]], ...$over]];
 }
 
 it('shows a group with its pricing, rules, owners and health', function () {
     $this->actingAs($this->admin)->get('/admin/groups/solar-installers-network')->assertOk()
-        ->assertInertia(fn ($p) => $p->component('admin/groups/Show')->where('group.pricing.seat_price', 10)->where('group.industry.guaranteeAllowed', true)->where('health.owners', 0)->where('affected.seats', 0));
+        ->assertInertia(fn ($p) => $p->component('admin/groups/Show')->where('group.pricing.seat_price', 25)->where('group.industry.rewardAllowed', true)->where('health.owners', 0)->where('affected.seats', 0));
 });
 
 it('updates pricing now and audits before and after', function () {
     $this->actingAs($this->admin)->put('/admin/groups/solar-installers-network/pricing', pricingPayload())->assertSessionHas('status', 'group-saved');
     expect($this->solar->fresh()->pricing['seat_price'])->toBe(89);
     $a = Activity::where('event', 'group-pricing-changed')->firstOrFail();
-    expect($a->properties['old']['seat_price'])->toBe(10)->and($a->properties['attributes']['seat_price'])->toBe(89);
+    expect($a->properties['old']['seat_price'])->toBe(25)->and($a->properties['attributes']['seat_price'])->toBe(89);
 });
 
-it('rejects invalid pricing and keeps the value guarantee off in Tier C', function () {
+it('rejects invalid pricing and keeps the sharing reward off outside Tier A', function () {
     $this->actingAs($this->admin)->put('/admin/groups/solar-installers-network/pricing', pricingPayload(['founding_price' => 120]))->assertSessionHasErrors('founding_price');
     $this->put('/admin/groups/solar-installers-network/pricing', pricingPayload(['discounts' => ['2' => 30, '5' => 15, '20' => 25]]))->assertSessionHasErrors('discounts');
-    $this->put("/admin/groups/{$this->hospice->slug}/pricing", pricingPayload())->assertSessionHasErrors('value_guarantee');
-    $this->put("/admin/groups/{$this->hospice->slug}/pricing", pricingPayload(['value_guarantee' => false]))->assertSessionHas('status', 'group-saved');
+    $this->put("/admin/groups/{$this->hospice->slug}/pricing", pricingPayload())->assertSessionHasErrors('sharing_reward');
+    $this->put("/admin/groups/{$this->hospice->slug}/pricing", pricingPayload(['sharing_reward' => false]))->assertSessionHas('status', 'group-saved');
 });
 
 it('schedules a change, notifies owners 30 days ahead, applies it on the day, and can be cancelled', function () {
@@ -70,7 +70,7 @@ it('schedules a change, notifies owners 30 days ahead, applies it on the day, an
     $this->delete("/admin/groups/solar-installers-network/scheduled/{$id}")->assertSessionHas('status', 'group-change-cancelled');
     $this->travel(70)->days();
     Artisan::call('t2t:groups:scheduled');
-    expect($this->solar->fresh()->pricing['seat_price'])->toBe(10);
+    expect($this->solar->fresh()->pricing['seat_price'])->toBe(25);
 });
 
 it('refuses to schedule changes in the past', function () {

@@ -54,7 +54,7 @@ beforeEach(function () {
 
 it('shows each account the person pays for, with its seats', function () {
     $this->actingAs($this->team->leader)->get('/app/billing')->assertOk()->assertInertia(fn ($p) => $p->component('app/Billing')->where('stripeKey', 'pk_test_123')
-        ->where('accounts.0.type', 'team')->where('accounts.0.card', null)->where('accounts.0.seats.0.price', 10)->where('accounts.0.seats.0.trialEnds', $this->seat->trial_ends_at->toDateString()));
+        ->where('accounts.0.type', 'team')->where('accounts.0.card', null)->where('accounts.0.seats.0.price', 25)->where('accounts.0.seats.0.trialEnds', $this->seat->trial_ends_at->toDateString()));
     $co = Company::create(['name' => 'Sun Holdings', 'admin_id' => $this->team->leader_id]);
     $this->team->forceFill(['company_id' => $co->id])->save();
     $this->seat->update(['payer' => 'company']);

@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/field';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { tierInfo, tierTone } from '@/pages/admin/industries/Index';
 import { useUrlFilters } from '@/lib/filters';
 import { cn, money, months } from '@/lib/utils';
 import type { Seo } from '@/types/seo';
@@ -26,7 +27,7 @@ type Group = {
     private: boolean;
     region: string | null;
     industry: { slug: string | null; name: string | null; tier: string | null };
-    pricing: { seat_price: number; founding_price: number; trial_months: number; value_guarantee: boolean; annual_months_free: number };
+    pricing: { seat_price: number; founding_price: number; trial_months: number; sharing_reward: boolean; annual_months_free: number };
     rules: { accept_hours: number; company_cap_pct: number; challenge_days: number };
     pendingApplications: number;
     referrals: number;
@@ -58,7 +59,7 @@ export default function GroupsIndex({
             seat_price: 10,
             founding_price: 10,
             trial_months: 3,
-            value_guarantee: false,
+            sharing_reward: false,
             annual_months_free: 2,
             discounts: { '2': 0, '5': 0, '20': 0 },
         },
@@ -105,7 +106,7 @@ export default function GroupsIndex({
             <Dialog open={pricing} onOpenChange={setPricing}>
                 <DialogContent
                     title={`Set pricing for ${selected.length} groups`}
-                    description="Each group gets this pricing. Tier C groups always keep the free extension off."
+                    description="Each group gets this pricing. Only Tier A groups can have the sharing reward."
                 >
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
@@ -141,10 +142,10 @@ export default function GroupsIndex({
                         <label className="flex items-center gap-2 text-sm">
                             <input
                                 type="checkbox"
-                                checked={bulk.data.values.value_guarantee}
-                                onChange={(e) => bulk.setData('values', { ...bulk.data.values, value_guarantee: e.target.checked })}
+                                checked={bulk.data.values.sharing_reward}
+                                onChange={(e) => bulk.setData('values', { ...bulk.data.values, sharing_reward: e.target.checked })}
                             />{' '}
-                            Free extension (a month with no referral offered is free)
+                            Sharing reward (send a good referral in a month, next month free)
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             <Field label="When">
@@ -267,9 +268,9 @@ export default function GroupsIndex({
                 </Select>
                 <Select aria-label="Compliance tier" className="w-auto" value={f.values.tier} onChange={(e) => f.set('tier', e.target.value)}>
                     <option value="">All tiers</option>
-                    <option value="A">Tier A</option>
-                    <option value="B">Tier B</option>
-                    <option value="C">Tier C</option>
+                    <option value="A">Tier A · Open</option>
+                    <option value="B">Tier B · Restricted</option>
+                    <option value="C">Tier C · Directory only</option>
                 </Select>
                 <Select aria-label="Type" className="w-auto" value={f.values.type} onChange={(e) => f.set('type', e.target.value)}>
                     <option value="">All types</option>
@@ -313,7 +314,7 @@ export default function GroupsIndex({
                                     onChange={(e) => setSelected(e.target.checked ? shown.map((g) => g.slug) : [])}
                                 />
                             </th>
-                            {['Group', 'Industry', 'Referrals', 'Seat price', 'Trial', 'Free extension', 'Rules', 'Status'].map((h) => (
+                            {['Group', 'Industry', 'Tier', 'Referrals', 'Seat price', 'Trial', 'Sharing reward', 'Rules', 'Status'].map((h) => (
                                 <th key={h} scope="col" className="px-4 py-3 font-medium">
                                     {h}
                                 </th>
@@ -346,9 +347,11 @@ export default function GroupsIndex({
                                 <td className="px-4 py-3">
                                     <Link href={`/admin/industries/${g.industry.slug}`} className="hover:text-primary">
                                         {g.industry.name}
-                                    </Link>{' '}
-                                    <Badge tone={g.industry.tier === 'A' ? 'success' : g.industry.tier === 'B' ? 'warning' : 'neutral'}>
-                                        Tier {g.industry.tier}
+                                    </Link>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap" title={tierInfo[g.industry.tier ?? '']?.meaning}>
+                                    <Badge tone={tierTone[g.industry.tier ?? ''] ?? 'neutral'}>
+                                        Tier {g.industry.tier} · {tierInfo[g.industry.tier ?? '']?.label}
                                     </Badge>
                                 </td>
                                 <td className="px-4 py-3 tabular-nums">
@@ -360,7 +363,7 @@ export default function GroupsIndex({
                                     {money(g.pricing.seat_price)} <span className="text-muted">· founding {money(g.pricing.founding_price)}</span>
                                 </td>
                                 <td className="px-4 py-3">{months(g.pricing.trial_months)}</td>
-                                <td className="px-4 py-3">{g.pricing.value_guarantee ? <Badge tone="success">On</Badge> : <Badge>Off</Badge>}</td>
+                                <td className="px-4 py-3">{g.pricing.sharing_reward ? <Badge tone="success">On</Badge> : <Badge>Off</Badge>}</td>
                                 <td className="px-4 py-3 text-muted">
                                     Accept in {g.rules.accept_hours} h · cap {g.rules.company_cap_pct}% · challenge after {g.rules.challenge_days}{' '}
                                     days
@@ -378,7 +381,7 @@ export default function GroupsIndex({
                         ))}
                         {shown.length === 0 && (
                             <tr>
-                                <td colSpan={8} className="px-4 py-10 text-center text-muted">
+                                <td colSpan={10} className="px-4 py-10 text-center text-muted">
                                     {groups.length === 0 ? 'No groups yet.' : 'No group matches these filters.'}
                                 </td>
                             </tr>

@@ -88,7 +88,7 @@ final class AdminGroupsController
                 'slug' => $group->slug, 'name' => $group->name, 'description' => $group->description, 'status' => $group->status, 'visibility' => $group->visibility,
                 'photo' => $group->photo_path ? Storage::disk('public')->url($group->photo_path) : null, 'launch' => $group->is_launch, 'private' => $group->is_private, 'region' => $group->region,
                 'pricing' => $group->pricing, 'rules' => [...Group::defaultRules(), ...$group->rules],
-                'industry' => ['slug' => $group->industry->slug, 'name' => $group->industry->name, 'tier' => $group->industry->tier->value, 'guaranteeAllowed' => $group->industry->tier->allowsValueGuarantee(), 'terms' => $group->industry->terms()],
+                'industry' => ['slug' => $group->industry->slug, 'name' => $group->industry->name, 'tier' => $group->industry->tier->value, 'rewardAllowed' => $group->industry->tier->allowsSharingReward(), 'terms' => $group->industry->terms()],
             ],
             'owners' => $group->owners()->orderBy('first_name')->get()->map(fn (User $u) => ['id' => $u->ulid, 'name' => $u->name, 'email' => $u->email]),
             'scheduled' => DB::table('group_scheduled_changes')->where('group_id', $group->id)->whereNull('applied_at')->whereNull('cancelled_at')->orderBy('effective_on')->get()
@@ -158,7 +158,7 @@ final class AdminGroupsController
         return back()->with('status', 'group-saved');
     }
 
-    /** One pricing change applied to many groups (now or scheduled). Tier C groups always keep the value guarantee off. */
+    /** One pricing change applied to many groups (now or scheduled). Tier B and C groups always keep the sharing reward off. */
     public function bulkPricing(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -173,8 +173,8 @@ final class AdminGroupsController
         DB::transaction(function () use ($groups, $request, $data, &$applied, &$forcedOff) {
             foreach ($groups as $group) {
                 $input = (array) $request->input('values');
-                if (! $group->industry->tier->allowsValueGuarantee() && ! empty($input['value_guarantee'])) {
-                    $input['value_guarantee'] = false;
+                if (! $group->industry->tier->allowsSharingReward() && ! empty($input['sharing_reward'])) {
+                    $input['sharing_reward'] = false;
                     $forcedOff[] = $group->name;
                 }
                 $values = GroupSettings::pricing($group, $input);
@@ -188,7 +188,7 @@ final class AdminGroupsController
                 $applied++;
             }
         });
-        $note = $forcedOff === [] ? '' : ' The value guarantee stays off for '.count($forcedOff).' Tier C group(s).';
+        $note = $forcedOff === [] ? '' : ' The sharing reward stays off for '.count($forcedOff).' Tier B/C group(s).';
 
         return back()->with('status', 'bulk-pricing-'.($data['when'] === 'scheduled' ? 'scheduled' : 'applied'))->with('bulkNote', "{$applied} groups updated.{$note}");
     }

@@ -9,9 +9,10 @@ import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
 type Item = { label: string; done: boolean; href: string | null };
+type Sharing = { group: string; sent: number; nextFree: boolean; thisFree: boolean; paused: boolean };
 type Strength = { score: number; items: { label: string; points: number; done: boolean }[] };
 
-export default function Home({ checklist, strength, seo }: { checklist: Item[]; strength: Strength; seo: Seo }) {
+export default function Home({ checklist, strength, sharing = [], seo }: { checklist: Item[]; strength: Strength; sharing?: Sharing[]; seo: Seo }) {
     const next = checklist.find((i) => !i.done);
     const { auth } = usePage<SharedProps>().props;
     const done = checklist.filter((i) => i.done).length;
@@ -52,6 +53,27 @@ export default function Home({ checklist, strength, seo }: { checklist: Item[]; 
                             </p>
                         </div>
                     </Card>
+                    {sharing.length > 0 && (
+                        <Card className="space-y-2 p-6" data-testid="sharing-reward">
+                            <h2 className="font-semibold">Sharing reward</h2>
+                            <ul className="space-y-1 text-sm">
+                                {sharing.map((s) => (
+                                    <li key={s.group}>
+                                        <span className="font-medium">{s.group}: </span>
+                                        {s.paused
+                                            ? 'Paused: 3 of your referrals in the last 90 days were marked not a real client.'
+                                            : s.nextFree
+                                              ? `Next month is free ✓ (${s.sent} good referral${s.sent === 1 ? '' : 's'} sent this month)`
+                                              : 'Send 1 good referral this month to make next month free.'}
+                                        {s.thisFree && <span className="text-muted"> This month is free.</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="text-xs text-muted">
+                                A good referral is one the other team accepts and contacts. One free month at most each month.
+                            </p>
+                        </Card>
+                    )}
                     <Card>
                         <ul className="divide-y divide-line">
                             {checklist.map((i) => (

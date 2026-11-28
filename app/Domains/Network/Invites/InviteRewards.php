@@ -65,7 +65,7 @@ final class InviteRewards
         [$status, $cents] = match (true) {
             $restricted || $seat === null => ['badge', 0],
             $thisYear >= self::setting('cap') => ['capped', 0],
-            default => ['rewarded', (int) round(100 * self::setting('reward_months') * (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 10))],
+            default => ['rewarded', (int) round(100 * self::setting('reward_months') * (float) data_get($seat->group->pricing, $seat->founding ? 'founding_price' : 'seat_price', 25))],
         };
         DB::table('invite_signups')->where('id', $signup->id)->update(['status' => $status, 'reward_cents' => $cents, 'qualified_at' => now(), 'updated_at' => now()]);
         if ($status === 'rewarded' && $seat !== null && ($payer = BillingAccounts::payerFor($seat)) !== null) {
@@ -99,7 +99,7 @@ final class InviteRewards
                 $team = Team::forLeader($owner);
                 for ($n = 1; $n <= $earned; $n++) {
                     // Keyed on the milestone, so each one is credited once.
-                    PricingRules::addCredit('team', $team->id, (int) round(100 * (float) data_get($group->pricing, 'seat_price', 10)), "Free month: {$group->name} reached ".($n * $per).' new paid seats');
+                    PricingRules::addCredit('team', $team->id, (int) round(100 * (float) data_get($group->pricing, 'seat_price', 25)), "Free month: {$group->name} reached ".($n * $per).' new paid seats');
                 }
             }
         }

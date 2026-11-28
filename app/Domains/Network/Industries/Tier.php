@@ -41,10 +41,13 @@ enum Tier: string
         return $this !== self::Directory;
     }
 
-    /** Free month when no referral reached a seat. Off for Tier C: fees there must not depend on referrals. */
-    public function allowsValueGuarantee(): bool
+    /**
+     * The sharing reward (a free month for sending a good referral) is something of value given for a referral, so
+     * only Tier A allows it: Tier B forbids anything of value for referrals, Tier C needs fees that don't depend on them.
+     */
+    public function allowsSharingReward(): bool
     {
-        return $this !== self::Directory;
+        return $this === self::Open;
     }
 
     /** A per-referral platform fee can only ever exist for Tier A. */
@@ -65,7 +68,7 @@ enum Tier: string
             'memberReferralFees' => $this->allowsMemberReferralFees(),
             'referralRouting' => $this->allowsReferralRouting(),
             'consumerRequests' => $this->allowsConsumerRequests(),
-            'valueGuarantee' => $this->allowsValueGuarantee(),
+            'sharingReward' => $this->allowsSharingReward(),
             'platformFee' => $this->allowsPlatformFee(),
             'disclosure' => $this->requiresDisclosure(),
         ];

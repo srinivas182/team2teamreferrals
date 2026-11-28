@@ -13,7 +13,7 @@ final class GroupSettings
 {
     /**
      * @param  array<string, mixed>  $input
-     * @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>}
+     * @return array{seat_price: int, founding_price: int, trial_months: int, sharing_reward: bool, annual_months_free: int, discounts: array<int|string, int>}
      */
     public static function pricing(Group $group, array $input): array
     {
@@ -21,7 +21,7 @@ final class GroupSettings
             'seat_price' => ['required', 'integer', 'min:0', 'max:5000'],
             'founding_price' => ['required', 'integer', 'min:0', 'lte:seat_price'],
             'trial_months' => ['required', 'integer', 'min:0', 'max:12'],
-            'value_guarantee' => ['required', 'boolean'],
+            'sharing_reward' => ['required', 'boolean'],
             'annual_months_free' => ['required', 'integer', 'min:0', 'max:6'],
             'discounts' => ['required', 'array'],
             'discounts.2' => ['required', 'integer', 'min:0', 'max:50'],
@@ -29,8 +29,8 @@ final class GroupSettings
             'discounts.20' => ['required', 'integer', 'min:0', 'max:50'],
         ], ['founding_price.lte' => 'The founding price can’t be higher than the seat price.'])->validate();
 
-        if ($v['value_guarantee'] && ! $group->industry->tier->allowsValueGuarantee()) {
-            throw ValidationException::withMessages(['value_guarantee' => 'This industry’s tier needs fees that are the same for everyone and don’t depend on referrals, so the free extension must stay off.']);
+        if ($v['sharing_reward'] && ! $group->industry->tier->allowsSharingReward()) {
+            throw ValidationException::withMessages(['sharing_reward' => 'Only Tier A industries can have the sharing reward: Tier B rules forbid anything of value for referrals, and Tier C fees can’t depend on them.']);
         }
         if (! ($v['discounts'][2] <= $v['discounts'][5] && $v['discounts'][5] <= $v['discounts'][20])) {
             throw ValidationException::withMessages(['discounts' => 'Larger seat counts should get the same or a bigger discount.']);
@@ -38,7 +38,7 @@ final class GroupSettings
 
         return [
             'seat_price' => (int) $v['seat_price'], 'founding_price' => (int) $v['founding_price'], 'trial_months' => (int) $v['trial_months'],
-            'value_guarantee' => (bool) $v['value_guarantee'], 'annual_months_free' => (int) $v['annual_months_free'],
+            'sharing_reward' => (bool) $v['sharing_reward'], 'annual_months_free' => (int) $v['annual_months_free'],
             'discounts' => ['2' => (int) $v['discounts'][2], '5' => (int) $v['discounts'][5], '20' => (int) $v['discounts'][20]],
         ];
     }

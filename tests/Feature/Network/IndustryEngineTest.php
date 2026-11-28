@@ -37,9 +37,9 @@ function industryStaff(): User
 }
 
 it('decides every tier rule in one place', function () {
-    expect(Tier::Open->rules())->toBe(['memberReferralFees' => true, 'referralRouting' => true, 'consumerRequests' => true, 'valueGuarantee' => true, 'platformFee' => true, 'disclosure' => false])
-        ->and(Tier::Restricted->rules())->toBe(['memberReferralFees' => false, 'referralRouting' => true, 'consumerRequests' => true, 'valueGuarantee' => true, 'platformFee' => false, 'disclosure' => true])
-        ->and(Tier::Directory->rules())->toBe(['memberReferralFees' => false, 'referralRouting' => false, 'consumerRequests' => false, 'valueGuarantee' => false, 'platformFee' => false, 'disclosure' => true]);
+    expect(Tier::Open->rules())->toBe(['memberReferralFees' => true, 'referralRouting' => true, 'consumerRequests' => true, 'sharingReward' => true, 'platformFee' => true, 'disclosure' => false])
+        ->and(Tier::Restricted->rules())->toBe(['memberReferralFees' => false, 'referralRouting' => true, 'consumerRequests' => true, 'sharingReward' => false, 'platformFee' => false, 'disclosure' => true])
+        ->and(Tier::Directory->rules())->toBe(['memberReferralFees' => false, 'referralRouting' => false, 'consumerRequests' => false, 'sharingReward' => false, 'platformFee' => false, 'disclosure' => true]);
 });
 
 it('creates draft industries from the admin and shows the builder with a territory preview', function () {

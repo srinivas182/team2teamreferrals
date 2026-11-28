@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $region
  * @property ?int $parent_group_id
  * @property array{accept_hours: int, first_contact_hours: int, update_days: int, challenge_days: int, challenge_threshold: int, company_cap_pct: int, waitlist: string} $rules
- * @property array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} $pricing
+ * @property array{seat_price: int, founding_price: int, trial_months: int, sharing_reward: bool, annual_months_free: int, discounts: array<int|string, int>} $pricing
  */
 final class Group extends Model
 {
@@ -96,12 +96,12 @@ final class Group extends Model
         });
     }
 
-    /** @return array{seat_price: int, founding_price: int, trial_months: int, value_guarantee: bool, annual_months_free: int, discounts: array<int|string, int>} */
+    /** @return array{seat_price: int, founding_price: int, trial_months: int, sharing_reward: bool, annual_months_free: int, discounts: array<int|string, int>} */
     public static function defaultPricing(Industry $industry): array
     {
-        // $10 per city per group; founders pay the same $10, locked while they hold the seat. Multi-city discounts off by default.
-        // The free extension (a month with no referral offered is free; stored as value_guarantee) is off by default, and never
-        // allowed where fees must not depend on referrals (Tier C). Groups created before this keep their own setting.
-        return ['seat_price' => 10, 'founding_price' => 10, 'trial_months' => 1, 'value_guarantee' => false, 'annual_months_free' => 2, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]];
+        // Founders pay the same, locked while they hold the seat. Multi-city discounts off by default.
+        // $25 per city per group after a 1-month trial. The sharing reward (send a good referral in a month, next month free)
+        // is on wherever it's allowed (Tier A only).
+        return ['seat_price' => 25, 'founding_price' => 25, 'trial_months' => 1, 'sharing_reward' => $industry->tier->allowsSharingReward(), 'annual_months_free' => 2, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]];
     }
 }

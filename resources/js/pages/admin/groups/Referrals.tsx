@@ -19,11 +19,12 @@ type Props = {
     pages: number;
     stages: string[];
     rows: LedgerRow[];
+    notRealReviews: { id: string; date: string; sender: string; receiver: string; reason: string; note: string }[];
     seo: Seo;
 };
 
 /** A group's referrals (owners and staff): how many, the list with the money, and a CSV for any date range. */
-export default function GroupReferrals({ group, basePath, admin, filters, totals, page, pages, stages, rows, seo }: Props) {
+export default function GroupReferrals({ group, basePath, admin, filters, totals, page, pages, stages, rows, notRealReviews, seo }: Props) {
     const [f, setF] = useState<Record<string, string>>(filters);
     const apply = (extra: Record<string, string | number> = {}) =>
         router.get(`${basePath}/referrals`, { ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)), ...extra }, { preserveState: true });
@@ -83,6 +84,47 @@ export default function GroupReferrals({ group, basePath, admin, filters, totals
                         <Download className="size-4" aria-hidden /> Export {filters.from || filters.to ? 'these dates' : 'all'} (CSV)
                     </a>
                 </Card>
+                {notRealReviews.length > 0 && (
+                    <Card className="space-y-3 border-warning/40 p-4 text-sm">
+                        <h2 className="font-semibold">“Not a real client” calls to review ({notRealReviews.length})</h2>
+                        <p className="text-muted">
+                            The receiving team said the client wasn’t real; the sending team disagrees. Reinstate if the client was real (it then
+                            counts against the receiver), or uphold (it counts against the sender).
+                        </p>
+                        <ul className="divide-y divide-line">
+                            {notRealReviews.map((n) => (
+                                <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 py-2">
+                                    <span>
+                                        {n.date} · {n.sender} → {n.receiver}
+                                        <span className="block text-muted">
+                                            {n.reason}: {n.note}
+                                        </span>
+                                    </span>
+                                    <span className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="secondary"
+                                            onClick={() =>
+                                                router.post(`${basePath}/not-real/${n.id}`, { decision: 'reinstate' }, { preserveScroll: true })
+                                            }
+                                        >
+                                            Reinstate
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() =>
+                                                router.post(`${basePath}/not-real/${n.id}`, { decision: 'uphold' }, { preserveScroll: true })
+                                            }
+                                        >
+                                            Uphold
+                                        </Button>
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+                )}
                 <LedgerTotalsRow totals={totals} />
                 <LedgerTable rows={rows} showNetwork={false} />
                 {pages > 1 && (

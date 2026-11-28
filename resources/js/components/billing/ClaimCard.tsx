@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CardForm } from '@/components/billing/CardForm';
-import { money, months } from '@/lib/utils';
+import { money, months, SHARING_REWARD_TEXT } from '@/lib/utils';
 
 export type ClaimBilling = {
     stripeKey: string | null;
@@ -9,7 +9,7 @@ export type ClaimBilling = {
     price: number;
     unit: string;
     firstCharge: string;
-    extension: boolean;
+    reward: boolean;
 };
 
 /** True when payments are on and there's no card yet: the claim button waits for one. */
@@ -31,8 +31,12 @@ export function ClaimCard({ billing, error }: { billing: ClaimBilling; error?: s
                 Nothing is charged today. After your {months(billing.trialMonths)} free trial it’s {money(billing.price)} per {billing.unit} per
                 month, billed to this card. If you start today, your first charge is on {billing.firstCharge}. Cancel any time before then and you pay
                 nothing.
-                {billing.extension && ' Any month you’re offered no referrals is free (a free extension).'}
             </p>
+            {billing.reward && (
+                <p className="text-sm" data-testid="sharing-reward-text">
+                    {SHARING_REWARD_TEXT}
+                </p>
+            )}
             {billing.card && !changing ? (
                 <p className="flex flex-wrap items-center gap-3 text-sm">
                     <span>

@@ -41,6 +41,7 @@ final class ServiceScore
         $refs = Referral::query()->with('group')->where('created_at', '>=', $from)->where('created_at', '<=', $to)
             ->where(fn ($q) => $q->where('receiver_team_id', $team->id)->orWhereIn('id', $offered))
             ->where('sender_team_id', '!=', $team->id)
+            ->whereNull('invalid_at') // a client marked not real counts against the sender, not the receiver
             ->get()
             // Time off doesn't count against anyone.
             ->reject(fn (Referral $r) => $off->contains(fn ($o) => $r->created_at->toDateString() >= $o->starts_on && $r->created_at->toDateString() <= $o->ends_on));

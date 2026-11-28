@@ -15,9 +15,9 @@ use RuntimeException;
 use stdClass;
 
 /**
- * Monthly billing, in arrears, so the value guarantee can be honoured: on the 1st, each payer gets one invoice for
+ * Monthly billing, in arrears, so the sharing reward can be applied: on the 1st, each payer gets one invoice for
  * the month just ended, with one line per seat for the days it was billable (after its own free trial, while not
- * inactive), and a free line for any seat that was offered no referral that month (where the group's guarantee is on).
+ * inactive), and a free line for any seat whose team sent a good referral in its group the month before (the sharing reward).
  * The saved card is charged through Stripe; failures retry on days 1, 3 and 5 and drive the agreed seat lifecycle.
  */
 final class Invoicing
@@ -269,13 +269,15 @@ final class Invoicing
      */
     private function line(Seat $seat, CarbonImmutable $start, CarbonImmutable $end, array $payer): ?array
     {
-        $offered = DB::table('referrals')->where('seat_id', $seat->id)->whereBetween('created_at', [$start, $end])->exists();
-        $guarantee = (bool) data_get($seat->group->pricing, 'value_guarantee', false);
-        // Covered by an annual plan: nothing to bill, and a month with no referral offered becomes an account credit.
+        // The sharing reward: the team sent a good referral in this group the month before, so this month is free.
+        $rewarded = $seat->primary_team_id !== null && \App\Domains\Referrals\SharingReward::on($seat->group)
+            && \App\Domains\Referrals\SharingReward::earned((int) $seat->primary_team_id, (int) $seat->group_id, $start);
+        $sentIn = $start->subMonthNoOverflow()->format('F');
+        // Covered by an annual plan: nothing to bill, and a rewarded month becomes an account credit.
         if ($seat->annual_paid_until !== null && $seat->annual_paid_until->gte($end->startOfDay())) {
-            if (! $offered && $guarantee) {
+            if ($rewarded) {
                 PricingRules::addCredit($payer['type'], $payer['id'], (int) round(PricingRules::annualCents($seat) / 12),
-                    "Free month credit: no referral was offered to {$seat->territory_name} in ".$start->format('M Y'));
+                    "Free month credit: sharing reward for referrals sent in {$sentIn} ({$seat->territory_name})");
             }
 
             return null;
@@ -290,10 +292,9 @@ final class Invoicing
         $amount = (int) round($monthly * 100 * $days / $start->daysInMonth);
         $label = "{$seat->territory_name} · {$seat->group->name} · ".$start->format('M Y');
         $line = ['type' => 'seat', 'seat_id' => $seat->id, 'group_id' => $seat->group_id, 'description' => $label.($days < $start->daysInMonth ? " ({$days} days)" : ''), 'days' => $days, 'amount_cents' => $amount, 'free_reason' => null];
-        // The value guarantee: a month in which no referral was offered to the seat is free.
-        if (! $offered && $guarantee) {
+        if ($rewarded) {
             $line['amount_cents'] = 0;
-            $line['free_reason'] = 'Free month: no referral was offered to this seat.';
+            $line['free_reason'] = "Free month: sharing reward for referrals sent in {$sentIn}.";
         }
 
         return $line;
