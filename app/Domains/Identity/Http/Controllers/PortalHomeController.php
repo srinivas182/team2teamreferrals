@@ -37,6 +37,8 @@ final class PortalHomeController
                 ['label' => 'Hold your first seat', 'done' => $holds, 'href' => '/app/groups/mine'],
             ],
             'strength' => $strength,
+            // Sharing reward progress for each group the team holds a seat in.
+            'sharing' => \App\Domains\Referrals\SharingReward::progress($team),
             'seo' => SeoData::private('Home')->toArray(),
         ]);
     }

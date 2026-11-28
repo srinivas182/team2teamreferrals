@@ -170,7 +170,7 @@ final class SeatController
 
         return Inertia::render('Invitation', [
             'invite' => $invite && $seat ? ['token' => $token, 'email' => (string) $invite->email, 'territory' => $seat->territory_name, 'group' => $seat->group->name, 'industry' => $seat->group->industry->name,
-                'price' => (int) ($seat->group->pricing['seat_price'] ?? 10), 'trial' => (int) ($seat->group->pricing['trial_months'] ?? 1), 'expires' => (string) $invite->expires_at] : null,
+                'price' => (int) ($seat->group->pricing['seat_price'] ?? 25), 'trial' => (int) ($seat->group->pricing['trial_months'] ?? 1), 'expires' => (string) $invite->expires_at] : null,
             'billing' => $seat !== null && $request->user() instanceof User ? self::billing(Team::of($request->user()), $seat->group) : null,
             'seo' => (new SeoData(title: 'Your invitation', description: 'Team to Team Referrals', index: false))->toArray(),
         ]);
@@ -189,7 +189,7 @@ final class SeatController
      * when the first charge would be if the seat started today. Billing is monthly in arrears, so it's the 1st of the
      * month after the trial ends.
      *
-     * @return array{stripeKey: ?string, card: array{brand: string, last4: string, payer: string}|null, trialMonths: int, price: int, unit: string, firstCharge: string, extension: bool}
+     * @return array{stripeKey: ?string, card: array{brand: string, last4: string, payer: string}|null, trialMonths: int, price: int, unit: string, firstCharge: string, reward: bool}
      */
     public static function billing(?Team $team, Group $group): array
     {
@@ -199,10 +199,10 @@ final class SeatController
         return [
             'stripeKey' => $stripe->connected() ? $stripe->publishableKey() : null,
             'card' => $team !== null ? \App\Domains\Billing\BillingAccounts::cardFor($team) : null,
-            'trialMonths' => $trial, 'price' => (int) ($group->pricing['seat_price'] ?? 10),
+            'trialMonths' => $trial, 'price' => (int) ($group->pricing['seat_price'] ?? 25),
             'unit' => ['city' => 'city', 'county' => 'county', 'metro' => 'metro area', 'state' => 'state'][$group->industry->territory_unit] ?? 'city',
             'firstCharge' => now()->addMonths($trial)->addMonthNoOverflow()->startOfMonth()->toFormattedDateString(),
-            'extension' => (bool) ($group->pricing['value_guarantee'] ?? false) && $group->industry->tier->allowsValueGuarantee(),
+            'reward' => (bool) ($group->pricing['sharing_reward'] ?? false) && $group->industry->tier->allowsSharingReward(),
         ];
     }
 

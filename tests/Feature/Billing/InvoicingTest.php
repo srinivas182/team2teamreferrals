@@ -20,10 +20,6 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     Artisan::call('t2t:locations:import', ['--path' => base_path('tests/fixtures/locations')]);
     Artisan::call('t2t:catalogue:sync');
-    // These tests cover the free extension, which new groups have off by default.
-    foreach (Group::with('industry')->get() as $g) {
-        $g->update(['pricing' => [...$g->pricing, 'value_guarantee' => $g->industry->tier->allowsValueGuarantee()]]);
-    }
     Notification::fake();
     Storage::fake('private');
     fakeSms();
@@ -60,7 +56,7 @@ beforeEach(function () {
     $this->card = fn (string $type, int $id) => DB::table('billing_customers')->updateOrInsert(['owner_type' => $type, 'owner_id' => $id],
         ['stripe_customer_id' => "cus_{$type}{$id}", 'payment_method_id' => 'pm_1', 'card_brand' => 'visa', 'card_last4' => '4242', 'card_exp_month' => 12, 'card_exp_year' => 2030, 'created_at' => now(), 'updated_at' => now()]);
     ($this->card)('team', $this->teamA->id);
-    // A referral offered to the seat in a given month (so the value guarantee doesn't make it free).
+    // A referral offered to the seat in a given month (not a good sent referral: nobody accepted it).
     $this->offer = fn (Seat $seat, string $when) => DB::table('referrals')->insert(['ulid' => strtolower((string) Str::ulid()), 'group_id' => $seat->group_id, 'seat_id' => $seat->id,
         'sender_team_id' => $seat->primary_team_id, 'sender_user_id' => $this->teamA->leader_id, 'receiver_team_id' => $seat->primary_team_id, 'routed_to' => 'holder', 'status' => 'sent',
         'client_name' => 'C', 'answers' => '{}', 'consent_at' => $when, 'consent_method' => 'sender_attested', 'consent_text' => 'x', 'respond_by' => $when, 'created_at' => $when, 'updated_at' => $when]);
@@ -73,7 +69,7 @@ it('charges nothing during the free trial, then a full month after it', function
     $this->travelTo('2027-02-01 06:00:00');
     Artisan::call('t2t:billing:run');
     $inv = ($this->inv)();
-    expect($inv->period)->toBe('2027-01')->and((int) $inv->total_cents)->toBe(1000)->and($inv->status)->toBe('paid')->and($this->charges[0]['amount'])->toBe(1000)
+    expect($inv->period)->toBe('2027-01')->and((int) $inv->total_cents)->toBe(2500)->and($inv->status)->toBe('paid')->and($this->charges[0]['amount'])->toBe(2500)
         ->and($this->seat->fresh()->status)->toBe('active');
     Storage::disk('private')->assertExists($inv->pdf_path);
     $this->actingAs($this->teamA->leader)->get("/app/billing/team/invoices/{$inv->id}.pdf")->assertOk();
@@ -86,14 +82,56 @@ it('prorates by day from the end of the seat’s own trial', function () {
     app(Invoicing::class)->run('2027-01');
     $inv = ($this->inv)();
     $line = json_decode((string) $inv->lines, true)[0];
-    expect($line['days'])->toBe(15)->and((int) $inv->total_cents)->toBe((int) round(1000 * 15 / 31))->and($line['description'])->toContain('(15 days)');
+    expect($line['days'])->toBe(15)->and((int) $inv->total_cents)->toBe((int) round(2500 * 15 / 31))->and($line['description'])->toContain('(15 days)');
 });
 
-it('makes a month with no referral offered free, without charging', function () {
+it('bills a quiet month in full: there is no free month for receiving nothing any more', function () {
+    app(Invoicing::class)->run('2027-01');
+    expect((int) ($this->inv)()->total_cents)->toBe(2500);
+});
+
+it('makes a month free when the team sent a good referral in the group the month before (the sharing reward)', function () {
+    $other = Team::forLeader(User::factory()->create());
+    $send = fn (string $when, array $extra = []) => DB::table('referrals')->insertGetId([
+        'ulid' => strtolower((string) Str::ulid()), 'group_id' => $this->g->id, 'seat_id' => $this->seat->id, 'sender_team_id' => $this->teamA->id, 'sender_user_id' => $this->teamA->leader_id,
+        'receiver_team_id' => $other->id, 'routed_to' => 'holder', 'status' => 'accepted', 'client_name' => 'C', 'answers' => '{}', 'consent_at' => $when,
+        'consent_method' => 'sender_attested', 'consent_text' => 'x', 'respond_by' => $when, 'accepted_at' => $when, 'first_contact_at' => $when, 'created_at' => $when, 'updated_at' => $when, ...$extra]);
+    // Two good referrals in December still earn one free month (January).
+    $send('2026-12-05 10:00:00');
+    $send('2026-12-20 10:00:00');
     app(Invoicing::class)->run('2027-01');
     $inv = ($this->inv)();
     expect($inv->status)->toBe('zero')->and((int) $inv->total_cents)->toBe(0)->and($this->charges)->toBe([])
-        ->and(json_decode((string) $inv->lines, true)[0]['free_reason'])->toContain('no referral was offered');
+        ->and(json_decode((string) $inv->lines, true)[0]['free_reason'])->toContain('sharing reward for referrals sent in December');
+    // Nothing good sent in January: February is billed.
+    $send('2027-01-10 10:00:00', ['first_contact_at' => null]); // accepted but never contacted
+    $send('2027-01-11 10:00:00', ['invalid_at' => '2027-01-12 10:00:00', 'invalid_reason' => 'spam']); // marked not real
+    app(Invoicing::class)->run('2027-02');
+    expect((int) ($this->inv)()->total_cents)->toBe(2500);
+});
+
+it('pauses the sharing reward after 3 not-real clients in 90 days', function () {
+    $other = Team::forLeader(User::factory()->create());
+    $this->travelTo('2027-02-01 06:00:00');
+    foreach (['2027-01-05', '2027-01-06', '2027-01-07', '2027-01-08'] as $i => $day) {
+        DB::table('referrals')->insert(['ulid' => strtolower((string) Str::ulid()), 'group_id' => $this->g->id, 'seat_id' => $this->seat->id, 'sender_team_id' => $this->teamA->id, 'sender_user_id' => $this->teamA->leader_id,
+            'receiver_team_id' => $other->id, 'routed_to' => 'holder', 'status' => 'accepted', 'client_name' => 'C', 'answers' => '{}', 'consent_at' => "{$day} 10:00:00",
+            'consent_method' => 'sender_attested', 'consent_text' => 'x', 'respond_by' => "{$day} 10:00:00", 'accepted_at' => "{$day} 10:00:00", 'first_contact_at' => "{$day} 11:00:00",
+            'invalid_at' => $i < 3 ? "{$day} 12:00:00" : null, 'invalid_reason' => $i < 3 ? 'wrong_contact' : null, 'created_at' => "{$day} 10:00:00", 'updated_at' => "{$day} 10:00:00"]);
+    }
+    expect(App\Domains\Referrals\SharingReward::paused($this->teamA->id))->toBeTrue();
+    app(Invoicing::class)->run('2027-02');
+    expect((int) ($this->inv)()->total_cents)->toBe(2500);
+});
+
+it('gives no sharing reward when the group has it switched off', function () {
+    $this->g->update(['pricing' => [...$this->g->pricing, 'sharing_reward' => false]]);
+    $other = Team::forLeader(User::factory()->create());
+    DB::table('referrals')->insert(['ulid' => strtolower((string) Str::ulid()), 'group_id' => $this->g->id, 'seat_id' => $this->seat->id, 'sender_team_id' => $this->teamA->id, 'sender_user_id' => $this->teamA->leader_id,
+        'receiver_team_id' => $other->id, 'routed_to' => 'holder', 'status' => 'accepted', 'client_name' => 'C', 'answers' => '{}', 'consent_at' => '2026-12-05 10:00:00',
+        'consent_method' => 'sender_attested', 'consent_text' => 'x', 'respond_by' => '2026-12-05 10:00:00', 'accepted_at' => '2026-12-05 10:00:00', 'first_contact_at' => '2026-12-05 11:00:00', 'created_at' => '2026-12-05 10:00:00', 'updated_at' => '2026-12-05 10:00:00']);
+    app(Invoicing::class)->run('2027-01');
+    expect((int) ($this->inv)()->total_cents)->toBe(2500);
 });
 
 it('bills a company once for all its branches', function () {
@@ -111,7 +149,7 @@ it('bills a company once for all its branches', function () {
     }
     app(Invoicing::class)->run('2027-01');
     $inv = ($this->inv)();
-    expect(DB::table('invoices')->count())->toBe(1)->and($inv->owner_type)->toBe('company')->and((int) $inv->total_cents)->toBe(2000)->and(count(json_decode((string) $inv->lines, true)))->toBe(2);
+    expect(DB::table('invoices')->count())->toBe(1)->and($inv->owner_type)->toBe('company')->and((int) $inv->total_cents)->toBe(5000)->and(count(json_decode((string) $inv->lines, true)))->toBe(2);
 });
 
 it('retries a declined card on days 3 and 5, and reactivates when it goes through', function () {

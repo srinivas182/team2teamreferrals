@@ -71,7 +71,7 @@ final class Sections
         $s['pricing_addons'] = ['Pricing: premium and private networks', 'Pricing', [['type' => 'pricing', 'heading' => 'Optional extras', 'plans' => [
             ['name' => 'Premium', 'price' => '{premium_price}', 'period' => 'month per team', 'features' => '{ai_premium} AI credits a month per seat, instead of {ai_free}', 'cta_label' => '', 'cta_url' => ''],
             ['name' => 'Private network', 'price' => '{private_price}', 'period' => 'month per company', 'features' => "Your company’s own invite-only network\nYour own network rules", 'cta_label' => '', 'cta_url' => '']]]]];
-        $s['value_guarantee'] = ['Free extension', 'Pricing', [['type' => 'cta', 'heading' => 'The free extension', 'text' => 'In networks that offer it, any month in which no referral is offered to your seat is free. It doesn’t apply to directory listings.', 'label' => 'See pricing', 'url' => '/pricing']]];
+        $s['value_guarantee'] = ['Sharing reward', 'Pricing', [['type' => 'cta', 'heading' => 'The sharing reward', 'text' => 'In open industries, send at least one referral in a month that the other team accepts and contacts, and your seat is free the next month. One free month at most each month. It doesn’t apply to restricted or directory-only industries.', 'label' => 'See pricing', 'url' => '/pricing']]];
         // FAQs
         $s['faq_general'] = ['FAQ: general', 'FAQ', [['type' => 'faq', 'heading' => 'Questions and answers', 'items' => [
             ['q' => 'What is {site_name}?', 'a' => 'A referral network that gives one verified pro per city a seat in each industry network, so members can send out-of-area clients to someone they trust and track the referral to the end.'],

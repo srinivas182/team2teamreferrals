@@ -1,4 +1,4 @@
-import { Link, router, usePage, Deferred } from '@inertiajs/react';
+import { Link, router, usePage, useForm, Deferred } from '@inertiajs/react';
 import { BellOff, MapPin, Paperclip, Search } from 'lucide-react';
 import { useReferralLive } from '@/lib/realtime';
 import { Lock } from 'lucide-react';
@@ -8,7 +8,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input, Select } from '@/components/ui/field';
+import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
 import { statusMessage } from '@/lib/status';
 import type { SharedProps } from '@/types/auth';
@@ -40,6 +40,9 @@ type Props = {
     isReceiver: boolean;
     canDecline: boolean;
     acceptNote: string | null;
+    canMarkNotReal: boolean;
+    notReal: { reason: string; note: string; disputed: boolean } | null;
+    notRealReasons: Record<string, string>;
     assignTo: { id: string; name: string }[];
     outOfArea: { city: string | null; miles: number | null } | null;
     acceptedBy: string | null;
@@ -111,6 +114,9 @@ export default function ReferralShow({
     isReceiver,
     canDecline,
     acceptNote,
+    canMarkNotReal,
+    notReal,
+    notRealReasons,
     assignTo,
     outOfArea,
     acceptedBy,
@@ -181,6 +187,8 @@ export default function ReferralShow({
                                 holds that city yet.
                             </p>
                         )}
+                        {notReal && <NotRealBanner referral={r.id} notReal={notReal} isReceiver={isReceiver} client={terms.client ?? 'client'} />}
+                        {canMarkNotReal && <NotRealForm referral={r.id} reasons={notRealReasons} client={terms.client ?? 'client'} />}
                         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
                             {r.answers.map((a) => (
                                 <div key={a.label}>
@@ -330,6 +338,10 @@ export default function ReferralShow({
                         <Card className="space-y-3 p-6">
                             <h2 className="font-semibold">Can you help this {terms.client}?</h2>
                             {acceptNote && <p className="text-sm text-muted">{acceptNote}</p>}
+                            <p className="text-sm text-muted">
+                                Accepting counts toward your closing rate. If you can’t help this {terms.client}, decline: declining on time doesn’t
+                                lower your score.
+                            </p>
                             {declining ? (
                                 <div className="flex flex-wrap gap-2">
                                     <Input
@@ -878,6 +890,100 @@ function AssignTo({ referral, people }: { referral: string; people: { id: string
             >
                 Assign
             </Button>
+        </div>
+    );
+}
+
+/** The receiver: an accepted client who turns out not to be real. Says what was tried; protects the receiver's score. */
+function NotRealForm({ referral, reasons, client }: { referral: string; reasons: Record<string, string>; client: string }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ reason: Object.keys(reasons)[0] ?? '', note: '' });
+    const errors = form.errors as Record<string, string>;
+    if (!open) {
+        return (
+            <button type="button" className="mt-3 text-sm font-medium text-muted underline hover:text-ink" onClick={() => setOpen(true)}>
+                Not a real {client}?
+            </button>
+        );
+    }
+    return (
+        <div className="mt-3 space-y-3 rounded-lg border border-line p-4 text-sm">
+            <p className="text-muted">
+                If this {client} isn’t real, say so. It won’t count against your scores, it counts against the sending team, and they’re told. They
+                can ask the group owner to review it.
+            </p>
+            <Field label="What’s wrong" error={errors.reason}>
+                <Select value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)}>
+                    {Object.entries(reasons).map(([k, v]) => (
+                        <option key={k} value={k}>
+                            {v}
+                        </option>
+                    ))}
+                </Select>
+            </Field>
+            <Field
+                label="What you tried"
+                error={errors.note}
+                hint="For example: called twice and texted on Monday and Tuesday; the number is not in service."
+            >
+                <Textarea rows={3} value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
+            </Field>
+            <div className="flex gap-2">
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={form.processing}
+                    onClick={() => form.post(`/app/referrals/${referral}/not-real`, { preserveScroll: true })}
+                >
+                    Mark as not a real {client}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+                    Cancel
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+/** Shown to both teams once a client is marked not real; the sender can ask the group owner to review it. */
+function NotRealBanner({
+    referral,
+    notReal,
+    isReceiver,
+    client,
+}: {
+    referral: string;
+    notReal: { reason: string; note: string; disputed: boolean };
+    isReceiver: boolean;
+    client: string;
+}) {
+    const form = useForm({ why: '' });
+    const errors = form.errors as Record<string, string>;
+    return (
+        <div className="mt-3 space-y-2 rounded-lg border border-warning/40 bg-warning/5 p-4 text-sm">
+            <p>
+                <strong>Marked not a real {client}:</strong> {notReal.reason}. {notReal.note}
+            </p>
+            {notReal.disputed ? (
+                <p className="text-muted">The group owner is reviewing this.</p>
+            ) : isReceiver ? (
+                <p className="text-muted">It doesn’t count against your scores.</p>
+            ) : (
+                <div className="space-y-2">
+                    <p className="text-muted">If this {client} is real, ask the group owner to review it.</p>
+                    <Field label="Why it’s a real client" error={errors.why}>
+                        <Textarea rows={2} value={form.data.why} onChange={(e) => form.setData('why', e.target.value)} />
+                    </Field>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        loading={form.processing}
+                        onClick={() => form.post(`/app/referrals/${referral}/not-real/dispute`, { preserveScroll: true })}
+                    >
+                        Ask the group owner to review
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

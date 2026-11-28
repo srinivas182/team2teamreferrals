@@ -71,7 +71,7 @@ it('fills live figures in help articles once published', function () {
     $help = DB::table('posts')->where('slug', 'help-claim-a-seat')->first();
     $this->actingAs($this->editor)->post("/admin/content/posts/{$help->ulid}/publish")->assertSessionHas('status', 'post-publish');
     $props = $this->get('/blog/help-claim-a-seat')->assertOk()->viewData('page')['props'];
-    expect($props['post']['body'])->toContain('$10 a month')->not->toMatch('/\{[a-z_]+\}/')
+    expect($props['post']['body'])->toContain('$25 a month')->not->toMatch('/\{[a-z_]+\}/')
         ->and($props['seo']['description'])->not->toMatch('/\{[a-z_]+\}/');
 });
 

@@ -17,7 +17,7 @@ type Pricing = {
     seat_price: number;
     founding_price: number;
     trial_months: number;
-    value_guarantee: boolean;
+    sharing_reward: boolean;
     annual_months_free: number;
     discounts: Record<string, number>;
 };
@@ -64,7 +64,7 @@ type Props = {
         region: string | null;
         pricing: Pricing;
         rules: Rules;
-        industry: { slug: string; name: string; tier: string; guaranteeAllowed: boolean; terms: Record<string, string> };
+        industry: { slug: string; name: string; tier: string; rewardAllowed: boolean; terms: Record<string, string> };
     };
     owners: { id: string; name: string; email: string }[];
     scheduled: { id: number; section: string; values: Record<string, unknown>; effectiveOn: string; notified: boolean }[];
@@ -302,20 +302,21 @@ export default function GroupShow({
                             <input
                                 type="checkbox"
                                 className="mt-1"
-                                disabled={!g.industry.guaranteeAllowed}
-                                checked={p.value_guarantee && g.industry.guaranteeAllowed}
-                                onChange={(e) => setP('value_guarantee', e.target.checked)}
+                                disabled={!g.industry.rewardAllowed}
+                                checked={p.sharing_reward && g.industry.rewardAllowed}
+                                onChange={(e) => setP('sharing_reward', e.target.checked)}
                             />
                             <span>
-                                <strong>Free extension:</strong> any month with no referral offered to a seat is free (off by default).
-                                {!g.industry.guaranteeAllowed && (
+                                <strong>Sharing reward:</strong> a team that sends at least one referral in a month that the other team accepts and
+                                contacts gets its seat free the next month (one free month at most each month).
+                                {!g.industry.rewardAllowed && (
                                     <span className="block text-muted">
-                                        Locked off for Tier C: fees must be the same for everyone and not depend on referrals.
+                                        Only for Tier A: Tier B rules forbid anything of value for referrals, and Tier C fees can’t depend on them.
                                     </span>
                                 )}
                             </span>
                         </label>
-                        {errs(pricing, 'value_guarantee') && <p className="text-sm text-danger">{errs(pricing, 'value_guarantee')}</p>}
+                        {errs(pricing, 'sharing_reward') && <p className="text-sm text-danger">{errs(pricing, 'sharing_reward')}</p>}
                         <When
                             when={pricing.data.when}
                             date={pricing.data.effective_on}
@@ -341,8 +342,8 @@ export default function GroupShow({
                                 <ul className="mt-3 space-y-1.5 text-sm">
                                     {[
                                         firstFree(p.trial_months),
-                                        p.value_guarantee && g.industry.guaranteeAllowed
-                                            ? 'Free for any month without a referral'
+                                        p.sharing_reward && g.industry.rewardAllowed
+                                            ? 'Send a good referral in a month, next month free'
                                             : 'Billed monthly after the trial',
                                         `Founding members: ${money(p.founding_price)}, locked`,
                                         `Annual billing: ${p.annual_months_free} months free`,

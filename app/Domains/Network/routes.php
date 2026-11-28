@@ -106,6 +106,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
             Route::put("{$prefix}/{group}/cities", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'save'])->name("groups.cities.save.{$who}");
             Route::get("{$prefix}/{group}/cities/state/{code}", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'state'])->where('code', '[A-Za-z]{2}')->name("groups.cities.state.{$who}");
             Route::get("{$prefix}/{group}/referrals", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'index'])->name("groups.referrals.{$who}");
+            Route::post("{$prefix}/{group}/not-real/{referral}", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'decideNotReal'])->name("groups.not-real.{$who}");
             Route::get("{$prefix}/{group}/referrals.csv", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'csv'])->name("groups.referrals.csv.{$who}");
             Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
             Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");
@@ -191,6 +192,8 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
     Route::get('app/referrals/{referral}', [App\Domains\Referrals\Http\ReferralController::class, 'show'])->name('referrals.show');
     Route::post('app/referrals/{referral}/accept', [App\Domains\Referrals\Http\ReferralController::class, 'accept'])->name('referrals.accept');
     Route::post('app/referrals/{referral}/assign', [App\Domains\Referrals\Http\ReferralController::class, 'assign'])->name('referrals.assign');
+    Route::post('app/referrals/{referral}/not-real', [App\Domains\Referrals\Http\ReferralController::class, 'notReal'])->name('referrals.not-real');
+    Route::post('app/referrals/{referral}/not-real/dispute', [App\Domains\Referrals\Http\ReferralController::class, 'disputeNotReal'])->name('referrals.not-real.dispute');
     Route::get('app/team/performance', [App\Domains\Network\Teams\TeamPerformanceController::class, '__invoke'])->name('team.performance');
     Route::get('app/referrals/{referral}/files/{attachment}', [App\Domains\Referrals\Http\ReferralController::class, 'attachment'])->middleware('signed')->whereNumber('attachment')->name('referrals.attachment');
     Route::post('app/referrals/{referral}/close/confirm', [App\Domains\Referrals\Http\ReferralController::class, 'confirmClose'])->name('referrals.close.confirm');

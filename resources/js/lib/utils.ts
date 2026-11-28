@@ -12,3 +12,7 @@ export const months = (n: number) => `${n} ${n === 1 ? 'month' : 'months'}`;
 
 /** "First month free", "First 3 months free". */
 export const firstFree = (n: number) => (n === 1 ? 'First month free' : `First ${months(n)} free`);
+
+/** The exact sharing reward wording shown on the join, invitation and waitlist offer pages (kept in step with SharingReward::TEXT). */
+export const SHARING_REWARD_TEXT =
+    'Sharing reward: send at least one referral in a month that the other team accepts and contacts, and your seat is free the next month. One free month at most each month, however many you send.';

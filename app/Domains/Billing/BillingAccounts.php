@@ -123,9 +123,10 @@ final class BillingAccounts
             }
             $hasCard = DB::table('billing_customers')->where(['owner_type' => $payer['type'], 'owner_id' => $payer['id']])->whereNotNull('payment_method_id')->exists();
             $when = $seat->trial_ends_at?->toFormattedDateString();
-            $price = '$'.number_format((float) data_get($seat->group->pricing, 'seat_price', 10), 2);
-            $body = $hasCard ? "Your card on file will be charged {$price} a month from then. Any month no referral is offered to your seat is free."
-                : "Add a card before then to keep receiving referrals. It’s {$price} a month, and any month no referral is offered to your seat is free.";
+            $price = '$'.number_format((float) data_get($seat->group->pricing, 'seat_price', 25), 2);
+            $reward = \App\Domains\Referrals\SharingReward::on($seat->group) ? ' Send at least one referral a month that the other team accepts and contacts, and your next month is free.' : '';
+            $body = ($hasCard ? "Your card on file will be charged {$price} a month from then."
+                : "Add a card before then to keep receiving referrals. It’s {$price} a month.").$reward;
             $recipients = self::contacts($payer['type'], $payer['id']);
             if ($payer['type'] === 'company' && $seat->primary !== null) {
                 $recipients[] = $seat->primary->leader; // the city leader hears too

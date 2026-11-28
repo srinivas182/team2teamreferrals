@@ -75,10 +75,10 @@ it('rewards the inviter with one free month only once the invitee is verified an
     expect(($this->credits)())->toBe(0)->and(DB::table('invite_signups')->value('status'))->toBe('joined');
     $r = app(Referrals::class)->send($this->inviter->leader, $this->g, $this->cities[1], [...($this->ans)($this->g), 'client_name' => 'Late Client', 'client_phone' => '+14355550777'], true, null, true)['referral'];
     app(Referrals::class)->accept($r->fresh(), $t->leader);
-    expect(($this->credits)())->toBe(1000)->and(DB::table('invite_signups')->value('status'))->toBe('rewarded');
+    expect(($this->credits)())->toBe(2500)->and(DB::table('invite_signups')->value('status'))->toBe('rewarded');
     Notification::assertSentTo($this->inviter->leader, InAppNotification::class, fn ($n) => str_contains($n->title, 'thanks to your invite') && str_contains($n->body, 'free month'));
     Artisan::call('t2t:performance'); // the daily sweep never pays twice
-    expect(($this->credits)())->toBe(1000);
+    expect(($this->credits)())->toBe(2500);
 });
 
 it('gives Tier B inviters the badge, never a free month', function () {
@@ -98,7 +98,7 @@ it('stops free months at the yearly cap', function () {
     app(Settings::class)->set('invites.cap', '1');
     ($this->invitee)($this->inviter, $this->g, 1);
     ($this->invitee)($this->inviter, $this->g, 2);
-    expect(($this->credits)())->toBe(1000)->and(DB::table('invite_signups')->orderBy('id')->pluck('status')->all())->toBe(['rewarded', 'capped']);
+    expect(($this->credits)())->toBe(2500)->and(DB::table('invite_signups')->orderBy('id')->pluck('status')->all())->toBe(['rewarded', 'capped']);
 });
 
 it('gives group owners a free month for every 5 new paid seats, once each', function () {
@@ -120,7 +120,7 @@ it('gives group owners a free month for every 5 new paid seats, once each', func
     $add(1);
     Artisan::call('t2t:performance');
     Artisan::call('t2t:performance');
-    expect($ownerCredits())->toBe(1000);
+    expect($ownerCredits())->toBe(2500);
 });
 
 it('keeps one leaderboard per network, counting joined and up-and-running separately', function () {

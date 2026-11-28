@@ -29,16 +29,16 @@ it('DONE WHEN (site): a fresh install publishes finished core pages that pass th
         ($this->aeo)($url);
     }
     $p = ($this->aeo)('/pricing');
-    expect($p['page']['summary'])->toContain('$10 a month')->toContain('1 month free');
+    expect($p['page']['summary'])->toContain('$25 a month')->toContain('1 month free');
     $menus = $this->get('/blog')->viewData('page')['props']['menus'];
     expect(collect($menus['header'])->pluck(1))->toContain('/how-it-works', '/pricing');
     $llms = $this->get('/llms.txt')->getContent();
-    expect($llms)->toContain('/pricing): Seats start at $10')->not->toMatch('/\{[a-z_]+\}/');
+    expect($llms)->toContain('/pricing): Seats start at $25')->not->toMatch('/\{[a-z_]+\}/');
     expect(file_exists(public_path('illustrations/network.svg')))->toBeTrue()->and(file_exists(public_path('illustrations/steps.svg')))->toBeTrue();
 });
 
 it('takes figures from live settings, so a price change updates the pages and their structured data', function () {
-    ($this->aeo)('/pricing'); // figures cached at $10
+    ($this->aeo)('/pricing'); // figures cached at $25
     foreach (Group::query()->get() as $g) {
         $g->update(['pricing' => [...$g->pricing, 'seat_price' => 12, 'trial_months' => 2]]); // through the model, as owners and schedules do
     }

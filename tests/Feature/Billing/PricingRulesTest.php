@@ -20,10 +20,6 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     Artisan::call('t2t:locations:import', ['--path' => base_path('tests/fixtures/locations')]);
     Artisan::call('t2t:catalogue:sync');
-    // These tests cover the free extension, which new groups have off by default.
-    foreach (Group::with('industry')->get() as $g) {
-        $g->update(['pricing' => [...$g->pricing, 'value_guarantee' => $g->industry->tier->allowsValueGuarantee()]]);
-    }
     Notification::fake();
     Storage::fake('private');
     fakeSms();
@@ -57,16 +53,22 @@ beforeEach(function () {
     $this->last = fn () => DB::table('invoices')->latest('id')->first();
 });
 
-it('bills an annual plan at 10 months, starts it once paid, and credits months with no referral', function () {
+it('bills an annual plan at 10 months, starts it once paid, and credits a month earned by the sharing reward', function () {
     $this->actingAs($this->team->leader)->post("/app/billing/team/seats/{$this->seat->id}/cycle", ['cycle' => 'annual'])->assertSessionHas('status', 'cycle-annual');
     ($this->offer)($this->seat, '2027-01-10 12:00:00');
     app(Invoicing::class)->run('2027-01');
     $inv = ($this->last)();
-    expect((int) $inv->total_cents)->toBe(1000 + 10000)->and(json_decode((string) $inv->lines, true)[1]['description'])->toContain('annual plan, Feb 2027 to Jan 2028 (2 months free)')
+    expect((int) $inv->total_cents)->toBe(2500 + 25000)->and(json_decode((string) $inv->lines, true)[1]['description'])->toContain('annual plan, Feb 2027 to Jan 2028 (2 months free)')
         ->and($this->seat->fresh()->annual_paid_until->toDateString())->toBe('2028-01-31');
 
-    app(Invoicing::class)->run('2027-02'); // covered, and no referral offered: credited, not charged
-    expect(DB::table('invoices')->count())->toBe(1)->and((int) DB::table('billing_credits')->value('amount_cents'))->toBe(833);
+    // A good referral sent in January: February is already covered by the plan, so it becomes a credit of 1/12.
+    $other = Team::forLeader(User::factory()->create());
+    DB::table('referrals')->insert(['ulid' => strtolower((string) Str::ulid()), 'group_id' => $this->g->id, 'seat_id' => $this->seat->id, 'sender_team_id' => $this->team->id, 'sender_user_id' => $this->team->leader_id,
+        'receiver_team_id' => $other->id, 'routed_to' => 'holder', 'status' => 'accepted', 'client_name' => 'C', 'answers' => '{}', 'consent_at' => '2027-01-12 10:00:00', 'consent_method' => 'sender_attested',
+        'consent_text' => 'x', 'respond_by' => '2027-01-12 10:00:00', 'accepted_at' => '2027-01-12 11:00:00', 'first_contact_at' => '2027-01-12 12:00:00', 'created_at' => '2027-01-12 10:00:00', 'updated_at' => '2027-01-12 10:00:00']);
+    app(Invoicing::class)->run('2027-02');
+    expect(DB::table('invoices')->count())->toBe(1)->and((int) DB::table('billing_credits')->value('amount_cents'))->toBe(2083)
+        ->and((string) DB::table('billing_credits')->value('reason'))->toContain('sharing reward for referrals sent in January');
     app(Invoicing::class)->run('2027-02');
     expect(DB::table('billing_credits')->count())->toBe(1);
 });
@@ -79,7 +81,7 @@ it('applies multi-city discounts per network', function () {
         ($this->offer)($seat, '2027-01-10 12:00:00');
     }
     app(Invoicing::class)->run('2027-01');
-    expect((int) ($this->last)()->total_cents)->toBe(1800)->and(($this->last)()->lines)->toContain('Multi-city discount: 10% for 2 seats');
+    expect((int) ($this->last)()->total_cents)->toBe(4500)->and(($this->last)()->lines)->toContain('Multi-city discount: 10% for 2 seats');
 });
 
 it('applies a coupon for its months and refuses bad codes', function () {
@@ -92,19 +94,19 @@ it('applies a coupon for its months and refuses bad codes', function () {
     ($this->offer)($this->seat, '2027-02-10 12:00:00');
     app(Invoicing::class)->run('2027-01');
     app(Invoicing::class)->run('2027-02');
-    expect(DB::table('invoices')->orderBy('id')->pluck('total_cents')->map(fn ($c) => (int) $c)->all())->toBe([500, 1000]);
+    expect(DB::table('invoices')->orderBy('id')->pluck('total_cents')->map(fn ($c) => (int) $c)->all())->toBe([1250, 2500]);
     $other = Team::forLeader(User::factory()->create());
     $this->actingAs($other->leader)->post('/app/billing/team/coupon', ['code' => 'LAUNCH50'])->assertSessionHasErrors('code'); // fully used
 });
 
 it('uses account credits, never below zero', function () {
-    PricingRules::addCredit('team', $this->team->id, 1500, 'Goodwill credit');
+    PricingRules::addCredit('team', $this->team->id, 3750, 'Goodwill credit');
     ($this->offer)($this->seat, '2027-01-10 12:00:00');
     ($this->offer)($this->seat, '2027-02-10 12:00:00');
     app(Invoicing::class)->run('2027-01');
     expect((int) ($this->last)()->total_cents)->toBe(0)->and(($this->last)()->status)->toBe('zero');
     app(Invoicing::class)->run('2027-02');
-    expect((int) ($this->last)()->total_cents)->toBe(500)->and($this->amounts)->toBe([500]);
+    expect((int) ($this->last)()->total_cents)->toBe(1250)->and($this->amounts)->toBe([1250]);
 });
 
 it('collects platform fees on the next invoice only while switched on', function () {
@@ -115,12 +117,12 @@ it('collects platform fees on the next invoice only while switched on', function
         'amount_cents' => 150000, 'platform_fee_cents' => 15000, 'platform_fee_status' => 'owed', 'due_on' => '2027-01-10', 'status' => 'received', 'created_at' => now(), 'updated_at' => now()]);
     ($this->offer)($this->seat, '2027-01-10 12:00:00');
     app(Invoicing::class)->run('2027-01');
-    expect((int) ($this->last)()->total_cents)->toBe(1000)->and(DB::table('referral_fees')->value('platform_fee_status'))->toBe('owed');
+    expect((int) ($this->last)()->total_cents)->toBe(2500)->and(DB::table('referral_fees')->value('platform_fee_status'))->toBe('owed');
 
     app(Settings::class)->set('billing.platform_fee_collection', '1');
     ($this->offer)($this->seat, '2027-02-10 12:00:00');
     app(Invoicing::class)->run('2027-02');
     $inv = ($this->last)();
-    expect((int) $inv->total_cents)->toBe(16000)->and($inv->lines)->toContain('Platform fee on the $1,500.00 referral fee for Tom Brennan')
+    expect((int) $inv->total_cents)->toBe(17500)->and($inv->lines)->toContain('Platform fee on the $1,500.00 referral fee for Tom Brennan')
         ->and(DB::table('referral_fees')->where('id', $fee)->value('platform_fee_status'))->toBe('paid');
 });

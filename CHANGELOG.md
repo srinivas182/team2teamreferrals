@@ -4,6 +4,16 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
 
 ## [Unreleased]
 
+### Sharing reward (replaces the free extension)
+1. **Sharing reward.** The old "free extension" switch is renamed and changed. A team that sends at least one good referral in a month gets its seat in that group free the next month. It's one free month at most each month, however many referrals the team sends. A good referral is one the other team accepts and contacts, and that nobody marked "not a real client". Annual plans get the month as a credit (1/12). The old "a month with no referrals is free" rule is gone.
+2. **Defaults.** Seats are $25 a month (seat and founding price) in every group. The sharing reward is on in every Tier A group, and Tier B and C groups can't turn it on. A migration applies this to every existing group.
+3. **The same words everywhere.** The join, invitation and waitlist offer pages all show: "Sharing reward: send at least one referral in a month that the other team accepts and contacts, and your seat is free the next month. One free month at most each month, however many you send." Updated to match: home page, pricing section, FAQ/AEO facts, terms draft, trial reminder emails and the free-month notification.
+4. **Warning before accepting.** "Accepting counts toward your closing rate. If you can't help this client, decline: declining on time doesn't lower your score."
+5. **"Not a real client".** Within 30 days of accepting, the receiving team can mark a referral not real. It gives a reason and says what it tried. The referral closes, doesn't count against the receiver's closing rate or trust score, and earns the sender no reward. The sender can ask the group owner to review once. The owner sees the request on the group's Referrals page and chooses Reinstate or Uphold.
+6. **Sent-referral quality.** If 3 of a team's referrals are marked not real in 90 days, that team's sharing reward pauses. The team's leader and the group owners are told, and the owners can remove the team.
+7. **Dashboard line.** Each group shows either "Send 1 good referral this month to make next month free" or "Next month is free ✓", or a note if the reward is paused.
+8. **Tiers in admin.** The Industries list shows "Tier A · Open / B · Restricted / C · Directory only" with what each means. The Groups list has its own Tier column.
+
 ### Fee wording
 - The site footer and the Groups page no longer say "We never take a share of your commission". They now say: referral fees are paid team to team (broker to broker in real estate); we charge a monthly seat fee and, where it applies, a flat platform fee when a referral closes.
 

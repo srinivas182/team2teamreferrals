@@ -36,6 +36,8 @@ final class GroupReferralsController
             'admin' => $request->is('admin/*'),
             'filters' => $f, 'totals' => $totals, 'page' => $page, 'pages' => $pages, 'stages' => ReferralLedger::STAGES,
             'rows' => ReferralLedger::rows($q, $page, self::PER_PAGE, ReferralLedger::fullNames($user), $totals['count']),
+            // "Not a real client" calls the sender asked the owner to review.
+            'notRealReviews' => \App\Domains\Referrals\NotRealClients::pending($group),
             'seo' => SeoData::private('Referrals · '.$group->name)->toArray(),
         ]);
     }
@@ -50,6 +52,16 @@ final class GroupReferralsController
         }
 
         return ReferralLedger::csv(ReferralLedger::query($f, $group->id), $full, $group->slug.'-referrals'.(isset($f['from']) ? '-'.$f['from'] : '').(isset($f['to']) ? '-to-'.$f['to'] : '').'.csv');
+    }
+
+    /** Owner or staff: reinstate a "not a real client" call (it was real) or uphold it. */
+    public function decideNotReal(Request $request, Group $group, string $referral, \App\Domains\Referrals\NotRealClients $notReal): \Illuminate\Http\RedirectResponse
+    {
+        $user = $this->authorize($request, $group);
+        $ref = \App\Domains\Referrals\Referral::query()->where('ulid', $referral)->firstOrFail();
+        $notReal->decide($ref, $group, $user, $request->validate(['decision' => ['required', 'in:reinstate,uphold']])['decision'] === 'reinstate');
+
+        return back()->with('status', 'not-real-decided');
     }
 
     /** @return array<string, string> */

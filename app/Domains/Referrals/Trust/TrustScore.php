@@ -50,7 +50,7 @@ final class TrustScore
         $now = $asOf ?? CarbonImmutable::now();
         $from = $now->subDays(self::WINDOW_DAYS);
         $w = fn ($at) => 0.5 ** (CarbonImmutable::parse((string) $at)->diffInDays($now) / self::HALF_LIFE_DAYS);
-        $received = DB::table('referrals')->where('receiver_team_id', $team->id)->where('created_at', '>=', $from)->where('created_at', '<=', $now)
+        $received = DB::table('referrals')->where('receiver_team_id', $team->id)->where('created_at', '>=', $from)->where('created_at', '<=', $now)->whereNull('invalid_at')
             ->get(['id', 'status', 'created_at', 'respond_by', 'accepted_at', 'updated_at', 'stage', 'close_status']);
         $accepted = $received->whereNotNull('accepted_at');
         // Each part: [weighted good, weighted total, items]

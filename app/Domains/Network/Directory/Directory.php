@@ -62,7 +62,7 @@ final class Directory
                 // For the directory card: the network's photo (or a cover drawn from its industry), who can join, and the price.
                 'photo' => $g->photo_path ? Storage::disk('public')->url($g->photo_path) : null, 'icon' => $g->industry->icon, 'family' => $g->industry->family,
                 'inviteOnly' => $g->visibility === 'invite_only',
-                'price' => ['seat' => (int) ($g->pricing['seat_price'] ?? 10), 'trialMonths' => (int) ($g->pricing['trial_months'] ?? 3)]];
+                'price' => ['seat' => (int) ($g->pricing['seat_price'] ?? 25), 'trialMonths' => (int) ($g->pricing['trial_months'] ?? 1)]];
             if ($city !== null) {
                 $row['citySeat'] = self::seatAt($g, $city);
             }

@@ -27,6 +27,13 @@ type Row = {
 };
 export const tierTone: Record<string, BadgeTone> = { A: 'success', B: 'warning', C: 'danger' };
 
+/** What each compliance tier means, shown next to the tier wherever admins see it. */
+export const tierInfo: Record<string, { label: string; meaning: string }> = {
+    A: { label: 'Open', meaning: 'Referral fees under a signed agreement; sharing reward on' },
+    B: { label: 'Restricted', meaning: 'No referral fees or anything of value; no sharing reward' },
+    C: { label: 'Directory only', meaning: 'Listed by city for a flat fee; no routing, no sharing reward' },
+};
+
 export default function Industries({
     industries,
     families,
@@ -168,7 +175,10 @@ export default function Industries({
                                     <div className="text-xs text-muted">{i.family}</div>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <Badge tone={tierTone[i.tier]}>Tier {i.tier}</Badge>
+                                    <Badge tone={tierTone[i.tier]}>
+                                        Tier {i.tier} · {tierInfo[i.tier]?.label}
+                                    </Badge>
+                                    <div className="mt-1 text-xs text-muted">{tierInfo[i.tier]?.meaning}</div>
                                 </td>
                                 <td className="px-4 py-3">{i.territory}</td>
                                 <td className="px-4 py-3">

@@ -15,7 +15,7 @@ beforeEach(function () {
 
 function bulkValues(array $over = []): array
 {
-    return [...['seat_price' => 12, 'founding_price' => 10, 'trial_months' => 2, 'value_guarantee' => true, 'annual_months_free' => 1, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]], ...$over];
+    return [...['seat_price' => 12, 'founding_price' => 10, 'trial_months' => 2, 'sharing_reward' => true, 'annual_months_free' => 1, 'discounts' => ['2' => 0, '5' => 0, '20' => 0]], ...$over];
 }
 
 it('moves groups still on the old $79 sample price to $10 and leaves custom prices alone', function () {
@@ -30,22 +30,22 @@ it('moves groups still on the old $79 sample price to $10 and leaves custom pric
         ->and($hvac->fresh()->pricing['seat_price'])->toBe(25);
 });
 
-it('applies one pricing change to many groups and keeps the guarantee off for Tier C', function () {
+it('applies one pricing change to many groups and keeps the sharing reward off for Tier C', function () {
     $this->actingAs($this->admin)->post('/admin/groups/bulk-pricing', ['groups' => ['solar-installers-network', 'hospice-providers-network'], 'when' => 'now', 'values' => bulkValues()])
-        ->assertSessionHas('status', 'bulk-pricing-applied')->assertSessionHas('bulkNote', '2 groups updated. The value guarantee stays off for 1 Tier C group(s).');
-    expect(Group::where('slug', 'solar-installers-network')->firstOrFail()->pricing)->toMatchArray(['seat_price' => 12, 'value_guarantee' => true])
-        ->and(Group::where('slug', 'hospice-providers-network')->firstOrFail()->pricing)->toMatchArray(['seat_price' => 12, 'value_guarantee' => false]);
+        ->assertSessionHas('status', 'bulk-pricing-applied')->assertSessionHas('bulkNote', '2 groups updated. The sharing reward stays off for 1 Tier B/C group(s).');
+    expect(Group::where('slug', 'solar-installers-network')->firstOrFail()->pricing)->toMatchArray(['seat_price' => 12, 'sharing_reward' => true])
+        ->and(Group::where('slug', 'hospice-providers-network')->firstOrFail()->pricing)->toMatchArray(['seat_price' => 12, 'sharing_reward' => false]);
 });
 
 it('schedules a bulk change instead when asked', function () {
     $this->actingAs($this->admin)->post('/admin/groups/bulk-pricing', ['groups' => ['solar-installers-network', 'roofing-contractors-network'], 'when' => 'scheduled', 'effective_on' => now()->addDays(45)->toDateString(), 'values' => bulkValues()])
         ->assertSessionHas('status', 'bulk-pricing-scheduled');
-    expect(DB::table('group_scheduled_changes')->count())->toBe(2)->and(Group::where('slug', 'solar-installers-network')->firstOrFail()->pricing['seat_price'])->toBe(10);
+    expect(DB::table('group_scheduled_changes')->count())->toBe(2)->and(Group::where('slug', 'solar-installers-network')->firstOrFail()->pricing['seat_price'])->toBe(25);
 });
 
 it('rejects invalid bulk pricing without changing any group', function () {
     $this->actingAs($this->admin)->post('/admin/groups/bulk-pricing', ['groups' => ['solar-installers-network', 'roofing-contractors-network'], 'when' => 'now', 'values' => bulkValues(['founding_price' => 50])])->assertSessionHasErrors('founding_price');
-    expect(Group::whereIn('slug', ['solar-installers-network', 'roofing-contractors-network'])->get()->every(fn ($g) => $g->pricing['seat_price'] === 10))->toBeTrue();
+    expect(Group::whereIn('slug', ['solar-installers-network', 'roofing-contractors-network'])->get()->every(fn ($g) => $g->pricing['seat_price'] === 25))->toBeTrue();
     $this->post('/admin/groups/bulk-pricing', ['groups' => [], 'when' => 'now', 'values' => bulkValues()])->assertSessionHasErrors('groups');
 });
 

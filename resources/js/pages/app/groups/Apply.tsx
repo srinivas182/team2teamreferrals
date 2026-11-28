@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
 import { PortalLayout } from '@/layouts/PortalLayout';
-import { money, firstFree } from '@/lib/utils';
+import { money, firstFree, SHARING_REWARD_TEXT } from '@/lib/utils';
 import type { SharedProps } from '@/types/auth';
 import type { Seo } from '@/types/seo';
 
@@ -22,7 +22,7 @@ type Props = {
         territory: string;
         licenseRequired: boolean;
         terms: Record<string, string>;
-        pricing: { seat_price: number; trial_months: number; value_guarantee: boolean };
+        pricing: { seat_price: number; trial_months: number; sharing_reward: boolean };
     };
     city?: { id: number; name: string } | null;
     openCities?: string | null;
@@ -94,7 +94,7 @@ export default function Apply({ group, city: claimed, openCities, billing, seo }
                             `${money(group.pricing.seat_price)} per ${unitWord[group.territory]} per month`,
                             firstFree(group.pricing.trial_months),
                             billing.stripeKey ? 'Card saved now, charged only after the trial' : 'No card needed during the trial',
-                            ...(billing.extension ? ['Free extension: any month with no referral offered is free'] : []),
+                            ...(billing.reward ? [SHARING_REWARD_TEXT] : []),
                             'If the seat is taken, you can back it up or join the waitlist',
                         ].map((t) => (
                             <li key={t} className="flex gap-2">

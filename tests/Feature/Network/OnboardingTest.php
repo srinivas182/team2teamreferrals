@@ -42,7 +42,7 @@ it('walks new members from sign-up to first seat on the portal home', function (
 
 it('lists public networks to join and hides private ones', function () {
     Group::where('slug', 'solar-installers-network')->update(['is_private' => true]);
-    $this->actingAs(User::factory()->create())->get('/app/groups')->assertOk()->assertInertia(fn ($p) => $p->component('app/groups/Index')->has('groups', 45)->where('groups.0.price', 10));
+    $this->actingAs(User::factory()->create())->get('/app/groups')->assertOk()->assertInertia(fn ($p) => $p->component('app/groups/Index')->has('groups', 45)->where('groups.0.price', 25));
 });
 
 it('previews the team’s public profile', function () {

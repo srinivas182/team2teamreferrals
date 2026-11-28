@@ -50,7 +50,7 @@ const ruleLabels: Record<string, string> = {
     memberReferralFees: 'Members may agree referral fees',
     referralRouting: 'Referrals are routed to members',
     consumerRequests: '“Request a pro” form',
-    valueGuarantee: 'Free month when no referral arrives',
+    sharingReward: 'Sharing reward (a free month for sending good referrals)',
     platformFee: 'Platform fee can ever be switched on',
     disclosure: 'Compliance disclosure shown',
 };
