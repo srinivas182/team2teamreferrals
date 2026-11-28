@@ -46,13 +46,11 @@ export function TrackRecord({
     trust,
     rating,
     ratings,
-    licenses,
     closed,
 }: {
     trust: TrustRecord | null | undefined;
     rating: number | null;
     ratings: number;
-    licenses: number;
     closed: number;
 }) {
     const parts = trust?.parts ?? {};
@@ -103,17 +101,13 @@ export function TrackRecord({
             tone: rating === null ? 'new' : rating >= 4 ? 'good' : rating >= 3 ? 'ok' : 'low',
         },
         {
-            key: 'verified',
+            key: 'closed',
             icon: BadgeCheck,
-            label: 'Verified',
-            value: licenses > 0 ? String(licenses) : 'Pending',
-            unit: licenses > 0 ? (licenses === 1 ? ' license' : ' licenses') : undefined,
-            detail:
-                closed > 0
-                    ? `${closed} ${closed === 1 ? 'referral' : 'referrals'} closed on the platform`
-                    : 'No referrals closed on the platform yet',
-            about: 'Licenses checked by our staff against the state’s public lookup.',
-            tone: licenses > 0 ? 'good' : 'new',
+            label: 'Referrals closed',
+            value: closed > 0 ? String(closed) : 'New',
+            detail: closed > 0 ? `${closed === 1 ? 'Referral' : 'Referrals'} received and closed on this platform` : 'No closed referrals yet',
+            about: 'A close counts once the referring team confirms it, or doesn’t dispute it in time.',
+            tone: closed > 0 ? 'good' : 'new',
         },
     ];
     return (

@@ -168,7 +168,7 @@ export default function TeamPublic({
                 </div>
             </section>
             <section className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
-                <TrackRecord trust={record.trust} rating={record.rating} ratings={record.ratings} licenses={licenses.length} closed={record.closed} />
+                <TrackRecord trust={record.trust} rating={record.rating} ratings={record.ratings} closed={record.closed} />
                 <RecordFacts response={response} lastYear={lastYear} foundedYear={team.foundedYear} />
                 <Credentials items={credentials} />
                 <Ratings reviews={reviews} />

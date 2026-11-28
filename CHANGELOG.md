@@ -18,7 +18,7 @@ All notable changes are recorded here. Versions follow Semantic Versioning once 
    Every action is recorded in the activity log.
 4. **Repeat pauses.** A second pause within 12 months asks the owners to review the team. A third pause also alerts the super admins.
 5. **Referral quality in the trust score.** It's a new 6th part (weight 10, adjustable on the Trust page): referrals the team sent that were real clients, out of those accepted. A referral waiting on the owner's review counts as real until decided.
-6. **Track record panel on team profiles.** A new panel shows six tiles: Trust score, Closing rate, Responds on time, Referral quality, Rating and Verified licenses. Each tile has its "x of y" counts and a line on what it means. Rates show after 3 referrals and say "New" before that.
+6. **Track record panel on team profiles.** A new panel shows six tiles: Trust score, Closing rate, Responds on time, Referral quality, Rating and Referrals closed. There is no "Verified" tile, because every team is verified before it joins. Each tile has its "x of y" counts and a line on what it means. Rates show after 3 referrals and say "New" before that.
 7. **Performance page.** Each trust part now shows "x of y". Each group shows how many referrals were marked not a real client in the last 90 days, out of 3.
 
 ### Sharing reward (replaces the free extension)
