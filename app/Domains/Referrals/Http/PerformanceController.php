@@ -27,6 +27,8 @@ final class PerformanceController
         return Inertia::render('app/Performance', [
             // The public trust score, explained part by part (recomputed nightly).
             'trust' => \App\Domains\Referrals\Trust\TrustScore::stored($team->id),
+            // Per group: referrals marked not a real client in the last 90 days (3 pauses the sharing reward there).
+            'sharing' => \App\Domains\Referrals\SharingReward::progress($team),
             'score' => $score, 'tips' => ServiceScore::topTips($score), 'minReferrals' => ServiceScore::MIN_REFERRALS, 'windowDays' => ServiceScore::WINDOW_DAYS,
             'cards' => DB::table('report_cards')->where('team_id', $team->id)->orderByDesc('period')->limit(12)->get()
                 ->map(fn ($c) => ['period' => (string) $c->period, 'score' => $c->score, 'data' => json_decode((string) $c->data, true)]),

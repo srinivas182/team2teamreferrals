@@ -52,7 +52,7 @@ final class LaunchResetCommand extends Command
         'companies', 'company_invites', 'consumer_requests', 'contact_messages', 'coupon_redemptions', 'credit_ledger', 'dashboard_views',
         'demo_records', 'event_rsvps', 'events', 'failed_jobs', 'feed_comments', 'feed_posts', 'feed_reactions', 'feed_reports',
         'group_insights', 'help_feedback', 'help_searches', 'inbound_emails', 'intake_messages', 'integration_mappings', 'integrations',
-        'invite_signups', 'invoices', 'job_batches', 'missed_referrals', 'jobs', 'leaderboard_snapshots', 'media', 'member_badges', 'message_deliveries',
+        'invite_signups', 'invoices', 'job_batches', 'missed_referrals', 'sharing_reward_pauses', 'jobs', 'leaderboard_snapshots', 'media', 'member_badges', 'message_deliveries',
         'notification_outbox', 'notifications', 'nurture_touchpoints', 'onboarding_nudges', 'owner_checkins', 'owner_reward_seats',
         'partner_endorsements', 'partner_enquiries', 'partner_listings', 'partner_shares', 'partner_stats', 'partners',
         'password_reset_tokens', 'profile_leads', 'profile_stats', 'prospect_activities', 'prospect_tasks', 'prospect_views', 'prospects',

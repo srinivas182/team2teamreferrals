@@ -119,7 +119,7 @@ it('pauses the sharing reward after 3 not-real clients in 90 days', function () 
             'consent_method' => 'sender_attested', 'consent_text' => 'x', 'respond_by' => "{$day} 10:00:00", 'accepted_at' => "{$day} 10:00:00", 'first_contact_at' => "{$day} 11:00:00",
             'invalid_at' => $i < 3 ? "{$day} 12:00:00" : null, 'invalid_reason' => $i < 3 ? 'wrong_contact' : null, 'created_at' => "{$day} 10:00:00", 'updated_at' => "{$day} 10:00:00"]);
     }
-    expect(App\Domains\Referrals\SharingReward::paused($this->teamA->id))->toBeTrue();
+    expect(App\Domains\Referrals\SharingReward::paused($this->teamA->id, $this->g->id))->toBeTrue();
     app(Invoicing::class)->run('2027-02');
     expect((int) ($this->inv)()->total_cents)->toBe(2500);
 });

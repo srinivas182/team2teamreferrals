@@ -107,6 +107,7 @@ Route::middleware(['web', 'noindex:always', 'auth', EnsureAccountIsActive::class
             Route::get("{$prefix}/{group}/cities/state/{code}", [App\Domains\Network\Groups\Http\GroupCitiesController::class, 'state'])->where('code', '[A-Za-z]{2}')->name("groups.cities.state.{$who}");
             Route::get("{$prefix}/{group}/referrals", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'index'])->name("groups.referrals.{$who}");
             Route::post("{$prefix}/{group}/not-real/{referral}", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'decideNotReal'])->name("groups.not-real.{$who}");
+            Route::post("{$prefix}/{group}/sharing-pause/{team}", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'sharingPause'])->whereNumber('team')->name("groups.sharing-pause.{$who}");
             Route::get("{$prefix}/{group}/referrals.csv", [App\Domains\Network\Groups\Http\GroupReferralsController::class, 'csv'])->name("groups.referrals.csv.{$who}");
             Route::get("{$prefix}/{group}/seat-map", [App\Domains\Network\Seats\Http\SeatController::class, 'map'])->name("seats.map.{$who}");
             Route::post("{$prefix}/{group}/invites", [App\Domains\Network\Seats\Http\SeatController::class, 'invite'])->middleware('throttle:20,60')->name("seats.invite.{$who}");

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Admin → Trust score: the weights of the five parts, with a preview of the effect before saving. */
+/** Admin → Trust score: the weights of the six parts, with a preview of the effect before saving. */
 final class TrustController
 {
     public function index(): Response

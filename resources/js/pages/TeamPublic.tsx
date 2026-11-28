@@ -1,6 +1,14 @@
 import { router, useForm } from '@inertiajs/react';
-import { BadgeCheck, Globe, Phone, Star } from 'lucide-react';
-import { Credentials, Ratings, RecordFacts, type Credential, type Reviews } from '@/components/directory/ProfileRecord';
+import { BadgeCheck, Globe, Phone } from 'lucide-react';
+import {
+    Credentials,
+    Ratings,
+    RecordFacts,
+    TrackRecord,
+    type Credential,
+    type Reviews,
+    type TrustRecord,
+} from '@/components/directory/ProfileRecord';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +43,7 @@ type Props = {
         topGiverIn: string[];
         builder: boolean;
         badges: { key: string; name: string; group: string | null }[];
-        trust?: { score: number | null; status: string } | null;
+        trust?: TrustRecord | null;
     };
     response: { hours: number | null; count: number };
     lastYear: { received: number; closed: number };
@@ -120,28 +128,23 @@ export default function TeamPublic({
                                 <BadgeCheck className="size-3" aria-hidden /> {l} license verified
                             </Badge>
                         ))}
-                        {record.trust && (
-                            <Badge tone="info">{record.trust.status === 'new' ? 'New member' : `Trust score ${record.trust.score}`}</Badge>
-                        )}
                         {record.badges.map((b) => (
                             <Badge key={b.key + (b.group ?? '')} tone="sender">
                                 {b.name}
                             </Badge>
                         ))}
                         {serviceScore !== null && <Badge tone="info">Service score {serviceScore}</Badge>}
-                        {record.rating !== null && (
-                            <Badge tone="neutral">
-                                <Star className="size-3" aria-hidden /> {record.rating} from {record.ratings} ratings
-                            </Badge>
-                        )}
                     </div>
                     {team.bio && <p className="mt-5 max-w-3xl text-lg">{team.bio}</p>}
                     {team.specialties.length > 0 && <p className="mt-3 text-sm">Specialties: {team.specialties.join(', ')}</p>}
                     {team.languages.length > 0 && <p className="mt-1 text-sm">Languages: {team.languages.join(', ')}</p>}
-                    <p className="mt-3 text-sm text-muted">
-                        {record.closed} referrals closed{team.serviceArea ? ` · serving ${team.serviceArea}` : ''}
-                        {team.foundedYear ? ` · since ${team.foundedYear}` : ''}
-                    </p>
+                    {(team.serviceArea || team.foundedYear) && (
+                        <p className="mt-3 text-sm text-muted">
+                            {team.serviceArea ? `Serving ${team.serviceArea}` : ''}
+                            {team.serviceArea && team.foundedYear ? ' · ' : ''}
+                            {team.foundedYear ? `In business since ${team.foundedYear}` : ''}
+                        </p>
+                    )}
                     <div className="mt-4 flex flex-wrap gap-2">
                         {team.phone && (
                             <a
@@ -165,6 +168,7 @@ export default function TeamPublic({
                 </div>
             </section>
             <section className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
+                <TrackRecord trust={record.trust} rating={record.rating} ratings={record.ratings} licenses={licenses.length} closed={record.closed} />
                 <RecordFacts response={response} lastYear={lastYear} foundedYear={team.foundedYear} />
                 <Credentials items={credentials} />
                 <Ratings reviews={reviews} />

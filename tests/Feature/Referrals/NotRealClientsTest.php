@@ -94,13 +94,80 @@ it('lets the sender ask the owner to review once, and the owner reinstate or uph
     expect($r2->fresh()->invalid_at)->toBeNull();
 });
 
-it('pauses the sender’s sharing reward after 3 not-real clients and alerts the group owners', function () {
+it('warns politely at 2, pauses at 3 with an end date, and tells the owners without blame', function () {
+    $sent = fn (User $u, string $needle) => Notification::assertSentTo($u, App\Domains\Messaging\InAppNotification::class, fn ($n) => str_contains($n->title.' '.$n->body, $needle));
+    ($this->mark)(($this->sendAccepted)());
+    ($this->mark)(($this->sendAccepted)());
+    $sent($this->a->leader, 'A quick check before you send your next referral');
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeFalse();
+    ($this->mark)(($this->sendAccepted)());
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeTrue()
+        ->and(SharingReward::pausedUntil($this->a->id, $this->g->id)?->toDateString())->toBe(now()->addDays(91)->toDateString())
+        ->and(DB::table('sharing_reward_pauses')->count())->toBe(1);
+    $sent($this->a->leader, 'Your seat and the referrals you receive are not affected');
+    $sent($this->owner, 'No action is needed');
+    Notification::assertNotSentTo($this->owner, App\Domains\Messaging\InAppNotification::class, fn ($n) => str_contains($n->title.' '.$n->body, 'keeps sending'));
+    $this->actingAs($this->a->leader)->get('/app')->assertInertia(fn ($p) => $p->where('sharing.0.paused', true)->where('sharing.0.notReal', 3)->whereNot('sharing.0.pausedUntil', null));
+    $this->actingAs($this->a->leader)->get('/app/performance')->assertInertia(fn ($p) => $p->where('sharing.0.paused', true));
+    $this->actingAs($this->owner)->get('/app/group/solar-installers-network/referrals')->assertInertia(fn ($p) => $p->has('pausedTeams', 1)->where('pausedTeams.0.team', 'Sender Solar'));
+});
+
+it('counts per group: a pause in one group leaves the reward in others alone', function () {
     foreach (range(1, 3) as $i) {
         ($this->mark)(($this->sendAccepted)());
     }
-    expect(SharingReward::paused($this->a->id))->toBeTrue();
-    Notification::assertSentTo($this->owner, App\Domains\Messaging\InAppNotification::class);
-    $this->actingAs($this->a->leader)->get('/app')->assertInertia(fn ($p) => $p->where('sharing.0.paused', true));
+    $other = Group::where('slug', '!=', 'solar-installers-network')->firstOrFail();
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeTrue()->and(SharingReward::paused($this->a->id, $other->id))->toBeFalse();
+});
+
+it('lets the owner lift a pause with a reason (any number of times), keep it, or remove the team', function () {
+    foreach (range(1, 3) as $i) {
+        ($this->mark)(($this->sendAccepted)());
+    }
+    $url = "/app/group/solar-installers-network/sharing-pause/{$this->a->id}";
+    $this->actingAs($this->b->leader)->post($url, ['action' => 'lift', 'reason' => 'Looks fine'])->assertForbidden();
+    $this->actingAs($this->owner)->post($url, ['action' => 'lift'])->assertSessionHasErrors('reason');
+    $this->post($url, ['action' => 'lift', 'reason' => 'Bad phone numbers from a lead list, now fixed'])->assertSessionHas('status', 'sharing-pause-lift');
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeFalse()->and(SharingReward::invalidSent($this->a->id, $this->g->id))->toBe(0);
+    Notification::assertSentTo($this->a->leader, App\Domains\Messaging\InAppNotification::class, fn ($n) => str_contains($n->title, 'is back on'));
+
+    // Paused again later: the owner is now asked to review, and can keep it or lift it again.
+    $this->travel(1)->minutes();
+    foreach (range(1, 3) as $i) {
+        ($this->mark)(($this->sendAccepted)());
+    }
+    Notification::assertSentTo($this->owner, App\Domains\Messaging\InAppNotification::class, fn ($n) => str_contains($n->title, 'Please review Sender Solar'));
+    $this->actingAs($this->owner)->post($url, ['action' => 'keep'])->assertSessionHas('status', 'sharing-pause-keep');
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeTrue();
+    $this->post($url, ['action' => 'lift', 'reason' => 'Second chance after a call'])->assertSessionHas('status', 'sharing-pause-lift');
+    expect(SharingReward::paused($this->a->id, $this->g->id))->toBeFalse();
+
+    // A third pause within the year also tells the super admins.
+    $super = User::factory()->create();
+    $super->assignRole('super_admin');
+    $this->travel(1)->minutes();
+    foreach (range(1, 3) as $i) {
+        ($this->mark)(($this->sendAccepted)());
+    }
+    Notification::assertSentTo($super, App\Domains\Messaging\InAppNotification::class, fn ($n) => str_contains($n->title, 'Please review Sender Solar'));
+
+    $this->actingAs($this->owner)->post($url, ['action' => 'remove', 'reason' => 'Repeated fake referrals'])->assertSessionHas('status', 'sharing-pause-remove');
+    expect(App\Domains\Network\Seats\Models\Seat::where(['group_id' => $this->g->id, 'primary_team_id' => $this->a->id])->exists())->toBeFalse();
+});
+
+it('puts referral quality in the trust score with counts, and shows the track record on the profile', function () {
+    foreach (range(1, 4) as $i) {
+        $r = ($this->sendAccepted)();
+        if ($i === 1) {
+            ($this->mark)($r);
+        }
+    }
+    $t = App\Domains\Referrals\Trust\TrustScore::compute($this->a);
+    expect($t['parts']['quality'])->toMatchArray(['items' => 4, 'good' => 3, 'label' => 'Referral quality'])->and($t['parts']['quality']['points'])->toBe(75);
+    App\Domains\Referrals\Trust\TrustScore::recomputeAll();
+    $profile = (string) DB::table('teams')->where('id', $this->a->id)->value('slug');
+    $page = $this->get("/t/{$profile}");
+    $page->assertOk()->assertInertia(fn ($p) => $p->where('record.trust.parts.quality', ['items' => 4, 'good' => 3]));
 });
 
 it('shows the sharing reward progress on the dashboard', function () {

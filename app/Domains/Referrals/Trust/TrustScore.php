@@ -10,7 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The trust score shown publicly: five parts over the last 12 months, recent activity counting more (half weight
+ * The trust score shown publicly: six parts over the last 12 months, recent activity counting more (half weight
  * after six months). A part needs at least 3 items to count; the weights are shared among the parts that count, so
  * fee reliability simply drops out where there are no fees (Tier B, or no fees yet). Fewer than 3 accepted referrals
  * is "New". Seat challenges keep using the service score, which covers only what a team controls.
@@ -31,6 +31,7 @@ final class TrustScore
         'conversion' => ['label' => 'Conversion', 'tip' => 'Follow up quickly and keep stalled referrals moving to win more of them.', 'weight' => 20],
         'fees' => ['label' => 'Fee reliability', 'tip' => 'Pay agreed referral fees by their due date.', 'weight' => 15],
         'accuracy' => ['label' => 'Outcome accuracy', 'tip' => 'Mark referrals won only once they have closed, with the right date and value.', 'weight' => 15],
+        'quality' => ['label' => 'Referral quality', 'tip' => 'Only send clients who asked for help, and check their phone and email before you send.', 'weight' => 10],
     ];
 
     /** @return array<string, int> */
@@ -43,7 +44,7 @@ final class TrustScore
 
     /**
      * @param  array<string, int>|null  $weights
-     * @return array{score: ?int, status: string, parts: array<string, array{label: string, tip: string, points: ?int, items: int}>}
+     * @return array{score: ?int, status: string, parts: array<string, array{label: string, tip: string, points: ?int, items: int, good: int}>}
      */
     public static function compute(Team $team, ?CarbonImmutable $asOf = null, ?array $weights = null): array
     {
@@ -53,12 +54,12 @@ final class TrustScore
         $received = DB::table('referrals')->where('receiver_team_id', $team->id)->where('created_at', '>=', $from)->where('created_at', '<=', $now)->whereNull('invalid_at')
             ->get(['id', 'status', 'created_at', 'respond_by', 'accepted_at', 'updated_at', 'stage', 'close_status']);
         $accepted = $received->whereNotNull('accepted_at');
-        // Each part: [weighted good, weighted total, items]
-        $part = fn () => [0.0, 0.0, 0];
-        $p = ['response' => $part(), 'updates' => $part(), 'conversion' => $part(), 'fees' => $part(), 'accuracy' => $part()];
+        // Each part: [weighted good, weighted total, items, good items]
+        $part = fn () => [0.0, 0.0, 0, 0];
+        $p = ['response' => $part(), 'updates' => $part(), 'conversion' => $part(), 'fees' => $part(), 'accuracy' => $part(), 'quality' => $part()];
         $add = function (string $k, bool $good, $at) use (&$p, $w) {
             $x = $w($at);
-            $p[$k] = [$p[$k][0] + ($good ? $x : 0), $p[$k][1] + $x, $p[$k][2] + 1];
+            $p[$k] = [$p[$k][0] + ($good ? $x : 0), $p[$k][1] + $x, $p[$k][2] + 1, $p[$k][3] + ($good ? 1 : 0)];
         };
         $passed = DB::table('referral_events')->whereIn('referral_id', $received->pluck('id'))->where(['event' => 'passed_to_backup', 'team_id' => $team->id])->pluck('created_at', 'referral_id');
         $missed = DB::table('referral_events')->whereIn('referral_id', $accepted->pluck('id'))->where(['event' => 'missed_update', 'team_id' => $team->id])->pluck('referral_id')->flip();
@@ -83,14 +84,20 @@ final class TrustScore
         foreach (DB::table('referral_fees')->where('payer_team_id', $team->id)->where('due_on', '>=', $from->toDateString())->where('due_on', '<', $now->toDateString())->get(['due_on', 'paid_at']) as $f) {
             $add('fees', $f->paid_at !== null && CarbonImmutable::parse((string) $f->paid_at)->lte(CarbonImmutable::parse((string) $f->due_on)->endOfDay()), $f->due_on);
         }
+        // Referral quality: of the referrals this team sent that were accepted, how many were real clients. One waiting
+        // on the group owner's review counts as real until decided.
+        foreach (DB::table('referrals')->where('sender_team_id', $team->id)->whereNotNull('accepted_at')->where('created_at', '>=', $from)->where('created_at', '<=', $now)
+            ->get(['created_at', 'invalid_at', 'invalid_disputed_at']) as $r) {
+            $add('quality', $r->invalid_at === null || $r->invalid_disputed_at !== null, $r->created_at);
+        }
         $weights ??= self::weights();
         $parts = [];
         $sum = 0.0;
         $wsum = 0;
         foreach (self::PARTS as $k => $def) {
-            [$good, $total, $items] = $p[$k];
+            [$good, $total, $items, $goodItems] = $p[$k];
             $points = $items >= self::MIN_ITEMS && $total > 0 ? (int) round(100 * $good / $total) : null;
-            $parts[$k] = ['label' => $def['label'], 'tip' => $def['tip'], 'points' => $points, 'items' => $items];
+            $parts[$k] = ['label' => $def['label'], 'tip' => $def['tip'], 'points' => $points, 'items' => $items, 'good' => $goodItems];
             if ($points !== null && ($weights[$k] ?? 0) > 0) {
                 $sum += $points * $weights[$k];
                 $wsum += $weights[$k];
